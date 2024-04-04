@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeception.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/phpspec.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/phpunit.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/AlgoliaProduct.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/ExternalIds.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Availability.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Category.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryCategory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryEvent.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryFile.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryInformationBlock.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryPerson.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryProduct.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/CategoryUploadGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Client.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ClientDiscount.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Colour.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Comment.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ContactMessage.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Currency.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Event.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/EventInformationBlock.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/EventType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/EventUploadGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/File.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/InformationBlock.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/InformationBlockType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Label.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/MenuType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Note.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/OpenTime.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/PaymentType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Person.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/PersonInformationBlock.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/PersonUploadGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Price.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Producer.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Product.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ProductInformationBlock.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ProductUploadGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ProductVariantUploadGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/PurchaseEvent.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/PurchaseProductVariant.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/ReservedTime.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Review.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/SubMenuType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Transportation.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Upload.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/UploadGroup.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/Project/Video.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/PurchaseTracking.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Entity/ResetPasswordRequest.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/GreendotEshopBundle.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/ExternalIdsRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/AvailabilityRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryCategoryRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryEventRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryFileRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryInformationBlockRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryPersonRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryProductRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryUploadGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ClientDiscountRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ClientRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ColourRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CommentRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ContactMessageRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/CurrencyRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/EventInformationBlockRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/EventRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/EventTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/EventUploadGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/FileRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/InformationBlockRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/InformationBlockTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/LabelRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/MenuTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/NoteRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/OpenTimeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ParameterGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ParameterGroupTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ParameterRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PaymentTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PersonInformationBlockRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PersonRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PersonUploadGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PriceRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProducerRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProductInformationBlockRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProductUploadGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProductVariantDiscountRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProductVariantRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ProductVariantUploadGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PurchaseEventRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PurchaseProductVariantRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/QuantityDiscountRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ReservedTimeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/ReviewRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/SubMenuTypeRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/TransportationPaymentRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/TransportationRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/UploadGroupRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/UploadRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/Project/VideoRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/PurchaseTrackingRepository.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Repository/ResetPasswordRequestRepository.php" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings" synchronizationState="SYNCHRONIZE">
+    <pharConfigPath>$PROJECT_DIR$/composer.json</pharConfigPath>
+    <execution />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="composer.json" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\wamp64\bin\php\php8.1.0\php.exe">
+    <include_path>
+      <path value="$PROJECT_DIR$/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/vendor/composer" />
+      <path value="$PROJECT_DIR$/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/vendor/symfony/dependency-injection" />
+      <path value="$PROJECT_DIR$/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/vendor/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/vendor/theseer/tokenizer" />
+      <path value="$PROJECT_DIR$/vendor/phar-io/manifest" />
+      <path value="$PROJECT_DIR$/vendor/phar-io/version" />
+      <path value="$PROJECT_DIR$/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/vendor/phpunit/php-timer" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php83" />
+      <path value="$PROJECT_DIR$/vendor/phpunit/phpunit" />
+      <path value="$PROJECT_DIR$/vendor/symfony/http-kernel" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php80" />
+      <path value="$PROJECT_DIR$/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/vendor/phpunit/php-code-coverage" />
+      <path value="$PROJECT_DIR$/vendor/phpunit/php-file-iterator" />
+      <path value="$PROJECT_DIR$/vendor/phpunit/php-invoker" />
+      <path value="$PROJECT_DIR$/vendor/phpunit/php-text-template" />
+      <path value="$PROJECT_DIR$/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/cli-parser" />
+      <path value="$PROJECT_DIR$/vendor/symfony/error-handler" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/diff" />
+      <path value="$PROJECT_DIR$/vendor/nikic/php-parser" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/environment" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/exporter" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/global-state" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/code-unit" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/code-unit-reverse-lookup" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/comparator" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/complexity" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/type" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/version" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/lines-of-code" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/object-enumerator" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/object-reflector" />
+      <path value="$PROJECT_DIR$/vendor/sebastian/recursion-context" />
+      <path value="$PROJECT_DIR$/vendor/myclabs/deep-copy" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/deprecations" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/doctrine-bundle" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/event-manager" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/inflector" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/cache" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/collections" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/dbal" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/sql-formatter" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/instantiator" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/lexer" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/orm" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/persistence" />
+      <path value="$PROJECT_DIR$/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/vendor/symfony/string" />
+      <path value="$PROJECT_DIR$/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/vendor/symfony/framework-bundle" />
+      <path value="$PROJECT_DIR$/vendor/symfony/doctrine-bridge" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/vendor/symfony/routing" />
+      <path value="$PROJECT_DIR$/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/vendor/symfony/console" />
+      <path value="$PROJECT_DIR$/vendor/symfony/filesystem" />
+      <path value="$PROJECT_DIR$/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/vendor/symfony/config" />
+      <path value="$PROJECT_DIR$/vendor/symfony/serializer" />
+      <path value="$PROJECT_DIR$/vendor/api-platform/core" />
+      <path value="$PROJECT_DIR$/vendor/willdurand/negotiation" />
+      <path value="$PROJECT_DIR$/vendor/symfony/property-access" />
+      <path value="$PROJECT_DIR$/vendor/symfony/property-info" />
+      <path value="$PROJECT_DIR$/vendor/symfony/web-link" />
+      <path value="$PROJECT_DIR$/vendor/symfony/translation-contracts" />
+      <path value="$PROJECT_DIR$/vendor/psr/link" />
+    </include_path>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2eXM0BB2whJoOjfr7q3rddTdoge" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/stepa/PhpstormProjects/GreendotEshopBundle/src/Repository",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository" />
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Entity" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-php-predefined-ba97393d7c68-74080bdb84d3-com.jetbrains.php.sharedIndexes-PS-233.11799.297" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration">
+    <configuration>C:\Users\stepa\AppData\Roaming\Subversion</configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="" />
+      <created>1712046243376</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1712046243376</updated>
+      <workItem from="1712046244441" duration="983000" />
+      <workItem from="1712047273711" duration="5670000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
