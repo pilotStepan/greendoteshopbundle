@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Initial">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GreendotEshopBundle.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/GreendotEshopBundle.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -167,7 +166,7 @@
       <updated>1712046243376</updated>
       <workItem from="1712046244441" duration="983000" />
       <workItem from="1712047273711" duration="6948000" />
-      <workItem from="1713256372239" duration="174000" />
+      <workItem from="1713256372239" duration="822000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -177,7 +176,15 @@
       <option name="project" value="LOCAL" />
       <updated>1712221174608</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Initial">
+      <option name="closed" value="true" />
+      <created>1713256555885</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1713256555885</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
