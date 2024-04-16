@@ -3,17 +3,32 @@
 namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
+use Greendot\EshopBundle\DependencyInjection\GreendotEshopExtension;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class GreendotEshopBundle extends AbstractBundle
 {
+
+    public function getPath(): string
+    {
+        return dirname(__DIR__);
+    }
+
+    public function getContainerExtension(): ?ExtensionInterface
+    {
+        return new GreendotEshopExtension();
+    }
+
     public function build(ContainerBuilder $container): void
     {
         /*
          * To extend the bundle to work with mongoDB and couchDB you can follow this tutorial
          * http://symfony.com/doc/current/doctrine/mapping_model_classes.html
          * */
+
+
 
         parent::build($container);
         $ormCompilerClass = 'Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass';
@@ -29,7 +44,7 @@ class GreendotEshopBundle extends AbstractBundle
             $enabledParameter = false;
             $aliasMap = [];
             $container->addCompilerPass(
-                DoctrineOrmMappingsPass::createAnnotationMappingDriver(
+                DoctrineOrmMappingsPass::createAttributeMappingDriver(
                     $namespaces,
                     $directories,
                     $managerParameters,
