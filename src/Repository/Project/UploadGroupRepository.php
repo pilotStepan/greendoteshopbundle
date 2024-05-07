@@ -42,14 +42,6 @@ class UploadGroupRepository extends ServiceEntityRepository
 
     public function getAllUploadGroupsForProduct(Product $product, $accountVariants = true): array
     {
-        /*
-        return $this->createQueryBuilder('pug')
-            ->leftJoin('pug.UploadGroup', 'ug')
-            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
-            //->andWhere('pug.Product = :product')->setParameter('product', $product)
-            ->andWhere('pvug.ProductVariant in (:variants)')->setParameter('variants', $product->getProductVariants())
-            ->getQuery()->getResult();*/
-
         $productUploadGroups = $this->createQueryBuilder('ug')
             ->leftJoin('ug.productUploadGroup', 'pug')
             ->andWhere('pug.Product = :product')->setParameter('product', $product)
@@ -65,29 +57,4 @@ class UploadGroupRepository extends ServiceEntityRepository
         return  $productUploadGroups;
 
     }
-
-//    /**
-//     * @return UploadGroup[] Returns an array of UploadGroup objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('u.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?UploadGroup
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }

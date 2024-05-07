@@ -52,7 +52,7 @@ class InformationBlockRepository extends ServiceEntityRepository
         } elseif ($entity instanceof Product){
             $qb->select('i')
                 ->leftJoin('i.productInformationBlocks', 'pib')
-                ->wheandWherere('pib.product = :entity')
+                ->andWhere('pib.product = :entity')
                 ->setParameter('entity', $entity)
                 ->addOrderBy('pib.sequence', 'ASC');
 

@@ -18,6 +18,7 @@ use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use App\Service\ProductInfoGetter;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
@@ -131,12 +132,19 @@ class Product implements Translatable
     #[Groups(['product_info:read'])]
     private string $priceFrom;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $metaDescription = null;
+
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductPerson::class)]
+    private Collection $productPeople;
+
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
         $this->reviews = new ArrayCollection();
         $this->categoryProducts = new ArrayCollection();
         $this->productUploadGroup = new ArrayCollection();
+        $this->productPeople = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -445,6 +453,48 @@ class Product implements Translatable
     public function getPriceFrom(): ?string
     {
         return $this->priceFrom;
+    }
+
+    public function getMetaDescription(): ?string
+    {
+        return $this->metaDescription;
+    }
+
+    public function setMetaDescription(?string $metaDescription): static
+    {
+        $this->metaDescription = $metaDescription;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductPerson>
+     */
+    public function getProductPeople(): Collection
+    {
+        return $this->productPeople;
+    }
+
+    public function addProductPerson(ProductPerson $productPerson): static
+    {
+        if (!$this->productPeople->contains($productPerson)) {
+            $this->productPeople->add($productPerson);
+            $productPerson->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductPerson(ProductPerson $productPerson): static
+    {
+        if ($this->productPeople->removeElement($productPerson)) {
+            // set the owning side to null (unless already changed)
+            if ($productPerson->getProduct() === $this) {
+                $productPerson->setProduct(null);
+            }
+        }
+
+        return $this;
     }
 
 }

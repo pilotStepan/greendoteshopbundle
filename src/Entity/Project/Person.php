@@ -61,10 +61,14 @@ class Person
     #[ORM\Column(nullable: true)]
     private ?bool $isActive = null;
 
+    #[ORM\OneToMany(mappedBy: 'person', targetEntity: ProductPerson::class)]
+    private Collection $productPeople;
+
     public function __construct()
     {
         $this->category = new ArrayCollection();
         $this->personUploadGroups = new ArrayCollection();
+        $this->productPeople = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -300,6 +304,36 @@ class Person
             // set the owning side to null (unless already changed)
             if ($parameter->getPerson() === $this) {
                 $parameter->setPerson(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductPerson>
+     */
+    public function getProductPeople(): Collection
+    {
+        return $this->productPeople;
+    }
+
+    public function addProductPerson(ProductPerson $productPerson): static
+    {
+        if (!$this->productPeople->contains($productPerson)) {
+            $this->productPeople->add($productPerson);
+            $productPerson->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductPerson(ProductPerson $productPerson): static
+    {
+        if ($this->productPeople->removeElement($productPerson)) {
+            // set the owning side to null (unless already changed)
+            if ($productPerson->getPerson() === $this) {
+                $productPerson->setPerson(null);
             }
         }
 

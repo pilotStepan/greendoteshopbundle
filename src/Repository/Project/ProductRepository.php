@@ -4,6 +4,8 @@ namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Parameter;
+use Greendot\EshopBundle\Entity\Project\Person;
+use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
 use App\Service\CategoryInfoGetter;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -68,6 +70,46 @@ class ProductRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function getProductsForEntity($entity, $onlyActive = true){
+        $qb = $this->createQueryBuilder('p');
+
+        if ($onlyActive){
+            $qb->andWhere('p.isActive = :val');
+            $qb->setParameter('val', 1);
+        }
+
+        if ($entity instanceof Category){
+            $qb->join('p.categoryProducts', 'c');
+            $subIds = [];
+            $subIds[] = $entity->getId();
+
+            if ($entity->getCategoryCategories()) {
+                $subCategories = $entity->getCategoryCategories();
+                foreach ($subCategories as $subCatCategory) {
+                    $subCategory = $subCatCategory->getCategorySub();
+                    $subIds[] = $subCategory->getId();
+                }
+            }
+            $qb->andWhere('c.category in (:subIds)');
+            $qb->setParameter('subIds', $subIds);
+        }
+
+        if ($entity instanceof Producer){
+            $qb->andWhere('p.producer = :producer');
+            $qb->setParameter('producer', $entity);
+        }
+
+        if ($entity instanceof Person){
+            $qb->leftJoin('p.productPeople', 'pp');
+            $qb->andWhere('pp.person = :person');
+            $qb->setParameter('person', $entity);
+        }
+
+        $qb->distinct();
+        $qb->orderBy('p.sequence', 'ASC');
+        return $qb->getQuery()->getResult();
+    }
+
     public function findCategoryProductsQB(int $category, QueryBuilder $qb)
     {
         $alias = $qb->getRootAliases()[0];
@@ -107,9 +149,6 @@ class ProductRepository extends ServiceEntityRepository
             ->andWhere('params.data in (:paramData)')->setParameter('paramData', $paramDataArray)
             ->andWhere('params.parameterGroup = :group')->setParameter('group', $parameterGroup);
 
-        //dd($queryBuilder->getQuery());
-
-
     }
 
     public function findCategoryNewProducts(Category $category, int $max = 4)
@@ -140,15 +179,6 @@ class ProductRepository extends ServiceEntityRepository
         $qb->setMaxResults($max);
 
         return $qb->getQuery()->getResult();
-    }
-
-    public function findProductsWithExternalIDs($limit, $offset)
-    {
-        return $this->createQueryBuilder("p")
-            ->setMaxResults($limit)
-            ->setFirstResult($offset)
-            ->andWhere("p.externalId is not null")
-            ->getQuery()->getResult();
     }
 
     public function findAllWithLimit($limit, $offset)
@@ -226,91 +256,4 @@ class ProductRepository extends ServiceEntityRepository
 
         return $queryBuilder;
     }
-
-    //zaloha
-    public function sortProductsByPrice2($queryBuilder, \DateTime $date, string $sort, int $minimalAmount = 1, int|null $vat = null)
-    {
-        $alias = $queryBuilder->getAllAliases()[0];
-        $queryBuilder
-            ->leftJoin($alias . '.productVariants', 'pv')
-            ->leftJoin('pv.price', 'p')
-            ->andWhere('p.validFrom <= :date')
-            ->setParameter('date', $date)
-            ->andWhere(
-                $queryBuilder->expr()->orX(
-                    'p.validUntil >= :date',
-                    'p.validUntil IS NULL'
-                )
-            )
-            ->andWhere('p.minimalAmount <= :minAmount')
-            ->setParameter('minAmount', $minimalAmount)
-            ->addOrderBy('p.price', strtoupper($sort))
-            ->groupBy('pv')//->groupBy('p.productVariant')
-        ;
-        if ($vat) {
-            $queryBuilder->andWhere('p.vat = :vat')->setParameter('vat', $vat);
-        }
-        return $queryBuilder;
-    }
-
-
-    public function findProductWithPhotoForCategory(Category $category): ?Product
-    {
-        return $this->createQueryBuilder('p')
-            ->leftJoin('p.categoryProducts', 'cp')
-            ->leftJoin('cp.category', 'c')
-            ->andWhere('c.id = :category')->setParameter('category', $category->getId())
-            ->andWhere('p.upload is not null')
-            ->setMaxResults(1)
-            ->getQuery()->getOneOrNullResult();
-    }
-
-    public function findProductsLLG(){
-        return $this->createQueryBuilder('p')
-            ->select('p.id')
-            ->leftJoin('p.producer', 'producer')
-            ->andWhere('producer.name = :producerName')->setParameter('producerName', 'LLG')
-            ->andWhere('p.externalId is not null')
-            ->getQuery()->getResult();
-    }
-
-    public function getAllExternalIDsOfProducts(){
-        $externalId =  $this->createQueryBuilder('p')
-            ->select('p.externalId')
-            ->leftJoin('p.producer', 'producer')
-            ->andWhere('producer.name = :producerName')->setParameter('producerName', 'LLG')
-            ->andWhere('p.externalId is not null')
-            ->getQuery()->getResult();
-
-        return array_column($externalId, 'externalId');
-    }
-
-    // /**
-    //  * @return Product[] Returns an array of Product objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('p.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Product
-    {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

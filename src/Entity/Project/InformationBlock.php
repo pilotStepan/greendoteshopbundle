@@ -46,6 +46,9 @@ class InformationBlock
     #[ORM\OneToMany(mappedBy: 'informationBlock', targetEntity: PersonInformationBlock::class)]
     private Collection $personInformationBlocks;
 
+    #[ORM\Column(options: ["default" => 0])]
+    private ?bool $isReusable = null;
+
     public function __construct()
     {
         $this->categoryInformationBlocks = new ArrayCollection();
@@ -247,6 +250,18 @@ class InformationBlock
                 $personInformationBlock->setInformationBlock(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isIsReusable(): ?bool
+    {
+        return $this->isReusable;
+    }
+
+    public function setIsReusable(bool $isReusable): static
+    {
+        $this->isReusable = $isReusable;
 
         return $this;
     }

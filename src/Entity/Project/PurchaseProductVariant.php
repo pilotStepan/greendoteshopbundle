@@ -22,11 +22,11 @@ class PurchaseProductVariant
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['order_product_variant:read', 'order_product_variant:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private ?int $id;
+    private $id;
 
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'ProductVariants')]
     #[Groups(['order_product_variant:read', 'order_product_variant:write'])]
-    private ?Purchase $purchase;
+    private $purchase;
 
     #[ORM\ManyToOne(targetEntity: ProductVariant::class, inversedBy: 'orderProductVariants')]
     #[Groups(['order:read', 'order:write', 'purchase:read', 'purchase:write'])]

@@ -21,6 +21,9 @@ class ProductInformationBlock
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $sequence = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -46,6 +49,18 @@ class ProductInformationBlock
     public function setProduct(?Product $product): static
     {
         $this->product = $product;
+
+        return $this;
+    }
+
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(?int $sequence): static
+    {
+        $this->sequence = $sequence;
 
         return $this;
     }
