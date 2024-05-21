@@ -7,11 +7,27 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Repository\Project\CategoryRepository;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\Controller\Api\CategoryController;
+use App\Doctrine\TranslationAwareSearchFilter;
+use App\Entity\Project\CategoryCategory;
+use App\Entity\Project\CategoryEvent;
+use App\Entity\Project\CategoryFile;
+use App\Entity\Project\CategoryPerson;
+use App\Entity\Project\CategoryProduct;
+use App\Entity\Project\CategoryType;
+use App\Entity\Project\CategoryUploadGroup;
+use App\Entity\Project\Comment;
+use App\Entity\Project\Label;
+use App\Entity\Project\Parameter;
+use App\Entity\Project\ParamGroupCategory;
+use App\Entity\Project\Upload;
+use App\Repository\Project\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Exception;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
@@ -27,19 +43,19 @@ use Gedmo\Mapping\Annotation as Gedmo;
     paginationEnabled: true
 )]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial'])]
-//#[ApiFilter(TranslationAwareSearchFilter::class)]
+
 class Category implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'searchable'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'searchable'])]
     private $name;
 
     #[Gedmo\Translatable]
@@ -70,18 +86,18 @@ class Category implements Translatable
     #[Groups(['category_default', 'category:read', 'category:write'])]
     private $labels;
 
-    #[ORM\OneToMany(mappedBy: 'category', targetEntity: CategoryFile::class)]
+    #[ORM\OneToMany(targetEntity: CategoryFile::class, mappedBy: 'category')]
     #[Groups('category_default')]
     private $categoryFiles;
 
-    #[ORM\OneToMany(mappedBy: 'category_super', targetEntity: CategoryCategory::class)]
+    #[ORM\OneToMany(targetEntity: CategoryCategory::class, mappedBy: 'category_super')]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
-    ##[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write'])]
     private $categoryCategories;
 
-    #[ORM\OneToMany(mappedBy: 'category_sub', targetEntity: CategoryCategory::class)]
+    #[ORM\OneToMany(targetEntity: CategoryCategory::class, mappedBy: 'category_sub')]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
-    ##[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write'])]
     private $categorySubCategories;
 
     #[Gedmo\Versioned]
@@ -156,11 +172,11 @@ class Category implements Translatable
     #[ORM\ManyToOne(inversedBy: 'categories')]
     private ?Upload $upload = null;
 
-    #[ORM\ManyToMany(targetEntity: MenuType::class, inversedBy: 'categories')]
-    private Collection|null $menuType = null;
+    #[ORM\Column(nullable: true)]
+    private ?bool $isXmlExportable = null;
 
-    #[ORM\ManyToMany(targetEntity: SubMenuType::class ,inversedBy: 'categories')]
-    private Collection|null $subMenuType = null;
+    #[ORM\OneToMany(mappedBy: 'category', targetEntity: ParamGroupCategory::class)]
+    private Collection $paramGroupCategories;
 
     public function __construct()
     {
@@ -173,8 +189,7 @@ class Category implements Translatable
         $this->persons = new ArrayCollection();
         $this->events = new ArrayCollection();
         $this->categoryUploadGroups = new ArrayCollection();
-        $this->menuType = new ArrayCollection();
-        $this->subMenuType = new ArrayCollection();
+        $this->paramGroupCategories = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -381,6 +396,20 @@ class Category implements Translatable
 
         return $this;
     }
+
+    public function getIsMenu(): ?int
+    {
+        return $this->is_menu;
+    }
+
+    public function setIsMenu(int $is_menu): self
+    {
+        $this->is_menu = $is_menu;
+
+        return $this;
+    }
+
+
 
     public function getLatitude(): ?float
     {
@@ -651,59 +680,45 @@ class Category implements Translatable
         return $this;
     }
 
-    /**
-     * @return Collection
-     */
-    public function getMenuType(): Collection
+    public function isIsXmlExportable(): ?bool
     {
-        return $this->menuType;
+        return $this->isXmlExportable;
     }
 
-    public function addMenuType(MenuType $menuType): self
+    public function setIsXmlExportable(?bool $isXmlExportable): static
     {
-        if (!$this->menuType->contains($menuType)) {
-            $this->menuType[] = $menuType;
+        $this->isXmlExportable = $isXmlExportable;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ParamGroupCategory>
+     */
+    public function getParamGroupCategories(): Collection
+    {
+        return $this->paramGroupCategories;
+    }
+
+    public function addParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    {
+        if (!$this->paramGroupCategories->contains($paramGroupCategory)) {
+            $this->paramGroupCategories->add($paramGroupCategory);
+            $paramGroupCategory->setCategory($this);
         }
 
         return $this;
     }
 
-    public function removeMenuType(Label $menuType): self
+    public function removeParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
     {
-        $this->menuType->removeElement($menuType);
-
-        return $this;
-    }
-
-    /**
-     * @return Collection
-     */
-    public function getSubMenuType(): Collection
-    {
-        return $this->subMenuType;
-    }
-
-    public function addSubMenuType(SubMenuType $subMenuType): self
-    {
-        if (!$this->subMenuType->contains($subMenuType)) {
-            $this->subMenuType[] = $subMenuType;
+        if ($this->paramGroupCategories->removeElement($paramGroupCategory)) {
+            // set the owning side to null (unless already changed)
+            if ($paramGroupCategory->getCategory() === $this) {
+                $paramGroupCategory->setCategory(null);
+            }
         }
 
         return $this;
-    }
-
-    public function removeSubMenuType(Label $subMenuType): self
-    {
-        $this->subMenuType->removeElement($subMenuType);
-
-        return $this;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function getIF(): array
-    {
-        return $this->getInformationBlocks($this);
     }
 }

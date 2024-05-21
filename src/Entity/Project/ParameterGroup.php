@@ -3,7 +3,10 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Repository\Project\ParameterGroupRepository;
+use App\Entity\Project\Parameter;
+use App\Entity\Project\ParameterGroupType;
+use App\Entity\Project\ParamGroupCategory;
+use App\Repository\Project\ParameterGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -43,9 +46,13 @@ class ParameterGroup
     #[ORM\Column(nullable: true)]
     private ?bool $isFilter = null;
 
+    #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: ParamGroupCategory::class)]
+    private Collection $paramGroupCategories;
+
     public function __construct()
     {
         $this->parameter = new ArrayCollection();
+        $this->paramGroupCategories = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -143,6 +150,36 @@ class ParameterGroup
     public function setIsFilter(?bool $isFilter): self
     {
         $this->isFilter = $isFilter;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ParamGroupCategory>
+     */
+    public function getParamGroupCategories(): Collection
+    {
+        return $this->paramGroupCategories;
+    }
+
+    public function addParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    {
+        if (!$this->paramGroupCategories->contains($paramGroupCategory)) {
+            $this->paramGroupCategories->add($paramGroupCategory);
+            $paramGroupCategory->setParameterGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    {
+        if ($this->paramGroupCategories->removeElement($paramGroupCategory)) {
+            // set the owning side to null (unless already changed)
+            if ($paramGroupCategory->getParameterGroup() === $this) {
+                $paramGroupCategory->setParameterGroup(null);
+            }
+        }
 
         return $this;
     }
