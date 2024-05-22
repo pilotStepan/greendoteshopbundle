@@ -46,6 +46,10 @@ class ParameterGroup
     #[Groups(['searchable'])]
     private ?bool $isProductParameter = null;
 
+    #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?ParameterGroupFilterType $parameterGroupFilterType = null;
+
     #[ORM\Column(nullable: true)]
     private ?bool $isFilter = null;
 
