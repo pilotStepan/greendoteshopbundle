@@ -30,6 +30,9 @@ class ParameterGroup
     #[Groups(['searchable'])]
     private $unit;
 
+    #[ORM\Column]
+    private ?int $sequence = null;
+
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: Parameter::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
     private $parameter;
