@@ -50,6 +50,9 @@ class ParameterGroup
     #[ORM\JoinColumn(nullable: true)]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
+    #[ORM\OneToMany(mappedBy: 'paramGroup', targetEntity: ProductParamGroup::class)]
+    private Collection $productParamGroups;
+
     #[ORM\Column(nullable: true)]
     private ?bool $isFilter = null;
 
@@ -60,6 +63,7 @@ class ParameterGroup
     {
         $this->parameter = new ArrayCollection();
         $this->paramGroupCategories = new ArrayCollection();
+        $this->productParamGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -190,4 +194,48 @@ class ParameterGroup
 
         return $this;
     }
+
+
+    public function getParameterGroupFilterType(): ?ParameterGroupFilterType
+    {
+        return $this->parameterGroupFilterType;
+    }
+
+    public function setParameterGroupFilterType(?ParameterGroupFilterType $parameterGroupFilterType): static
+    {
+        $this->parameterGroupFilterType = $parameterGroupFilterType;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductParamGroup>
+     */
+    public function getProductParamGroups(): Collection
+    {
+        return $this->productParamGroups;
+    }
+
+    public function addProductParamGroup(ProductParamGroup $productParamGroup): static
+    {
+        if (!$this->productParamGroups->contains($productParamGroup)) {
+            $this->productParamGroups->add($productParamGroup);
+            $productParamGroup->setParamGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductParamGroup(ProductParamGroup $productParamGroup): static
+    {
+        if ($this->productParamGroups->removeElement($productParamGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($productParamGroup->getParamGroup() === $this) {
+                $productParamGroup->setParamGroup(null);
+            }
+        }
+
+        return $this;
+    }
+
 }

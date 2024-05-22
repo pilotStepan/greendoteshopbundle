@@ -132,6 +132,9 @@ class Product implements Translatable
     #[Groups(['product_info:read'])]
     private string $priceFrom;
 
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParamGroup::class)]
+    private Collection $productParamGroups;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $metaDescription = null;
 
@@ -145,6 +148,7 @@ class Product implements Translatable
         $this->categoryProducts = new ArrayCollection();
         $this->productUploadGroup = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
+        $this->productParamGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -491,6 +495,36 @@ class Product implements Translatable
             // set the owning side to null (unless already changed)
             if ($productPerson->getProduct() === $this) {
                 $productPerson->setProduct(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductParamGroup>
+     */
+    public function getProductParamGroups(): Collection
+    {
+        return $this->productParamGroups;
+    }
+
+    public function addProductParamGroup(ProductParamGroup $productParamGroup): static
+    {
+        if (!$this->productParamGroups->contains($productParamGroup)) {
+            $this->productParamGroups->add($productParamGroup);
+            $productParamGroup->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductParamGroup(ProductParamGroup $productParamGroup): static
+    {
+        if ($this->productParamGroups->removeElement($productParamGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($productParamGroup->getProduct() === $this) {
+                $productParamGroup->setProduct(null);
             }
         }
 
