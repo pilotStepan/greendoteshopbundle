@@ -6,6 +6,7 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
+use App\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -98,6 +99,9 @@ class Purchase
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseTracking::class)]
     private Collection $purchaseTrackings;
+
+    #[ORM\ManyToOne(inversedBy: 'Purchase')]
+    private ?ClientAddress $clientAddress = null;
 
     public function __construct()
     {
@@ -399,4 +403,17 @@ class Purchase
 
         return $this;
     }
+
+    public function getClientAddress(): ?ClientAddress
+    {
+        return $this->clientAddress;
+    }
+
+    public function setClientAddress(?ClientAddress $clientAddress): static
+    {
+        $this->clientAddress = $clientAddress;
+
+        return $this;
+    }
+
 }

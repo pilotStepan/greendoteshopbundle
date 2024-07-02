@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use App\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -41,18 +42,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $title;
 
-    #[ORM\Column(type: 'string', length: 65, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private $street;
-
-    #[ORM\Column(type: 'string', length: 65, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private $city;
-
-    #[ORM\Column(type: 'string', length: 5, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private $zip;
-
     #[ORM\Column(type: 'string', length: 55, nullable: true)]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $phone;
@@ -60,50 +49,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 55, nullable: true)]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $mail;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $country;
-
-    #[ORM\Column(type: 'string', length: 85, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private $company;
-
-    #[ORM\Column(type: 'string', length: 45, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private $ic;
-
-    #[ORM\Column(type: 'string', length: 45, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
-    private $dic;
-
-    #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_name;
-
-    #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_surname;
-
-    #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_company;
-
-    #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_street;
-
-    #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_city;
-
-    #[ORM\Column(type: 'string', length: 5, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_zip;
-
-    #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write'])]
-    private $ship_country;
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Purchase::class)]
     #[Groups(['client:read', 'client:write'])]
@@ -128,11 +73,17 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true, options: ['default' => 0])]
     private ?bool $agreeNewsletter = null;
 
+    #[ORM\OneToMany(mappedBy: 'Client', targetEntity: ClientAddress::class)]
+    private Collection $clientAddresses;
+
+
     public function __construct()
     {
         $this->orders = new ArrayCollection();
         $this->comments = new ArrayCollection();
         $this->clientDiscounts = new ArrayCollection();
+        $this->clientAddresses = new ArrayCollection();
+
     }
 
     public function getId(): ?int
@@ -176,42 +127,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getStreet(): ?string
-    {
-        return $this->street;
-    }
-
-    public function setStreet(?string $street): self
-    {
-        $this->street = $street;
-
-        return $this;
-    }
-
-    public function getCity(): ?string
-    {
-        return $this->city;
-    }
-
-    public function setCity(?string $city): self
-    {
-        $this->city = $city;
-
-        return $this;
-    }
-
-    public function getZip(): ?string
-    {
-        return $this->zip;
-    }
-
-    public function setZip(?string $zip): self
-    {
-        $this->zip = $zip;
-
-        return $this;
-    }
-
     public function getPhone(): ?string
     {
         return $this->phone;
@@ -232,139 +147,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function setMail(?string $mail): self
     {
         $this->mail = $mail;
-
-        return $this;
-    }
-
-    public function getCountry(): ?string
-    {
-        return $this->country;
-    }
-
-    public function setCountry(?string $country): self
-    {
-        $this->country = $country;
-
-        return $this;
-    }
-
-    public function getCompany(): ?string
-    {
-        return $this->company;
-    }
-
-    public function setCompany(?string $company): self
-    {
-        $this->company = $company;
-
-        return $this;
-    }
-
-    public function getIc(): ?string
-    {
-        return $this->ic;
-    }
-
-    public function setIc(?string $ic): self
-    {
-        $this->ic = $ic;
-
-        return $this;
-    }
-
-    public function getDic(): ?string
-    {
-        return $this->dic;
-    }
-
-    public function setDic(?string $dic): self
-    {
-        $this->dic = $dic;
-
-        return $this;
-    }
-
-
-    public function getShipName(): ?string
-    {
-        return $this->ship_name;
-    }
-
-    public function setShipName(?string $ship_name): self
-    {
-        $this->ship_name = $ship_name;
-
-        return $this;
-    }
-
-    public function getShipSurname(): ?string
-    {
-        return $this->ship_surname;
-    }
-
-    public function setShipSurname(?string $ship_surname): self
-    {
-        $this->ship_surname = $ship_surname;
-
-        return $this;
-    }
-
-    public function getShipCompany(): ?string
-    {
-        return $this->ship_company;
-    }
-
-    public function setShipCompany(?string $ship_company): self
-    {
-        $this->ship_company = $ship_company;
-
-        return $this;
-    }
-
-    public function getShipStreet(): ?string
-    {
-        return $this->ship_street;
-    }
-
-    public function setShipStreet(?string $ship_street): self
-    {
-        $this->ship_street = $ship_street;
-
-        return $this;
-    }
-
-    public function getShipCity(): ?string
-    {
-        return $this->ship_city;
-    }
-
-    public function setShipCity(?string $ship_city): self
-    {
-        $this->ship_city = $ship_city;
-
-        return $this;
-    }
-
-    public function getShipZip(): ?string
-    {
-        return $this->ship_zip;
-    }
-
-    public function setShipZip(?string $ship_zip): self
-    {
-        $this->ship_zip = $ship_zip;
-
-        return $this;
-    }
-
-    public function getShipCountry(): ?string
-    {
-        return $this->ship_country;
-    }
-
-    public function setShipCountry(?string $ship_country): self
-    {
-        $this->ship_country = $ship_country;
 
         return $this;
     }
@@ -522,6 +304,37 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAgreeNewsletter(?bool $agreeNewsletter): self
     {
         $this->agreeNewsletter = $agreeNewsletter;
+
+        return $this;
+    }
+
+
+    /**
+     * @return Collection<int, ClientAddress>
+     */
+    public function getClientAddresses(): Collection
+    {
+        return $this->clientAddresses;
+    }
+
+    public function addClientAddress(ClientAddress $clientAddress): static
+    {
+        if (!$this->clientAddresses->contains($clientAddress)) {
+            $this->clientAddresses->add($clientAddress);
+            $clientAddress->setClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeClientAddress(ClientAddress $clientAddress): static
+    {
+        if ($this->clientAddresses->removeElement($clientAddress)) {
+            // set the owning side to null (unless already changed)
+            if ($clientAddress->getClient() === $this) {
+                $clientAddress->setClient(null);
+            }
+        }
 
         return $this;
     }
