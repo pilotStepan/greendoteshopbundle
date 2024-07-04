@@ -20,7 +20,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['client:read']],
     denormalizationContext: ['groups' => ['client:write']],
 )]
-#[ApiFilter(SearchFilter::class, properties: ['name' => 'partial', 'surname' => 'partial', 'mail' => 'partial', 'phone' => 'partial', 'city' => 'partial', 'ic' => 'partial'])]
+#[ApiFilter(SearchFilter::class, properties: ['name' => 'partial', 'surname' => 'partial', 'mail' => 'partial', 'phone' => 'partial'])]
 class Client implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
