@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
+use App\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -61,14 +62,6 @@ class Transportation implements Translatable
     #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $duration;
 
-    #[ORM\Column(type: 'float', nullable: true)]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
-    private $price;
-
-    #[ORM\Column(type: 'float', nullable: true)]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
-    private $free_from_price;
-
     /*
      * TODO fix typo
      */
@@ -101,10 +94,18 @@ class Transportation implements Translatable
     #[Gedmo\Locale]
     private $locale;
 
+    /**
+     * @var Collection<int, HandlingPrice>
+     */
+    #[ORM\OneToMany(mappedBy: 'paymentType', targetEntity: HandlingPrice::class)]
+    private Collection $handlingPrices;
+
+
     public function __construct()
     {
         $this->purchases = new ArrayCollection();
         $this->paymentTypes = new ArrayCollection();
+        $this->handlingPrices = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -226,30 +227,6 @@ class Transportation implements Translatable
         return $this;
     }
 
-    public function getPrice(): ?float
-    {
-        return $this->price;
-    }
-
-    public function setPrice(float $price): self
-    {
-        $this->price = $price;
-
-        return $this;
-    }
-
-    public function getFreeFromPrice(): ?float
-    {
-        return $this->free_from_price;
-    }
-
-    public function setFreeFromPrice(float $free_from_price): self
-    {
-        $this->free_from_price = $free_from_price;
-
-        return $this;
-    }
-
     public function getSquence(): ?int
     {
         return $this->squence;
@@ -350,4 +327,36 @@ class Transportation implements Translatable
     {
         $this->locale = $locale;
     }
+
+
+    /**
+     * @return Collection<int, HandlingPrice>
+     */
+    public function getHandlingPrices(): Collection
+    {
+        return $this->handlingPrices;
+    }
+
+    public function addHandlingPrice(HandlingPrice $handlingPrice): static
+    {
+        if (!$this->handlingPrices->contains($handlingPrice)) {
+            $this->handlingPrices->add($handlingPrice);
+            $handlingPrice->setPaymentType($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHandlingPrice(HandlingPrice $handlingPrice): static
+    {
+        if ($this->handlingPrices->removeElement($handlingPrice)) {
+            // set the owning side to null (unless already changed)
+            if ($handlingPrice->getPaymentType() === $this) {
+                $handlingPrice->setPaymentType(null);
+            }
+        }
+
+        return $this;
+    }
+
 }
