@@ -18,16 +18,16 @@ class Colour
     #[Groups(["SearchProductResultApiModel"])]
     private $id;
 
-    #[Groups(['product_info:read', 'product_variant:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
     #[ORM\Column(type: 'string', length: 255)]
     private $name;
 
-    #[Groups(['product_info:read', 'product_variant:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
     #[ORM\Column(type: 'string', length: 255)]
     private $hex;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'product_variant:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
     private $sequence;
 
     #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'colour')]
