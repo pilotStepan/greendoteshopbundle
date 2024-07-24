@@ -101,6 +101,7 @@ class Purchase
     private Collection $purchaseTrackings;
 
     #[ORM\ManyToOne(inversedBy: 'Purchase')]
+    #[Groups(['purchase:read'])]
     private ?ClientAddress $clientAddress = null;
 
     public function __construct()

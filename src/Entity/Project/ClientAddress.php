@@ -2,81 +2,120 @@
 
 namespace App\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Put;
+use App\ApiResource\ClientAddressDateFilter;
+use App\ApiResource\InformationBlockExcludeRelationFilter;
+use App\DataPersister\ClientAddressProcessor;
 use App\Repository\Project\ClientAddressRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+
 
 #[ORM\Entity(repositoryClass: ClientAddressRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['clientAddress:read']],
+    denormalizationContext: ['groups' => ['clientAddress:write']],
+    order: ['id' => 'desc'],
+    //processor: ClientAddressProcessor::class
+)]
+//#[ApiFilter(SearchFilter::class, properties: ['purchase' => 'exact'])]
+//#[ApiFilter(ClientAddressDateFilter::class)]
 class ClientAddress
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['client:read', 'clientAddress:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $city = null;
 
     #[ORM\Column(length: 5, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $zip = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $country = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $company = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ic = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $dic = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_surname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_company = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_city = null;
 
     #[ORM\Column(length: 5, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_zip = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_country = null;
 
     #[ORM\ManyToOne(inversedBy: 'clientAddresses')]
+    #[Groups(['clientAddress:read', 'clientAddress:write'])]
     private ?Client $Client = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write'])]
     private ?\DateTimeInterface $date_created = null;
 
     #[ORM\OneToOne(targetEntity: self::class, cascade: ['persist', 'remove'])]
+    #[Groups(['clientAddress:read', 'clientAddress:write'])]
     private ?self $ClientAddress = null;
 
     #[ORM\OneToMany(mappedBy: 'clientAddress', targetEntity: Purchase::class)]
+    #[Groups(['clientAddress:read', 'clientAddress:write'])]
     private Collection $Purchase;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write'])]
     private ?bool $is_primary = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_ic = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_dic = null;
 
     public function __construct()
@@ -87,6 +126,13 @@ class ClientAddress
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(?int $id) : static
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getStreet(): ?string

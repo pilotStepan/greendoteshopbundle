@@ -74,6 +74,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private ?bool $agreeNewsletter = null;
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: ClientAddress::class)]
+    #[Groups(['client:read'])]
     private Collection $clientAddresses;
 
 
