@@ -14,7 +14,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method ParamGroupCategory[]    findAll()
  * @method ParamGroupCategory[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ParamGroupCategoryRepository extends ServiceEntityRepository
+class CategoryParamGroupRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

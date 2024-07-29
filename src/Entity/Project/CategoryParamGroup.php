@@ -8,7 +8,7 @@ use App\Repository\Project\ParamGroupCategoryRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ParamGroupCategoryRepository::class)]
-class ParamGroupCategory
+class CategoryParamGroup
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

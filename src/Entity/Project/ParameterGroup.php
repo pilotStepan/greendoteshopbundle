@@ -166,7 +166,7 @@ class ParameterGroup
     }
 
     /**
-     * @return Collection<int, ParamGroupCategory>
+     * @return Collection<int, CategoryParamGroup>
      */
     public function getParamGroupCategories(): Collection
     {
