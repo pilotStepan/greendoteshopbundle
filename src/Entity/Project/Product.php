@@ -148,6 +148,9 @@ class Product implements Translatable
     #[ORM\OneToMany(mappedBy: 'product2', targetEntity: ProductProduct::class)]
     private Collection $product2Products;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $hasVariantPicture = null;
+
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -601,5 +604,15 @@ class Product implements Translatable
         return $this;
     }
 
+    public function isHasVariantPicture(): ?bool
+    {
+        return $this->hasVariantPicture;
+    }
 
+    public function setHasVariantPicture(?bool $hasVariantPicture): static
+    {
+        $this->hasVariantPicture = $hasVariantPicture;
+
+        return $this;
+    }
 }
