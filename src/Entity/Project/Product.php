@@ -13,6 +13,7 @@ use App\ApiResource\ProductFromAllSubCategories;
 use App\ApiResource\ProductParameterSearch;
 use App\ApiResource\ProductPriceSortFilter;
 use App\ApiResource\ProductSearchFilter;
+use App\Entity\Project\ProductProduct;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use App\Service\ProductInfoGetter;
@@ -141,6 +142,12 @@ class Product implements Translatable
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductPerson::class)]
     private Collection $productPeople;
 
+    #[ORM\OneToMany(mappedBy: 'product1', targetEntity: ProductProduct::class)]
+    private Collection $product1Products;
+
+    #[ORM\OneToMany(mappedBy: 'product2', targetEntity: ProductProduct::class)]
+    private Collection $product2Products;
+
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -149,6 +156,8 @@ class Product implements Translatable
         $this->productUploadGroup = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
         $this->productParamGroups = new ArrayCollection();
+        $this->product1Products = new ArrayCollection();
+        $this->product2Products = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -530,5 +539,67 @@ class Product implements Translatable
 
         return $this;
     }
+
+
+    /**
+     * @return Collection<int, ProductProduct>
+     */
+    public function getProduct1Products(): Collection
+    {
+        return $this->product1Products;
+    }
+
+    public function addProduct1Product(ProductProduct $product1Product): static
+    {
+        if (!$this->product1Products->contains($product1Product)) {
+            $this->product1Products->add($product1Product);
+            $product1Product->setProduct1($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProduct1Product(ProductProduct $product1Product): static
+    {
+        if ($this->product1Products->removeElement($product1Product)) {
+            // set the owning side to null (unless already changed)
+            if ($product1Product->getProduct1() === $this) {
+                $product1Product->setProduct1(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductProduct>
+     */
+    public function getProduct2Products(): Collection
+    {
+        return $this->product2Products;
+    }
+
+    public function addProduct2Product(ProductProduct $product2Product): static
+    {
+        if (!$this->product2Products->contains($product2Product)) {
+            $this->product2Products->add($product2Product);
+            $product2Product->setProduct2($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProduct2Product(ProductProduct $product2Product): static
+    {
+        if ($this->product2Products->removeElement($product2Product)) {
+            // set the owning side to null (unless already changed)
+            if ($product2Product->getProduct2() === $this) {
+                $product2Product->setProduct2(null);
+            }
+        }
+
+        return $this;
+    }
+
 
 }
