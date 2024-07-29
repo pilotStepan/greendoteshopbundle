@@ -2,6 +2,10 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use App\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\DiscountType;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Repository\Project\ClientDiscountRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -24,8 +28,23 @@ class ClientDiscount
     private ?\DateTimeInterface $dateEnd = null;
 
     #[ORM\ManyToOne(inversedBy: 'clientDiscounts')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Client $client = null;
+
+    #[ORM\OneToMany(mappedBy: 'clientDiscount', targetEntity: Purchase::class)]
+    private Collection $purchase;
+
+    #[ORM\Column(type: "string", enumType: DiscountType::class)]
+    private DiscountType $type;
+
+    #[ORM\Column]
+    private ?bool $is_used = null;
+
+    public function __construct()
+    {
+        $this->purchase = new ArrayCollection();
+        $this->type = DiscountType::SingleUse;
+    }
 
     public function getId(): ?int
     {
@@ -76,6 +95,61 @@ class ClientDiscount
     public function setClient(?Client $client): self
     {
         $this->client = $client;
+
+        return $this;
+    }
+
+
+    /**
+     * @return Collection<int, Purchase>
+     */
+    public function getPurchase(): Collection
+    {
+        return $this->purchase;
+    }
+
+    public function addPurchase(Purchase $purchase): static
+    {
+        if (!$this->purchase->contains($purchase)) {
+            $this->purchase->add($purchase);
+            $purchase->setClientDiscount($this);
+        }
+
+        return $this;
+    }
+
+    public function removePurchase(Purchase $purchase): static
+    {
+        if ($this->purchase->removeElement($purchase)) {
+            // set the owning side to null (unless already changed)
+            if ($purchase->getClientDiscount() === $this) {
+                $purchase->setClientDiscount(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isIsUsed(): ?bool
+    {
+        return $this->is_used;
+    }
+
+    public function setIsUsed(bool $is_used): static
+    {
+        $this->is_used = $is_used;
+
+        return $this;
+    }
+
+    public function getType(): DiscountType
+    {
+        return $this->type;
+    }
+
+    public function setType(DiscountType $type): static
+    {
+        $this->type = $type;
 
         return $this;
     }

@@ -2,11 +2,15 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use App\Entity\Project\ClientAddress;
+use App\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -19,72 +23,74 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     normalizationContext: ['groups' => ['purchase:read']],
     denormalizationContext: ['groups' => ['purchase:write']],
-    paginationEnabled: false
+    order: ['date_issue' => 'DESC']
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'state' => 'exact', 'invoice_number' => 'exact','Client.name' => 'partial','Client.surname' => 'partial'])]
+#[ApiFilter(ExistsFilter::class, properties: ['purchaseEvents', 'ProductVariant'])]
+#[ApiFilter(DateFilter::class, properties: ['date_issue'])]
 
 class Purchase
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:write', 'client:read', 'event_purchase'])]
     private $id;
 
     #[ORM\Column(type: 'datetime')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
     private $date_issue;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $date_expedition;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $date_invoiced;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
     private $state = "draft";
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $invoice_number;
 
     #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => false])]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $is_exported_stock;
 
     #[ORM\Column(type: 'boolean',nullable: true, options: ['default' => false])]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $is_exported_book;
 
     #[ORM\Column(type: 'boolean',nullable: true, options: ['default' => false])]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $is_exported_transport;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $transport_number;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $client_number;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $review_type;
 
     #[ORM\ManyToOne(targetEntity: PaymentType::class, inversedBy: 'purchases')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
     private $PaymentType;
 
     #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'purchases')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
     private $Transportation;
 
-    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'orders')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private $Client;
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseProductVariant::class, cascade: ['persist'])]
@@ -92,13 +98,22 @@ class Purchase
     private Collection $ProductVariants;
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseEvent::class)]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
     private Collection $purchaseEvents;
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Note::class)]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
     private Collection $notes;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseTracking::class)]
-    private Collection $purchaseTrackings;
+    #[ApiProperty]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read'])]
+    private $purchasePrice;
+    #[ApiProperty]
+    #[Groups(['purchase:read', 'purchase:write', 'client:read'])]
+    private $purchasePriceVat;
+
+    #[ORM\ManyToOne(inversedBy: 'type')]
+    private ?ClientDiscount $clientDiscount = null;
 
     #[ORM\ManyToOne(inversedBy: 'Purchase')]
     #[Groups(['purchase:read'])]
@@ -109,7 +124,6 @@ class Purchase
         $this->ProductVariants = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
         $this->notes = new ArrayCollection();
-        $this->purchaseTrackings = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -375,32 +389,38 @@ class Purchase
         return $this;
     }
 
-    /**
-     * @return Collection<int, PurchaseTracking>
-     */
-    public function getPurchaseTrackings(): Collection
+    public function setPurchasePrice($price): self
     {
-        return $this->purchaseTrackings;
-    }
-
-    public function addPurchaseTracking(PurchaseTracking $purchaseTracking): static
-    {
-        if (!$this->purchaseTrackings->contains($purchaseTracking)) {
-            $this->purchaseTrackings->add($purchaseTracking);
-            $purchaseTracking->setPurchase($this);
-        }
+        $this->purchasePrice = $price;
 
         return $this;
     }
 
-    public function removePurchaseTracking(PurchaseTracking $purchaseTracking): static
+    public function getPurchasePrice(): ?float
     {
-        if ($this->purchaseTrackings->removeElement($purchaseTracking)) {
-            // set the owning side to null (unless already changed)
-            if ($purchaseTracking->getPurchase() === $this) {
-                $purchaseTracking->setPurchase(null);
-            }
-        }
+        return $this->purchasePrice;
+    }
+
+    public function setPurchasePriceVat($price): self
+    {
+        $this->purchasePriceVat = $price;
+
+        return $this;
+    }
+
+    public function getPurchasePriceVat(): ?float
+    {
+        return $this->purchasePriceVat;
+    }
+
+    public function getClientDiscount(): ?ClientDiscount
+    {
+        return $this->clientDiscount;
+    }
+
+    public function setClientDiscount(?ClientDiscount $clientDiscount): static
+    {
+        $this->clientDiscount = $clientDiscount;
 
         return $this;
     }
