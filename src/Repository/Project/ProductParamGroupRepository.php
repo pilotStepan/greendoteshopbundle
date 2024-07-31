@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use App\Entity\Project\ProductParamGroup;
+use Greendot\EshopBundle\Entity\Project\ProductParamGroup;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

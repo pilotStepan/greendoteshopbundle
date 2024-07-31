@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository\Project;
+namespace Greendot\EshopBundle\Repository\Project;
 
-use App\Entity\Project\ClientAddress;
+use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

@@ -13,7 +13,7 @@ use App\ApiResource\ProductFromAllSubCategories;
 use App\ApiResource\ProductParameterSearch;
 use App\ApiResource\ProductPriceSortFilter;
 use App\ApiResource\ProductSearchFilter;
-use App\Entity\Project\ProductProduct;
+use Greendot\EshopBundle\Entity\Project\ProductProduct;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use App\Service\ProductInfoGetter;

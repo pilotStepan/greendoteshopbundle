@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use App\Entity\Project\ParameterGroup;
-use App\Entity\Project\Product;
-use App\Repository\Project\ProductParamGroupRepository;
+use Greendot\EshopBundle\Entity\Project\ParameterGroup;
+use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Repository\Project\ProductParamGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductParamGroupRepository::class)]

@@ -2,8 +2,8 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use App\Entity\Project\ParameterGroup;
-use App\Repository\Project\ParameterGroupFilterTypeRepository;
+use Greendot\EshopBundle\Entity\Project\ParameterGroup;
+use Greendot\EshopBundle\Repository\Project\ParameterGroupFilterTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;

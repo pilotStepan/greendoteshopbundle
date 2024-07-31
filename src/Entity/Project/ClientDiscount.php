@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use App\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\DiscountType;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

@@ -3,10 +3,10 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use App\Entity\Project\Parameter;
-use App\Entity\Project\ParameterGroupType;
-use App\Entity\Project\ParamGroupCategory;
-use App\Repository\Project\ParameterGroupRepository;
+use Greendot\EshopBundle\Entity\Project\Parameter;
+use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
+use Greendot\EshopBundle\Entity\Project\ParamGroupCategory;
+use Greendot\EshopBundle\Repository\Project\ParameterGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;

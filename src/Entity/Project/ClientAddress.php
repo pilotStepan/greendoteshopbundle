@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Project;
+namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
@@ -9,7 +9,7 @@ use ApiPlatform\Metadata\Put;
 use App\ApiResource\ClientAddressDateFilter;
 use App\ApiResource\InformationBlockExcludeRelationFilter;
 use App\DataPersister\ClientAddressProcessor;
-use App\Repository\Project\ClientAddressRepository;
+use Greendot\EshopBundle\Repository\Project\ClientAddressRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;

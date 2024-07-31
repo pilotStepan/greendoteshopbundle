@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use App\Entity\Project\ParameterGroupFilterType;
+use Greendot\EshopBundle\Entity\Project\ParameterGroupFilterType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

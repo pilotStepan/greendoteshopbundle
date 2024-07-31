@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository\Project;
+namespace Greendot\EshopBundle\Repository\Project;
 
-use App\Entity\Project\HandlingPrice;
+use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

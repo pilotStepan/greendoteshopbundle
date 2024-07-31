@@ -3,7 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use App\Entity\Project\HandlingPrice;
+use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

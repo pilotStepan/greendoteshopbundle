@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Entity\Project;
+namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use App\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 

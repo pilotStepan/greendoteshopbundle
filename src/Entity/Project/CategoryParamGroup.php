@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use App\Entity\Project\Category;
-use App\Entity\Project\ParameterGroup;
-use App\Repository\Project\ParamGroupCategoryRepository;
+use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\ParameterGroup;
+use Greendot\EshopBundle\Repository\Project\ParamGroupCategoryRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ParamGroupCategoryRepository::class)]

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity\Project;
+namespace Greendot\EshopBundle\Entity\Project;
 
-use App\Repository\Project\ProductProductRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductProductRepository::class)]
