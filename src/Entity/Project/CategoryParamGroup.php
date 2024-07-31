@@ -4,10 +4,10 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
-use Greendot\EshopBundle\Repository\Project\ParamGroupCategoryRepository;
+use Greendot\EshopBundle\Repository\Project\CategoryParamGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ParamGroupCategoryRepository::class)]
+#[ORM\Entity(repositoryClass: CategoryParamGroupRepository::class)]
 class CategoryParamGroup
 {
     #[ORM\Id]

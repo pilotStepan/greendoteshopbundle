@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
-use Greendot\EshopBundle\Entity\Project\ParamGroupCategory;
+use Greendot\EshopBundle\Entity\Project\CategoryParamGroup;
 use Greendot\EshopBundle\Repository\Project\ParameterGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -50,13 +50,13 @@ class ParameterGroup
     #[ORM\JoinColumn(nullable: true)]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
-    #[ORM\OneToMany(mappedBy: 'paramGroup', targetEntity: ProductParamGroup::class)]
+    #[ORM\OneToMany(targetEntity: ProductParamGroup::class, mappedBy: 'paramGroup')]
     private Collection $productParamGroups;
 
     #[ORM\Column(nullable: true)]
     private ?bool $isFilter = null;
 
-    #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: ParamGroupCategory::class)]
+    #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: CategoryParamGroup::class)]
     private Collection $paramGroupCategories;
 
     public function __construct()
@@ -173,7 +173,7 @@ class ParameterGroup
         return $this->paramGroupCategories;
     }
 
-    public function addParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    public function addParamGroupCategory(CategoryParamGroup $paramGroupCategory): static
     {
         if (!$this->paramGroupCategories->contains($paramGroupCategory)) {
             $this->paramGroupCategories->add($paramGroupCategory);
@@ -183,7 +183,7 @@ class ParameterGroup
         return $this;
     }
 
-    public function removeParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    public function removeParamGroupCategory(CategoryParamGroupv $paramGroupCategory): static
     {
         if ($this->paramGroupCategories->removeElement($paramGroupCategory)) {
             // set the owning side to null (unless already changed)

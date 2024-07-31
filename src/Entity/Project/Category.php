@@ -22,7 +22,7 @@ use Greendot\EshopBundle\Entity\Project\CategoryUploadGroup;
 use Greendot\EshopBundle\Entity\Project\Comment;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Entity\Project\Parameter;
-use Greendot\EshopBundle\Entity\Project\ParamGroupCategory;
+use Greendot\EshopBundle\Entity\Project\CategoryParamGroup;
 use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -175,7 +175,7 @@ class Category implements Translatable
     #[ORM\Column(nullable: true)]
     private ?bool $isXmlExportable = null;
 
-    #[ORM\OneToMany(mappedBy: 'category', targetEntity: ParamGroupCategory::class)]
+    #[ORM\OneToMany(targetEntity: CategoryParamGroup::class, mappedBy: 'category')]
     private Collection $paramGroupCategories;
 
     public function __construct()
@@ -700,7 +700,7 @@ class Category implements Translatable
         return $this->paramGroupCategories;
     }
 
-    public function addParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    public function addParamGroupCategory(CategoryParamGroup $paramGroupCategory): static
     {
         if (!$this->paramGroupCategories->contains($paramGroupCategory)) {
             $this->paramGroupCategories->add($paramGroupCategory);
@@ -710,7 +710,7 @@ class Category implements Translatable
         return $this;
     }
 
-    public function removeParamGroupCategory(ParamGroupCategory $paramGroupCategory): static
+    public function removeParamGroupCategory(CategoryParamGroup $paramGroupCategory): static
     {
         if ($this->paramGroupCategories->removeElement($paramGroupCategory)) {
             // set the owning side to null (unless already changed)

@@ -2,23 +2,23 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Greendot\EshopBundle\Entity\Project\ParamGroupCategory;
+use Greendot\EshopBundle\Entity\Project\CategoryParamGroup;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<ParamGroupCategory>
+ * @extends ServiceEntityRepository<CategoryParamGroup>
  *
- * @method ParamGroupCategory|null find($id, $lockMode = null, $lockVersion = null)
- * @method ParamGroupCategory|null findOneBy(array $criteria, array $orderBy = null)
- * @method ParamGroupCategory[]    findAll()
- * @method ParamGroupCategory[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method CategoryParamGroup|null find($id, $lockMode = null, $lockVersion = null)
+ * @method CategoryParamGroup|null findOneBy(array $criteria, array $orderBy = null)
+ * @method CategoryParamGroup[]    findAll()
+ * @method CategoryParamGroup[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class CategoryParamGroupRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, ParamGroupCategory::class);
+        parent::__construct($registry, CategoryParamGroup::class);
     }
 
     //    /**
