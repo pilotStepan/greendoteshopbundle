@@ -72,7 +72,7 @@ class PaymentType implements Translatable
     #[ORM\Column(nullable: true)]
     private ?bool $isEnabled = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: false)]
     private ?int $vat = null;
 
     /**

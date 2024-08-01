@@ -1,43 +1,60 @@
 <?php
 
-namespace Greendot\EshopBundle\Entity\Project;
+namespace App\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use App\Repository\Project\HandlingPriceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: HandlingPriceRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['handlingPrice:read']],
+    denormalizationContext: ['groups' => ['handlingPrice:write']],
+)]
 class HandlingPrice
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['handlingPrice:read'])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['handlingPrice:read'])]
     private ?float $price = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['handlingPrice:read'])]
     private ?float $free_from_price = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['handlingPrice:read'])]
     private ?float $discount = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(['handlingPrice:read'])]
+    private ?int $vat = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['handlingPrice:read'])]
     private ?\DateTimeInterface $validFrom = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['handlingPrice:read'])]
     private ?\DateTimeInterface $validUntil = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['handlingPrice:read'])]
     private ?\DateTimeInterface $created = null;
 
-    #[ORM\ManyToOne(inversedBy: 'handlingPrices')]
+    #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'handlingPrices')]
+    #[Groups(['handlingPrice:read'])]
     private ?Transportation $transportation = null;
 
-    #[ORM\ManyToOne(inversedBy: 'handlingPrices')]
+    #[ORM\ManyToOne(targetEntity: PaymentType::class, inversedBy: 'handlingPrices')]
+    #[Groups(['handlingPrice:read'])]
     private ?PaymentType $paymentType = null;
 
     public function getId(): ?int
@@ -139,5 +156,17 @@ class HandlingPrice
         $this->paymentType = $paymentType;
 
         return $this;
+    }
+
+    public function setVat(?int $vat) : static
+    {
+        $this->vat = $vat;
+
+        return $this;
+    }
+
+    public function getVat() : ?int
+    {
+        return $this->vat;
     }
 }
