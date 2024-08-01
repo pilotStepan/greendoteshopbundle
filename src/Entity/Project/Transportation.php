@@ -341,7 +341,7 @@ class Transportation implements Translatable
     {
         if (!$this->handlingPrices->contains($handlingPrice)) {
             $this->handlingPrices->add($handlingPrice);
-            $handlingPrice->setPaymentType($this);
+            $handlingPrice->setTransportation($this);
         }
 
         return $this;
