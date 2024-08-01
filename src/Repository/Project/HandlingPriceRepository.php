@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Repository\Project;
+namespace Greendot\EshopBundle\Repository\Project;
 
-use App\Entity\Project\HandlingPrice;
-use App\Entity\Project\PaymentType;
-use App\Entity\Project\Transportation;
+use Greendot\EshopBundle\Entity\Project\HandlingPrice;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Validator\Constraints\DateTime;
