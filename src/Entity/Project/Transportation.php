@@ -351,8 +351,8 @@ class Transportation implements Translatable
     {
         if ($this->handlingPrices->removeElement($handlingPrice)) {
             // set the owning side to null (unless already changed)
-            if ($handlingPrice->getPaymentType() === $this) {
-                $handlingPrice->setPaymentType(null);
+            if ($handlingPrice->getTransportation() === $this) {
+                $handlingPrice->setTransportation(null);
             }
         }
 
