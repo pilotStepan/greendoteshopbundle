@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Update from YS24">
-      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
-    </list>
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Algolia" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -249,7 +247,15 @@
       <option name="project" value="LOCAL" />
       <updated>1725023721412</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Algolia">
+      <option name="closed" value="true" />
+      <created>1725023862441</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1725023862441</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -270,6 +276,7 @@
     <MESSAGE value="Initial" />
     <MESSAGE value="2" />
     <MESSAGE value="Update from YS24" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update from YS24" />
+    <MESSAGE value="Algolia" />
+    <option name="LAST_COMMIT_MESSAGE" value="Algolia" />
   </component>
 </project>
