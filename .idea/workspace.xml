@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="2">
-      <change beforePath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/doctrine.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/packages/dev/maker.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/services.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DependencyInjection/GreendotEshopExtension.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/DependencyInjection/GreendotEshopExtension.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Client.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Client.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GreendotEshopBundle.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/GreendotEshopBundle.php" afterDir="false" />
-    </list>
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="2" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,18 +24,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "jakub-greendot"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;jakub-greendot&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/pilotStepan/greendoteshopbundle.git",
-    "accountId": "7a005ae7-095e-4e6b-b7f3-6c09f4638612"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pilotStepan/greendoteshopbundle.git&quot;,
+    &quot;accountId&quot;: &quot;7a005ae7-095e-4e6b-b7f3-6c09f4638612&quot;
   }
-}]]></component>
+}</component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -149,7 +140,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Repositories/greendoteshopbundle",
+    "last_opened_file_path": "C:/Users/stepa/PhpstormProjects/GreendotEshopBundle/src/Repository/Project",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -161,6 +152,8 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository\Project" />
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Entity\Project" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Entity" />
     </key>
@@ -221,11 +214,30 @@
       <option name="project" value="LOCAL" />
       <updated>1713259932909</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="2">
+      <option name="closed" value="true" />
+      <created>1725021214390</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1725021214390</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial" />

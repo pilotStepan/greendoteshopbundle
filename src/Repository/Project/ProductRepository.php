@@ -7,7 +7,7 @@ use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
-use App\Service\CategoryInfoGetter;
+use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query\Expr\Join;
