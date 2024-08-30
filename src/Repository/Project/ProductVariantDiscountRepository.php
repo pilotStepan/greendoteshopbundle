@@ -8,7 +8,6 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use http\Exception\BadMessageException;
 
 /**
  * @extends ServiceEntityRepository<ProductVariantDiscount>

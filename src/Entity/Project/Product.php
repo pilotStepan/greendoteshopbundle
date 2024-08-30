@@ -2,28 +2,29 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use App\ApiResource\ProductAvailability;
+use App\ApiResource\ProductFilterByDiscount;
+use App\ApiResource\ProductFilterByReviews;
 use App\ApiResource\ProductFromAllSubCategories;
+use App\ApiResource\ProductLabel;
 use App\ApiResource\ProductParameterSearch;
+//use App\ApiResource\ProductPriceRangeFilter;
 use App\ApiResource\ProductPriceSortFilter;
 use App\ApiResource\ProductSearchFilter;
-use Greendot\EshopBundle\Entity\Project\ProductProduct;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use App\Entity\ProductProduct;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use App\Service\ProductInfoGetter;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -37,11 +38,16 @@ use Symfony\Component\Serializer\Annotation\Groups;
 )]
 #[ApiFilter(SearchFilter::class, properties: ['categoryProducts.category' => "exact"])]
 #[ApiFilter(RangeFilter::class, properties: ['productVariants.stock'])]
-#[ApiFilter(OrderFilter::class, properties: ['productVariants.price.price', 'sequence', 'id', 'externalId'])]
+#[ApiFilter(OrderFilter::class, properties: ['productVariants.price.price', 'sequence', 'id', 'externalId', 'name'])]
 #[ApiFilter(ProductSearchFilter::class)]
 #[ApiFilter(ProductPriceSortFilter::class)]
 #[ApiFilter(ProductFromAllSubCategories::class)]
 #[ApiFilter(ProductParameterSearch::class)]
+#[ApiFilter(ProductLabel::class)]
+#[ApiFilter(ProductAvailability::class)]
+#[ApiFilter(ProductFilterByReviews::class)]
+#[ApiFilter(ProductFilterByDiscount::class)]
+//#[ApiFilter(ProductPriceRangeFilter::class)]
 class Product implements Translatable
 {
     #[ORM\Id]
@@ -93,8 +99,8 @@ class Product implements Translatable
     #[ORM\Column(type: 'text', nullable: true)]
     private $textGeneral;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVariant::class, orphanRemoval: true)]
-    #[Groups(['product_info:read', 'searchable'])]
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVariant::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['product_info:read'])]
     private $productVariants;
 
     #[ORM\ManyToOne(targetEntity: Producer::class, inversedBy: 'Product')]
@@ -108,7 +114,7 @@ class Product implements Translatable
     private $state = 'draft';
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: CategoryProduct::class, cascade: ['persist'])]
-    #[Groups(['searchable'])]
+    #[Groups(['searchable', 'product_info:read'])]
     private Collection $categoryProducts;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -133,8 +139,9 @@ class Product implements Translatable
     #[Groups(['product_info:read'])]
     private string $priceFrom;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParamGroup::class)]
-    private Collection $productParamGroups;
+    #[ApiProperty]
+    #[Groups(['product_info:read'])]
+    private string $currencySymbol;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $metaDescription = null;
@@ -142,14 +149,39 @@ class Product implements Translatable
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductPerson::class)]
     private Collection $productPeople;
 
-    #[ORM\OneToMany(mappedBy: 'product1', targetEntity: ProductProduct::class)]
-    private Collection $product1Products;
+    /**
+     * @var Collection<int, Label>
+     */
+    #[ORM\ManyToMany(targetEntity: Label::class, inversedBy: 'products')]
+    #[Groups(['product_info:read', 'product_info:write', 'search_result'])]
+    private Collection $labels;
 
-    #[ORM\OneToMany(mappedBy: 'product2', targetEntity: ProductProduct::class)]
-    private Collection $product2Products;
+    #[Groups(['product_info:read', 'search_result'])]
+    private ?string $availability = null;
+
+    #[Groups(['product_info:read', 'search_result'])]
+    private array $parameters = [];
+
+    #[Groups(['product_info:read', 'search_result'])]
+    private ?string $imagePath = null;
+
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParameterGroup::class)]
+    private Collection $productParameterGroups;
+
+    #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
+    private Collection $childrenProducts;
+
+    #[ORM\OneToMany(mappedBy: 'childProduct', targetEntity: ProductProduct::class)]
+    private Collection $parentProducts;
 
     #[ORM\Column(nullable: true)]
     private ?bool $hasVariantPicture = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $sold_amount = null;
+
+    #[ORM\ManyToOne(inversedBy: 'Products')]
+    private ?ProductType $productType = null;
 
     public function __construct()
     {
@@ -158,9 +190,10 @@ class Product implements Translatable
         $this->categoryProducts = new ArrayCollection();
         $this->productUploadGroup = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
-        $this->productParamGroups = new ArrayCollection();
-        $this->product1Products = new ArrayCollection();
-        $this->product2Products = new ArrayCollection();
+        $this->labels = new ArrayCollection();
+        $this->productParameterGroups = new ArrayCollection();
+        $this->childrenProducts = new ArrayCollection();
+        $this->parentProducts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -447,7 +480,6 @@ class Product implements Translatable
     public function removeProductVariantUploadGroup(ProductUploadGroup $productUploadGroup): self
     {
         if ($this->productUploadGroup->removeElement($productUploadGroup)) {
-            // set the owning side to null (unless already changed)
             if ($productUploadGroup->getProductVariant() === $this) {
                 $productUploadGroup->setProductVariant(null);
             }
@@ -514,90 +546,117 @@ class Product implements Translatable
     }
 
     /**
-     * @return Collection<int, ProductParamGroup>
+     * @return Collection<int, Label>
      */
-    public function getProductParamGroups(): Collection
+    public function getLabels(): Collection
     {
-        return $this->productParamGroups;
+        return $this->labels;
     }
 
-    public function addProductParamGroup(ProductParamGroup $productParamGroup): static
+    public function addLabel(Label $label): static
     {
-        if (!$this->productParamGroups->contains($productParamGroup)) {
-            $this->productParamGroups->add($productParamGroup);
-            $productParamGroup->setProduct($this);
+        if (!$this->labels->contains($label)) {
+            $this->labels->add($label);
         }
 
         return $this;
     }
 
-    public function removeProductParamGroup(ProductParamGroup $productParamGroup): static
+    public function removeLabel(Label $label): static
     {
-        if ($this->productParamGroups->removeElement($productParamGroup)) {
-            // set the owning side to null (unless already changed)
-            if ($productParamGroup->getProduct() === $this) {
-                $productParamGroup->setProduct(null);
+        $this->labels->removeElement($label);
+
+        return $this;
+    }
+
+    public function getAvailability(): ?string
+    {
+        return $this->availability;
+    }
+
+    public function setAvailability(?string $availability): self
+    {
+        $this->availability = $availability;
+        return $this;
+    }
+
+    public function getImagePath(): ?string
+    {
+        return $this->imagePath;
+    }
+
+    public function setImagePath(?string $imagePath): self
+    {
+        $this->imagePath = $imagePath;
+        return $this;
+    }
+
+    public function getParameters(): array
+    {
+        return $this->parameters;
+    }
+
+    public function setParameters(array $parameters): void
+    {
+        $this->parameters = $parameters;
+    }
+
+    public function getCurrencySymbol(): string
+    {
+        return $this->currencySymbol;
+    }
+
+    public function setCurrencySymbol(string $currencySymbol): void
+    {
+        $this->currencySymbol = $currencySymbol;
+    }
+
+    public function getChildrenProducts(): Collection
+    {
+        return $this->childrenProducts;
+    }
+
+    public function addChildrenProduct(ProductProduct $productProduct): self
+    {
+        if (!$this->childrenProducts->contains($productProduct)) {
+            $this->childrenProducts->add($productProduct);
+            $productProduct->setParentProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeChildrenProduct(ProductProduct $productProduct): self
+    {
+        if ($this->childrenProducts->removeElement($productProduct)) {
+            if ($productProduct->getParentProduct() === $this) {
+                $productProduct->setParentProduct(null);
             }
         }
 
         return $this;
     }
 
-
-    /**
-     * @return Collection<int, ProductProduct>
-     */
-    public function getProduct1Products(): Collection
+    public function getParentProducts(): Collection
     {
-        return $this->product1Products;
+        return $this->parentProducts;
     }
 
-    public function addProduct1Product(ProductProduct $product1Product): static
+    public function addParentProduct(ProductProduct $productProduct): self
     {
-        if (!$this->product1Products->contains($product1Product)) {
-            $this->product1Products->add($product1Product);
-            $product1Product->setProduct1($this);
+        if (!$this->parentProducts->contains($productProduct)) {
+            $this->parentProducts->add($productProduct);
+            $productProduct->setChildProduct($this);
         }
 
         return $this;
     }
 
-    public function removeProduct1Product(ProductProduct $product1Product): static
+    public function removeParentProduct(ProductProduct $productProduct): self
     {
-        if ($this->product1Products->removeElement($product1Product)) {
-            // set the owning side to null (unless already changed)
-            if ($product1Product->getProduct1() === $this) {
-                $product1Product->setProduct1(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, ProductProduct>
-     */
-    public function getProduct2Products(): Collection
-    {
-        return $this->product2Products;
-    }
-
-    public function addProduct2Product(ProductProduct $product2Product): static
-    {
-        if (!$this->product2Products->contains($product2Product)) {
-            $this->product2Products->add($product2Product);
-            $product2Product->setProduct2($this);
-        }
-
-        return $this;
-    }
-
-    public function removeProduct2Product(ProductProduct $product2Product): static
-    {
-        if ($this->product2Products->removeElement($product2Product)) {
-            // set the owning side to null (unless already changed)
-            if ($product2Product->getProduct2() === $this) {
-                $product2Product->setProduct2(null);
+        if ($this->parentProducts->removeElement($productProduct)) {
+            if ($productProduct->getChildProduct() === $this) {
+                $productProduct->setChildProduct(null);
             }
         }
 
@@ -612,6 +671,30 @@ class Product implements Translatable
     public function setHasVariantPicture(?bool $hasVariantPicture): static
     {
         $this->hasVariantPicture = $hasVariantPicture;
+
+        return $this;
+    }
+
+    public function getSoldAmount(): ?int
+    {
+        return $this->sold_amount;
+    }
+
+    public function setSoldAmount(?int $sold_amount): static
+    {
+        $this->sold_amount = $sold_amount;
+
+        return $this;
+    }
+
+    public function getProductType(): ?ProductType
+    {
+        return $this->productType;
+    }
+
+    public function setProductType(?ProductType $productType): static
+    {
+        $this->productType = $productType;
 
         return $this;
     }

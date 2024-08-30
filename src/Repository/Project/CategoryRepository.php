@@ -2,21 +2,22 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Greendot\EshopBundle\Entity\Project\Category;
-use Greendot\EshopBundle\Entity\Project\CategoryCategory;
+use Exception;
+use Doctrine\ORM\Query;
 use Greendot\EshopBundle\Entity\Project\Event;
-use Greendot\EshopBundle\Entity\Project\MenuType;
+use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\MenuType;
 use Greendot\EshopBundle\Entity\Project\SubMenuType;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Greendot\EshopBundle\Entity\Project\CategoryCategory;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
-use Exception;
-use Gedmo\Translatable\Query\TreeWalker\TranslationWalker;
 use Gedmo\Translatable\TranslatableListener;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Gedmo\Translatable\Query\TreeWalker\TranslationWalker;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @method Category|null find($id, $lockMode = null, $lockVersion = null)
@@ -34,9 +35,30 @@ class CategoryRepository extends ServiceEntityRepository
         $this->entityManager = $entityManager;
     }
 
+    public function findByNameLike(string $query, int $limit): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.name LIKE :query')
+            ->setParameter('query', '%' . $query . '%')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByNameLikeAndType(string $query, int $typeId, int $limit): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.name LIKE :query')
+            ->andWhere('c.categoryType = :typeId')
+            ->setParameter('query', '%' . $query . '%')
+            ->setParameter('typeId', $typeId)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function searchByName($name)
     {
-
         $query = $this->createQueryBuilder('c')
             ->andWhere('c.name LIKE :name')->setParameter('name', '%' . $name . '%')
             ->getQuery();
@@ -51,6 +73,38 @@ class CategoryRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+    public function findCategorySiblings(int $categoryId): array
+    {
+        $category = $this->find($categoryId);
+        $categoryCategoryRepository = $this->entityManager->getRepository(CategoryCategory::class);
+
+        $categoryCategory = $categoryCategoryRepository->findOneBy(['category_sub' => $category]);
+        $parentCategory = $categoryCategory->getCategorySuper();
+
+        $qb = $this->createQueryBuilder('c')
+            ->innerJoin('c.categorySubCategories', 'cc')
+            ->where('cc.category_super = :parentCategory')
+            ->andWhere('c.id != :categoryId')
+            ->setParameter('parentCategory', $parentCategory->getId())
+            ->setParameter('categoryId', $categoryId);
+
+        $siblings = array_map(function (Category $category) {
+            return [
+                'name' => $category->getName(),
+                'slug' => $category->getSlug(),
+            ];
+        }, $qb->getQuery()->getResult());
+
+        $parent = [
+            'name' => $parentCategory->getName(),
+            'slug' => $parentCategory->getSlug()
+        ];
+
+        return [
+            'parent' => $parent,
+            'siblings' => $siblings
+        ];
+    }
 
     public function findMenuCategories(MenuType $menuType)
     {
@@ -74,16 +128,22 @@ class CategoryRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('c')
             ->leftJoin('c.menuType', 'mt')
             ->leftJoin('c.categorySubCategories', 'a')
+
             ->andWhere('c.isActive = :is_active')
             ->setParameter('is_active', 1)
+
             ->andWhere('c.id >= :val')
             ->setParameter('val', 2)
+
             ->andWhere('c.id != :id')
             ->setParameter('id', $category->getId())
+
             ->andWhere('a.category_super = :cat')
             ->setParameter('cat', $category->getId())
+
             ->andWhere('mt.id = :menuType')
             ->setParameter('menuType', $menuType->getId())
+
             ->orderBy('c.sequence', 'ASC')
             ->getQuery()
             ->getResult();
@@ -134,6 +194,23 @@ class CategoryRepository extends ServiceEntityRepository
             $result->andWhere('c.id > 10');
         }
         return $result->getQuery()->getResult();
+    }
+
+    public function findBlogCategoriesByLabel(Label|int $label, int $limit = null)
+    {
+        if ($label instanceof Label){
+            $label = $label->getId();
+        }
+        $result = $this->createQueryBuilder('c')
+            ->andWhere('c.isActive = 1')
+            ->leftJoin('c.labels', 'l')
+            ->andWhere('l = :labelID')
+            ->andWhere('c.categoryType = 6')
+            ->setParameter('labelID', $label);
+            if($limit) {
+                $result->setMaxResults($limit);
+            }
+            return $result->getQuery()->getResult();
     }
 
     /**

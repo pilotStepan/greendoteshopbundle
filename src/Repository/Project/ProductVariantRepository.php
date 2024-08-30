@@ -4,8 +4,8 @@ namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Entity\Project\Purchase;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -19,6 +19,28 @@ class ProductVariantRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ProductVariant::class);
+    }
+
+    public function findProductVariantByProductIdQB($productId, QueryBuilder $qb): void
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->andWhere(sprintf('%s.product = :productId', $alias))
+            ->setParameter('productId', $productId);
+    }
+
+    public function findProductVariantByProductParametersQB(array $parameters, QueryBuilder $qb): void
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        foreach ($parameters as $index => $parameter) {
+            $parameterAlias = 'parameter' . $index;
+            $qb
+                ->leftJoin(sprintf('%s.parameters', $alias), 'p' . $index)
+                ->andWhere(sprintf('p%s.data = :%s', $index, $parameterAlias))
+                ->setParameter($parameterAlias, $parameter);
+        }
     }
 
     public function findAllWithLimit($limit, $offset){

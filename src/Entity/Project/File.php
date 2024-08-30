@@ -3,9 +3,9 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\FileRepository;
+use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FileRepository::class)]
 #[ORM\Table(name: 'p_file')]
@@ -43,6 +43,10 @@ class File
     #[ORM\ManyToMany(targetEntity: Comment::class, mappedBy: 'file')]
     private Collection $comments;
 
+    #[ORM\ManyToOne(targetEntity: Review::class, inversedBy: 'files')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Review $review = null;
+
     public function __construct()
     {
         $this->categoryFiles = new ArrayCollection();
@@ -62,7 +66,6 @@ class File
     public function setName(string $name): self
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -74,7 +77,6 @@ class File
     public function setExtension(string $extension): self
     {
         $this->extension = $extension;
-
         return $this;
     }
 
@@ -86,7 +88,6 @@ class File
     public function setMime(string $mime): self
     {
         $this->mime = $mime;
-
         return $this;
     }
 
@@ -98,7 +99,6 @@ class File
     public function setDescription(?string $description): self
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -110,7 +110,6 @@ class File
     public function setCreated(?\DateTimeInterface $created): self
     {
         $this->created = $created;
-
         return $this;
     }
 
@@ -122,7 +121,6 @@ class File
     public function setPath(string $path): self
     {
         $this->path = $path;
-
         return $this;
     }
 
@@ -134,7 +132,6 @@ class File
     public function setClassType(string $class_type): self
     {
         $this->class_type = $class_type;
-
         return $this;
     }
 
@@ -159,7 +156,6 @@ class File
     public function removeCategoryFile(CategoryFile $categoryFile): self
     {
         if ($this->categoryFiles->removeElement($categoryFile)) {
-            // set the owning side to null (unless already changed)
             if ($categoryFile->getFile() === $this) {
                 $categoryFile->setFile(null);
             }
@@ -192,6 +188,17 @@ class File
             $comment->removeFile($this);
         }
 
+        return $this;
+    }
+
+    public function getReview(): ?Review
+    {
+        return $this->review;
+    }
+
+    public function setReview(?Review $review): self
+    {
+        $this->review = $review;
         return $this;
     }
 }

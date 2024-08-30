@@ -2,84 +2,77 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation\Locale;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: TransportationRepository::class)]
 #[ApiResource(
     normalizationContext: ['groups' => ['transportation:read']],
     denormalizationContext: ['groups' => ['transportation:write']],
 )]
+#[ApiFilter(SearchFilter::class, properties: ['action' => "exact"])]
 class Transportation implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write', 'branch:read'])]
     private $id;
 
-    /*
-     * TODO fix typo
-     */
     #[ORM\Column(type: 'string', length: 255)]
     #[Gedmo\Translatable]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
-    private $Name;
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write', 'branch:read'])]
+    private $name;
 
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'Transportation')]
-    #[Groups(['transportation:read', 'transportation:write'])]
     private $purchases;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description_mail;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description_duration;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $html;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $icon;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $duration;
 
-    /*
-     * TODO fix typo
-     */
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $squence;
 
-
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $country;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $state_url;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $section;
 
     #[ORM\ManyToMany(targetEntity: PaymentType::class, inversedBy: 'transportations')]
@@ -88,24 +81,39 @@ class Transportation implements Translatable
     #[ORM\Column(nullable: true)]
     private ?bool $isEnabled = null;
 
-    #[ORM\Column(nullable: false)]
-    private ?int $vat = null;
-
     #[Gedmo\Locale]
     private $locale;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $token = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $secretKey = null;
+
 
     /**
      * @var Collection<int, HandlingPrice>
      */
-    #[ORM\OneToMany(mappedBy: 'paymentType', targetEntity: HandlingPrice::class)]
+    #[ORM\OneToMany(mappedBy: 'transportation', targetEntity: HandlingPrice::class)]
+    #[Groups(['transportation:read', 'transportation_action:read'])]
     private Collection $handlingPrices;
 
+    #[ORM\ManyToOne(targetEntity: TransportationAction::class, cascade: ['persist'], inversedBy: 'transportations')]
+    #[ORM\JoinColumn(nullable: false)]
+    private $action;
+
+    /**
+     * @var Collection<int, Branch>
+     */
+    #[ORM\OneToMany(mappedBy: 'transportation', targetEntity: Branch::class, orphanRemoval: true)]
+    private Collection $branches;
 
     public function __construct()
     {
-        $this->purchases = new ArrayCollection();
-        $this->paymentTypes = new ArrayCollection();
+        $this->purchases      = new ArrayCollection();
+        $this->paymentTypes   = new ArrayCollection();
         $this->handlingPrices = new ArrayCollection();
+        $this->branches = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -115,12 +123,12 @@ class Transportation implements Translatable
 
     public function getName(): ?string
     {
-        return $this->Name;
+        return $this->name;
     }
 
-    public function setName(string $Name): self
+    public function setName(string $name): self
     {
-        $this->Name = $Name;
+        $this->name = $name;
 
         return $this;
     }
@@ -311,21 +319,22 @@ class Transportation implements Translatable
         return $this;
     }
 
-    public function getVat(): ?int
-    {
-        return $this->vat;
-    }
-
-    public function setVat(?int $vat): self
-    {
-        $this->vat = $vat;
-
-        return $this;
-    }
-
     public function setTranslatableLocale($locale)
     {
         $this->locale = $locale;
+    }
+
+
+
+    public function getAction(): ?TransportationAction
+    {
+        return $this->action;
+    }
+
+    public function setAction(?TransportationAction $action): self
+    {
+        $this->action = $action;
+        return $this;
     }
 
 
@@ -359,4 +368,53 @@ class Transportation implements Translatable
         return $this;
     }
 
+    public function getToken(): ?string
+    {
+        return $this->token;
+    }
+
+    public function setToken(?string $token): void
+    {
+        $this->token = $token;
+    }
+
+    public function getSecretKey(): ?string
+    {
+        return $this->secretKey;
+    }
+
+    public function setSecretKey(?string $secretKey): void
+    {
+        $this->secretKey = $secretKey;
+    }
+
+    /**
+     * @return Collection<int, Branch>
+     */
+    public function getBranches(): Collection
+    {
+        return $this->branches;
+    }
+
+    public function addBranch(Branch $branch): static
+    {
+        if (!$this->branches->contains($branch)) {
+            $this->branches->add($branch);
+            $branch->setTransportation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBranch(Branch $branch): static
+    {
+        if ($this->branches->removeElement($branch)) {
+            // set the owning side to null (unless already changed)
+            if ($branch->getTransportation() === $this) {
+                $branch->setTransportation(null);
+            }
+        }
+
+        return $this;
+    }
 }

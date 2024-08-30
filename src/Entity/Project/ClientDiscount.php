@@ -2,14 +2,16 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\DiscountType;
+use App\Enum\DiscountType;
+use Greendot\EshopBundle\Repository\Project\ClientDiscountRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Greendot\EshopBundle\Repository\Project\ClientDiscountRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ *
+ */
 #[ORM\Entity(repositoryClass: ClientDiscountRepository::class)]
 class ClientDiscount
 {
@@ -27,16 +29,32 @@ class ClientDiscount
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $dateEnd = null;
 
+    /**
+     * @var Client|null
+     * Links to the Client in case it is defined only for specified client. Otherwise it should be null.
+     */
     #[ORM\ManyToOne(inversedBy: 'clientDiscounts')]
     #[ORM\JoinColumn(nullable: true)]
     private ?Client $client = null;
 
+    /**
+     * @var Collection|ArrayCollection
+     * Purchases during which the coupon was used.
+     */
     #[ORM\OneToMany(mappedBy: 'clientDiscount', targetEntity: Purchase::class)]
     private Collection $purchase;
 
+    /**
+     * @var DiscountType
+     * Discount type for the Coupon from ENUM.
+     */
     #[ORM\Column(type: "string", enumType: DiscountType::class)]
     private DiscountType $type;
 
+    /**
+     * @var bool|null
+     * Defines the validity of the coupon in case it is only SINGLE_USE DiscountType
+     */
     #[ORM\Column]
     private ?bool $is_used = null;
 
@@ -98,7 +116,6 @@ class ClientDiscount
 
         return $this;
     }
-
 
     /**
      * @return Collection<int, Purchase>

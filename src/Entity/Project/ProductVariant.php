@@ -2,7 +2,9 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use App\ApiResource\ProductVariantFilter;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -11,12 +13,12 @@ use Gedmo\Translatable\Translatable;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-
 #[ORM\Entity(repositoryClass: ProductVariantRepository::class)]
 #[ApiResource(
     normalizationContext: ['groups' => ['product_variant:read']],
     denormalizationContext: ['groups' => ['product_variant:write']],
 )]
+#[ApiFilter(ProductVariantFilter::class)]
 class ProductVariant implements Translatable
 {
     #[ORM\Id]
@@ -28,7 +30,7 @@ class ProductVariant implements Translatable
     #[Gedmo\Versioned]
     #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel"])]
     private $name;
 
     #[ORM\Column(type: 'integer', nullable: true)]
@@ -40,7 +42,8 @@ class ProductVariant implements Translatable
     private $externalId;
 
     #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'productVariants')]
-    #[Groups(['search_result', "SearchProductResultApiModel"])]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['product_variant:read'])]
     private $product;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: PurchaseProductVariant::class)]
@@ -58,12 +61,12 @@ class ProductVariant implements Translatable
     #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
     private $availability;
 
-    #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant')]
+    #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
     #[Groups(['searchable', "SearchProductResultApiModel"])]
     private $parameters;
 
     #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
-    #[Groups(["SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_info:read', "SearchProductResultApiModel"])]
     private Collection $price;
 
     #[ORM\Column(nullable: true)]
@@ -72,6 +75,7 @@ class ProductVariant implements Translatable
 
     #[ORM\ManyToOne(inversedBy: 'productVariants')]
     //#[Groups(["SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: ProductVariantUploadGroup::class)]
@@ -363,5 +367,4 @@ class ProductVariant implements Translatable
     {
         $this->locale = $locale;
     }
-
 }

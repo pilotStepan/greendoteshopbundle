@@ -2,6 +2,9 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use App\ApiResource\ProductUploads;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -10,6 +13,11 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UploadRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['upload:read']],
+    denormalizationContext: ['groups' => ['upload:write']],
+)]
+#[ApiFilter(ProductUploads::class)]
 class Upload
 {
     #[ORM\Id]
@@ -18,7 +26,7 @@ class Upload
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel"])]
+    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
@@ -40,7 +48,7 @@ class Upload
     private ?\DateTimeInterface $created = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel"])]
+    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel"])]
     private ?string $path = null;
 
     #[ORM\Column(length: 255)]

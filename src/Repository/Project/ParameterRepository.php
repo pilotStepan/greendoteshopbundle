@@ -3,17 +3,15 @@
 namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\CategoryParameterGroup;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
-use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use App\Service\CategoryInfoGetter;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use function Doctrine\ORM\QueryBuilder;
 
 /**
  * @extends ServiceEntityRepository<Parameter>
@@ -35,6 +33,54 @@ class ParameterRepository extends ServiceEntityRepository
         parent::__construct($registry, Parameter::class);
     }
 
+    public function findAvailableParametersByColorOrSize($productId, $color = null, $size = null)
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.productVariant', 'pv')
+            ->where('pv.product = :productId')
+            ->setParameter('productId', $productId);
+
+        if ($color) {
+            $subQb = $this->createQueryBuilder('subP')
+                ->select('DISTINCT pv.id')
+                ->join('subP.productVariant', 'pv')
+                ->where('subP.data = :color')
+                ->andWhere('pv.product = :productId')
+                ->setParameter('color', $color)
+                ->setParameter('productId', $productId);
+
+            $variantIds = $subQb->getQuery()->getScalarResult();
+            $variantIds = array_column($variantIds, 'id');
+
+            $qb->andWhere($qb->expr()->in('pv.id', ':variantIds'))
+                ->andWhere('p.parameterGroup = :parameterGroupColor')
+                ->setParameter('variantIds', $variantIds)
+                ->setParameter('parameterGroupColor', 2);
+        }
+
+        if ($size) {
+            $subQb = $this->createQueryBuilder('subP')
+                ->select('DISTINCT pv.id')
+                ->join('subP.productVariant', 'pv')
+                ->where('subP.data = :size')
+                ->andWhere('pv.product = :productId')
+                ->setParameter('size', $size)
+                ->setParameter('productId', $productId);
+
+            $variantIds = $subQb->getQuery()->getScalarResult();
+            $variantIds = array_column($variantIds, 'id');
+
+            $qb->andWhere($qb->expr()->in('pv.id', ':variantIds'))
+                ->andWhere('p.parameterGroup = :parameterGroupSize')
+                ->setParameter('variantIds', $variantIds)
+                ->setParameter('parameterGroupSize', 1);
+        }
+
+        $qb->groupBy('p.data');
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function add(Parameter $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);
@@ -51,6 +97,52 @@ class ParameterRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function findParametersQB(QueryBuilder $queryBuilder, int $parameterGroupId): QueryBuilder
+    {
+        $alias = $queryBuilder->getRootAliases()[0];
+
+        return $queryBuilder
+            ->andWhere($alias . '.parameterGroup = :parameterGroupId')
+            ->setParameter('parameterGroupId', $parameterGroupId);
+    }
+
+    public function getFilterTree(int $categoryId): array
+    {
+        $categoryParameterGroups = $this->getEntityManager()->getRepository(CategoryParameterGroup::class)
+            ->createQueryBuilder('cpg')
+            ->select('cpg', 'pg')
+            ->innerJoin('cpg.parameterGroup', 'pg')
+            ->where('cpg.category = :categoryId')
+            ->setParameter('categoryId', $categoryId)
+            ->getQuery()
+            ->getResult();
+
+        $result = [];
+        foreach ($categoryParameterGroups as $categoryParameterGroup) {
+            $parameterGroup = $categoryParameterGroup->getParameterGroup();
+
+            $parameters = $this->getEntityManager()->getRepository(Parameter::class)
+                ->createQueryBuilder('p')
+                ->select('p')
+                ->where('p.parameterGroup = :parameterGroup')
+                ->setParameter('parameterGroup', $parameterGroup)
+                ->getQuery()
+                ->getResult();
+
+            $groupedParameters = [];
+            foreach ($parameters as $parameter) {
+                $data = $parameter->getData();
+                if (!in_array($data, $groupedParameters)) {
+                    $groupedParameters[] = $data;
+                }
+            }
+
+            $result[$parameterGroup->getName()] = $groupedParameters;
+        }
+
+        return $result;
     }
 
     public function getByGroupAndMostSuperiorCategoryQB(ParameterGroup $parameterGroup, Category $category){
@@ -169,5 +261,20 @@ class ParameterRepository extends ServiceEntityRepository
             }
         }
         return $returnArray;
+    }
+
+    public function getSingleParameterByParameterGroupForCategory(string $parameterGroupName, Category $category): Parameter|null
+    {
+        try {
+            $qb = $this->createQueryBuilder("p")
+                ->leftJoin("p.parameterGroup", "pg")
+                ->andWhere("pg.name LIKE :parameterGroup")
+                ->setParameter("parameterGroup", "%" . $parameterGroupName . "%")
+                ->andWhere("p.category = :category")->setParameter("category", $category)
+                ->getQuery()->getSingleResult();
+        } catch (NoResultException $exception) {
+            $qb = null;
+        }
+        return $qb;
     }
 }

@@ -47,4 +47,14 @@ class PurchaseRepository extends ServiceEntityRepository
             ->orderBy('p.date_issue', 'desc')
             ->getQuery()->getResult();
     }
+
+    public function getNextInvoiceNumber(): ?int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('MAX(CAST(p.invoice_number AS int)) as max_invoice_number');
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result !== null ? (int) $result + 1 : 1;
+    }
 }

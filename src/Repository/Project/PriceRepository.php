@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Price;
+use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -38,6 +39,21 @@ class PriceRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function findCheapestPriceForProduct(Product $product): ?Price
+    {
+        return $this->createQueryBuilder('p')
+            ->join('p.productVariant', 'pv')
+            ->where('pv.product = :product')
+            ->andWhere('p.validFrom <= :now')
+            ->andWhere('p.validUntil IS NULL OR p.validUntil > :now')
+            ->setParameter('product', $product)
+            ->setParameter('now', new \DateTime())
+            ->orderBy('p.price', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     public function findPricesByDateAndProductVariant(ProductVariant $productVariant, \DateTime $date, ?int $minimalAmount = 1, int|null $vat = null): array

@@ -5,12 +5,10 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -28,7 +26,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'integer')]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $id;
-
 
     #[ORM\Column(type: 'string', length: 65, nullable: true)]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
@@ -77,14 +74,12 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['client:read'])]
     private Collection $clientAddresses;
 
-
     public function __construct()
     {
-        $this->orders = new ArrayCollection();
-        $this->comments = new ArrayCollection();
+        $this->orders          = new ArrayCollection();
+        $this->comments        = new ArrayCollection();
         $this->clientDiscounts = new ArrayCollection();
         $this->clientAddresses = new ArrayCollection();
-
     }
 
     public function getId(): ?int
@@ -180,7 +175,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeOrder(Purchase $order): self
     {
         if ($this->orders->removeElement($order)) {
-            // set the owning side to null (unless already changed)
             if ($order->getClient() === $this) {
                 $order->setClient(null);
             }
@@ -230,7 +224,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeComment(Comment $comment): self
     {
         if ($this->comments->removeElement($comment)) {
-            // set the owning side to null (unless already changed)
             if ($comment->getClient() === $this) {
                 $comment->setClient(null);
             }
@@ -251,7 +244,8 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getFullname(){
+    public function getFullname()
+    {
         return $this->name . " " . $this->surname;
     }
 
@@ -288,7 +282,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeClientDiscount(ClientDiscount $clientDiscount): self
     {
         if ($this->clientDiscounts->removeElement($clientDiscount)) {
-            // set the owning side to null (unless already changed)
             if ($clientDiscount->getClient() === $this) {
                 $clientDiscount->setClient(null);
             }
@@ -339,5 +332,4 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-
 }

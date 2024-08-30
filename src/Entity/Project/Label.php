@@ -3,8 +3,6 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Entity\Project\LabelType;
-use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\LabelRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -26,7 +24,7 @@ class Label
     private $id;
 
     #[ORM\Column(type: 'string', length: 150)]
-    #[Groups(['label:read', 'label:write', 'category:read', 'category:write', 'product_info:read', 'product_info:write'])]
+    #[Groups(['category:read', 'category:write', 'product_info:read', 'product_info:write'])]
     private $name;
 
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'labels')]
@@ -42,6 +40,13 @@ class Label
     #[ORM\JoinColumn(name: 'label_type_id', referencedColumnName: 'id', nullable: true)]
     #[Groups(['label:read', 'label:write', 'category:read', 'category:write', 'product_info:read', 'product_info:write'])]
     private ?LabelType $labelType = null;
+
+    
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $slug = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private $description;
 
     public function __construct()
     {
@@ -98,9 +103,8 @@ class Label
         return $this->getName();
     }
 
-
     /**
-     * @return Collection<int, \Greendot\EshopBundle\Entity\Project\Product>
+     * @return Collection<int, Product>
      */
     public function getProducts(): Collection
     {
@@ -126,7 +130,7 @@ class Label
         return $this;
     }
 
-    public function getLabelType(): ?\Greendot\EshopBundle\Entity\Project\LabelType
+    public function getLabelType(): ?LabelType
     {
         return $this->labelType;
     }
@@ -134,6 +138,29 @@ class Label
     public function setLabelType(?LabelType $labelType): static
     {
         $this->labelType = $labelType;
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): static
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->slug = $description;
 
         return $this;
     }

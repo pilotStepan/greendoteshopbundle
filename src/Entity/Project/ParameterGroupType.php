@@ -9,6 +9,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+/**
+ * Defines usage of the ParameterGroup - eq used for Products / Blog / Category, ...
+ */
 #[ORM\Entity(repositoryClass: ParameterGroupTypeRepository::class)]
 #[ApiResource(
     normalizationContext: ['groups' => ['parameter_group_type:read']],
@@ -30,12 +33,17 @@ class ParameterGroupType
     #[ORM\OneToMany(mappedBy: 'type', targetEntity: ParameterGroup::class)]
     private Collection $parameterGroups;
 
+    /**
+     * @var int|null
+     * Define the sequence (priority) in which this parameterGroupShould be displayed
+     */
+    #[ORM\Column]
+    private ?int $sequence = null;
+
     public function __construct()
     {
         $this->parameterGroups = new ArrayCollection();
     }
-
-
 
     public function getId(): ?int
     {
@@ -84,5 +92,15 @@ class ParameterGroupType
         return $this;
     }
 
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
 
+    public function setSequence(int $sequence): static
+    {
+        $this->sequence = $sequence;
+
+        return $this;
+    }
 }

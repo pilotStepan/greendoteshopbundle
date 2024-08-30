@@ -2,8 +2,9 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Entity\Project\HandlingPrice;
+use App\ApiResource\PaymentTypeByTransportationFilter;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -17,6 +18,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
     normalizationContext: ['groups' => ['payment:read']],
     denormalizationContext: ['groups' => ['payment:write']],
 )]
+#[ApiFilter(PaymentTypeByTransportationFilter::class)]
 class PaymentType implements Translatable
 {
     #[ORM\Id]
@@ -28,7 +30,7 @@ class PaymentType implements Translatable
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
     #[Gedmo\Translatable]
-    private $Name;
+    private $name;
 
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'PaymentType')]
     #[Groups(['payment:read', 'payment:write'])]
@@ -72,14 +74,28 @@ class PaymentType implements Translatable
     #[ORM\Column(nullable: true)]
     private ?bool $isEnabled = null;
 
-    #[ORM\Column(nullable: false)]
-    private ?int $vat = null;
+    #[ORM\Column(type: 'smallint')]
+    #[Groups(['reservation_edit', 'order_edit', 'payment_type_edit'])]
+    private $action_group;
 
     /**
      * @var Collection<int, HandlingPrice>
      */
     #[ORM\OneToMany(mappedBy: 'paymentType', targetEntity: HandlingPrice::class)]
+    #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
     private Collection $handlingPrices;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $account = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $bank_number = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $iban = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $bank_name = null;
 
     public function __construct()
     {
@@ -88,7 +104,6 @@ class PaymentType implements Translatable
         $this->handlingPrices = new ArrayCollection();
     }
 
-
     public function getId(): ?int
     {
         return $this->id;
@@ -96,12 +111,12 @@ class PaymentType implements Translatable
 
     public function getName(): ?string
     {
-        return $this->Name;
+        return $this->name;
     }
 
-    public function setName(string $Name): self
+    public function setName(string $name): self
     {
-        $this->Name = $Name;
+        $this->name = $name;
 
         return $this;
     }
@@ -208,7 +223,7 @@ class PaymentType implements Translatable
         return $this;
     }
 
-    public function getSequence(): ?int
+     public function getSequence(): ?int
     {
         return $this->sequence;
     }
@@ -271,23 +286,20 @@ class PaymentType implements Translatable
         return $this;
     }
 
-    public function getVat(): ?int
-    {
-        return $this->vat;
-    }
-
-    public function setVat(?int $vat): self
-    {
-        $this->vat = $vat;
-
-        return $this;
-    }
-
     public function setTranslatableLocale($locale)
     {
         $this->locale = $locale;
     }
 
+    public function getActionGroup()
+    {
+        return $this->action_group;
+    }
+
+    public function setActionGroup($action_group): void
+    {
+        $this->action_group = $action_group;
+    }
 
     /**
      * @return Collection<int, HandlingPrice>
@@ -315,6 +327,55 @@ class PaymentType implements Translatable
                 $handlingPrice->setPaymentType(null);
             }
         }
+
+        return $this;
+    }
+
+
+    public function getAccount(): ?string
+    {
+        return $this->account;
+    }
+
+    public function setAccount(?string $account): static
+    {
+        $this->account = $account;
+
+        return $this;
+    }
+
+    public function getBankNumber(): ?string
+    {
+        return $this->bank_number;
+    }
+
+    public function setBankNumber(?string $bank_number): static
+    {
+        $this->bank_number = $bank_number;
+
+        return $this;
+    }
+
+    public function getIban(): ?string
+    {
+        return $this->iban;
+    }
+
+    public function setIban(?string $iban): static
+    {
+        $this->iban = $iban;
+
+        return $this;
+    }
+
+    public function getBankName(): ?string
+    {
+        return $this->bank_name;
+    }
+
+    public function setBankName(?string $bank_name): static
+    {
+        $this->bank_name = $bank_name;
 
         return $this;
     }

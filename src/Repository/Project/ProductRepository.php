@@ -8,6 +8,7 @@ use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
 use App\Service\CategoryInfoGetter;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
@@ -32,6 +33,77 @@ class ProductRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Product::class);
         $this->priceRepository = $priceRepository;
+    }
+
+    public function calculateParameters(Product $product): array
+    {
+        $parameters = [];
+
+        foreach ($product->getProductVariants() as $variant) {
+            foreach ($variant->getParameters() as $parameter) {
+                $parameters[] = [
+                    'name' => $parameter->getParameterGroup()->getName(),
+                    'value' => $parameter->getData(),
+                ];
+            }
+        }
+
+        return $parameters;
+    }
+
+    public function findAvailabilityByProduct(Product $product): ?string
+    {
+        $availabilityCheckQb = $this->createQueryBuilder('p')
+            ->select('COUNT(pv.id)')
+            ->join('p.productVariants', 'pv')
+            ->where('p.id = :productId')
+            ->andWhere('pv.availability = 1')
+            ->setParameter('productId', $product->getId());
+
+        $hasAvailability = $availabilityCheckQb->getQuery()->getSingleScalarResult() > 0;
+
+        return $hasAvailability ? 'skladem' : 'vyprodáno';
+    }
+
+    public function findTopSellingProducts(array $products, int $limit): array
+    {
+        $productIds = array_map(fn($product) => $product->getId(), $products);
+
+        $qb = $this->createQueryBuilder('p')
+            ->select('p, COUNT(ppv.id) AS variantCount, u.path AS imagePath')
+            ->join('p.productVariants', 'pv')
+            ->join('pv.orderProductVariants', 'ppv')
+            ->leftJoin('p.upload', 'u') //
+            ->where('p.id IN (:productIds)')
+            ->setParameter('productIds', $productIds)
+            ->groupBy('p.id, u.path')
+            ->orderBy('variantCount', 'DESC')
+            ->setMaxResults($limit);
+
+        $result = $qb->getQuery()->getResult();
+
+        $topProducts = [];
+
+        foreach ($result as $row) {
+            $product = $row[0];
+            $imagePath = $row['imagePath'];
+
+            $availabilityCheckQb = $this->createQueryBuilder('p')
+                ->select('COUNT(pv.id)')
+                ->join('p.productVariants', 'pv')
+                ->where('p.id = :productId')
+                ->andWhere('pv.availability = 1')
+                ->setParameter('productId', $product->getId());
+
+            $hasAvailability = $availabilityCheckQb->getQuery()->getSingleScalarResult() > 0;
+
+            $product->setAvailability($hasAvailability ? 'Skladem' : 'Vyprodáno');
+            $product->setImagePath($imagePath);
+
+            $topProducts[] = $product;
+        }
+
+        return $topProducts;
     }
 
     public function findActive()
@@ -110,6 +182,74 @@ class ProductRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function findByReviewsQB(QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->leftJoin($alias . '.reviews', 'r')
+            ->addSelect('AVG(r.stars) AS HIDDEN avg_rating')
+            ->groupBy($alias . '.id')
+            ->orderBy('avg_rating', 'DESC');
+
+        return $qb;
+    }
+
+    public function findByAvailabilityQB(QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->innerJoin($alias . '.productVariants', 'pv')
+            ->innerJoin('pv.availability', 'a')
+            ->andWhere($alias . '.state = :state')
+            ->andWhere('pv.isActive = :variantActive')
+            ->andWhere('a.id = :availabilityId')
+            ->setParameter('state', 'active')
+            ->setParameter('variantActive', true)
+            ->setParameter('availabilityId', 1);
+
+        return $qb;
+    }
+
+    public function findDiscountedProducts(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.productVariants', 'pv')
+            ->innerJoin('pv.price', 'price')
+            ->leftJoin('p.upload', 'upload')
+            ->andWhere('price.discount IS NOT NULL')
+            ->andWhere('price.discount > 0')
+            ->addSelect('upload')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByDiscountQB(QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->innerJoin($alias . '.productVariants', 'pv')
+            ->innerJoin('pv.price', 'p')
+            ->andWhere('p.discount IS NOT NULL')
+            ->andWhere('p.discount > 0');
+
+        return $qb;
+    }
+
+    public function findByLabelQB(int $labelId, QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->innerJoin($alias . '.labels', 'l')
+            ->andWhere('l.id = :labelId')
+            ->setParameter('labelId', $labelId);
+
+        return $qb;
+    }
+
     public function findCategoryProductsQB(int $category, QueryBuilder $qb)
     {
         $alias = $qb->getRootAliases()[0];
@@ -120,35 +260,30 @@ class ProductRepository extends ServiceEntityRepository
 
         $allSubCats = $this->categoryInfoGetter->getAllSubCategories($category);
         $subIds = [];
+
         foreach ($allSubCats as $subCat) {
             $subIds[] = $subCat->getId();
         }
+
         $qb->andWhere('c.category in (:subIds)');
         $qb->setParameter('subIds', $subIds);
         $qb->andWhere($alias . '.isActive = :val');
         $qb->distinct();
+
         return $qb;
     }
 
-    public function productsByParameterQB(QueryBuilder $queryBuilder, array $parameters)
+    public function productsByParameterQB(QueryBuilder $queryBuilder, string $parameter): QueryBuilder
     {
-
-        $paramDataArray = [];
-        $parameterGroup = null;
-        foreach ($parameters as $parameter) {
-            $parameter = $this->parameterRepository->find($parameter);
-            $paramDataArray []= $parameter->getData();
-            $parameterGroup = $parameterGroup ?? $parameter->getParameterGroup();
-        }
-
-
         $alias = $queryBuilder->getRootAliases()[0];
-        $queryBuilder
-            ->join($alias . '.productVariants', 'prodV')
-            ->join('prodV.parameters', 'params')
-            ->andWhere('params.data in (:paramData)')->setParameter('paramData', $paramDataArray)
-            ->andWhere('params.parameterGroup = :group')->setParameter('group', $parameterGroup);
 
+        $queryBuilder
+            ->innerJoin($alias . '.productVariants', 'pv')
+            ->innerJoin('pv.parameters', 'p')
+            ->andWhere('p.data LIKE :parameter')
+            ->setParameter('parameter', '%' . $parameter . '%');
+
+        return $queryBuilder;
     }
 
     public function findCategoryNewProducts(Category $category, int $max = 4)
@@ -189,7 +324,7 @@ class ProductRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
-    public function findProductsWithDiscountForAPI($queryBuilder, \DateTime $date, int $minimalAmount = 1, int|null $vat = null)
+    public function findProductsWithDiscountForAPI($queryBuilder, DateTime $date, int $minimalAmount = 1, int|null $vat = null)
     {
         $alias = $queryBuilder->getAllAliases()[0];
         $queryBuilder
@@ -216,7 +351,7 @@ class ProductRepository extends ServiceEntityRepository
     }
 
 
-    public function sortProductsByPrice($queryBuilder, \DateTime $date, string $sort, int $minimalAmount = 1, int|null $vat = null)
+    public function sortProductsByPrice($queryBuilder, DateTime $date, string $sort, int $minimalAmount = 1, int|null $vat = null)
     {
         $alias = $queryBuilder->getAllAliases()[0];
 
@@ -256,4 +391,23 @@ class ProductRepository extends ServiceEntityRepository
 
         return $queryBuilder;
     }
+
+    public function getSoldProductsCount(DateTime $startDate, DateTime $endDate): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.id, SUM(ppv.amount) as sold_amount')
+            ->join('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pv', Join::WITH, 'pv.product = p.id')
+            ->join('Greendot\EshopBundle\Entity\Project\PurchaseProductVariant', 'ppv', Join::WITH, 'ppv.ProductVariant = pv.id')
+            ->join('Greendot\EshopBundle\Entity\Project\Purchase', 'pu', Join::WITH, 'ppv.purchase = pu.id')
+            ->where('pu.date_invoiced >= :startDate')
+            ->andWhere('pu.date_invoiced <= :endDate')
+            ->andWhere('pu.state NOT IN (:excludedStates)')
+            ->groupBy('p.id')
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->setParameter('excludedStates', ['draft', 'new']);
+
+        return $qb->getQuery()->getResult();
+    }
+
 }

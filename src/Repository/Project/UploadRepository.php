@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Upload;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -38,6 +39,23 @@ class UploadRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function findUploadsForProductQB(int $productId, QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->innerJoin($alias . '.uploadGroup', 'ug')
+            ->leftJoin('ug.productUploadGroup', 'pug')
+            ->leftJoin('pug.Product', 'p')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->leftJoin('pvug.ProductVariant', 'pv')
+            ->leftJoin('pv.product', 'pvp')
+            ->andWhere('p.id = :productId OR pvp.id = :productId')
+            ->setParameter('productId', $productId);
+
+        return $qb;
     }
 
     public function getUploadForProduct(Product $product)

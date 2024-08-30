@@ -2,16 +2,10 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
-use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Post;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
-use Greendot\EshopBundle\Entity\PurchaseTracking;
+use App\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -23,107 +17,116 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     normalizationContext: ['groups' => ['purchase:read']],
     denormalizationContext: ['groups' => ['purchase:write']],
-    order: ['date_issue' => 'DESC']
+    paginationEnabled: false
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'state' => 'exact', 'invoice_number' => 'exact','Client.name' => 'partial','Client.surname' => 'partial'])]
-#[ApiFilter(ExistsFilter::class, properties: ['purchaseEvents', 'ProductVariant'])]
-#[ApiFilter(DateFilter::class, properties: ['date_issue'])]
-
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
 class Purchase
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['purchase:read', 'purchase:write', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $id;
 
     #[ORM\Column(type: 'datetime')]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $date_issue;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $date_expedition;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $date_invoiced;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $state = "draft";
 
-    #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $invoice_number;
 
     #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => false])]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $is_exported_stock;
 
-    #[ORM\Column(type: 'boolean',nullable: true, options: ['default' => false])]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => false])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $is_exported_book;
 
-    #[ORM\Column(type: 'boolean',nullable: true, options: ['default' => false])]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => false])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $is_exported_transport;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $transport_number;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $client_number;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $review_type;
 
-    #[ORM\ManyToOne(targetEntity: PaymentType::class, inversedBy: 'purchases')]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[ORM\ManyToOne(targetEntity: PaymentType::class, cascade: ['persist'], inversedBy: 'purchases')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $PaymentType;
 
-    #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'purchases')]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[ORM\ManyToOne(targetEntity: Transportation::class, cascade: ['persist'], inversedBy: 'purchases')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $Transportation;
 
-    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
-    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'orders')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $Client;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseProductVariant::class, cascade: ['persist'])]
+    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseProductVariant::class, cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
     private Collection $ProductVariants;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseEvent::class)]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseEvent::class, cascade: ['persist', 'remove'])]
     private Collection $purchaseEvents;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Note::class)]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read', 'event_purchase'])]
+    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Note::class, cascade: ['persist', 'remove'])]
     private Collection $notes;
 
-    #[ApiProperty]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read'])]
-    private $purchasePrice;
-    #[ApiProperty]
-    #[Groups(['purchase:read', 'purchase:write', 'client:read'])]
-    private $purchasePriceVat;
+    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseTracking::class, cascade: ['persist', 'remove'])]
+    private Collection $purchaseTrackings;
 
-    #[ORM\ManyToOne(inversedBy: 'type')]
-    private ?ClientDiscount $clientDiscount = null;
+    #[ORM\OneToMany(mappedBy: 'Purchase_issued', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
+    private Collection $VouchersIssued;
+
+    #[ORM\OneToMany(mappedBy: 'Purchase_used', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
+    private Collection $VouchersUsed;
+
+    #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'Purchases')]
+    private Collection $Consents;
 
     #[ORM\ManyToOne(inversedBy: 'Purchase')]
     #[Groups(['purchase:read'])]
     private ?ClientAddress $clientAddress = null;
 
+    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Payment::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
+    private Collection $payments;
+
     public function __construct()
     {
+        $this->date_issue = new \DateTime();
         $this->ProductVariants = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
         $this->notes = new ArrayCollection();
+        $this->purchaseTrackings = new ArrayCollection();
+        $this->VouchersIssued = new ArrayCollection();
+        $this->VouchersUsed = new ArrayCollection();
+        $this->Consents = new ArrayCollection();
+        $this->payments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -389,38 +392,120 @@ class Purchase
         return $this;
     }
 
-    public function setPurchasePrice($price): self
+    /**
+     * @return Collection<int, PurchaseTracking>
+     */
+    public function getPurchaseTrackings(): Collection
     {
-        $this->purchasePrice = $price;
+        return $this->purchaseTrackings;
+    }
+
+    public function addPurchaseTracking(PurchaseTracking $purchaseTracking): static
+    {
+        if (!$this->purchaseTrackings->contains($purchaseTracking)) {
+            $this->purchaseTrackings->add($purchaseTracking);
+            $purchaseTracking->setPurchase($this);
+        }
 
         return $this;
     }
 
-    public function getPurchasePrice(): ?float
+    public function removePurchaseTracking(PurchaseTracking $purchaseTracking): static
     {
-        return $this->purchasePrice;
-    }
-
-    public function setPurchasePriceVat($price): self
-    {
-        $this->purchasePriceVat = $price;
+        if ($this->purchaseTrackings->removeElement($purchaseTracking)) {
+            // set the owning side to null (unless already changed)
+            if ($purchaseTracking->getPurchase() === $this) {
+                $purchaseTracking->setPurchase(null);
+            }
+        }
 
         return $this;
     }
 
-    public function getPurchasePriceVat(): ?float
+    /**
+     * @return Collection<int, Voucher>
+     */
+    public function getVouchersIssued(): Collection
     {
-        return $this->purchasePriceVat;
+        return $this->VouchersIssued;
     }
 
-    public function getClientDiscount(): ?ClientDiscount
+    public function addVoucherIssued(Voucher $voucher): static
     {
-        return $this->clientDiscount;
+        if (!$this->VouchersIssued->contains($voucher)) {
+            $this->VouchersIssued->add($voucher);
+            $voucher->setPurchaseIssued($this);
+        }
+
+        return $this;
     }
 
-    public function setClientDiscount(?ClientDiscount $clientDiscount): static
+    public function removeVoucherIssued(Voucher $voucher): static
     {
-        $this->clientDiscount = $clientDiscount;
+        if ($this->VouchersIssued->removeElement($voucher)) {
+            // set the owning side to null (unless already changed)
+            if ($voucher->getPurchaseIssued() === $this) {
+                $voucher->setPurchaseIssued(null);
+            }
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @return Collection<int, Voucher>
+     */
+    public function getVouchersUsed(): Collection
+    {
+        return $this->VouchersUsed;
+    }
+
+    public function addVoucherUsed(Voucher $voucher): static
+    {
+        if (!$this->VouchersUsed->contains($voucher)) {
+            $this->VouchersUsed->add($voucher);
+            $voucher->setPurchaseUsed($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVoucherUsed(Voucher $voucher): static
+    {
+        if ($this->VouchersUsed->removeElement($voucher)) {
+            // set the owning side to null (unless already changed)
+            if ($voucher->getPurchaseUsed() === $this) {
+                $voucher->setPurchaseUsed(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Consent>
+     */
+    public function getConsents(): Collection
+    {
+        return $this->Consents;
+    }
+
+    public function addConsent(Consent $consent): static
+    {
+        if (!$this->Consents->contains($consent)) {
+            $this->Consents->add($consent);
+            $consent->addPurchase($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConsent(Consent $consent): static
+    {
+        if ($this->Consents->removeElement($consent)) {
+            $consent->removePurchase($this);
+        }
 
         return $this;
     }
@@ -437,4 +522,29 @@ class Purchase
         return $this;
     }
 
+    public function getPayments(): Collection
+    {
+        return $this->payments;
+    }
+
+    public function addPayment(Payment $payment): self
+    {
+        if (!$this->payments->contains($payment)) {
+            $this->payments->add($payment);
+            $payment->setPurchase($this);
+        }
+
+        return $this;
+    }
+
+    public function removePayment(Payment $payment): self
+    {
+        if ($this->payments->removeElement($payment)) {
+            if ($payment->getPurchase() === $this) {
+                $payment->setPurchase(null);
+            }
+        }
+
+        return $this;
+    }
 }

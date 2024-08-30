@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -18,36 +19,36 @@ class HandlingPrice
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?float $price = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?float $free_from_price = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?float $discount = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?int $vat = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['handlingPrice:read'])]
-    private ?\DateTimeInterface $validFrom = null;
+    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    private ?DateTimeInterface $validFrom = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['handlingPrice:read'])]
-    private ?\DateTimeInterface $validUntil = null;
+    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    private ?DateTimeInterface $validUntil = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['handlingPrice:read'])]
-    private ?\DateTimeInterface $created = null;
+    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    private ?DateTimeInterface $created = null;
 
     #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'handlingPrices')]
     #[Groups(['handlingPrice:read'])]
@@ -98,36 +99,36 @@ class HandlingPrice
         return $this;
     }
 
-    public function getValidFrom(): ?\DateTimeInterface
+    public function getValidFrom(): ?DateTimeInterface
     {
         return $this->validFrom;
     }
 
-    public function setValidFrom(?\DateTimeInterface $validFrom): static
+    public function setValidFrom(?DateTimeInterface $validFrom): static
     {
         $this->validFrom = $validFrom;
 
         return $this;
     }
 
-    public function getValidUntil(): ?\DateTimeInterface
+    public function getValidUntil(): ?DateTimeInterface
     {
         return $this->validUntil;
     }
 
-    public function setValidUntil(?\DateTimeInterface $validUntil): static
+    public function setValidUntil(?DateTimeInterface $validUntil): static
     {
         $this->validUntil = $validUntil;
 
         return $this;
     }
 
-    public function getCreated(): ?\DateTimeInterface
+    public function getCreated(): ?DateTimeInterface
     {
         return $this->created;
     }
 
-    public function setCreated(?\DateTimeInterface $created): static
+    public function setCreated(?DateTimeInterface $created): static
     {
         $this->created = $created;
 

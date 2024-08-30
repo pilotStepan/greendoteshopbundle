@@ -2,13 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Put;
-use App\ApiResource\ClientAddressDateFilter;
-use App\ApiResource\InformationBlockExcludeRelationFilter;
-use App\DataPersister\ClientAddressProcessor;
 use Greendot\EshopBundle\Repository\Project\ClientAddressRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,13 +10,11 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-
 #[ORM\Entity(repositoryClass: ClientAddressRepository::class)]
 #[ApiResource(
     normalizationContext: ['groups' => ['clientAddress:read']],
     denormalizationContext: ['groups' => ['clientAddress:write']],
     order: ['id' => 'desc'],
-    //processor: ClientAddressProcessor::class
 )]
 //#[ApiFilter(SearchFilter::class, properties: ['purchase' => 'exact'])]
 //#[ApiFilter(ClientAddressDateFilter::class)]
@@ -126,13 +118,6 @@ class ClientAddress
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function setId(?int $id) : static
-    {
-        $this->id = $id;
-
-        return $this;
     }
 
     public function getStreet(): ?string

@@ -19,7 +19,7 @@ class LabelType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['labelType:read', 'labelType:write', 'label:read', 'label:write'])]
+    #[Groups(['product_info:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -33,7 +33,8 @@ class LabelType
     /**
      * @var Collection<int, Label>
      */
-    #[ORM\OneToMany(targetEntity: Label::class, mappedBy: 'labelType')]
+    #[ORM\OneToMany(mappedBy: 'labelType', targetEntity: Label::class)]
+    #[Groups(['labelType:read', 'labelType:write', 'label:read', 'label:write'])]
     private Collection $labels;
 
     public function __construct()
@@ -91,7 +92,6 @@ class LabelType
     public function removeLabel(Label $label): static
     {
         if ($this->labels->removeElement($label)) {
-            // set the owning side to null (unless already changed)
             if ($label->getLabelType() === $this) {
                 $label->setLabelType(null);
             }

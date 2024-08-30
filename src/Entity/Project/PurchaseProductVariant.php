@@ -21,19 +21,18 @@ class PurchaseProductVariant
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['order_product_variant:read', 'order_product_variant:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $id;
 
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'ProductVariants')]
-    #[Groups(['order_product_variant:read', 'order_product_variant:write'])]
     private $purchase;
 
-    #[ORM\ManyToOne(targetEntity: ProductVariant::class, inversedBy: 'orderProductVariants')]
-    #[Groups(['order:read', 'order:write', 'purchase:read', 'purchase:write'])]
+    #[ORM\ManyToOne(targetEntity: ProductVariant::class, inversedBy: 'orderProductVariants', cascade: ['persist'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $ProductVariant;
 
-    #[ORM\Column]
-    private ?int $amount = null;
+    #[ORM\Column(type: 'integer')]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $amount;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $state = null;

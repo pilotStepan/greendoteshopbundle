@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Repository\Project\ParameterGroupFilterTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -65,7 +64,6 @@ class ParameterGroupFilterType
     public function removeParameterGroup(ParameterGroup $parameterGroup): static
     {
         if ($this->parameterGroup->removeElement($parameterGroup)) {
-            // set the owning side to null (unless already changed)
             if ($parameterGroup->getParameterGroupFilterType() === $this) {
                 $parameterGroup->setParameterGroupFilterType(null);
             }
