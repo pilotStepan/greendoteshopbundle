@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace Greendot\EshopBundle\Entity;
 
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository;
+namespace Greendot\EshopBundle\Repository;
 
-use App\Entity\ExternalIds;
+use Greendot\EshopBundle\Entity\ExternalIds;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;

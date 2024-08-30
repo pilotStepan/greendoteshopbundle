@@ -1,5 +1,5 @@
 <?php
-namespace App\Entity;
+namespace Greendot\EshopBundle\Entity\Entity;
 
 
 use Algolia\SearchBundle\Entity\Aggregator;

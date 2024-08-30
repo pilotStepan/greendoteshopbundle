@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository;
+namespace Greendot\EshopBundle\Repository;
 
-use App\Entity\PurchaseTracking;
+use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

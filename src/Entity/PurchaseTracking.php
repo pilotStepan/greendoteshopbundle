@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace Greendot\EshopBundle\Entity;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use App\Repository\PurchaseTrackingRepository;

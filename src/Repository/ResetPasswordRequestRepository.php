@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository;
+namespace Greendot\EshopBundle\Repository;
 
-use App\Entity\ResetPasswordRequest;
+use Greendot\EshopBundle\Entity\ResetPasswordRequest;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordRequestInterface;
