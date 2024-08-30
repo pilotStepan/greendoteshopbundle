@@ -27,7 +27,9 @@
     "symfony/serializer": "^7.0",
     "api-platform/core": "^3.2",
     "gedmo/doctrine-extensions": "*",
-    "symfonycasts/reset-password-bundle": "*"
+    "symfonycasts/reset-password-bundle": "*",
+    "algolia/algoliasearch-client-php": "^3.3",
+    "algolia/search-bundle": "^6.0"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

@@ -5,14 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Update from YS24">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/AlgoliaProduct.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/AlgoliaProduct.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/ExternalIds.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/ExternalIds.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/PurchaseTracking.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/PurchaseTracking.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/ResetPasswordRequest.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/ResetPasswordRequest.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/ExternalIdsRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/ExternalIdsRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/PurchaseTrackingRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/PurchaseTrackingRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/ResetPasswordRequestRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/ResetPasswordRequestRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,7 +241,15 @@
       <option name="project" value="LOCAL" />
       <updated>1725023067174</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Update from YS24">
+      <option name="closed" value="true" />
+      <created>1725023721412</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1725023721412</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
