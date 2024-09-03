@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\Controller;
 
 
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
-use Greendot\EshopBundle\Service\AlgoliaSearch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -19,7 +18,6 @@ use Symfony\Component\Serializer\SerializerInterface;
 class AlgoliaController extends AbstractController
 {
     public function __construct(
-        private AlgoliaSearch            $algoliaSearch,
         private ProductRepository        $productRepository,
         private ProductVariantRepository $productVariantRepository,
         private ManagerRegistry          $managerRegistry,
@@ -99,7 +97,7 @@ class AlgoliaController extends AbstractController
             return $this->redirectToRoute('homepage');
         }
 
-        $this->searchService->index($this->managerRegistry->getManager(), $entities);
+        //$this->searchService->index($this->managerRegistry->getManager(), $entities);
 
         if (count($entities) < $limit) {
             return $this->redirectToRoute('homepage');
