@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Enum;
 
 enum DiscountType: string
 {
-    Case SingleClient = "SINGLE_CLIENT";
-    Case SingleUse = "SINGLE_USE";
-    Case MultiUse = "MULTI_USE";
+    case SingleClient = "SINGLE_CLIENT";
+    case SingleUse = "SINGLE_USE";
+    case MultiUse = "MULTI_USE";
 }
