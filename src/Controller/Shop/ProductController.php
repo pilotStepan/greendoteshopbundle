@@ -1,0 +1,270 @@
+<?php
+
+namespace Greendot\EshopBundle\Controller\Shop;
+
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Repository\Project\ClientRepository;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\ParameterRepository;
+use Greendot\EshopBundle\Repository\Project\ProductVariantDiscountRepository;
+use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
+use Greendot\EshopBundle\Service\GoogleAnalytics;
+use Greendot\EshopBundle\Service\ManageOrder;
+use Greendot\EshopBundle\Service\ProductInfoGetter;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
+class ProductController extends AbstractController
+{
+    private ProductRepository $productRepository;
+    private ProductVariantRepository $productVariantRepository;
+
+    public function __construct(ProductRepository $productRepository, ProductVariantRepository $productVariantRepository)
+    {
+        $this->productRepository        = $productRepository;
+        $this->productVariantRepository = $productVariantRepository;
+    }
+
+    #[Route('/api/store-last-viewed-product', name: 'store_last_viewed_product', methods: ['POST'])]
+    public function storeLastViewedProduct(Request $request, SessionInterface $session): JsonResponse
+    {
+        $data        = json_decode($request->getContent(), true);
+        $productSlug = $data['productSlug'] ?? null;
+
+        if ($productSlug) {
+            $session->set('last_viewed_product', $productSlug);
+            return $this->json(['message' => 'Last viewed product stored successfully']);
+        }
+
+        return $this->json(['error' => 'Invalid product slug'], 400);
+    }
+
+    #[Route('/api/get-last-viewed-product', name: 'get_last_viewed_product', methods: ['GET'])]
+    public function getLastViewedProduct(SessionInterface $session): JsonResponse
+    {
+        $productSlug = $session->get('last_viewed_product');
+
+        if ($productSlug) {
+            return $this->json(['productSlug' => $productSlug]);
+        }
+
+        return $this->json(['productSlug' => null]);
+    }
+
+    #[Route('/{slug}-p', name: 'shop_product', requirements: ['slug' => '[A-Za-z0-9\-]+'], options: ['expose' => true], priority: 20)]
+    public function index(string $slug): Response
+    {
+        $product = $this->productRepository->findOneBy(['slug' => $slug]);
+
+        if (!$product) {
+            throw $this->createNotFoundException('Produkt nenalezen!');
+        }
+
+        //return $this->render('template/product-detail.html.twig');
+
+        return $this->render('shop/product/index.html.twig', [
+            'productId' => $product->getId(),
+        ]);
+    }
+
+    #[Route('/{slug}-p/add', name: 'add_product', priority: 2, requirements: ['slug' => '[A-Za-z0-9\-]+'])]
+    public function add(Product $product, Session $session): Response
+    {
+        if ($session->has('purchase')) {
+            $purchase = $session->get('purchase');
+        } else {
+            $purchase = new Purchase();
+        }
+
+        $opv = new PurchaseProductVariant();
+        $opv->setProductVariant($product->getProductVariants()->first());
+
+        $purchase->addProductVariant($opv);
+
+        $session->set('purchase', $purchase);
+
+        return $this->redirectToRoute('shop_product', ['slug' => $product->getSlug()]);
+    }
+
+    #[Route('/shop/api/cart/add-{variant_id}/amount-{amount}', name: 'add_to_cart', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
+    public function addToCart
+    (
+        $variant_id,
+        $amount,
+        RequestStack $requestStack,
+        ClientRepository $clientRepository,
+        ProductVariantRepository $productVariantRepository,
+        ManageOrder $manageOrder,
+    ): Response
+    {
+        $session = $requestStack->getSession();
+        if ($session->has('purchase')) {
+            $purchase = $session->get('purchase');
+
+            $productVariant = $productVariantRepository->find($variant_id);
+            $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+
+            $session->set('purchase', $purchase);
+        } else {
+            $productVariant = $productVariantRepository->find($variant_id);
+
+            $purchase = new Purchase();
+            $purchase->setDateIssue(new \DateTime());
+            $purchase->setState('draft');
+
+            if ($this->getUser()) {
+                $client = $this->getUser();
+                $client = $clientRepository->find($client);
+                $purchase->setClient($client);
+            }
+            $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+
+            $session->set('purchase', $purchase);
+        }
+
+        return new Response();
+    }
+
+    #[Route('/shop/api/cart/add_modal', name: 'cart_add_modal')]
+    public function cart_add_modal(RequestStack $requestStack, ProductVariantRepository $productVariantRepository): Response
+    {
+        $session         = $requestStack->getSession();
+        $purchase        = $session->get('purchase');
+        $productVariants = [];
+        foreach ($purchase->getProductVariants() as $orderProductVariant) {
+            $productVariant = $orderProductVariant->getProductVariant()->getId();
+            $productVariant = $productVariantRepository->find($productVariant);
+            array_push($productVariants, $productVariant);
+        }
+        return $this->json(
+            $this->render('shop/cart/_add_to_cart_modal.html.twig', [
+                'productVariants' => $productVariants,
+                'order'           => $purchase
+            ]),
+            headers: ['Content-Type' => 'application/json;charset=UTF-8']
+        );
+    }
+
+    #[Route('/shop/api/inquiry/add-{variant_id}/amount-{amount}', name: 'add_to_inquiry', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
+    public function addToInquiry
+    (
+        $variant_id,
+        $amount,
+        RequestStack $requestStack,
+        ClientRepository $clientRepository,
+        ProductVariantRepository $productVariantRepository,
+        ManageOrder $manageOrder,
+        GoogleAnalytics $googleAnalytics
+    )
+    {
+        $session = $requestStack->getSession();
+        if ($session->has('inquiry')) {
+            $purchase = $session->get('inquiry');
+
+            $productVariant = $productVariantRepository->find($variant_id);
+            $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+
+            $session->set('inquiry', $purchase);
+        } else {
+            $productVariant = $productVariantRepository->find($variant_id);
+
+            $purchase = new Purchase();
+            $purchase->setState('inquiry');
+            if ($this->getUser()) {
+                $client = $this->getUser();
+                $client = $clientRepository->find($client);
+                $purchase->setClient($client);
+            }
+            $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+
+            $session->set('inquiry', $purchase);
+        }
+
+        return $this->json(
+            $googleAnalytics->addToCart($productVariant, $amount, 'inquiry'),
+            headers: ['Content-Type' => 'application/json;charset=UTF-8']
+        );
+    }
+
+    #[Route('/shop/api/cart/remove-{variant_id}-{type}', name: 'remove_from_cart', defaults: ['amount' => 0])]
+    public function removeFromCart
+    (
+        $variant_id,
+        $type,
+        RequestStack $requestStack,
+    ): JsonResponse
+    {
+        $session  = $requestStack->getSession();
+        $purchase = $session->get($type);
+
+        foreach ($purchase->getProductVariants() as $orderProductVariant) {
+            if ($orderProductVariant->getProductVariant()->getId() == $variant_id) {
+                $purchase->removeProductVariant($orderProductVariant);
+            }
+        }
+        $session->set($type, $purchase);
+        return $this->json(
+            'success',
+            headers: ['Content-Type' => 'application/json;charset=UTF-8']
+        );
+    }
+
+    #[Route('/shop/api/cart/change_amount-{variant_id}-{amount}-{type}', name: 'change_amount_in_cart', requirements: ['slug' => '[A-Za-z0-9\-]+'], priority: 2)]
+    public function changeAmountInCart
+    (
+        $variant_id,
+        $amount,
+        $type,
+        RequestStack $requestStack,
+    ): JsonResponse
+    {
+        $session  = $requestStack->getSession();
+        $purchase = $session->get($type);
+        if ($purchase) {
+            foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
+                if ($purchaseProductVariant->getProductVariant()->getId() == $variant_id) {
+                    $purchaseProductVariant->setAmount((int)$amount);
+                }
+            }
+        }
+        $session->set($type, $purchase);
+        return $this->json(
+            'success',
+            headers: ['Content-Type' => 'application/json;charset=UTF-8']
+        );
+    }
+
+    #[Route('/shop/api/vue/price_string_for_product/{product}', name: 'api_vue_price_string_for_product')]
+    public function getPriceStringForProduct(Product $product, Session $session, CurrencyRepository $deleteThis, ProductInfoGetter $productInfoGetter): JsonResponse
+    {
+        // TODO REMOVE THIS
+        $currency = $deleteThis->find(1);
+
+        //$currency = $session->get('selectedCurrency');
+
+        $finalString = $productInfoGetter->getProductPriceString($product, $currency);
+
+        return $this->json($finalString, headers: ['Content-Type' => 'application/json;chatset=UTF-8']);
+    }
+
+    #[Route('/api/parameters/available', name: 'api_parameters_available', methods: ['GET'])]
+    public function getAvailableParameters(Request $request, ParameterRepository $parameterRepository): JsonResponse
+    {
+        $productId = $request->query->get('productId');
+        $color     = $request->query->get('color');
+        $size      = $request->query->get('size');
+
+        $parameters = $parameterRepository->findAvailableParametersByColorOrSize($productId, $color, $size);
+
+        return $this->json($parameters, 200, [], ['groups' => ['parameter_type:read']]);
+    }
+}

@@ -4,7 +4,54 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Algolia" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Controllery">
+      <change afterPath="$PROJECT_DIR$/src/Controller/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/AlgoliaController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/ClientController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/CustomErrorHandlerController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/FragmentController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/MasterController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/ResetPasswordController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/CategoryController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/ClientSectionController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/DiscountsController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/LoginController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/MenuController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/ProductController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/RegistrationController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/ScheduledTasksController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/TemplateController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/TestController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/TranslationController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/ApplicationPageController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/BlogController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/GeneralPageController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/HomepageController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/IndustryPageController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/MenuController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/Web/PageController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Controller/WebController.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ChangePasswordFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ClientAddressFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ClientChangePasswordFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ClientFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ClientMailQuestion.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ContactFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/InquiryToBdlType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/InquiryToFileType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/InquiryToMailType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/InquiryToXLSType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/LoginFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/RegistrationFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Form/ResetPasswordRequestFormType.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Security/EmailVerifier.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/phpspec.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/phpspec.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -122,6 +169,37 @@
       <path value="$PROJECT_DIR$/vendor/symfony/web-link" />
       <path value="$PROJECT_DIR$/vendor/symfony/translation-contracts" />
       <path value="$PROJECT_DIR$/vendor/psr/link" />
+      <path value="$PROJECT_DIR$/vendor/behat/transliterator" />
+      <path value="$PROJECT_DIR$/vendor/gedmo/doctrine-extensions" />
+      <path value="$PROJECT_DIR$/vendor/symfonycasts/reset-password-bundle" />
+      <path value="$PROJECT_DIR$/vendor/symfony/options-resolver" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-icu" />
+      <path value="$PROJECT_DIR$/vendor/symfony/form" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/annotations" />
+      <path value="$PROJECT_DIR$/vendor/doctrine/common" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-idn" />
+      <path value="$PROJECT_DIR$/vendor/symfony/mime" />
+      <path value="$PROJECT_DIR$/vendor/symfony/mailer" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php72" />
+      <path value="$PROJECT_DIR$/vendor/egulias/email-validator" />
+      <path value="$PROJECT_DIR$/vendor/psr/clock" />
+      <path value="$PROJECT_DIR$/vendor/symfony/messenger" />
+      <path value="$PROJECT_DIR$/vendor/symfony/clock" />
+      <path value="$PROJECT_DIR$/vendor/symfony/doctrine-messenger" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php81" />
+      <path value="$PROJECT_DIR$/vendor/symfony/translation" />
+      <path value="$PROJECT_DIR$/vendor/knplabs/knp-components" />
+      <path value="$PROJECT_DIR$/vendor/knplabs/knp-paginator-bundle" />
+      <path value="$PROJECT_DIR$/vendor/twig/twig" />
+      <path value="$PROJECT_DIR$/vendor/symfony/security-bundle" />
+      <path value="$PROJECT_DIR$/vendor/symfony/security-core" />
+      <path value="$PROJECT_DIR$/vendor/symfony/security-csrf" />
+      <path value="$PROJECT_DIR$/vendor/symfony/password-hasher" />
+      <path value="$PROJECT_DIR$/vendor/symfony/security-http" />
+      <path value="$PROJECT_DIR$/vendor/symfony/validator" />
+      <path value="$PROJECT_DIR$/vendor/symfony/twig-bundle" />
+      <path value="$PROJECT_DIR$/vendor/symfony/twig-bridge" />
+      <path value="$PROJECT_DIR$/vendor/symfonycasts/verify-email-bundle" />
     </include_path>
   </component>
   <component name="ProjectColorInfo">{
@@ -140,7 +218,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/stepa/PhpstormProjects/GreendotEshopBundle/config/packages",
+    "last_opened_file_path": "C:/Users/stepa/PhpstormProjects/GreendotEshopBundle/src",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -152,8 +230,8 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\config\packages" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src" />
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\config\packages" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Service" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository\Project" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Entity\Project" />
@@ -255,7 +333,15 @@
       <option name="project" value="LOCAL" />
       <updated>1725023862441</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Algolia">
+      <option name="closed" value="true" />
+      <created>1725024001186</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1725024001186</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -277,6 +363,7 @@
     <MESSAGE value="2" />
     <MESSAGE value="Update from YS24" />
     <MESSAGE value="Algolia" />
-    <option name="LAST_COMMIT_MESSAGE" value="Algolia" />
+    <MESSAGE value="Controllery" />
+    <option name="LAST_COMMIT_MESSAGE" value="Controllery" />
   </component>
 </project>

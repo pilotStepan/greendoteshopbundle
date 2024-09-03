@@ -27,7 +27,17 @@
     "symfony/serializer": "^7.0",
     "api-platform/core": "^3.2",
     "gedmo/doctrine-extensions": "*",
-    "symfonycasts/reset-password-bundle": "*"
+    "symfonycasts/reset-password-bundle": "*",
+    "symfony/form": "^7.1",
+    "symfony/mailer": "^7.1",
+    "symfony/mime": "^7.1",
+    "symfony/messenger": "^7.1",
+    "symfony/doctrine-messenger": "^7.1",
+    "knplabs/knp-paginator-bundle": "^6.5",
+    "symfony/security-bundle": "^7.1",
+    "symfony/validator": "^7.1",
+    "symfony/twig-bundle": "^7.1",
+    "symfonycasts/verify-email-bundle": "^1.17"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
