@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\ApiResource\ProductVariantFilter;
+use Greendot\EshopBundle\ApiResource\ProductVariantFilter;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

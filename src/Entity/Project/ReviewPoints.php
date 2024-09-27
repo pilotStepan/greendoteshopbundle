@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\ApiResource\ReviewPointsByReviewFilter;
+use Greendot\EshopBundle\ApiResource\ReviewPointsByReviewFilter;
 use Greendot\EshopBundle\Repository\Project\ReviewPointsRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;

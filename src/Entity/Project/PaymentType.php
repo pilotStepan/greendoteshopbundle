@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\ApiResource\PaymentTypeByTransportationFilter;
+use Greendot\EshopBundle\ApiResource\PaymentTypeByTransportationFilter;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

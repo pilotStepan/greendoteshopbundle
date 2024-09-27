@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\ApiResource\ProductReviews;
+use Greendot\EshopBundle\ApiResource\ProductReviews;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;

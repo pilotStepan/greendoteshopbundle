@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
-use App\ApiResource\ParameterCategoryFilter;
+use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;

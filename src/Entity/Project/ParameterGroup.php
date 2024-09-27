@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\ApiResource\ParameterGroupValues;
+use Greendot\EshopBundle\ApiResource\ParameterGroupValues;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

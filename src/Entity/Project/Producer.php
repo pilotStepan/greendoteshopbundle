@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\ApiResource\ProducerSearchFilter;
+use Greendot\EshopBundle\ApiResource\ProducerSearchFilter;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
