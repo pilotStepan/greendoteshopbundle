@@ -22,7 +22,6 @@ class GreendotEshopBundle extends AbstractBundle
          * http://symfony.com/doc/current/doctrine/mapping_model_classes.html
          * */
 
-        dd("dédé");
 
         parent::build($container);
         $ormCompilerClass = 'Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass';

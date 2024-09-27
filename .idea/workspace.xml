@@ -5,6 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="DiscountType">
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ParameterCategoryFilter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ParameterGroupValues.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/PaymentTypeByTransportationFilter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProducerSearchFilter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductAvailability.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductFilterByDiscount.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductFilterByReviews.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductFromAllSubCategories.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductLabel.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductParameterSearch.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductPriceSortFilter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductReviews.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductSearchFilter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductUploads.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductVariantFilter.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ApiResource/ReviewPointsByReviewFilter.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/GreendotEshopBundle.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/GreendotEshopBundle.php" afterDir="false" />
     </list>
@@ -33,12 +51,12 @@
     &quot;assignee&quot;: &quot;jakub-greendot&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/pilotStepan/GreendotEshopBundle.git",
-    "accountId": "b973daa2-4046-49f9-8e5a-4a327ffe925a"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pilotStepan/GreendotEshopBundle.git&quot;,
+    &quot;accountId&quot;: &quot;b973daa2-4046-49f9-8e5a-4a327ffe925a&quot;
   }
-}]]></component>
+}</component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -217,7 +235,9 @@
       <workItem from="1712047273711" duration="6948000" />
       <workItem from="1713256372239" duration="3345000" />
       <workItem from="1713778153881" duration="302000" />
-      <workItem from="1726557533540" duration="1182000" />
+      <workItem from="1726557533540" duration="5162000" />
+      <workItem from="1727288857403" duration="596000" />
+      <workItem from="1727423273085" duration="437000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -339,7 +359,15 @@
       <option name="project" value="LOCAL" />
       <updated>1725351747539</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="DiscountType">
+      <option name="closed" value="true" />
+      <created>1726558751370</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1726558751370</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
