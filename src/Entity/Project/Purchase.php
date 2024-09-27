@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use App\Entity\PurchaseTracking;
+use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

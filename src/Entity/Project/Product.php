@@ -17,7 +17,7 @@ use Greendot\EshopBundle\ApiResource\ProductParameterSearch;
 //use Greendot\EshopBundle\ApiResource\ProductPriceRangeFilter;
 use Greendot\EshopBundle\ApiResource\ProductPriceSortFilter;
 use Greendot\EshopBundle\ApiResource\ProductSearchFilter;
-use App\Entity\ProductProduct;
+use Greendot\EshopBundle\Entity\Project\ProductProduct;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

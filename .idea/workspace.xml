@@ -4,28 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="DiscountType">
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ParameterCategoryFilter.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ParameterGroupValues.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/PaymentTypeByTransportationFilter.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProducerSearchFilter.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductAvailability.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductFilterByDiscount.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductFilterByReviews.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductFromAllSubCategories.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductLabel.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductParameterSearch.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductPriceSortFilter.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductReviews.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductSearchFilter.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductUploads.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ProductVariantFilter.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ReviewPointsByReviewFilter.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GreendotEshopBundle.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GreendotEshopBundle.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/GreendotEshopBundle.php" afterDir="false" />
-    </list>
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="API" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -237,7 +216,7 @@
       <workItem from="1713778153881" duration="302000" />
       <workItem from="1726557533540" duration="5162000" />
       <workItem from="1727288857403" duration="596000" />
-      <workItem from="1727423273085" duration="437000" />
+      <workItem from="1727423273085" duration="794000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -367,7 +346,23 @@
       <option name="project" value="LOCAL" />
       <updated>1726558751370</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="API">
+      <option name="closed" value="true" />
+      <created>1727423804235</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1727423804235</updated>
+    </task>
+    <task id="LOCAL-00018" summary="API">
+      <option name="closed" value="true" />
+      <created>1727423971670</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1727423971670</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -393,6 +388,7 @@
     <MESSAGE value="Removed AlgoliaSearch.php" />
     <MESSAGE value="EraseCredentials update" />
     <MESSAGE value="DiscountType" />
-    <option name="LAST_COMMIT_MESSAGE" value="DiscountType" />
+    <MESSAGE value="API" />
+    <option name="LAST_COMMIT_MESSAGE" value="API" />
   </component>
 </project>
