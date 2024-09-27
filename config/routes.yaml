@@ -1,0 +1,5 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: Greendot\EshopBundle\Controller
+    type: attribute

@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Routes">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Routes" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -191,6 +189,9 @@
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Service" />
       <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository\Project" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Resources\config" />
+    </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -218,7 +219,7 @@
       <workItem from="1713778153881" duration="302000" />
       <workItem from="1726557533540" duration="5162000" />
       <workItem from="1727288857403" duration="596000" />
-      <workItem from="1727423273085" duration="2878000" />
+      <workItem from="1727423273085" duration="3205000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -380,7 +381,15 @@
       <option name="project" value="LOCAL" />
       <updated>1727426947626</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="Routes">
+      <option name="closed" value="true" />
+      <created>1727427634538</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1727427634538</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
