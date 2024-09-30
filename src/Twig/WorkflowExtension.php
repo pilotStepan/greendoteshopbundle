@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Twig;
+namespace Greendot\EshopBundle\Twig;
 
-use App\Service\ManageWorkflows;
+use Greendot\EshopBundle\Service\ManageWorkflows;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
