@@ -1,0 +1,12 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  Greendot\EshopBundle\:
+    resource: '../src/*'
+    exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+
+  Greendot\EshopBundle\Controller\:
+    resource: '../src/Controller'
+    tags: ['controller.service_arguments']
