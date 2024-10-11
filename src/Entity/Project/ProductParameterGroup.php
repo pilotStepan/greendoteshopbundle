@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\ProductParameterGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  *  Attaches required ParameterGroups to the product - these will be required for product variants definitions.
@@ -22,6 +23,7 @@ class ProductParameterGroup
 
     #[ORM\ManyToOne(inversedBy: 'productParameterGroups')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['product_info:read'])]
     private ?ParameterGroup $parameterGroup = null;
 
     /**
@@ -31,6 +33,7 @@ class ProductParameterGroup
      * This ParameterGroup should be required for each ProductVariant
      */
     #[ORM\Column]
+    #[Groups(['product_info:read'])]
     private ?bool $isVariant = null;
 
     public function getId(): ?int

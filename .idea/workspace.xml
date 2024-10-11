@@ -5,8 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Twig ext">
-      <change beforePath="$PROJECT_DIR$/src/Twig/AppExtension.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Twig/AppExtension.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Twig/WorkflowExtension.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Twig/WorkflowExtension.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Product.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Product.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductParameterGroup.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -223,7 +227,10 @@
       <workItem from="1726557533540" duration="5162000" />
       <workItem from="1727288857403" duration="596000" />
       <workItem from="1727423273085" duration="4002000" />
-      <workItem from="1727694111756" duration="1506000" />
+      <workItem from="1727694111756" duration="2843000" />
+      <workItem from="1728299235183" duration="2862000" />
+      <workItem from="1728463375555" duration="597000" />
+      <workItem from="1728636273651" duration="516000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -417,7 +424,15 @@
       <option name="project" value="LOCAL" />
       <updated>1727698243327</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="Twig ext">
+      <option name="closed" value="true" />
+      <created>1727698325058</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1727698325058</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

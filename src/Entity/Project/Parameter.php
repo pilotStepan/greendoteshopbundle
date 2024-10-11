@@ -21,15 +21,15 @@ class Parameter
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'parameter_type:read', 'searchable', "SearchProductResultApiModel"])]
+    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'parameter_type:read', 'searchable', "SearchProductResultApiModel"])]
     private $id;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter_type:read', 'parameter_type:write'])]
+    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter_type:read', 'parameter_type:write'])]
     private $data;
 
     #[ORM\ManyToOne(targetEntity: ParameterGroup::class, inversedBy: 'parameter')]
-    #[Groups(['category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter_type:read', 'parameter_type:write'])]
+    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter_type:read', 'parameter_type:write'])]
     private $parameterGroup;
 
     #[Groups(['parameter_type:read', 'parameter_type:write'])]
