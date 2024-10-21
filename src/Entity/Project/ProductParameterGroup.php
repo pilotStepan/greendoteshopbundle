@@ -19,6 +19,7 @@ class ProductParameterGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['product_info:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'productParameterGroups')]
@@ -80,4 +81,5 @@ class ProductParameterGroup
 
         return $this;
     }
+
 }

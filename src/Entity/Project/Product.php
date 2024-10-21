@@ -699,4 +699,14 @@ class Product implements Translatable
 
         return $this;
     }
+
+    public function getProductParameterGroups(): Collection
+    {
+        return $this->productParameterGroups;
+    }
+
+    public function setProductParameterGroups(Collection $productParameterGroups): void
+    {
+        $this->productParameterGroups = $productParameterGroups;
+    }
 }
