@@ -159,7 +159,7 @@ class Product implements Translatable
     #[Groups(['product_info:read', 'search_result'])]
     private ?string $availability = null;
 
-    #[Groups(['product_info:read', 'search_result'])]
+
     private array $parameters = [];
 
     #[Groups(['product_info:read', 'search_result'])]

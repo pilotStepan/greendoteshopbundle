@@ -11,9 +11,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *  Attaches required ParameterGroups to the product - these will be required for product variants definitions.
  */
 #[ORM\Entity(repositoryClass: ProductParameterGroupRepository::class)]
-#[ApiResource(
-    normalizationContext: ['groups' => ['product_info:read']]
-)]
+#[ApiResource()]
 class ProductParameterGroup
 {
     #[ORM\Id]
