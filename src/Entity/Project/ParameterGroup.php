@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  */
 #[ORM\Entity(repositoryClass: ParameterRepository::class)]
 #[ApiResource(
-    normalizationContext: ['groups' => ['parameter:read']],
+    normalizationContext: ['groups' => ['parameter:read', 'product_info:read']],
     denormalizationContext: ['groups' => ['parameter:write']],
     paginationEnabled: false
 )]

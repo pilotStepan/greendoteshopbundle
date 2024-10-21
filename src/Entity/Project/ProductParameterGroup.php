@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\ProductParameterGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -10,6 +11,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *  Attaches required ParameterGroups to the product - these will be required for product variants definitions.
  */
 #[ORM\Entity(repositoryClass: ProductParameterGroupRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['product_info:read']]
+)]
 class ProductParameterGroup
 {
     #[ORM\Id]
