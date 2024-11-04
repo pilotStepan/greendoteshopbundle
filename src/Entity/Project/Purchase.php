@@ -5,6 +5,17 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use Greendot\EshopBundle\Entity\Project\Branch;
+use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\ClientAddress;
+use Greendot\EshopBundle\Entity\Project\Consent;
+use Greendot\EshopBundle\Entity\Project\Note;
+use Greendot\EshopBundle\Entity\Project\Payment;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Entity\Project\PurchaseEvent;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -72,6 +83,10 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $review_type;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $name;
+
     #[ORM\ManyToOne(targetEntity: PaymentType::class, cascade: ['persist'], inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -116,6 +131,22 @@ class Purchase
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Payment::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
     private Collection $payments;
 
+    #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'purchases')]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?Branch $branch = null;
+
+    public function getBranch(): ?Branch
+    {
+        return $this->branch;
+    }
+
+    public function setBranch(?Branch $branch): self
+    {
+        $this->branch = $branch;
+
+        return $this;
+    }
+
     public function __construct()
     {
         $this->date_issue = new \DateTime();
@@ -127,6 +158,23 @@ class Purchase
         $this->VouchersUsed = new ArrayCollection();
         $this->Consents = new ArrayCollection();
         $this->payments = new ArrayCollection();
+    }
+
+    public function getProducts(): Collection
+    {
+        $products = new ArrayCollection();
+
+        foreach ($this->getProductVariants() as $purchaseProductVariant) {
+            $productVariant = $purchaseProductVariant->getProductVariant();
+            if ($productVariant) {
+                $product = $productVariant->getProduct();
+                if ($product && !$products->contains($product)) {
+                    $products->add($product);
+                }
+            }
+        }
+
+        return $products;
     }
 
     public function getId(): ?int
@@ -300,6 +348,17 @@ class Purchase
         $this->Client = $Client;
 
         return $this;
+    }
+
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setName($name): void
+    {
+        $this->name = $name;
     }
 
     /**
