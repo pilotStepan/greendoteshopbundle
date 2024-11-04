@@ -2,15 +2,20 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
+use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantDiscountRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
 use Greendot\EshopBundle\Service\ManageOrder;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
@@ -103,21 +108,26 @@ class ProductController extends AbstractController
         RequestStack $requestStack,
         ClientRepository $clientRepository,
         ProductVariantRepository $productVariantRepository,
+        TransportationRepository $transportationRepository,
+        PaymentTypeRepository $paymentTypeRepository,
         ManageOrder $manageOrder,
+        PurchaseRepository $purchaseRepository,
+        EntityManagerInterface $entityManager,
     ): Response
     {
         $session = $requestStack->getSession();
         if ($session->has('purchase')) {
-            $purchase = $session->get('purchase');
+            $purchase = $purchaseRepository->find($session->get('purchase'));
 
             $productVariant = $productVariantRepository->find($variant_id);
             $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
 
-            $session->set('purchase', $purchase);
+            $entityManager->persist($purchase);
+            $entityManager->flush();
         } else {
             $productVariant = $productVariantRepository->find($variant_id);
 
-            $purchase = new Purchase();
+            $purchase = new \App\Entity\Project\Purchase();
             $purchase->setDateIssue(new \DateTime());
             $purchase->setState('draft');
 
@@ -128,7 +138,11 @@ class ProductController extends AbstractController
             }
             $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
 
-            $session->set('purchase', $purchase);
+
+            $entityManager->persist($purchase);
+            $entityManager->flush();
+
+            $session->set('purchase', $purchase->getId());
         }
 
         return new Response();
@@ -267,4 +281,47 @@ class ProductController extends AbstractController
 
         return $this->json($parameters, 200, [], ['groups' => ['parameter_type:read']]);
     }
+
+    /*
+     * TODO přehodit do API Platform - k variantám
+     */
+    #[Route('/api/product-variant/{id}/prices', name: 'api_get_product_variant_prices', methods: ['GET'])]
+    public function getProductVariantPrices(int $id): JsonResponse
+    {
+        $productVariant = $this->productVariantRepository->find($id);
+
+        if (!$productVariant) {
+            return $this->json(['error' => 'Product variant not found'], 404);
+        }
+
+        $prices = $productVariant->getPrice()->toArray();
+
+        $currentDate = new \DateTime();
+
+        $validPrices = array_filter($prices, function (Price $price) use ($currentDate) {
+            $validFrom = $price->getValidFrom();
+            $validUntil = $price->getValidUntil();
+
+            return ($validFrom <= $currentDate) &&
+                ($validUntil === null || $validUntil >= $currentDate);
+        });
+
+        usort($validPrices, function (Price $a, Price $b) {
+            return $a->getMinimalAmount() <=> $b->getMinimalAmount();
+        });
+
+        $priceData = array_map(function (Price $price) {
+            return [
+                'price' => $price->getPrice(),
+                'vat' => $price->getVat(),
+                'minimalAmount' => $price->getMinimalAmount(),
+                'discount' => $price->getDiscount(),
+                'isPackage' => $price->isIsPackage(),
+                'minPrice' => $price->getMinPrice(),
+            ];
+        }, $validPrices);
+
+        return $this->json($priceData);
+    }
+
 }
