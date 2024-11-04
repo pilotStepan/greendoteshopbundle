@@ -127,7 +127,7 @@ class ProductController extends AbstractController
         } else {
             $productVariant = $productVariantRepository->find($variant_id);
 
-            $purchase = new \App\Entity\Project\Purchase();
+            $purchase = new Greendot\EshopBundle\Entity\Project\Purchase();
             $purchase->setDateIssue(new \DateTime());
             $purchase->setState('draft');
 
