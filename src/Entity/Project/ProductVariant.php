@@ -62,7 +62,7 @@ class ProductVariant implements Translatable
     private $availability;
 
     #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
-    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read'])]
+    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_info:read'])]
     private $parameters;
 
     #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
