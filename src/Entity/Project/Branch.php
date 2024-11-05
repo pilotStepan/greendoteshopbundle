@@ -84,9 +84,13 @@ class Branch
     #[Groups(['branch:read', 'branch:write'])]
     private ?Transportation $transportation = null;
 
+    #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'Branch')]
+    private Collection $Purchases;
+
     public function __construct()
     {
         $this->BranchOpeningHours = new ArrayCollection();
+        $this->Purchases = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -264,6 +268,27 @@ class Branch
     public function setTransportation(?Transportation $transportation): static
     {
         $this->transportation = $transportation;
+
+        return $this;
+    }
+
+    public function getPurchases(): Collection
+    {
+        return $this->Purchases;
+    }
+
+    public function addPurchase(Purchase $purchase): static
+    {
+        if (!$this->Purchases->contains($purchase)) {
+            $this->Purchases->add($purchase);
+        }
+
+        return $this;
+    }
+
+    public function removePurchase(Purchase $purchase): static
+    {
+        $this->Purchases->removeElement($purchase);
 
         return $this;
     }

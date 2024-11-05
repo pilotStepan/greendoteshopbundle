@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Changes to cart handling">
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/PurchaseSession.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Purchase session filter">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Branch.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Branch.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -230,7 +229,7 @@
       <workItem from="1728463375555" duration="597000" />
       <workItem from="1728636273651" duration="1136000" />
       <workItem from="1729496601370" duration="8055000" />
-      <workItem from="1730725517934" duration="3702000" />
+      <workItem from="1730725517934" duration="5428000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -496,7 +495,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730727512939</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="Purchase session filter">
+      <option name="closed" value="true" />
+      <created>1730796785854</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1730796785854</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -528,6 +535,7 @@
     <MESSAGE value="Twig ext" />
     <MESSAGE value="Update API" />
     <MESSAGE value="Changes to cart handling" />
-    <option name="LAST_COMMIT_MESSAGE" value="Changes to cart handling" />
+    <MESSAGE value="Purchase session filter" />
+    <option name="LAST_COMMIT_MESSAGE" value="Purchase session filter" />
   </component>
 </project>

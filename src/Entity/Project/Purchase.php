@@ -133,7 +133,7 @@ class Purchase
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Payment::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
     private Collection $payments;
 
-    #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'purchases')]
+    #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'Purchases')]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?Branch $branch = null;
 
