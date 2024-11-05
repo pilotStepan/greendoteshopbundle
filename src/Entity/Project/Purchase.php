@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use Greendot\EshopBundle\ApiResource\PurchaseSession;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
@@ -31,6 +32,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationEnabled: false
 )]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
+#[ApiFilter(PurchaseSession::class)]
 class Purchase
 {
     #[ORM\Id]

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Doctrine\ORM\QueryBuilder;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -56,5 +57,21 @@ class PurchaseRepository extends ServiceEntityRepository
         $result = $qb->getQuery()->getSingleScalarResult();
 
         return $result !== null ? (int) $result + 1 : 1;
+    }
+
+    public function findBySession(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        $alias = $queryBuilder->getRootAliases()[0];
+        $session = $this->requestStack->getCurrentRequest()->getSession();
+        if($session->has('purchase')){
+            $purchaseId = $session->get('purchase');
+        }else{
+            $purchaseId = 0;
+        }
+
+
+        return $queryBuilder
+            ->andWhere(sprintf('%s.id = :purchaseId', $alias))
+            ->setParameter('purchaseId', $purchaseId);
     }
 }
