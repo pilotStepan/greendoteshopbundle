@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Purchase session filter">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Fix for purchase">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Branch.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Branch.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -229,7 +227,7 @@
       <workItem from="1728463375555" duration="597000" />
       <workItem from="1728636273651" duration="1136000" />
       <workItem from="1729496601370" duration="8055000" />
-      <workItem from="1730725517934" duration="5428000" />
+      <workItem from="1730725517934" duration="6039000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -503,7 +501,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730796785854</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="Fix for purchase">
+      <option name="closed" value="true" />
+      <created>1730799968248</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1730799968248</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -536,6 +542,7 @@
     <MESSAGE value="Update API" />
     <MESSAGE value="Changes to cart handling" />
     <MESSAGE value="Purchase session filter" />
-    <option name="LAST_COMMIT_MESSAGE" value="Purchase session filter" />
+    <MESSAGE value="Fix for purchase" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix for purchase" />
   </component>
 </project>

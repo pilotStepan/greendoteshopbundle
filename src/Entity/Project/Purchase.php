@@ -31,7 +31,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['purchase:write']],
     paginationEnabled: false
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
+//#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
 #[ApiFilter(PurchaseSession::class)]
 class Purchase
 {
@@ -90,17 +90,17 @@ class Purchase
     private $name;
 
     #[ORM\ManyToOne(targetEntity: PaymentType::class, cascade: ['persist'], inversedBy: 'purchases')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $PaymentType;
 
     #[ORM\ManyToOne(targetEntity: Transportation::class, cascade: ['persist'], inversedBy: 'purchases')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $Transportation;
 
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'orders')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $Client;
 
@@ -134,6 +134,7 @@ class Purchase
     private Collection $payments;
 
     #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'Purchases')]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?Branch $branch = null;
 
