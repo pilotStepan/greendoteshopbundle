@@ -81,7 +81,7 @@ class PurchaseRepository extends ServiceEntityRepository
         $session = $this->requestStack->getCurrentRequest()->getSession();
         if($session->has('purchase')){
             $purchaseId = $session->get('purchase');
-            $qb->andWhere('id = :purchaseId')
+            $qb->andWhere('p.id = :purchaseId')
                 ->setParameter('purchaseId', $purchaseId);
             return $qb->getQuery()->getOneOrNullResult();
         }else{

@@ -4,14 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Fix for purchase">
-      <change afterPath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="PurchaseStateProvider">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Price.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Price.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Product.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Product.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -235,7 +231,7 @@
       <workItem from="1728636273651" duration="1136000" />
       <workItem from="1729496601370" duration="8055000" />
       <workItem from="1730725517934" duration="6162000" />
-      <workItem from="1730887185648" duration="5736000" />
+      <workItem from="1730887185648" duration="6379000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -525,7 +521,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730800850079</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="PurchaseStateProvider">
+      <option name="closed" value="true" />
+      <created>1731056201263</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1731056201263</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -559,6 +563,7 @@
     <MESSAGE value="Changes to cart handling" />
     <MESSAGE value="Purchase session filter" />
     <MESSAGE value="Fix for purchase" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix for purchase" />
+    <MESSAGE value="PurchaseStateProvider" />
+    <option name="LAST_COMMIT_MESSAGE" value="PurchaseStateProvider" />
   </component>
 </project>
