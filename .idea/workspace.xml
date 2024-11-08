@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="PurchaseStateProvider">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="PurchaseStateProvider - variant total prices">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/PurchaseProductVariant.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/PurchaseProductVariant.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Price.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Price.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -231,7 +232,7 @@
       <workItem from="1728636273651" duration="1136000" />
       <workItem from="1729496601370" duration="8055000" />
       <workItem from="1730725517934" duration="6162000" />
-      <workItem from="1730887185648" duration="7582000" />
+      <workItem from="1730887185648" duration="8465000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -537,7 +538,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731056967197</updated>
     </task>
-    <option name="localTasksCounter" value="39" />
+    <task id="LOCAL-00039" summary="PurchaseStateProvider - variant total prices">
+      <option name="closed" value="true" />
+      <created>1731064296054</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1731064296054</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -572,6 +581,7 @@
     <MESSAGE value="Purchase session filter" />
     <MESSAGE value="Fix for purchase" />
     <MESSAGE value="PurchaseStateProvider" />
-    <option name="LAST_COMMIT_MESSAGE" value="PurchaseStateProvider" />
+    <MESSAGE value="PurchaseStateProvider - variant total prices" />
+    <option name="LAST_COMMIT_MESSAGE" value="PurchaseStateProvider - variant total prices" />
   </component>
 </project>

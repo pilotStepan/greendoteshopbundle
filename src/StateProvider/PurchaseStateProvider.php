@@ -39,6 +39,7 @@ class PurchaseStateProvider implements ProviderInterface
         if($purchase) {
             /*
              * TO-DO find currency in session
+             * TO-DO select default VAT calculation from env
              */
             //$currency = $this->requestStack->getCurrentRequest()->get('currency');
             $currency = $this->currencyRepository->findOneBy([]);

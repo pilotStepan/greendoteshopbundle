@@ -19,19 +19,19 @@ class Price
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read", 'purchase:read'])]
+    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
     private ?float $price = null;
 
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read", 'purchase:read'])]
+    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
     private ?int $vat = null;
 
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read", 'purchase:read'])]
+    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
     private ?int $minimalAmount = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read", 'purchase:read'])]
+    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
     private ?float $discount = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

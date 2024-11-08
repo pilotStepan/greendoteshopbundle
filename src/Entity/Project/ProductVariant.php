@@ -69,7 +69,7 @@ class ProductVariant implements Translatable
     private $parameters;
 
     #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
-    #[Groups(['product_variant:read', 'product_info:read', "SearchProductResultApiModel", 'purchase:read'])]
+    #[Groups(['product_variant:read', 'product_info:read', "SearchProductResultApiModel"])]
     private Collection $price;
 
     #[ORM\Column(nullable: true)]
