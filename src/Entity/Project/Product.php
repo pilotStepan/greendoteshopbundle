@@ -97,6 +97,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['product_info:read', 'product_info:write'])]
     private $textGeneral;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVariant::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
