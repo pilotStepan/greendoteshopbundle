@@ -44,6 +44,10 @@ class PurchaseStateProvider implements ProviderInterface
             $currency = $this->currencyRepository->findOneBy([]);
             $total_price = $this->priceCalculator->calculatePurchasePrice($purchase, $currency, VatCalculationType::WithVAT, null, DiscountCalculationType::WithDiscount, false, VoucherCalculationType::WithoutVoucher, true);
             $purchase->setTotalPrice($total_price);
+            foreach ($purchase->getProductVariants() as $productVariant) {
+                $productVariant->setTotalPrice($this->priceCalculator->calculateProductVariantPrice($productVariant, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount, false, true));
+            }
+
             return $purchase;
         }else{
             return null;

@@ -43,6 +43,8 @@ class PurchaseProductVariant
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $delivery_until = null;
 
+    #[Groups(['purchase:read'])]
+    private $total_price;
 
 
     public function __construct()
@@ -128,6 +130,22 @@ class PurchaseProductVariant
         $this->delivery_until = $delivery_until;
 
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTotalPrice(): float
+    {
+        return $this->total_price;
+    }
+
+    /**
+     * @param float $total_price
+     */
+    public function setTotalPrice($total_price): void
+    {
+        $this->total_price = $total_price;
     }
 
 
