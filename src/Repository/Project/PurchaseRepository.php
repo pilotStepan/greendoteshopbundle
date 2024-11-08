@@ -74,4 +74,21 @@ class PurchaseRepository extends ServiceEntityRepository
             ->andWhere(sprintf('%s.id = :purchaseId', $alias))
             ->setParameter('purchaseId', $purchaseId);
     }
+
+    public function findOneBySession(String $type): Purchase|null
+    {
+        $qb = $this->createQueryBuilder('p');
+        $session = $this->requestStack->getCurrentRequest()->getSession();
+        if($session->has('purchase')){
+            $purchaseId = $session->get('purchase');
+            $qb->andWhere('id = :purchaseId')
+                ->setParameter('purchaseId', $purchaseId);
+            return $qb->getQuery()->getOneOrNullResult();
+        }else{
+            return null;
+        }
+
+
+
+    }
 }

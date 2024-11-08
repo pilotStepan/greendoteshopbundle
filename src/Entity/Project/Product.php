@@ -59,7 +59,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result'])]
+    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read'])]
     private $name;
 
     #[Gedmo\Translatable]
@@ -81,7 +81,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result'])]
+    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'purchase:read'])]
     private $slug;
 
     #[ORM\Column(type: 'boolean')]

@@ -5,6 +5,12 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Client;
@@ -22,15 +28,29 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
+    operations: [
+        new GetCollection(),
+        new GetCollection(
+            uriTemplate: '/purchases/session',
+            provider: PurchaseStateProvider::class,
+        ),
+        new Get(),
+        new Post(),
+        new Put(),
+        new Delete(),
+        new Patch(),
+    ],
     normalizationContext: ['groups' => ['purchase:read']],
     denormalizationContext: ['groups' => ['purchase:write']],
     paginationEnabled: false
 )]
+#[Get(provider: PurchaseStateProvider::class)]
 //#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
 #[ApiFilter(PurchaseSession::class)]
 class Purchase
@@ -103,6 +123,9 @@ class Purchase
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $Client;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $total_price;
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseProductVariant::class, cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -608,5 +631,21 @@ class Purchase
         }
 
         return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getTotalPrice()
+    {
+        return $this->total_price;
+    }
+
+    /**
+     * @param float $total_price
+     */
+    public function setTotalPrice($total_price): void
+    {
+        $this->total_price = $total_price;
     }
 }

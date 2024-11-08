@@ -43,12 +43,15 @@ class ProductVariant implements Translatable
 
     #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'productVariants')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['product_variant:read'])]
+    #[Groups(['product_variant:read', 'purchase:read'])]
     private $product;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: PurchaseProductVariant::class)]
     private $orderProductVariants;
 
+    /*
+     * TO-DO remove
+     */
     #[ORM\ManyToOne(targetEntity: Colour::class, inversedBy: 'productVariants')]
     #[Groups(['product_variant:read', 'product_variant:write', "SearchProductResultApiModel"])]
     private $colour;
@@ -66,7 +69,7 @@ class ProductVariant implements Translatable
     private $parameters;
 
     #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
-    #[Groups(['product_variant:read', 'product_info:read', "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_info:read', "SearchProductResultApiModel", 'purchase:read'])]
     private Collection $price;
 
     #[ORM\Column(nullable: true)]
