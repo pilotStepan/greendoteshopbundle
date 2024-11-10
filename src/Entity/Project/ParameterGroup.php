@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\ParameterGroupValues;
-use Greendot\EshopBundle\Repository\Project\ParameterRepository;
+use Greendot\EshopBundle\Repository\Project\ParameterGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,10 +14,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
 /**
  *  Defines the parameter details like unit (eq kg) and name (eq vaha)
  */
-#[ORM\Entity(repositoryClass: ParameterRepository::class)]
+#[ORM\Entity(repositoryClass: ParameterGroupRepository::class)]
 #[ApiResource(
-    normalizationContext: ['groups' => ['parameter:read']],
-    denormalizationContext: ['groups' => ['parameter:write']],
+    normalizationContext: ['groups' => ['parameter_group:read']],
+    denormalizationContext: ['groups' => ['parameter_group:write']],
     paginationEnabled: false
 )]
 #[ApiFilter(ParameterGroupValues::class)]
@@ -26,11 +26,11 @@ class ParameterGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write'])]
+    #[Groups(['parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'category_parameter_group:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable'])]
+    #[Groups(['parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'category_parameter_group:read'])]
     private $name;
 
     /**
@@ -38,7 +38,7 @@ class ParameterGroup
      * Defines the unit that should be displayed with the parameter value.     *
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['searchable', 'product_variant:read', 'product_info:read'])]
+    #[Groups(['parameter_group:read', 'searchable', 'product_variant:read', 'product_info:read', 'category_parameter_group:read'])]
     private $unit;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: Parameter::class)]
@@ -51,7 +51,7 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroups')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['category:read', 'category:write'])]
+    #[Groups(['parameter_group:read', 'category:read', 'category:write', 'category_parameter_group:read'])]
     private ?ParameterGroupType $type = null;
 
     /**
@@ -59,7 +59,7 @@ class ParameterGroup
      * TODO Obsolete, remove
      */
     #[ORM\Column(nullable: true)]
-    #[Groups(['searchable'])]
+    #[Groups(['parameter_group:read', 'searchable', 'category_parameter_group:read'])]
     private ?bool $isProductParameter = null;
 
     #[ORM\Column(nullable: true)]

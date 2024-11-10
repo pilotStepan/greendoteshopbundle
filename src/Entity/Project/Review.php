@@ -23,6 +23,7 @@ class Review
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['review:read'])]
     private $id;
 
     #[ORM\Column(type: 'datetime')]
