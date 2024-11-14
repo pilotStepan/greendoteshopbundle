@@ -4,12 +4,76 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ProductVariant price for API">
-      <change afterPath="$PROJECT_DIR$/src/ApiResource/ParameterGroupCategoryFilter.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ParameterGroup API groups update">
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/AppFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/AvailabilityFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/BranchTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/CategoryFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/CategoryTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ClientFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ColourFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/CurrencyFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/InformationBlockFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/InformationBlockTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/MenuTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ParameterFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ParameterGroupFilterTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ParameterGroupFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ParameterGroupTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PaymentActionFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PaymentFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PaymentTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PersonFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PriceFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ProducerFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ProductFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ProductTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ProductVariantFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PurchaseFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/PurchaseProductVariantFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/ReviewFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/SubMenuTypeFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/TransportationActionFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/TransportationFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/UploadFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DataFixtures/UploadGroupFixtures.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryCategoryFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryInformationBlockFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryPersonFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryProductFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryTypeFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/CategoryUploadGroupFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ClientAddressFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ClientFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/InformationBlockFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/InformationBlockTypeFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ParameterFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ParameterGroupFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ParameterGroupFilterTypeFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PaymentFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PaymentTypeFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PersonFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PersonInformationBlockFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PersonUploadGroupFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PriceFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProducerFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProductFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProductInformationBlockFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProductPersonFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProductUploadGroupFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProductVariantFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ProductVariantUploadGroupFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PurchaseFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/PurchaseProductVariantFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ReviewFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/ReviewPointsFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/SubMenuTypeFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/TransportationFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/UploadFactory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Factory/Project/UploadGroupFactory.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/CategoryParamGroup.php" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Review.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Review.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -235,7 +299,8 @@
       <workItem from="1730725517934" duration="6162000" />
       <workItem from="1730887185648" duration="12003000" />
       <workItem from="1731173321215" duration="595000" />
-      <workItem from="1731242224272" duration="973000" />
+      <workItem from="1731242224272" duration="6312000" />
+      <workItem from="1731576442264" duration="745000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -565,7 +630,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731096602447</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="ParameterGroup API groups update">
+      <option name="closed" value="true" />
+      <created>1731243377039</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1731243377039</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -602,6 +675,7 @@
     <MESSAGE value="PurchaseStateProvider" />
     <MESSAGE value="PurchaseStateProvider - variant total prices" />
     <MESSAGE value="ProductVariant price for API" />
-    <option name="LAST_COMMIT_MESSAGE" value="ProductVariant price for API" />
+    <MESSAGE value="ParameterGroup API groups update" />
+    <option name="LAST_COMMIT_MESSAGE" value="ParameterGroup API groups update" />
   </component>
 </project>

@@ -42,6 +42,8 @@
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
-    "phpunit/phpunit": "^11.0"
+    "phpunit/phpunit": "^11.0",
+    "doctrine/doctrine-fixtures-bundle": "^3.6",
+    "zenstruck/foundry": "^2.2"
   }
 }

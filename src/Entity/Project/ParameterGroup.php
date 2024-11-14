@@ -63,6 +63,7 @@ class ParameterGroup
     private ?bool $isProductParameter = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['parameter_group:read', 'searchable', 'category_parameter_group:read'])]
     private ?bool $isFilter = null;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: CategoryParameterGroup::class)]
@@ -74,6 +75,7 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
     #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['parameter_group:read', 'category_parameter_group:read'])]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
     /**
