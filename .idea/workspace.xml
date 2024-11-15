@@ -4,15 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Fixtures">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Parameter filter API">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ApiResource/ParameterCategoryFilter.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/ApiResource/ParameterCategoryFilter.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Currency.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Currency.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupFilterType.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupFilterType.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupType.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupType.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Repository/Project/ParameterRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ParameterRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -245,7 +238,7 @@
       <workItem from="1730887185648" duration="12003000" />
       <workItem from="1731173321215" duration="595000" />
       <workItem from="1731242224272" duration="6312000" />
-      <workItem from="1731576442264" duration="6516000" />
+      <workItem from="1731576442264" duration="8303000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -599,7 +592,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731589956159</updated>
     </task>
-    <option name="localTasksCounter" value="45" />
+    <task id="LOCAL-00045" summary="Parameter filter API">
+      <option name="closed" value="true" />
+      <created>1731675372494</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1731675372495</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -638,6 +639,7 @@
     <MESSAGE value="ProductVariant price for API" />
     <MESSAGE value="ParameterGroup API groups update" />
     <MESSAGE value="Fixtures" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixtures" />
+    <MESSAGE value="Parameter filter API" />
+    <option name="LAST_COMMIT_MESSAGE" value="Parameter filter API" />
   </component>
 </project>

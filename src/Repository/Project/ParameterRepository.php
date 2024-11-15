@@ -170,25 +170,14 @@ class ParameterRepository extends ServiceEntityRepository
     public function getProductParametersByTopCategory(QueryBuilder $queryBuilder, int $categoryId): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
-        dd($queryBuilder->join($alias.'.productVariant', 'pv')
-            ->join('pv.product', 'pr')
-            ->join('pr.categoryProducts', 'cp')
-            ->join('cp.category', 'ca')
-            ->join('ca.categoryCategory', 'cc')
-            ->join($alias.'.parameterGroup', 'pg')
-            ->andWhere('cp.id = :categoryId')
-            ->orWhere('cc.categorySuper = :categoryId')
-            ->andWhere('pg.isFilter=1')
-            ->setParameter('categoryId', $categoryId)
-            ->groupBy($alias.'.data')->getQuery()->getSQL());
         return $queryBuilder->join($alias.'.productVariant', 'pv')
             ->join('pv.product', 'pr')
             ->join('pr.categoryProducts', 'cp')
             ->join('cp.category', 'ca')
-            ->join('ca.categoryCategory', 'cc')
+            ->leftJoin('ca.categoryCategories', 'cc')
             ->join($alias.'.parameterGroup', 'pg')
-            ->andWhere('cp.id = :categoryId')
-            ->orWhere('cc.categorySuper = :categoryId')
+            ->andWhere('ca.id = :categoryId')
+            ->orWhere('cc.category_super = :categoryId')
             ->andWhere('pg.isFilter=1')
             ->setParameter('categoryId', $categoryId)
             ->groupBy($alias.'.data');
