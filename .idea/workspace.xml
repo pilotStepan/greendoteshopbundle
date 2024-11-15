@@ -6,7 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Fixtures">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Branch.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Branch.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ApiResource/ParameterCategoryFilter.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/ApiResource/ParameterCategoryFilter.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Currency.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Currency.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupFilterType.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupFilterType.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupType.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupType.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ParameterRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ParameterRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -238,7 +245,7 @@
       <workItem from="1730887185648" duration="12003000" />
       <workItem from="1731173321215" duration="595000" />
       <workItem from="1731242224272" duration="6312000" />
-      <workItem from="1731576442264" duration="1954000" />
+      <workItem from="1731576442264" duration="6516000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -584,7 +591,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731588911870</updated>
     </task>
-    <option name="localTasksCounter" value="44" />
+    <task id="LOCAL-00044" summary="Fixtures">
+      <option name="closed" value="true" />
+      <created>1731589956159</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1731589956159</updated>
+    </task>
+    <option name="localTasksCounter" value="45" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -24,9 +24,9 @@ use Doctrine\Persistence\ManagerRegistry;
 class ParameterRepository extends ServiceEntityRepository
 {
     public function __construct(
-        ManagerRegistry $registry,
-        private CategoryInfoGetter $categoryInfoGetter,
-        private CategoryRepository $categoryRepository,
+        ManagerRegistry                  $registry,
+        private CategoryInfoGetter       $categoryInfoGetter,
+        private CategoryRepository       $categoryRepository,
         private ParameterGroupRepository $parameterGroupRepository
     )
     {
@@ -145,11 +145,12 @@ class ParameterRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function getByGroupAndMostSuperiorCategoryQB(ParameterGroup $parameterGroup, Category $category){
+    public function getByGroupAndMostSuperiorCategoryQB(ParameterGroup $parameterGroup, Category $category)
+    {
 
         $allCategories = $this->categoryInfoGetter->getAllSubCategories($category);
         $categoryids = [];
-        foreach ($allCategories as $category){
+        foreach ($allCategories as $category) {
             $categoryids[] = $category->getId();
         }
 
@@ -165,6 +166,33 @@ class ParameterRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
+
+    public function getProductParametersByTopCategory(QueryBuilder $queryBuilder, int $categoryId): QueryBuilder
+    {
+        $alias = $queryBuilder->getRootAliases()[0];
+        dd($queryBuilder->join($alias.'.productVariant', 'pv')
+            ->join('pv.product', 'pr')
+            ->join('pr.categoryProducts', 'cp')
+            ->join('cp.category', 'ca')
+            ->join('ca.categoryCategory', 'cc')
+            ->join($alias.'.parameterGroup', 'pg')
+            ->andWhere('cp.id = :categoryId')
+            ->orWhere('cc.categorySuper = :categoryId')
+            ->andWhere('pg.isFilter=1')
+            ->setParameter('categoryId', $categoryId)
+            ->groupBy($alias.'.data')->getQuery()->getSQL());
+        return $queryBuilder->join($alias.'.productVariant', 'pv')
+            ->join('pv.product', 'pr')
+            ->join('pr.categoryProducts', 'cp')
+            ->join('cp.category', 'ca')
+            ->join('ca.categoryCategory', 'cc')
+            ->join($alias.'.parameterGroup', 'pg')
+            ->andWhere('cp.id = :categoryId')
+            ->orWhere('cc.categorySuper = :categoryId')
+            ->andWhere('pg.isFilter=1')
+            ->setParameter('categoryId', $categoryId)
+            ->groupBy($alias.'.data');
+    }
     public function getByManufacturerGroupAndMostSuperiorCategoryQB(QueryBuilder $queryBuilder, int $category){
 
         $category = $this->categoryRepository->find($category);

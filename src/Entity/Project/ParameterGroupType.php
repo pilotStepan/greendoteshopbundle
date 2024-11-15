@@ -23,11 +23,11 @@ class ParameterGroupType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['parameter_group_type:read', 'parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group_type:read', 'parameter_group:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['parameter_group_type:read', 'parameter_group_type:read', 'parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group_type:read', 'parameter_group_type:read', 'parameter_group:read'])]
     private ?string $name = null;
 
     #[ORM\OneToMany(mappedBy: 'type', targetEntity: ParameterGroup::class)]

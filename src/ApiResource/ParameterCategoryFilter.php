@@ -24,8 +24,8 @@ class ParameterCategoryFilter extends AbstractFilter
     {
         $entityManager = $this->getManagerRegistry()->getManagerForClass(Parameter::class);
         $repository    = $entityManager->getRepository(Parameter::class);
-
-        $repository->getByManufacturerGroupAndMostSuperiorCategoryQB($queryBuilder, $value);
+        $repository->getProductParametersByTopCategory($queryBuilder, $value);
+        //$repository->getByManufacturerGroupAndMostSuperiorCategoryQB($queryBuilder, $value);
     }
 
     public function getDescription(string $resourceClass): array

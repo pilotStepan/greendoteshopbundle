@@ -28,6 +28,9 @@ class Currency
     #[ORM\Column]
     private ?bool $isDefault = null;
 
+    #[ORM\Column(options: ["default" => false])]
+    private ?bool $is_symbol_left = true;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -89,6 +92,18 @@ class Currency
     public function setIsDefault(bool $isDefault): self
     {
         $this->isDefault = $isDefault;
+
+        return $this;
+    }
+
+    public function isSymbolLeft(): ?bool
+    {
+        return $this->is_symbol_left;
+    }
+
+    public function setSymbolLeft(bool $is_symbol_left): static
+    {
+        $this->is_symbol_left = $is_symbol_left;
 
         return $this;
     }

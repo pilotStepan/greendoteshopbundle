@@ -26,11 +26,11 @@ class ParameterGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'category_parameter_group:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'category_parameter_group:read'])]
     private $name;
 
     /**
@@ -38,7 +38,7 @@ class ParameterGroup
      * Defines the unit that should be displayed with the parameter value.     *
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['parameter_group:read', 'searchable', 'product_variant:read', 'product_info:read', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_info:read', 'category_parameter_group:read'])]
     private $unit;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: Parameter::class)]
@@ -51,7 +51,7 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroups')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['parameter_group:read', 'category:read', 'category:write', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'category_parameter_group:read'])]
     private ?ParameterGroupType $type = null;
 
     /**
@@ -63,7 +63,7 @@ class ParameterGroup
     private ?bool $isProductParameter = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['parameter_group:read', 'searchable', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'searchable', 'category_parameter_group:read'])]
     private ?bool $isFilter = null;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: CategoryParameterGroup::class)]
@@ -75,7 +75,7 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['parameter_group:read', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'category_parameter_group:read'])]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
     /**
