@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Symfony\Component\HttpFoundation\RequestStack;
