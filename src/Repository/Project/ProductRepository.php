@@ -250,9 +250,13 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    /*
+     * TODO remove
+     */
     public function findCategoryProductsQB(int $category, QueryBuilder $qb)
     {
         $alias = $qb->getRootAliases()[0];
+
         $category = $this->categoryRepository->find($category);
         $qb->join($alias . '.categoryProducts', 'c');
 
@@ -273,6 +277,47 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    public function findProductsInCategory(QueryBuilder $qb, int $categoryId): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+
+        $qb->join($alias . '.categoryProducts', 'cp');
+        $qb->join('p.categories', 'c');
+        $qb->leftJoin('c.categoryCategories', 'cc');
+        $qb->where('cp.category = :categoryId OR cc.category_super = :categoryId');
+        $qb->setParameter('categoryId', $categoryId);
+
+
+        $qb->andWhere($alias . '.isActive = :val');
+        $qb->setParameter('val', 1);
+
+        $qb->distinct();
+
+        return $qb;
+    }
+
+    public function productsByParameters(QueryBuilder $queryBuilder, iterable $parameters): QueryBuilder
+    {
+        $alias = $queryBuilder->getRootAliases()[0];
+        $queryBuilder
+            ->innerJoin($alias . '.productVariants', 'pv')
+            ->innerJoin('pv.parameters', 'pa');
+        foreach ($parameters as $parameter) {
+            if($parameter['parameterGroup']['name'] === 'Cena'){
+
+            }else {
+                $queryBuilder->andWhere('pa.data in (:selpar)');
+                $queryBuilder->setParameter('selpar', $parameter['selectedParameters']);
+            }
+        }
+
+        return $queryBuilder;
+    }
+
+    /*
+     * TODO remove
+     */
     public function productsByParameterQB(QueryBuilder $queryBuilder, string $parameter): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
