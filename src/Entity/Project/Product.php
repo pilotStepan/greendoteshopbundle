@@ -8,7 +8,12 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\ProductAvailability;
 use Greendot\EshopBundle\ApiResource\ProductFilterByDiscount;
 use Greendot\EshopBundle\ApiResource\ProductFilterByReviews;
@@ -40,6 +45,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
             provider: ProductStateProvider::class,
         ),
         new Get(),
+        new Post(
+            uriTemplate: '/products/filterPost',
+            provider: ProductStateProvider::class,
+        ),
         new Post(),
         new Put(),
         new Delete(),
