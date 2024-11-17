@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ProductStateProvider">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Product filters and ordering">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Category.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Category.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/StateProvider/ProductStateProvider.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProvider/ProductStateProvider.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -243,7 +241,7 @@
       <workItem from="1731242224272" duration="6312000" />
       <workItem from="1731576442264" duration="8303000" />
       <workItem from="1731764738442" duration="11317000" />
-      <workItem from="1731834334148" duration="2190000" />
+      <workItem from="1731834334148" duration="2728000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -629,7 +627,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731791832138</updated>
     </task>
-    <option name="localTasksCounter" value="49" />
+    <task id="LOCAL-00049" summary="Product filters and ordering">
+      <option name="closed" value="true" />
+      <created>1731861514475</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1731861514475</updated>
+    </task>
+    <option name="localTasksCounter" value="50" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -670,6 +676,7 @@
     <MESSAGE value="Fixtures" />
     <MESSAGE value="Parameter filter API" />
     <MESSAGE value="ProductStateProvider" />
-    <option name="LAST_COMMIT_MESSAGE" value="ProductStateProvider" />
+    <MESSAGE value="Product filters and ordering" />
+    <option name="LAST_COMMIT_MESSAGE" value="Product filters and ordering" />
   </component>
 </project>

@@ -41,9 +41,9 @@ class ProductStateProvider implements ProviderInterface
 
         $qb = $this->productRepository->createQueryBuilder('p');
         $this->productRepository->findProductsInCategory($qb, $filters->categoryId);
-        if($filters->selectedParameters) {
-            $this->productRepository->productsByParameters($qb, $filters->selectedParameters);
-        }
+        //if($filters->selectedParameters) {
+        $this->productRepository->productsByParameters($qb, $filters->selectedParameters);
+        //}
         if($filters->isStockOnly){
             $this->productRepository->filterAvailableQB($qb);
         }
