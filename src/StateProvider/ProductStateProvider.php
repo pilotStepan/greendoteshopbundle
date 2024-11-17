@@ -36,10 +36,31 @@ class ProductStateProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|Product|null
     {
 
-        dd($uriVariables, $context);
+
+        $filters = json_decode($context['filters']['parameters']);
+
         $qb = $this->productRepository->createQueryBuilder('p');
-        $this->productRepository->findProductsInCategory($qb, $uriVariables['categoryId']);
-        $this->productRepository->productsByParameters($qb, $uriVariables['parameters']);
+        $this->productRepository->findProductsInCategory($qb, $filters->categoryId);
+        if($filters->selectedParameters) {
+            $this->productRepository->productsByParameters($qb, $filters->selectedParameters);
+        }
+        if($filters->isStockOnly){
+            $this->productRepository->filterAvailableQB($qb);
+        }
+        switch ($filters->orderBy->id){
+            case 'name':
+                if($filters->orderBy->direction === 'DESC'){
+                    $qb->orderBy('p.name', 'DESC');
+                }else{
+                    $qb->orderBy('p.name', 'ASC');
+                }
+                break;
+            case 'price':
+                $this->productRepository->sortProductsByPrice($qb, new \DateTime(), $filters->orderBy->direction);
+                break;
+            case 'default':
+                $this->productRepository->sortByReviewsQB($qb, $filters->orderBy->direction);
+        }
 
         return $qb->getQuery()->getResult();
     }

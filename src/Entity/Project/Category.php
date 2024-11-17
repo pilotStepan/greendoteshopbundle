@@ -76,7 +76,7 @@ class Category implements Translatable
 
     #[ORM\OneToMany(mappedBy: 'category_super', targetEntity: CategoryCategory::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
-    ##[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write'])]
     private $categoryCategories;
 
     #[ORM\OneToMany(mappedBy: 'category_sub', targetEntity: CategoryCategory::class)]

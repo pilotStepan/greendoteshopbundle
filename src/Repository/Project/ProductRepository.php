@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -27,7 +28,8 @@ class ProductRepository extends ServiceEntityRepository
         PriceRepository             $priceRepository,
         private CategoryRepository  $categoryRepository,
         private CategoryInfoGetter  $categoryInfoGetter,
-        private ParameterRepository $parameterRepository
+        private ParameterRepository $parameterRepository,
+        private EntityManagerInterface      $entityManager,
 
     )
     {
@@ -182,6 +184,9 @@ class ProductRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    /*
+     * TODO remove
+     */
     public function findByReviewsQB(QueryBuilder $qb): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
@@ -195,6 +200,19 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    public function sortByReviewsQB(QueryBuilder $qb, $direction = 'DESC'): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->leftJoin($alias . '.reviews', 'r')
+            ->addSelect('AVG(r.stars) AS HIDDEN avg_rating')
+            ->groupBy($alias . '.id')
+            ->orderBy('avg_rating', $direction);
+
+        return $qb;
+    }
+
     public function findByAvailabilityQB(QueryBuilder $qb): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
@@ -202,6 +220,24 @@ class ProductRepository extends ServiceEntityRepository
         $qb
             ->innerJoin($alias . '.productVariants', 'pv')
             ->innerJoin('pv.availability', 'a')
+            ->andWhere($alias . '.state = :state')
+            ->andWhere('pv.isActive = :variantActive')
+            ->andWhere('a.id = :availabilityId')
+            ->setParameter('state', 'active')
+            ->setParameter('variantActive', true)
+            ->setParameter('availabilityId', 1);
+
+        return $qb;
+    }
+
+    /*
+     * Add to statement with joined variants.
+     */
+    public function filterAvailableQB(QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
             ->andWhere($alias . '.state = :state')
             ->andWhere('pv.isActive = :variantActive')
             ->andWhere('a.id = :availabilityId')
@@ -283,8 +319,9 @@ class ProductRepository extends ServiceEntityRepository
 
 
         $qb->join($alias . '.categoryProducts', 'cp');
-        $qb->join('p.categories', 'c');
-        $qb->leftJoin('c.categoryCategories', 'cc');
+        //$qb->join('p.categories', 'c');
+        $qb->join('cp.category', 'ca');
+        $qb->leftJoin('ca.categoryCategories', 'cc');
         $qb->where('cp.category = :categoryId OR cc.category_super = :categoryId');
         $qb->setParameter('categoryId', $categoryId);
 
@@ -301,14 +338,16 @@ class ProductRepository extends ServiceEntityRepository
     {
         $alias = $queryBuilder->getRootAliases()[0];
         $queryBuilder
-            ->innerJoin($alias . '.productVariants', 'pv')
-            ->innerJoin('pv.parameters', 'pa');
+            ->innerJoin($alias . '.productVariants', 'pv');
+        $i = 1;
         foreach ($parameters as $parameter) {
-            if($parameter['parameterGroup']['name'] === 'Cena'){
+            $queryBuilder
+                ->innerJoin('pv.parameters', 'pa'.$i);
+            if($parameter->parameterGroup->name === 'Cena'){
 
             }else {
-                $queryBuilder->andWhere('pa.data in (:selpar)');
-                $queryBuilder->setParameter('selpar', $parameter['selectedParameters']);
+                $queryBuilder->andWhere('pa'.$i.'.data in (?'.$i.')');
+                $queryBuilder->setParameter($i++, $parameter->selectedParameters);
             }
         }
 
@@ -408,11 +447,12 @@ class ProductRepository extends ServiceEntityRepository
             $defaultPrice = 0;
         }
 
-        $subquery = $this->_em->createQueryBuilder()
+        /*
+        $subquery = $this->entityManager->createQueryBuilder()
             ->select('CASE WHEN MIN(pv_price.price) IS NULL THEN :defaultPrice ELSE MIN(pv_price.price) END')
             //->select('MIN(pv_price.price)')
-            ->from('App:Project\ProductVariant', 'pv')
-            ->leftJoin('pv.price', 'pv_price', Join::WITH,
+            ->from('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pva')
+            ->leftJoin('pva.price', 'pv_price', Join::WITH,
                 $queryBuilder->expr()->andX(
                     $queryBuilder->expr()->eq('pv_price.minimalAmount', $minimalAmount),
                     $queryBuilder->expr()->lte('pv_price.validFrom', ':currentDateTime'),
@@ -433,6 +473,14 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('defaultPrice', $defaultPrice) // Set a suitable default value
             ->setParameter('currentDateTime', $date)
             ->orderBy('min_price', strtoupper($sort));
+           */
+        $queryBuilder->leftJoin('pv.price', 'price')
+            ->andWhere('price.validFrom <= :date')
+            ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
+            ->setParameter('date', $date)
+            ->groupBy('pv')
+            ->addSelect('MIN(price.price) AS hidden minPrice')
+            ->orderBy('minPrice', strtoupper($sort));
 
         return $queryBuilder;
     }
