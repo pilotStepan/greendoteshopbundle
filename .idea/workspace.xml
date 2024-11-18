@@ -4,12 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Parameter filter API">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Product filters and ordering">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Parameter.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Product.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Product.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductVariant.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Upload.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Upload.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/StateProvider/ProductStateProvider.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProvider/ProductStateProvider.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,7 +35,7 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pilotStepan/GreendotEshopBundle.git&quot;,
+    &quot;url&quot;: &quot;https://github.com/pilotStepan/greendoteshopbundle.git&quot;,
     &quot;accountId&quot;: &quot;b973daa2-4046-49f9-8e5a-4a327ffe925a&quot;
   }
 }</component>
@@ -49,7 +46,7 @@
     <scope name="i18n Ally: Symfony/PHP source" pattern="file[GreendotEshopBundle]:src//*&amp;&amp;!file[GreendotEshopBundle]:src/DataFixtures//*" />
     <scope name="i18n Ally: Symfony/Twig templates" pattern="file[GreendotEshopBundle]:templates//*" />
   </component>
-  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\wamp64\bin\php\php8.1.0\php.exe">
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\wamp64\bin\php\php8.1.10\php.exe">
     <include_path>
       <path value="$PROJECT_DIR$/vendor/symfony/service-contracts" />
       <path value="$PROJECT_DIR$/vendor/composer" />
@@ -164,6 +161,7 @@
       <path value="$PROJECT_DIR$/vendor/fakerphp/faker" />
       <path value="$PROJECT_DIR$/vendor/zenstruck/foundry" />
       <path value="$PROJECT_DIR$/vendor/zenstruck/assert" />
+      <path value="$PROJECT_DIR$/vendor/zenstruck/callback" />
     </include_path>
   </component>
   <component name="ProjectColorInfo">{
@@ -241,7 +239,9 @@
       <workItem from="1730887185648" duration="12003000" />
       <workItem from="1731173321215" duration="595000" />
       <workItem from="1731242224272" duration="6312000" />
-      <workItem from="1731576442264" duration="9192000" />
+      <workItem from="1731576442264" duration="8303000" />
+      <workItem from="1731764738442" duration="11317000" />
+      <workItem from="1731834334148" duration="2728000" />
     </task>
     <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
@@ -603,15 +603,39 @@
       <option name="project" value="LOCAL" />
       <updated>1731675372495</updated>
     </task>
-    <task id="LOCAL-00046" summary="Parameter filter API">
+    <task id="LOCAL-00046" summary="ProductStateProvider">
       <option name="closed" value="true" />
-      <created>1731679702738</created>
+      <created>1731791340757</created>
       <option name="number" value="00046" />
       <option name="presentableId" value="LOCAL-00046" />
       <option name="project" value="LOCAL" />
-      <updated>1731679702738</updated>
+      <updated>1731791340757</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="ProductStateProvider">
+      <option name="closed" value="true" />
+      <created>1731791501880</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1731791501880</updated>
+    </task>
+    <task id="LOCAL-00048" summary="ProductStateProvider">
+      <option name="closed" value="true" />
+      <created>1731791832138</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1731791832138</updated>
+    </task>
+    <task id="LOCAL-00049" summary="Product filters and ordering">
+      <option name="closed" value="true" />
+      <created>1731861514475</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1731861514475</updated>
+    </task>
+    <option name="localTasksCounter" value="50" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -651,6 +675,8 @@
     <MESSAGE value="ParameterGroup API groups update" />
     <MESSAGE value="Fixtures" />
     <MESSAGE value="Parameter filter API" />
-    <option name="LAST_COMMIT_MESSAGE" value="Parameter filter API" />
+    <MESSAGE value="ProductStateProvider" />
+    <MESSAGE value="Product filters and ordering" />
+    <option name="LAST_COMMIT_MESSAGE" value="Product filters and ordering" />
   </component>
 </project>
