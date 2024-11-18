@@ -14,6 +14,7 @@ use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantDiscountRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
+use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
@@ -108,6 +109,7 @@ class ProductController extends AbstractController
         RequestStack $requestStack,
         ClientRepository $clientRepository,
         ProductVariantRepository $productVariantRepository,
+        PurchaseProductVariantRepository $purchaseProductVariantRepository,
         TransportationRepository $transportationRepository,
         PaymentTypeRepository $paymentTypeRepository,
         ManageOrder $manageOrder,
@@ -120,6 +122,11 @@ class ProductController extends AbstractController
             $purchase = $purchaseRepository->find($session->get('purchase'));
 
             $productVariant = $productVariantRepository->find($variant_id);
+            $purchaseProductVariant = $purchaseProductVariantRepository->findOneBy(['ProductVariant' => $productVariant, 'purchase' => $purchase]);
+            if($purchaseProductVariant){
+                $purchase->removeProductVariant($purchaseProductVariant);
+            }
+
             $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
 
             $entityManager->persist($purchase);
