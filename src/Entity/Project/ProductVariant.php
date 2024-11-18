@@ -24,7 +24,7 @@ class ProductVariant implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read'])]
     private $id;
 
     #[Gedmo\Versioned]
@@ -65,7 +65,7 @@ class ProductVariant implements Translatable
     private $availability;
 
     #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
-    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_info:read'])]
+    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_info:read', 'purchase:read'])]
     private $parameters;
 
     #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
@@ -78,11 +78,11 @@ class ProductVariant implements Translatable
 
     #[ORM\ManyToOne(inversedBy: 'productVariants')]
     //#[Groups(["SearchProductResultApiModel"])]
-    #[Groups(['product_variant:read'])]
+    #[Groups(['product_variant:read', 'purchase:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: ProductVariantUploadGroup::class)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read'])]
+    #[Groups(['product_variant:read', 'product_variant:write'])]
     private Collection $productVariantUploadGroups;
 
     #[ORM\Column(nullable: true)]

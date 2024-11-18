@@ -75,7 +75,7 @@ class Product implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read'])]
     private $id;
 
     #[Gedmo\Translatable]
@@ -148,7 +148,7 @@ class Product implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
-    #[Groups(['search_result','product_info:read', 'product_info:write'])]
+    #[Groups(['search_result','product_info:read', 'product_info:write', 'purchase:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
