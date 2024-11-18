@@ -127,7 +127,9 @@ class ProductController extends AbstractController
                 $purchase->removeProductVariant($purchaseProductVariant);
             }
 
-            $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+            if($amount > 0) {
+                $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+            }
 
             $entityManager->persist($purchase);
             $entityManager->flush();
