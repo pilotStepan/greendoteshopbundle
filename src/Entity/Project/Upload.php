@@ -26,7 +26,7 @@ class Upload
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel"])]
+    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
@@ -48,7 +48,7 @@ class Upload
     private ?\DateTimeInterface $created = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel"])]
+    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read'])]
     private ?string $path = null;
 
     #[ORM\Column(length: 255)]

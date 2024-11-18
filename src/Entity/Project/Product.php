@@ -8,13 +8,18 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\ProductAvailability;
 use Greendot\EshopBundle\ApiResource\ProductFilterByDiscount;
 use Greendot\EshopBundle\ApiResource\ProductFilterByReviews;
 use Greendot\EshopBundle\ApiResource\ProductFromAllSubCategories;
 use Greendot\EshopBundle\ApiResource\ProductLabel;
 use Greendot\EshopBundle\ApiResource\ProductParameterSearch;
-//use Greendot\EshopBundle\ApiResource\ProductPriceRangeFilter;
 use Greendot\EshopBundle\ApiResource\ProductPriceSortFilter;
 use Greendot\EshopBundle\ApiResource\ProductSearchFilter;
 use Greendot\EshopBundle\Entity\Project\ProductProduct;
@@ -25,6 +30,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
+use Greendot\EshopBundle\StateProvider\ProductStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -32,6 +38,22 @@ use Symfony\Component\Serializer\Annotation\Groups;
  */
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[ApiResource(
+    operations: [
+        new GetCollection(),
+        new GetCollection(
+            uriTemplate: '/products/filter',
+            provider: ProductStateProvider::class,
+        ),
+        new Get(),
+        new Post(
+            uriTemplate: '/products/filterPost',
+            provider: ProductStateProvider::class,
+        ),
+        new Post(),
+        new Put(),
+        new Delete(),
+        new Patch(),
+    ],
     normalizationContext: ['groups' => ['product_info:read']],
     denormalizationContext: ['groups' => ['product_info:write']],
     paginationClientItemsPerPage: true
@@ -53,7 +75,7 @@ class Product implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read'])]
     private $id;
 
     #[Gedmo\Translatable]
@@ -126,7 +148,7 @@ class Product implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
-    #[Groups(['search_result','product_info:read', 'product_info:write'])]
+    #[Groups(['search_result','product_info:read', 'product_info:write', 'purchase:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]

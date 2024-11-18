@@ -25,11 +25,11 @@ class Parameter
     private $id;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter:read', 'parameter:write'])]
+    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
     private $data;
 
     #[ORM\ManyToOne(targetEntity: ParameterGroup::class, inversedBy: 'parameter')]
-    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter:read', 'parameter:write'])]
+    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
     private $parameterGroup;
 
     #[Groups(['parameter:read', 'parameter:write'])]
