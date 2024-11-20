@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  *
@@ -18,9 +19,11 @@ class ClientDiscount
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['purchase:read'])]
     private ?int $id = null;
 
     #[ORM\Column]
+    #[Groups(['purchase:read'])]
     private ?float $discount = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -50,6 +53,7 @@ class ClientDiscount
      */
     #[ORM\Column(type: "string", enumType: DiscountType::class)]
     private DiscountType $type;
+
 
     /**
      * @var bool|null

@@ -18,12 +18,15 @@ class Voucher
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['purchase:read'])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['purchase:read'])]
     private ?int $amount = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['purchase:read'])]
     private ?string $hash = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
@@ -49,6 +52,9 @@ class Voucher
     #[Groups(['voucher:read', 'voucher:write'])]
     private ?string $state = "draft";
 
+    /*
+     * Type - druh certifikátu pro různá pozadí pdf
+     */
     #[ORM\Column(length: 64, nullable: true)]
     private ?string $type = null;
 

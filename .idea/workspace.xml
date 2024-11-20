@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ProductController" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ProductController">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ClientDiscount.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ClientDiscount.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -238,15 +243,7 @@
       <workItem from="1731242224272" duration="6312000" />
       <workItem from="1731576442264" duration="8303000" />
       <workItem from="1731764738442" duration="11317000" />
-      <workItem from="1731834334148" duration="3441000" />
-    </task>
-    <task id="LOCAL-00003" summary="2">
-      <option name="closed" value="true" />
-      <created>1713257526268</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1713257526268</updated>
+      <workItem from="1731834334148" duration="4977000" />
     </task>
     <task id="LOCAL-00004" summary="2">
       <option name="closed" value="true" />
@@ -632,7 +629,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731958018149</updated>
     </task>
-    <option name="localTasksCounter" value="52" />
+    <task id="LOCAL-00052" summary="ProductController">
+      <option name="closed" value="true" />
+      <created>1731958103819</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1731958103819</updated>
+    </task>
+    <option name="localTasksCounter" value="53" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

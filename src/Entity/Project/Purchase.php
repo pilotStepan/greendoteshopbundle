@@ -144,6 +144,7 @@ class Purchase
     private Collection $VouchersIssued;
 
     #[ORM\OneToMany(mappedBy: 'Purchase_used', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
+    #[Groups(['purchase:read'])]
     private Collection $VouchersUsed;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'Purchases')]
@@ -155,6 +156,10 @@ class Purchase
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Payment::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
     private Collection $payments;
+
+    #[ORM\ManyToOne(inversedBy: 'purchase')]
+    #[Groups(['purchase:read'])]
+    private ?ClientDiscount $clientDiscount;
 
     #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'Purchases')]
     #[ORM\JoinColumn(nullable: true)]
@@ -648,4 +653,17 @@ class Purchase
     {
         $this->total_price = $total_price;
     }
+
+    public function getClientDiscount(): ?ClientDiscount
+    {
+        return $this->clientDiscount;
+    }
+
+    public function setClientDiscount(?ClientDiscount $clientDiscount): static
+    {
+        $this->clientDiscount = $clientDiscount;
+
+        return $this;
+    }
+
 }
