@@ -18,4 +18,13 @@ class TransportationRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Transportation::class);
     }
+
+    public function findOneByLowFree(): Transportation|null
+    {
+        return $this->createQueryBuilder('t')
+            ->join('handlingPrice', 'h')
+            ->where('h.free_from_price > 0')
+            ->orderBy('h.free_from_price', 'ASC')
+            ->getQuery()->getOneOrNullResult();
+    }
 }

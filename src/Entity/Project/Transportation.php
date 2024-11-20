@@ -5,18 +5,38 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
+use Greendot\EshopBundle\StateProvider\CheapTransportationStateProvider;
+use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TransportationRepository::class)]
 #[ApiResource(
     normalizationContext: ['groups' => ['transportation:read']],
     denormalizationContext: ['groups' => ['transportation:write']],
+    operations: [
+        new GetCollection(),
+        new GetCollection(
+            uriTemplate: '/transportations/cheap',
+            provider: CheapTransportationStateProvider::class,
+        ),
+        new Get(),
+        new Post(),
+        new Put(),
+        new Delete(),
+        new Patch(),
+    ],
 )]
 #[ApiFilter(SearchFilter::class, properties: ['action' => "exact"])]
 class Transportation implements Translatable
@@ -90,6 +110,11 @@ class Transportation implements Translatable
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $secretKey = null;
 
+    #[Groups(['transportation:read'])]
+    private $free_from_price;
+
+    #[Groups(['transportation:read'])]
+    private $price;
 
     /**
      * @var Collection<int, HandlingPrice>
@@ -416,5 +441,37 @@ class Transportation implements Translatable
         }
 
         return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPrice()
+    {
+        return $this->price;
+    }
+
+    /**
+     * @param float $price
+     */
+    public function setPrice($price): void
+    {
+        $this->price = $price;
+    }
+
+    /**
+     * @return float
+     */
+    public function getFreeFromPrice()
+    {
+        return $this->free_from_price;
+    }
+
+    /**
+     * @param float $free_from_price
+     */
+    public function setFreeFromPrice($free_from_price): void
+    {
+        $this->free_from_price = $free_from_price;
     }
 }

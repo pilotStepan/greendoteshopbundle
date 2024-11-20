@@ -234,6 +234,17 @@ class PriceCalculator
         return $returnAmount;
     }
 
+    public function transportationFreeFrom(Transportation $transportation){
+        $prices = $transportation->getHandlingPrices();
+        $free_from = 99000;
+        foreach ($prices as $price) {
+            if($price->getValidFrom() < new \DateTime("now") && $price->getValidUntil() > new \DateTime("now") && $price->getFreeFromPrice() < $free_from) {
+                $free_from = $price->getFreeFromPrice();
+            }
+        }
+        return $free_from;
+    }
+
 
     public function transportationPrice(Transportation|Purchase $purchaseOrTransportation, VatCalculationType $vatCalculationType, ?Currency $currency = null): float|int
     {
@@ -245,7 +256,7 @@ class PriceCalculator
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph
-            $purchasePrice = $this->calculatePurchasePrice($purchaseOrTransportation, $this->currencyRepository->findOneBy(["conversionRate" => 1]), VatCalculationType::WithoutVAT, null, DiscountCalculationType::WithDiscount, false);
+            $purchasePrice = $this->calculatePurchasePrice($purchaseOrTransportation, $this->currencyRepository->findOneBy(["conversionRate" => 1]), $vatCalculationType, null, DiscountCalculationType::WithDiscount, false);
 
             // check for null transportation
             if ($purchaseOrTransportation->getTransportation() !== null)
