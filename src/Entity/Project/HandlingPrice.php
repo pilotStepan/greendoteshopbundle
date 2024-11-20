@@ -27,15 +27,15 @@ class HandlingPrice
     private ?float $price = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?float $free_from_price = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?float $discount = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
     private ?int $vat = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]

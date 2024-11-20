@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Cheap transportation state provider">
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Transportation.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Transportation.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/HandlingPrice.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/HandlingPrice.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/Project/TransportationRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/TransportationRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -240,15 +242,7 @@
       <workItem from="1731242224272" duration="6312000" />
       <workItem from="1731576442264" duration="8303000" />
       <workItem from="1731764738442" duration="11317000" />
-      <workItem from="1731834334148" duration="8072000" />
-    </task>
-    <task id="LOCAL-00006" summary="Update from YS24">
-      <option name="closed" value="true" />
-      <created>1725021543829</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
-      <option name="project" value="LOCAL" />
-      <updated>1725021543829</updated>
+      <workItem from="1731834334148" duration="9132000" />
     </task>
     <task id="LOCAL-00007" summary="Update from YS24">
       <option name="closed" value="true" />
@@ -634,7 +628,15 @@
       <option name="project" value="LOCAL" />
       <updated>1732096000338</updated>
     </task>
-    <option name="localTasksCounter" value="55" />
+    <task id="LOCAL-00055" summary="Cheap transportation state provider">
+      <option name="closed" value="true" />
+      <created>1732096019205</created>
+      <option name="number" value="00055" />
+      <option name="presentableId" value="LOCAL-00055" />
+      <option name="project" value="LOCAL" />
+      <updated>1732096019205</updated>
+    </task>
+    <option name="localTasksCounter" value="56" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

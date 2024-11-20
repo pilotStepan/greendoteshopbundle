@@ -22,9 +22,10 @@ class TransportationRepository extends ServiceEntityRepository
     public function findOneByLowFree(): Transportation|null
     {
         return $this->createQueryBuilder('t')
-            ->join('handlingPrice', 'h')
+            ->join('t.handlingPrices', 'h')
             ->where('h.free_from_price > 0')
             ->orderBy('h.free_from_price', 'ASC')
+            ->setMaxResults(1)
             ->getQuery()->getOneOrNullResult();
     }
 }
