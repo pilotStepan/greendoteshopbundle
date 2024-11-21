@@ -20,6 +20,7 @@ class ParameterGroupTypeFixtures extends Fixture implements FixtureGroupInterfac
         foreach ($dataValues as $dataValue) {
             $object = new ParameterGroupType();
             $object->setName($dataValue['name']);
+            $object->setSequence($dataValue['id']);
             $manager->persist($object);
         }
 

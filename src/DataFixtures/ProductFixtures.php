@@ -2,10 +2,9 @@
 
 namespace Greendot\EshopBundle\DataFixtures;
 
-use Greendot\EshopBundle\Entity\Project\Category;
-use Greendot\EshopBundle\Entity\Project\MenuType;
-use Greendot\EshopBundle\Factory\Project\CategoryProductFactory;
+use Greendot\EshopBundle\Factory\Project\ParameterFactory;
 use Greendot\EshopBundle\Factory\Project\ProductFactory;
+use Greendot\EshopBundle\Factory\Project\ProductParameterGroupFactory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -18,77 +17,95 @@ class ProductFixtures extends Fixture implements DependentFixtureInterface, Fixt
 
     public function load(ObjectManager $manager): void
     {
-        $menuType = $this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Hlavní menu']);
-        $eshopCategories = $this->entityManager->getRepository(Category::class)->findMenuCategories($menuType);
+        $faker = FakerFactory::create();
+        $products = ProductFactory::all();
+        $colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3', '#33FFF3'];
+        $sizes = ['S', 'M', 'L', 'XL', 'XXL'];
 
-        foreach ($eshopCategories as $eshopCategory) {
-            $products = ProductFactory::createMany(rand(1, 5));
-            foreach ($products as $product) {
-                CategoryProductFactory::createOne([
-                    'category' => $eshopCategory,
+        $availableGroups = [
+            // ensure that ParameterGroup's repository is ParameterGroupRepository if something goes wrong
+            'Barva' => $manager->getRepository(ParameterGroup::class)->findOneBy(['name' => 'Barva']),
+            'Velikost' => $manager->getRepository(ParameterGroup::class)->findOneBy(['name' => 'Velikost']),
+        ];
+
+        foreach ($products as $product) {
+
+            $numVariants = rand(1, 3);
+            $productVariants = [];
+            $usedColors = [];
+            $usedSizes = [];
+
+
+            for ($i = 0; $i < $numVariants; $i++) {
+                $variant = ProductVariantFactory::createOne([
+                    'name' => $product->getName() . '- ' . $faker->word(),
                     'product' => $product,
+                    'upload' => $product->getUpload(),
                 ]);
+
+                $productVariants[] = $variant;
             }
-            $eshopSubCategories = $this->entityManager->getRepository(Category::class)->findSubMenuCategories($eshopCategory, $menuType);
-            foreach ($eshopSubCategories as $eshopSubCategory) {
-                $products = ProductFactory::createMany(rand(1, 5));
-                foreach ($products as $product) {
-                    CategoryProductFactory::createOne([
-                        'category' => $eshopSubCategory,
+
+            if (count($productVariants) > 1) {
+                $parameterGroups = [];
+
+                foreach ($availableGroups as $name => $group) {
+                    if (rand(0, 1)) {
+                        $parameterGroups[$name] = $group;
+                    }
+                }
+
+                foreach ($parameterGroups as $groupName => $group) {
+                    ProductParameterGroupFactory::createOne([
                         'product' => $product,
+                        'parameterGroup' => $group,
+                        'isVariant' => true,
                     ]);
+
+                    foreach ($productVariants as $variant) {
+                        if ($groupName === 'Barva') {
+                            $data = $this->getUniqueData($colors, $usedColors);
+                            if ($data !== null) {
+                                $usedColors[] = $data;
+                                ParameterFactory::createOne([
+                                    'parameterGroup' => $group,
+                                    'data' => $data,
+                                    'productVariant' => $variant,
+                                ]);
+                            }
+                        } elseif ($groupName === 'Velikost') {
+                            $data = $this->getUniqueData($sizes, $usedSizes);
+                            if ($data !== null) {
+                                $usedSizes[] = $data;
+                                ParameterFactory::createOne([
+                                    'parameterGroup' => $group,
+                                    'data' => $data,
+                                    'productVariant' => $variant,
+                                ]);
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
 
-
-
-//        $products = ProductFactory::all();
-
-//        foreach ($products as $product) {
-
-//            // Assign product to 1-25 people
-//            $persons = PersonFactory::randomRange(1, 25);
-//            foreach ($persons as $person) {
-//                ProductPersonFactory::createOne([
-//                    'product' => $product,
-//                    'person' => $person,
-//                    'sequence' => 1,
-//                ]);
-//            }
-
-//            // Assign product to 1-5 information block
-//            $informationBlocks = InformationBlockFactory::randomRange(1, 5);
-//            foreach ($informationBlocks as $informationBlock) {
-//                ProductInformationBlockFactory::createOne([
-//                    'product' => $product,
-//                    'informationBlock' => $informationBlock,
-//                    'sequence' => 1,
-//                ]);
-//            }
-
-//            // Assign product to 1-4 upload groups
-//            $uploadGroups = UploadGroupFactory::randomRange(1, 4);
-//            foreach ($uploadGroups as $uploadGroup) {
-//                ProductUploadGroupFactory::createOne([
-//                    'product' => $product,
-//                    'upload_group' => $uploadGroup,
-//                ]);
-//            }
-//        }
+    private function getUniqueData(array $pool, array $used): ?string
+    {
+        $available = array_diff($pool, $used);
+        return $available ? array_shift($available) : null;
     }
 
     public function getDependencies(): array
     {
-        return array(
-            CategoryFixtures::class,
-            PersonFixtures::class,
-            InformationBlockFixtures::class,
-            InformationBlockTypeFixtures::class,
+        return [
+            ProductFixtures::class,
             UploadFixtures::class,
-            ProducerFixtures::class,
-        );
+            ParameterGroupFixtures::class,
+            AvailabilityFixtures::class,
+        ];
     }
+
     public static function getGroups(): array
     {
         return ['dynamic'];

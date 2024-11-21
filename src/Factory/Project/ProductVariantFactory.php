@@ -65,17 +65,8 @@ final class ProductVariantFactory extends ModelFactory
      */
     protected function getDefaults(): array
     {
-        $availabilityRepository = $this->getAvailabilityRepository();
-        $availableItems = $availabilityRepository->findAll();
-
-        if (empty($availableItems)) {
-            throw new \RuntimeException('No availability items found.');
-        }
-
-        $randomAvailability = $availableItems[array_rand($availableItems)];
-
         return [
-            'availability' => $randomAvailability,
+            'availability' => AvailabilityFactory::random(),
             'stock' => rand(1, 100),
             'avgRestockDays' => rand(1, 4) * 7,
             'isActive' => 1,

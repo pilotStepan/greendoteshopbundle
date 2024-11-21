@@ -68,14 +68,14 @@ final class ProductFactory extends ModelFactory
             'menu_name' => $productName,
             'description' => $productName . " " . self::faker()->text(100),
             'title' => $productName,
-            'slug' => str_replace(' ', '-', strtolower($productName)),
+            'slug' => str_replace(' ', '-', strtolower($productName)) . '-id-' . self::faker()->uuid(),
             'isActive' => 1,
             'sequence' => 1,
             'javascript' => $productName . self::faker()->text(100),
             'is_indexable' => 1,
             'state' => 'draft',
-            'producer' => ProducerFactory::random(),
-//            'upload' => UploadFactory::random(),
+            'producer' => ProducerFactory::random()->object(),
+            'upload' => UploadFactory::random()->object(),
         ];
     }
 

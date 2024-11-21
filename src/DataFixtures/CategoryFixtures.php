@@ -24,97 +24,21 @@ class CategoryFixtures extends Fixture implements DependentFixtureInterface, Fix
 
     public function load(ObjectManager $manager): void
     {
-        $defaultCategories = $this->getDefaultCategories();
+        $this->createDefaultCategories();
 
-        foreach ($defaultCategories as $id => $data) {
-            $defaultCategory = new Category();
-            $defaultCategory->setName($data['name']);
-            $defaultCategory->setHtml($data['html']);
-            $defaultCategory->setSlug($data['slug']);
-            $defaultCategory->setIsActive($data['is_active']);
-            $defaultCategory->setState($data['state']);
-            $defaultCategory->setIsIndexable($data['is_indexable']);
-            $this->entityManager->persist($defaultCategory);
-        }
+        $this->createCategoriesWithMenuType('Stránka', 'Sekundární menu', 5);
+        $this->createCategoriesWithMenuType('Stránka', 'Horní menu', 4);
+        $categories = $this->createCategoriesWithMenuType('Category', 'Hlavní menu', 7, 'E-shop');
 
-        CategoryFactory::createMany(5, [
-            'category_type' => $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => 'Stránka']),
-        ]);
+        $subCategories = $this->createNestedCategories($categories, 3);
+        $subSubCategories = $this->createNestedCategories($subCategories, 2);
+        $subSubSubCategories = $this->createNestedCategories($subSubCategories, 1);
 
-
-        $categories = CategoryFactory::createMany(4);
-        foreach ($categories as $category){
-            $category->addMenuType($this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Sekundární menu']));
-            $this->entityManager->persist($category->object());
-        }
-
-        $categories = CategoryFactory::createMany(4);
-        foreach ($categories as $category){
-            $category->addMenuType($this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Horní menu']));
-            $this->entityManager->persist($category->object());
-        }
-
-
-        $categories = CategoryFactory::createMany(7, [
-            'category_type' => $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => 'Category']),
-        ]);
-        foreach ($categories as $category){
-            $category->addMenuType($this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Hlavní menu']));
-            $category->addSubMenuType($this->entityManager->getRepository(SubMenuType::class)->findOneBy(['name' => 'E-shop']));
-            $this->entityManager->persist($category->object());
-        }
-
-        $subCategories = [];
-
-        foreach ($categories as $category) {
-            $random = rand(0,2) * 4;
-            for ($i = 0; $i < $random; $i++) {
-                $subCategory = CategoryFactory::createOne([
-                    'category_type' => $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => 'SubCategory']),
-                ]);
-                $subCategories[] = $subCategory;
-
-                $subCategory->addMenuType($this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Hlavní menu']));
-                $this->entityManager->persist($subCategory->object());
-
-                CategoryCategoryFactory::createOne([
-                    'category_sub' => $subCategory,
-                    'category_super' => $category,
-                ]);
-            }
-        }
-
-        // Create j sub-sub-categories for each sub-category
-        foreach ($subCategories as $subCategory) {
-            for ($j = 0; $j < rand(0,2); $j++) {
-                $subSubCategory = CategoryFactory::createOne([
-                    'category_type' => $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => 'SubCategory']),
-                ]);
-
-                $subSubCategory->addMenuType($this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Hlavní menu']));
-                $this->entityManager->persist($subSubCategory->object());
-
-                CategoryCategoryFactory::createOne([
-                    'category_sub' => $subSubCategory,
-                    'category_super' => $subCategory,
-                ]);
-            }
-        }
-
-        // Connect categories with upload groups
-        $categories = CategoryFactory::all();
-        foreach ($categories as $category) {
-            $uploadGroups = UploadGroupFactory::randomRange(1, 4);
-            foreach ($uploadGroups as $uploadGroup) {
-                CategoryUploadGroupFactory::createOne([
-                    'category' => $category,
-                    'upload_group' => $uploadGroup,
-                ]);
-            }
-        }
+        $this->connectCategoriesWithUploadGroups();
 
         $this->entityManager->flush();
     }
+
     public function getDependencies(): array
     {
         return array(
@@ -125,119 +49,106 @@ class CategoryFixtures extends Fixture implements DependentFixtureInterface, Fix
             SubMenuTypeFixtures::class,
         );
     }
+
     public static function getGroups(): array
     {
         return ['dynamic'];
     }
+
+    private function createNestedCategories(array $superCategories, int $iterationMultiplier): array
+    {
+        $nestedCategories = [];
+
+        foreach ($superCategories as $superCategory) {
+            $iterations = rand(0, 3) * $iterationMultiplier;
+            for ($i = 0; $i < $iterations; $i++) {
+                $nestedCategory = CategoryFactory::createOne([
+                    'category_type' => $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => 'SubCategory']),
+                ]);
+
+                $mainMenuType = $this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => 'Hlavní menu']);
+                $nestedCategory->addMenuType($mainMenuType);
+                $this->entityManager->persist($nestedCategory->object());
+
+                CategoryCategoryFactory::createOne([
+                    'category_sub' => $nestedCategory,
+                    'category_super' => $superCategory,
+                ]);
+
+                $nestedCategories[] = $nestedCategory;
+            }
+        }
+
+        return $nestedCategories;
+    }
+
+    private function createCategoriesWithMenuType(string $categoryTypeName, string $menuTypeName, int $count, string $subMenuTypeName = null): array
+    {
+        $categoryType = $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => $categoryTypeName]);
+        $menuType = $this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => $menuTypeName]);
+        $subMenuType = $subMenuTypeName ? $this->entityManager->getRepository(SubMenuType::class)->findOneBy(['name' => $subMenuTypeName]) : null;
+
+        $categories = CategoryFactory::createMany($count, ['category_type' => $categoryType]);
+
+        foreach ($categories as $category) {
+            $category->addMenuType($menuType);
+            if ($subMenuType) {
+                $category->addSubMenuType($subMenuType);
+            }
+            $this->entityManager->persist($category->object());
+        }
+
+        return $categories;
+    }
+
+    private function createDefaultCategories(): void
+    {
+        $categories = [
+            ['name' => 'Homepage', 'slug' => '', 'is_active' => 1, 'is_menu' => 1],
+            ['name' => 'Blog', 'slug' => null, 'is_active' => 1, 'is_menu' => 0],
+        ];
+
+        for ($i = 3; $i <= 10; $i++) {
+            $categories[] = [
+                'name' => "Placeholder $i",
+                'slug' => null,
+                'is_active' => 0,
+                'is_menu' => 0,
+            ];
+        }
+
+        foreach ($categories as $categoryData) {
+            $name = $categoryData['name'];
+            $category = new Category();
+            $category->setName($name);
+            $category->setHtml("<h1>$name</h1>");
+            $category->setSlug($categoryData['slug'] ?? $this->slugify($name));
+            $category->setIsActive($categoryData['is_active']);
+            $category->setState('draft');
+            $category->setIsIndexable(1);
+            $this->entityManager->persist($category);
+        }
+
+        $this->entityManager->flush();
+    }
+
 
     private function slugify(string $name): string
     {
         return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
     }
 
-    private function getDefaultCategories(): array
+    private function connectCategoriesWithUploadGroups(): void
     {
-        return [
-            1 => [
-                $name = 'Homepage',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 1,
-            ],
-            2 => [
-                $name = 'Novinky',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            3 => [
-                $name = 'Category 3',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            4 => [
-                $name = 'Category 4',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            5 => [
-                $name = 'Category 5',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            6 => [
-                $name = 'Category 6',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            7 => [
-                $name = 'Category 7',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            8 => [
-                $name = 'Category 8',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            9 => [
-                $name = 'Category 9',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-            10 => [
-                $name = 'Category 10',
-                'name' => $name,
-                'html' => "<h1>$name</h1>",
-                'slug' => $this->slugify($name),
-                'is_active' => 1,
-                'state' => 'draft',
-                'is_indexable' => 1,
-                'is_menu' => 0,
-            ],
-        ];
+        $categories = CategoryFactory::all();
+        foreach ($categories as $category) {
+            $uploadGroups = UploadGroupFactory::randomRange(1, 4);
+            foreach ($uploadGroups as $uploadGroup) {
+                CategoryUploadGroupFactory::createOne([
+                    'category' => $category,
+                    'upload_group' => $uploadGroup,
+                ]);
+            }
+        }
     }
 }

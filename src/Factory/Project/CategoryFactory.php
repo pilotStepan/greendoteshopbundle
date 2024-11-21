@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Factory\Project;
 
-use Greendot\EshopBundle\DataFixtures\CategoryTypeFixtures;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Zenstruck\Foundry\ModelFactory;
@@ -77,9 +76,8 @@ final class CategoryFactory extends ModelFactory
             'html' => "<p> $html </p>",
             'slug' => str_replace(' ', '-', strtolower($name)) . '-id-' . self::faker()->uuid(),
             'state' => 'draft',
-
-            'category_type' => CategoryTypeFactory::random(),
-            'upload' => UploadFactory::random(),
+            'category_type' => CategoryTypeFactory::random()->object(),
+            'upload' => UploadFactory::random()->object(),
         ];
     }
 }
