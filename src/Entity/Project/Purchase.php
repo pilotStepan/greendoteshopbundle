@@ -119,7 +119,7 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $Transportation;
 
-    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'orders')]
+    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $Client;
