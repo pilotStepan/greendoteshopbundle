@@ -49,7 +49,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Purchase::class)]
     #[Groups(['client:read', 'client:write'])]
-    private $purchases;
+    private $orders;
 
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
     private $password;
@@ -76,7 +76,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
-        $this->purchases          = new ArrayCollection();
+        $this->orders          = new ArrayCollection();
         $this->comments        = new ArrayCollection();
         $this->clientDiscounts = new ArrayCollection();
         $this->clientAddresses = new ArrayCollection();
@@ -157,24 +157,24 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @return Collection|Purchase[]
      */
-    public function getPurchases(): Collection
+    public function getOrders(): Collection
     {
-        return $this->purchases;
+        return $this->orders;
     }
 
-    public function addPurchase(Purchase $order): self
+    public function addOrder(Purchase $order): self
     {
-        if (!$this->purchases->contains($order)) {
-            $this->purchases[] = $order;
+        if (!$this->orders->contains($order)) {
+            $this->orders[] = $order;
             $order->setClient($this);
         }
 
         return $this;
     }
 
-    public function removePurchase(Purchase $order): self
+    public function removeOrder(Purchase $order): self
     {
-        if ($this->purchases->removeElement($order)) {
+        if ($this->orders->removeElement($order)) {
             if ($order->getClient() === $this) {
                 $order->setClient(null);
             }
