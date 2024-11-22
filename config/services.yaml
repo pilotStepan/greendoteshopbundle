@@ -10,29 +10,3 @@ services:
   Greendot\EshopBundle\Controller\:
     resource: '../src/Controller'
     tags: ['controller.service_arguments']
-
-  Gedmo\Translatable\TranslatableListener:
-    tags:
-      - name: 'stof_doctrine_extensions.listener.translatable'
-        public: true
-        priority: 500
-        connection: 'default'
-
-  Greendot\EshopBundle\Service\CzechPostParcel:
-    arguments:
-      $httpClient: '@http_client'
-      $logger: '@logger'
-
-  Greendot\EshopBundle\Service\GPWebpay:
-    arguments:
-      $private_key: '%kernel.project_dir%/src/GPE/private_Elpida.key'
-      $private_pass: 'tenistaRoku1984'
-      $public_key: '%kernel.project_dir%/src/GPE/public_GPE.pem'
-      $merchant_id: '2200000458'
-
-  Greendot\EshopBundle\Service\InvoiceMaker:
-    arguments:
-      $twig: '@twig'
-      $container: '@service_container'
-      $valueAddedTaxCalculator: '@Greendot\EshopBundle\Service\ValueAddedTaxCalculator'
-      $settingsRepository: '@Greendot\EshopBundle\Repository\Project\SettingsRepository'

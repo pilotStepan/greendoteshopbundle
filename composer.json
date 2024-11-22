@@ -38,26 +38,12 @@
     "symfony/validator": "^7.1",
     "symfony/twig-bundle": "^7.1",
     "symfonycasts/verify-email-bundle": "^1.17",
-    "symfony/config": "^7.1",
-    "symfony/runtime": "^7.1",
-    "symfony/yaml": "^7.1",
-    "symfony/workflow": "^7.1",
-    "stof/doctrine-extensions-bundle": "^1.12",
-    "symfony/http-client": "^7.1",
-    "symfony/dotenv": "^7.1"
+    "symfony/config": "^7.1"
   },
   "require-dev": {
-    "symfony/http-kernel": "^7.1",
+    "symfony/http-kernel": "^7.0",
     "phpunit/phpunit": "^11.0",
     "doctrine/doctrine-fixtures-bundle": "^3.6",
-    "zenstruck/foundry": "^2.2",
-    "symfony/maker-bundle": "^1.61",
-    "symfony/flex": "^2.4"
-  },
-  "scripts": {
-    "auto-scripts": {
-      "cache:clear": "symfony-cmd",
-      "assets:install %PUBLIC_DIR%": "symfony-cmd"
-    }
+    "zenstruck/foundry": "^1.37"
   }
 }

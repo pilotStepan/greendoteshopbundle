@@ -62,9 +62,6 @@ class ClientDiscount
     #[ORM\Column]
     private ?bool $is_used = null;
 
-    #[ORM\Column(length: 20, nullable: true)]
-    private ?string $hash = null;
-
     public function __construct()
     {
         $this->purchase = new ArrayCollection();
@@ -174,18 +171,6 @@ class ClientDiscount
     public function setType(DiscountType $type): static
     {
         $this->type = $type;
-
-        return $this;
-    }
-
-    public function getHash(): ?string
-    {
-        return $this->hash;
-    }
-
-    public function setHash(?string $hash): static
-    {
-        $this->hash = $hash;
 
         return $this;
     }
