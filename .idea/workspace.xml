@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Catefory sub menu">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Cheap transportation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Branch.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Branch.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Transportation.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Transportation.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupFilterType.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroupFilterType.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -251,15 +250,7 @@
       <workItem from="1731764738442" duration="11317000" />
       <workItem from="1731834334148" duration="9132000" />
       <workItem from="1733300771694" duration="1212000" />
-      <workItem from="1733479775263" duration="1138000" />
-    </task>
-    <task id="LOCAL-00009" summary="Algolia">
-      <option name="closed" value="true" />
-      <created>1725023862441</created>
-      <option name="number" value="00009" />
-      <option name="presentableId" value="LOCAL-00009" />
-      <option name="project" value="LOCAL" />
-      <updated>1725023862441</updated>
+      <workItem from="1733479775263" duration="2468000" />
     </task>
     <task id="LOCAL-00010" summary="Algolia">
       <option name="closed" value="true" />
@@ -645,7 +636,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733479852215</updated>
     </task>
-    <option name="localTasksCounter" value="58" />
+    <task id="LOCAL-00058" summary="Cheap transportation">
+      <option name="closed" value="true" />
+      <created>1733487540333</created>
+      <option name="number" value="00058" />
+      <option name="presentableId" value="LOCAL-00058" />
+      <option name="project" value="LOCAL" />
+      <updated>1733487540333</updated>
+    </task>
+    <option name="localTasksCounter" value="59" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -675,7 +674,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Controllery" />
     <MESSAGE value="Removed AlgoliaSearch.php" />
     <MESSAGE value="EraseCredentials update" />
     <MESSAGE value="DiscountType" />
@@ -700,6 +698,7 @@
     <MESSAGE value="Cheap transportation state provider" />
     <MESSAGE value="Revert &quot;Update pro maker&quot;&#10;&#10;This reverts commit 45222b39" />
     <MESSAGE value="Catefory sub menu" />
-    <option name="LAST_COMMIT_MESSAGE" value="Catefory sub menu" />
+    <MESSAGE value="Cheap transportation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Cheap transportation" />
   </component>
 </project>
