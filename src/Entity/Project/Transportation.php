@@ -23,6 +23,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TransportationRepository::class)]
 #[ApiResource(
+    normalizationContext: ['groups' => ['transportation:read']],
+    denormalizationContext: ['groups' => ['transportation:write']],
     operations: [
         new GetCollection(),
         new GetCollection(
@@ -35,8 +37,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Delete(),
         new Patch(),
     ],
-    normalizationContext: ['groups' => ['transportation:read']],
-    denormalizationContext: ['groups' => ['transportation:write']],
 )]
 #[ApiFilter(SearchFilter::class, properties: ['action' => "exact"])]
 class Transportation implements Translatable
