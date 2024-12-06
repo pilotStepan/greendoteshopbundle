@@ -123,10 +123,10 @@ class CategoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findSubMenuCategories(Category $category, MenuType $menuType)
+    public function findSubMenuCategories(Category $category, SubMenuType $menuType)
     {
-        return $this->createQueryBuilder('c')
-            ->leftJoin('c.menuType', 'mt')
+        $qb = $this->createQueryBuilder('c')
+            ->leftJoin('c.subMenuType', 'mt')
             ->leftJoin('c.categorySubCategories', 'a')
 
             ->andWhere('c.isActive = :is_active')
@@ -145,8 +145,10 @@ class CategoryRepository extends ServiceEntityRepository
             ->setParameter('menuType', $menuType->getId())
 
             ->orderBy('c.sequence', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->getQuery();
+
+        //dd($qb->getSQL());
+        return $qb->getResult();
     }
 
     public function findMenuCategoriesByMenuID($menu_id)
@@ -207,10 +209,10 @@ class CategoryRepository extends ServiceEntityRepository
             ->andWhere('l = :labelID')
             ->andWhere('c.categoryType = 6')
             ->setParameter('labelID', $label);
-            if($limit) {
-                $result->setMaxResults($limit);
-            }
-            return $result->getQuery()->getResult();
+        if($limit) {
+            $result->setMaxResults($limit);
+        }
+        return $result->getQuery()->getResult();
     }
 
     /**

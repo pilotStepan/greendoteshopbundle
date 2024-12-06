@@ -41,7 +41,7 @@ class MenuController extends AbstractController
 
         $locale = $request->getLocale();
 
-        $categories = $categoryRepository->findSubMenuCategories($category, $menuType);
+        $categories = $categoryRepository->findSubMenuCategories($category, $subMenuType);
         return $this->render($subMenuType->getTemplate(), [
             'categories'      => $categories,
             'locale'          => $locale,

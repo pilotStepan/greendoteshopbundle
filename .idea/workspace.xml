@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Web/MenuController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Web/MenuController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/Project/CategoryRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/CategoryRepository.php" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,7 +53,7 @@
     <scope name="i18n Ally: Symfony/PHP source" pattern="file[GreendotEshopBundle]:src//*&amp;&amp;!file[GreendotEshopBundle]:src/DataFixtures//*" />
     <scope name="i18n Ally: Symfony/Twig templates" pattern="file[GreendotEshopBundle]:templates//*" />
   </component>
-  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\wamp64\bin\php\php8.1.10\php.exe">
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\wamp64\bin\php\php8.1.0\php.exe">
     <include_path>
       <path value="$PROJECT_DIR$/vendor/symfony/service-contracts" />
       <path value="$PROJECT_DIR$/vendor/composer" />
@@ -245,6 +249,8 @@
       <workItem from="1731576442264" duration="8303000" />
       <workItem from="1731764738442" duration="11317000" />
       <workItem from="1731834334148" duration="9132000" />
+      <workItem from="1733300771694" duration="1212000" />
+      <workItem from="1733479775263" duration="56000" />
     </task>
     <task id="LOCAL-00008" summary="Update from YS24">
       <option name="closed" value="true" />
