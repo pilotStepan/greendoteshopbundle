@@ -26,7 +26,7 @@ class SupplierController extends AbstractController
     public function producerList(Category $category, ProducerRepository $producerRepository): Response
     {
         return $this->render('shop/supplier/suppliers.html.twig', [
-            'producers' => $producerRepository->findAll(),
+            'suppliers' => $producerRepository->findAll(),
             'title'     => $category->getTitle(),
             'category'  => $category,
         ]);
