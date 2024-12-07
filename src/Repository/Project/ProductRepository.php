@@ -53,6 +53,19 @@ class ProductRepository extends ServiceEntityRepository
         return $parameters;
     }
 
+    public function findProductsByProducer(int $producerId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->join('p.producer', 'pr')
+            ->andWhere('pr.id = :producerId')
+            ->setParameter('producerId', $producerId)
+            ->andWhere('p.isActive = 1')
+            ->orderBy('p.sequence', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+
     public function findAvailabilityByProduct(Product $product): ?string
     {
         $availabilityCheckQb = $this->createQueryBuilder('p')
