@@ -22,7 +22,7 @@ class SupplierController extends AbstractController
     {
     }
 
-    #[Route('/{slug}', name: 'shop_supplier_list', priority: 2)]
+    #[Route('/{slug}', name: 'shop_supplier_list')]
     public function producerList(Category $category, ProducerRepository $producerRepository): Response
     {
         return $this->render('shop/supplier/suppliers.html.twig', [
@@ -32,7 +32,7 @@ class SupplierController extends AbstractController
         ]);
     }
 
-    #[Route('/znacky/{producerSlug}', name: 'shop_producer_products')]
+    #[Route('/{slug}-v', name: 'shop_producer_products', priority: 2)]
     #[ParamConverter('producer', class: 'App\Entity\Project\Producer', options: ['mapping' => ['producerSlug' => 'slug']])]
     public function producerProducts(Producer $producer, ProductRepository $productRepository, SessionInterface $session): Response
     {
