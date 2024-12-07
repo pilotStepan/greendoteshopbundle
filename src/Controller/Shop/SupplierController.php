@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
@@ -21,12 +22,13 @@ class SupplierController extends AbstractController
     {
     }
 
-    #[Route('/znacky', name: 'shop_producer_list', priority: 2)]
-    public function producerList(ProducerRepository $producerRepository): Response
+    #[Route('/{slug}', name: 'shop_supplier_list', priority: 2)]
+    public function producerList(Category $category, ProducerRepository $producerRepository): Response
     {
-        return $this->render('shop/producer/list.html.twig', [
+        return $this->render('shop/supplier/suppliers.html.twig', [
             'producers' => $producerRepository->findAll(),
-            'title'     => $this->translator->trans('Značky')
+            'title'     => $category->getTitle(),
+            'category'  => $category,
         ]);
     }
 

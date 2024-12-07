@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Product variant filter type">
-      <change afterPath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="SupplierController">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -250,15 +249,7 @@
       <workItem from="1731764738442" duration="11317000" />
       <workItem from="1731834334148" duration="9132000" />
       <workItem from="1733300771694" duration="1212000" />
-      <workItem from="1733479775263" duration="4674000" />
-    </task>
-    <task id="LOCAL-00012" summary="Removed AlgoliaSearch.php">
-      <option name="closed" value="true" />
-      <created>1725350177369</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
-      <option name="project" value="LOCAL" />
-      <updated>1725350177369</updated>
+      <workItem from="1733479775263" duration="5307000" />
     </task>
     <task id="LOCAL-00013" summary="Removed AlgoliaSearch.php">
       <option name="closed" value="true" />
@@ -644,7 +635,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733497099984</updated>
     </task>
-    <option name="localTasksCounter" value="61" />
+    <task id="LOCAL-00061" summary="SupplierController">
+      <option name="closed" value="true" />
+      <created>1733565686017</created>
+      <option name="number" value="00061" />
+      <option name="presentableId" value="LOCAL-00061" />
+      <option name="project" value="LOCAL" />
+      <updated>1733565686017</updated>
+    </task>
+    <option name="localTasksCounter" value="62" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -674,7 +673,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="EraseCredentials update" />
     <MESSAGE value="DiscountType" />
     <MESSAGE value="API" />
     <MESSAGE value="Routes" />
@@ -699,6 +697,7 @@
     <MESSAGE value="Catefory sub menu" />
     <MESSAGE value="Cheap transportation" />
     <MESSAGE value="Product variant filter type" />
-    <option name="LAST_COMMIT_MESSAGE" value="Product variant filter type" />
+    <MESSAGE value="SupplierController" />
+    <option name="LAST_COMMIT_MESSAGE" value="SupplierController" />
   </component>
 </project>
