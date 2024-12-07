@@ -35,57 +35,11 @@ class SupplierController extends AbstractController
     #[Route('/{slug}-v', name: 'shop_producer_products', priority: 2)]
     public function producerProducts(Producer $producer, ProductRepository $productRepository, SessionInterface $session): Response
     {
-        $products = $productRepository->findProductsByProducer($producer->getId());
 
-        $preparedProducts = array_map(function ($product) {
-            $sizes  = [];
-            $colors = [];
-
-            foreach ($product->getProductVariants() as $variant) {
-                foreach ($variant->getParameters() as $parameter) {
-                    $parameterGroup = $parameter->getParameterGroup();
-                    if ($parameterGroup) {
-                        $parameterGroupName = $parameterGroup->getName();
-                        if ($parameterGroupName === 'Velikost') {
-                            $size = $parameter->getData();
-                            if (!in_array($size, $sizes)) {
-                                $sizes[] = $size;
-                            }
-                        } elseif ($parameterGroupName === 'Barva') {
-                            $colorName = $parameter->getData();
-                            $colorCode = $parameter->getData();
-                            $colorData = [
-                                'name' => $colorName,
-                                'code' => $colorCode,
-                            ];
-                            if (!in_array($colorData, $colors)) {
-                                $colors[] = $colorData;
-                            }
-                        }
-                    }
-                }
-            }
-
-//            $currencySymbol = $this->session->get('selectedCurrency');
-
-            return [
-                'id'                  => $product->getId(),
-                'name'                => $product->getName(),
-                'slug'                => $product->getSlug(),
-                'mainImage'           => $product->getUpload() ? $product->getUpload()->getPath() : null,
-                'availability'        => $product->getAvailability(),
-                'priceCurrency'      => 'CZK',
-//              'priceCurrencySymbol' => $currencySymbol,
-                'priceCurrencySymbol' => 'Kč',
-                'sizes'               => $sizes,
-                'colors'              => $colors,
-            ];
-        }, $products);
 
         return $this->render('shop/producer/products.html.twig', [
             'title'    => $producer->getName(),
-            'producer' => $producer,
-            'products' => $preparedProducts,
+            'supplier' => $producer
         ]);
     }
 }
