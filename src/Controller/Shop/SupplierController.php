@@ -37,7 +37,7 @@ class SupplierController extends AbstractController
     {
 
 
-        return $this->render('shop/producer/products.html.twig', [
+        return $this->render('shop/supplier/products.html.twig', [
             'title'    => $producer->getName(),
             'supplier' => $producer
         ]);

@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="SupplierController">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Filter by supplier">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/StateProvider/ProductStateProvider.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProvider/ProductStateProvider.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -250,15 +249,7 @@
       <workItem from="1731764738442" duration="11317000" />
       <workItem from="1731834334148" duration="9132000" />
       <workItem from="1733300771694" duration="1212000" />
-      <workItem from="1733479775263" duration="7879000" />
-    </task>
-    <task id="LOCAL-00018" summary="API">
-      <option name="closed" value="true" />
-      <created>1727423971670</created>
-      <option name="number" value="00018" />
-      <option name="presentableId" value="LOCAL-00018" />
-      <option name="project" value="LOCAL" />
-      <updated>1727423971670</updated>
+      <workItem from="1733479775263" duration="8293000" />
     </task>
     <task id="LOCAL-00019" summary="API">
       <option name="closed" value="true" />
@@ -644,7 +635,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733567976926</updated>
     </task>
-    <option name="localTasksCounter" value="67" />
+    <task id="LOCAL-00067" summary="Filter by supplier">
+      <option name="closed" value="true" />
+      <created>1733569044856</created>
+      <option name="number" value="00067" />
+      <option name="presentableId" value="LOCAL-00067" />
+      <option name="project" value="LOCAL" />
+      <updated>1733569044857</updated>
+    </task>
+    <option name="localTasksCounter" value="68" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -674,7 +673,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="DiscountType" />
     <MESSAGE value="API" />
     <MESSAGE value="Routes" />
     <MESSAGE value="Services" />
@@ -699,6 +697,7 @@
     <MESSAGE value="Cheap transportation" />
     <MESSAGE value="Product variant filter type" />
     <MESSAGE value="SupplierController" />
-    <option name="LAST_COMMIT_MESSAGE" value="SupplierController" />
+    <MESSAGE value="Filter by supplier" />
+    <option name="LAST_COMMIT_MESSAGE" value="Filter by supplier" />
   </component>
 </project>
