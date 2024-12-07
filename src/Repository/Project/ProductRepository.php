@@ -347,6 +347,19 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    public function findProductsForProducers(QueryBuilder $qb, iterable $producers): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+
+        $qb->join($alias . '.producers', 'pp');
+        $qb->where('pp.id IN :producers');
+        $qb->setParameter('producers', $producers);
+
+
+        return $qb;
+    }
+
     public function productsByParameters(QueryBuilder $queryBuilder, iterable $parameters): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];

@@ -40,7 +40,12 @@ class ProductStateProvider implements ProviderInterface
         $filters = json_decode($context['filters']['parameters']);
 
         $qb = $this->productRepository->createQueryBuilder('p');
-        $this->productRepository->findProductsInCategory($qb, $filters->categoryId);
+        if($filters->categoryId > 0) {
+            $this->productRepository->findProductsInCategory($qb, $filters->categoryId);
+        }
+        if(count($filters->supplierIds) > 0) {
+            $this->productRepository->findProductsForProducers($qb, $filters->supplierIds);
+        }
         //if($filters->selectedParameters) {
         $this->productRepository->productsByParameters($qb, $filters->selectedParameters);
         //}
