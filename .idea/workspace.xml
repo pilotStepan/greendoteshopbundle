@@ -7,6 +7,7 @@
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Filter by supplier">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/SupplierController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -249,15 +250,7 @@
       <workItem from="1731764738442" duration="11317000" />
       <workItem from="1731834334148" duration="9132000" />
       <workItem from="1733300771694" duration="1212000" />
-      <workItem from="1733479775263" duration="8293000" />
-    </task>
-    <task id="LOCAL-00019" summary="API">
-      <option name="closed" value="true" />
-      <created>1727424289330</created>
-      <option name="number" value="00019" />
-      <option name="presentableId" value="LOCAL-00019" />
-      <option name="project" value="LOCAL" />
-      <updated>1727424289330</updated>
+      <workItem from="1733479775263" duration="9025000" />
     </task>
     <task id="LOCAL-00020" summary="Routes">
       <option name="closed" value="true" />
@@ -643,7 +636,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733569044857</updated>
     </task>
-    <option name="localTasksCounter" value="68" />
+    <task id="LOCAL-00068" summary="Filter by supplier">
+      <option name="closed" value="true" />
+      <created>1733569356415</created>
+      <option name="number" value="00068" />
+      <option name="presentableId" value="LOCAL-00068" />
+      <option name="project" value="LOCAL" />
+      <updated>1733569356415</updated>
+    </task>
+    <option name="localTasksCounter" value="69" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

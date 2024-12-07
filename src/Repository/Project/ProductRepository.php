@@ -251,6 +251,7 @@ class ProductRepository extends ServiceEntityRepository
         $alias = $qb->getRootAliases()[0];
 
         $qb
+            ->innerJoin('pv.availability', 'a')
             ->andWhere($alias . '.state = :state')
             ->andWhere('pv.isActive = :variantActive')
             ->andWhere('a.id = :availabilityId')
@@ -352,8 +353,8 @@ class ProductRepository extends ServiceEntityRepository
         $alias = $qb->getRootAliases()[0];
 
 
-        $qb->join($alias . '.producers', 'pp');
-        $qb->where('pp.id IN :producers');
+        //$qb->join($alias . '.producers', 'pp');
+        $qb->where($alias . '.producer IN (:producers)');
         $qb->setParameter('producers', $producers);
 
 

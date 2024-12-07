@@ -33,7 +33,7 @@ class SupplierController extends AbstractController
     }
 
     #[Route('/{slug}-v', name: 'shop_producer_products', priority: 2)]
-    public function producerProducts(Producer $producer, ProductRepository $productRepository, SessionInterface $session): Response
+    public function producerProducts(Producer $producer): Response
     {
 
 
