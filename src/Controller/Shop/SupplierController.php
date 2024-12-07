@@ -33,7 +33,6 @@ class SupplierController extends AbstractController
     }
 
     #[Route('/{slug}-v', name: 'shop_producer_products', priority: 2)]
-    #[ParamConverter('producer', class: 'App\Entity\Project\Producer', options: ['mapping' => ['producerSlug' => 'slug']])]
     public function producerProducts(Producer $producer, ProductRepository $productRepository, SessionInterface $session): Response
     {
         $products = $productRepository->findProductsByProducer($producer->getId());
