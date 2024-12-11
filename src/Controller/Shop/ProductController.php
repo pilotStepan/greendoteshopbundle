@@ -78,6 +78,7 @@ class ProductController extends AbstractController
         //return $this->render('template/product-detail.html.twig');
 
         return $this->render('shop/product/index.html.twig', [
+            'product' => $product,
             'productId' => $product->getId(),
         ]);
     }
