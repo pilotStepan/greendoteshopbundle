@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Comment content string to text">
-      <change afterPath="$PROJECT_DIR$/src/StateProcessor/SessionPurchaseStateProcessor.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="SessionPurchase">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
     </list>
@@ -252,15 +251,8 @@
       <workItem from="1733300771694" duration="1212000" />
       <workItem from="1733479775263" duration="9810000" />
       <workItem from="1733909034370" duration="1358000" />
-      <workItem from="1734685063046" duration="242000" />
-    </task>
-    <task id="LOCAL-00023" summary="Services">
-      <option name="closed" value="true" />
-      <created>1727698083999</created>
-      <option name="number" value="00023" />
-      <option name="presentableId" value="LOCAL-00023" />
-      <option name="project" value="LOCAL" />
-      <updated>1727698083999</updated>
+      <workItem from="1734685063046" duration="1869000" />
+      <workItem from="1735811832561" duration="791000" />
     </task>
     <task id="LOCAL-00024" summary="Twig ext">
       <option name="closed" value="true" />
@@ -646,7 +638,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733911410413</updated>
     </task>
-    <option name="localTasksCounter" value="72" />
+    <task id="LOCAL-00072" summary="SessionPurchase">
+      <option name="closed" value="true" />
+      <created>1734685319518</created>
+      <option name="number" value="00072" />
+      <option name="presentableId" value="LOCAL-00072" />
+      <option name="project" value="LOCAL" />
+      <updated>1734685319519</updated>
+    </task>
+    <option name="localTasksCounter" value="73" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -676,7 +676,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Routes" />
     <MESSAGE value="Services" />
     <MESSAGE value="Twig ext" />
     <MESSAGE value="Update API" />
@@ -701,6 +700,7 @@
     <MESSAGE value="SupplierController" />
     <MESSAGE value="Filter by supplier" />
     <MESSAGE value="Comment content string to text" />
-    <option name="LAST_COMMIT_MESSAGE" value="Comment content string to text" />
+    <MESSAGE value="SessionPurchase" />
+    <option name="LAST_COMMIT_MESSAGE" value="SessionPurchase" />
   </component>
 </project>
