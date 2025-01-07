@@ -43,7 +43,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Get(),
         new Post(),
         new Patch(
-            uriTemplate: '/purchase/session',
+            uriTemplate: '/purchases/session',
             //processor: SessionPurchaseStateProcessor::class,
             provider: PurchaseStateProvider::class,
             denormalizationContext: ['groups' => ['purchase:write']],
