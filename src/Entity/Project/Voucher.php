@@ -27,7 +27,7 @@ class Voucher
 
     #[ORM\Column(length: 255)]
     #[Groups(['purchase:read'])]
-    private ?string $hash = null;
+    private string $hash;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $date_issued = null;
@@ -78,7 +78,7 @@ class Voucher
         return $this;
     }
 
-    public function getHash(): ?string
+    public function getHash(): string
     {
         return $this->hash;
     }

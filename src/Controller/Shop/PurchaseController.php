@@ -539,22 +539,15 @@ class PurchaseController extends AbstractController
     }
 
     #[Route('/objednavka/obsah', name: 'shop_order_first', options: ['expose' => true])]
+    #[Route('/objednavka/doprava', name: 'shop_order_second', options: ['expose' => true])]
+    #[Route('/objednavka/dodaci', name: 'shop_order_third', options: ['expose' => true])]
     public function first(): Response
     {
         return $this->render('shop/cart/step1.html.twig');
     }
 
-    #[Route('/objednavka/doprava', name: 'shop_order_second', options: ['expose' => true])]
-    public function second(): Response
-    {
-        return $this->render('shop/cart/step2.html.twig');
-    }
 
-    #[Route('/objednavka/platba', name: 'shop_order_third', options: ['expose' => true])]
-    public function third(): Response
-    {
-        return $this->render('shop/cart/step3.html.twig');
-    }
+
 
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
     public function thankYou($id, SessionInterface $session): Response

@@ -9,17 +9,24 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\ApiProperty;
 
 /**
  *
  */
 #[ORM\Entity(repositoryClass: ClientDiscountRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['client_discount:read']],
+    denormalizationContext: ['groups' => ['client_discount:write']],
+    paginationEnabled: false
+)]
 class ClientDiscount
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['purchase:read'])]
+    #[ApiProperty(identifier: false)]
     private ?int $id = null;
 
     #[ORM\Column]
@@ -53,6 +60,11 @@ class ClientDiscount
      */
     #[ORM\Column(type: "string", enumType: DiscountType::class)]
     private DiscountType $type;
+
+    #[ORM\Column(length: 255)]
+    #[Groups(['purchase:read'])]
+    #[ApiProperty(identifier: true)]
+    private ?string $hash = null;
 
 
     /**
@@ -171,6 +183,18 @@ class ClientDiscount
     public function setType(DiscountType $type): static
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getHash(): ?string
+    {
+        return $this->hash;
+    }
+
+    public function setHash(string $hash): static
+    {
+        $this->hash = $hash;
 
         return $this;
     }

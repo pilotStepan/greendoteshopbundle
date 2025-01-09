@@ -132,7 +132,16 @@ class Purchase
     private $Client;
 
     #[Groups(['purchase:read', 'purchase:write'])]
+    private $total_price_no_services;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $total_price;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $transportation_price;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $payment_price;
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseProductVariant::class, cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -151,7 +160,7 @@ class Purchase
     private Collection $VouchersIssued;
 
     #[ORM\OneToMany(mappedBy: 'Purchase_used', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
-    #[Groups(['purchase:read'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private Collection $VouchersUsed;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'Purchases')]
@@ -165,7 +174,7 @@ class Purchase
     private Collection $payments;
 
     #[ORM\ManyToOne(inversedBy: 'purchase')]
-    #[Groups(['purchase:read'])]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private ?ClientDiscount $clientDiscount;
 
     #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'Purchases')]
@@ -607,6 +616,38 @@ class Purchase
         return $this;
     }
 
+    /**
+     * @return float
+     */
+    public function getTransportationPrice()
+    {
+        return $this->transportation_price;
+    }
+
+    /**
+     * @param float $transportation_price
+     */
+    public function setTransportationPrice($transportation_price): void
+    {
+        $this->transportation_price = $transportation_price;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPaymentPrice()
+    {
+        return $this->payment_price;
+    }
+
+    /**
+     * @param float $payment_price
+     */
+    public function setPaymentPrice($payment_price): void
+    {
+        $this->payment_price = $payment_price;
+    }
+
     public function getClientAddress(): ?ClientAddress
     {
         return $this->clientAddress;
@@ -671,6 +712,22 @@ class Purchase
         $this->clientDiscount = $clientDiscount;
 
         return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getTotalPriceNoServices()
+    {
+        return $this->total_price_no_services;
+    }
+
+    /**
+     * @param float $total_price_no_services
+     */
+    public function setTotalPriceNoServices($total_price_no_services): void
+    {
+        $this->total_price_no_services = $total_price_no_services;
     }
 
 }

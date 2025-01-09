@@ -43,10 +43,22 @@ class PurchaseStateProvider implements ProviderInterface
              */
             //$currency = $this->requestStack->getCurrentRequest()->get('currency');
             $currency = $this->currencyRepository->findOneBy([]);
-            $total_price = $this->priceCalculator->calculatePurchasePrice($purchase, $currency, VatCalculationType::WithVAT, null, DiscountCalculationType::WithDiscount, false, VoucherCalculationType::WithoutVoucher, true);
+            $total_price = $this->priceCalculator->calculatePurchasePrice($purchase, $currency, VatCalculationType::WithVAT, null, DiscountCalculationType::WithDiscount, true, VoucherCalculationType::WithVoucher, true);
             $purchase->setTotalPrice($total_price);
+
+            $total_price_no_services = $this->priceCalculator->calculatePurchasePrice($purchase, $currency, VatCalculationType::WithVAT, null, DiscountCalculationType::WithDiscount, false, VoucherCalculationType::WithoutVoucher, true);
+            $purchase->setTotalPriceNoServices($total_price_no_services);
+
             foreach ($purchase->getProductVariants() as $productVariant) {
                 $productVariant->setTotalPrice($this->priceCalculator->calculateProductVariantPrice($productVariant, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount, false, true));
+            }
+
+            if($purchase->getTransportation()){
+                $purchase->setTransportationPrice($this->priceCalculator->transportationPrice($purchase, VatCalculationType::WithVAT, $currency));
+            }
+
+            if($purchase->getPaymentType()){
+                $purchase->setPaymentPrice($this->priceCalculator->paymentPrice($purchase, VatCalculationType::WithVAT, $currency));
             }
 
             return $purchase;
