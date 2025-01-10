@@ -128,7 +128,7 @@ class Purchase
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
-    private $Client;
+    private $client;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     private $total_price_no_services;
@@ -162,17 +162,17 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private Collection $vouchersUsed;
 
-    #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'Purchases')]
+    #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'purchases')]
     private Collection $Consents;
 
-    #[ORM\ManyToOne(inversedBy: 'Purchase')]
+    #[ORM\ManyToOne(inversedBy: 'purchases', targetEntity: ClientAddress::class)]
     #[Groups(['purchase:read'])]
     private ?ClientAddress $clientAddress = null;
 
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Payment::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
     private Collection $payments;
 
-    #[ORM\ManyToOne(inversedBy: 'purchase')]
+    #[ORM\ManyToOne(inversedBy: 'purchases', targetEntity: ClientDiscount::class)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?ClientDiscount $clientDiscount;
 
@@ -386,12 +386,12 @@ class Purchase
 
     public function getClient(): ?Client
     {
-        return $this->Client;
+        return $this->client;
     }
 
     public function setClient(?Client $Client): self
     {
-        $this->Client = $Client;
+        $this->client = $Client;
 
         return $this;
     }
@@ -658,6 +658,8 @@ class Purchase
 
         return $this;
     }
+
+
 
     public function getPayments(): Collection
     {

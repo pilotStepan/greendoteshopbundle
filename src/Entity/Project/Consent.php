@@ -28,7 +28,7 @@ class Consent
      * @var Collection<int, Purchase>
      */
     #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'Consents')]
-    private Collection $Purchases;
+    private Collection $purchases;
 
     public function __construct()
     {
@@ -81,13 +81,13 @@ class Consent
      */
     public function getPurchases(): Collection
     {
-        return $this->Purchases;
+        return $this->purchases;
     }
 
     public function addPurchase(Purchase $purchase): static
     {
-        if (!$this->Purchases->contains($purchase)) {
-            $this->Purchases->add($purchase);
+        if (!$this->purchases->contains($purchase)) {
+            $this->purchases->add($purchase);
         }
 
         return $this;
@@ -95,7 +95,7 @@ class Consent
 
     public function removePurchase(Purchase $purchase): static
     {
-        $this->Purchases->removeElement($purchase);
+        $this->purchases->removeElement($purchase);
 
         return $this;
     }

@@ -96,7 +96,7 @@ class ClientAddress
 
     #[ORM\OneToMany(mappedBy: 'clientAddress', targetEntity: Purchase::class)]
     #[Groups(['clientAddress:read', 'clientAddress:write'])]
-    private Collection $Purchase;
+    private Collection $purchases;
 
     #[ORM\Column(nullable: true)]
     #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write'])]
@@ -327,15 +327,15 @@ class ClientAddress
     /**
      * @return Collection<int, Purchase>
      */
-    public function getPurchase(): Collection
+    public function getPurchases(): Collection
     {
-        return $this->Purchase;
+        return $this->purchases;
     }
 
     public function addPurchase(Purchase $purchase): static
     {
-        if (!$this->Purchase->contains($purchase)) {
-            $this->Purchase->add($purchase);
+        if (!$this->purchases->contains($purchase)) {
+            $this->purchases->add($purchase);
             $purchase->setClientAddress($this);
         }
 
@@ -344,7 +344,7 @@ class ClientAddress
 
     public function removePurchase(Purchase $purchase): static
     {
-        if ($this->Purchase->removeElement($purchase)) {
+        if ($this->purchases->removeElement($purchase)) {
             // set the owning side to null (unless already changed)
             if ($purchase->getClientAddress() === $this) {
                 $purchase->setClientAddress(null);
