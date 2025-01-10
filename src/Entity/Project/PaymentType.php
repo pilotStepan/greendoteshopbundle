@@ -82,7 +82,7 @@ class PaymentType implements Translatable
      * @var Collection<int, HandlingPrice>
      */
     #[ORM\OneToMany(mappedBy: 'paymentType', targetEntity: HandlingPrice::class)]
-    #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['payment:read', 'payment:write'])]
     private Collection $handlingPrices;
 
     #[ORM\Column(length: 255, nullable: true)]

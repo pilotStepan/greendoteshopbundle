@@ -7,26 +7,32 @@ use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\ApiProperty;
 
 /**
  *  Gift certificate that can be bought on the eshop and used as equivalent to money value.
  */
 #[ORM\Entity(repositoryClass: VoucherRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['voucher:read']],
+    denormalizationContext: ['groups' => ['voucher:write']],
+)]
 class Voucher
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['purchase:read'])]
+    #[Groups(['purchase:read', 'voucher:read'])]
+    #[ApiProperty(identifier: false)]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['purchase:read'])]
+    #[Groups(['purchase:read', 'voucher:read', 'voucher:write'])]
     private ?int $amount = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['purchase:read'])]
+    #[Groups(['purchase:read', 'voucher:read'])]
+    #[ApiProperty(identifier: true)]
     private string $hash;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
@@ -37,7 +43,7 @@ class Voucher
      * @var Purchase|null
      * Link to the purchase within which the certificate was bought and according to which state is linked its validity.
      */
-    #[ORM\ManyToOne(inversedBy: 'vouchers')]
+    #[ORM\ManyToOne(inversedBy: 'VouchersIssued')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Purchase $Purchase_issued = null;
 
@@ -45,8 +51,9 @@ class Voucher
      * @var Purchase|null
      * Link to the purchase where the certificate was used for payment.
      */
-    #[ORM\ManyToOne(inversedBy: 'vouchers')]
-    private ?Purchase $Purchase_used = null;
+    #[ORM\ManyToOne(inversedBy: 'vouchersUsed')]
+    #[Groups(['purchase:write', 'voucher:read', 'voucher:write'])]
+    private ?Purchase $purchaseUsed = null;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['voucher:read', 'voucher:write'])]
@@ -116,15 +123,17 @@ class Voucher
 
     public function getPurchaseUsed(): ?Purchase
     {
-        return $this->Purchase_used;
+        return $this->purchaseUsed;
     }
 
-    public function setPurchaseUsed(?Purchase $Purchase_used): static
+    public function setPurchaseUsed(?Purchase $PurchaseUsed): static
     {
-        $this->Purchase_used = $Purchase_used;
+        $this->purchaseUsed = $PurchaseUsed;
 
         return $this;
     }
+
+
 
     public function getState(): ?string
     {

@@ -58,7 +58,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationEnabled: false
 )]
 #[Get(provider: PurchaseStateProvider::class)]
-//#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact'])]
 #[ApiFilter(PurchaseSession::class)]
 class Purchase
 {
@@ -159,9 +158,9 @@ class Purchase
     #[ORM\OneToMany(mappedBy: 'Purchase_issued', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
     private Collection $VouchersIssued;
 
-    #[ORM\OneToMany(mappedBy: 'Purchase_used', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'purchaseUsed', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
-    private Collection $VouchersUsed;
+    private Collection $vouchersUsed;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'Purchases')]
     private Collection $Consents;
@@ -202,7 +201,7 @@ class Purchase
         $this->notes = new ArrayCollection();
         $this->purchaseTrackings = new ArrayCollection();
         $this->VouchersIssued = new ArrayCollection();
-        $this->VouchersUsed = new ArrayCollection();
+        $this->vouchersUsed = new ArrayCollection();
         $this->Consents = new ArrayCollection();
         $this->payments = new ArrayCollection();
     }
@@ -564,13 +563,13 @@ class Purchase
      */
     public function getVouchersUsed(): Collection
     {
-        return $this->VouchersUsed;
+        return $this->vouchersUsed;
     }
 
     public function addVoucherUsed(Voucher $voucher): static
     {
-        if (!$this->VouchersUsed->contains($voucher)) {
-            $this->VouchersUsed->add($voucher);
+        if (!$this->vouchersUsed->contains($voucher)) {
+            $this->vouchersUsed->add($voucher);
             $voucher->setPurchaseUsed($this);
         }
 
@@ -579,7 +578,7 @@ class Purchase
 
     public function removeVoucherUsed(Voucher $voucher): static
     {
-        if ($this->VouchersUsed->removeElement($voucher)) {
+        if ($this->vouchersUsed->removeElement($voucher)) {
             // set the owning side to null (unless already changed)
             if ($voucher->getPurchaseUsed() === $this) {
                 $voucher->setPurchaseUsed(null);

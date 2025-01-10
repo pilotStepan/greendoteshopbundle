@@ -4,13 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="SessionPurchase">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Purchase pricing api changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/ClientDiscount.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ClientDiscount.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/PaymentType.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/PaymentType.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProvider/PurchaseStateProvider.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -256,15 +255,7 @@
       <workItem from="1733479775263" duration="9810000" />
       <workItem from="1733909034370" duration="1358000" />
       <workItem from="1734685063046" duration="1869000" />
-      <workItem from="1735811832561" duration="3977000" />
-    </task>
-    <task id="LOCAL-00026" summary="Update API">
-      <option name="closed" value="true" />
-      <created>1728636804290</created>
-      <option name="number" value="00026" />
-      <option name="presentableId" value="LOCAL-00026" />
-      <option name="project" value="LOCAL" />
-      <updated>1728636804290</updated>
+      <workItem from="1735811832561" duration="6116000" />
     </task>
     <task id="LOCAL-00027" summary="Update API">
       <option name="closed" value="true" />
@@ -650,7 +641,15 @@
       <option name="project" value="LOCAL" />
       <updated>1736243852907</updated>
     </task>
-    <option name="localTasksCounter" value="75" />
+    <task id="LOCAL-00075" summary="Purchase pricing api changes">
+      <option name="closed" value="true" />
+      <created>1736421936947</created>
+      <option name="number" value="00075" />
+      <option name="presentableId" value="LOCAL-00075" />
+      <option name="project" value="LOCAL" />
+      <updated>1736421936947</updated>
+    </task>
+    <option name="localTasksCounter" value="76" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -680,7 +679,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Services" />
     <MESSAGE value="Twig ext" />
     <MESSAGE value="Update API" />
     <MESSAGE value="Changes to cart handling" />
@@ -705,6 +703,7 @@
     <MESSAGE value="Filter by supplier" />
     <MESSAGE value="Comment content string to text" />
     <MESSAGE value="SessionPurchase" />
-    <option name="LAST_COMMIT_MESSAGE" value="SessionPurchase" />
+    <MESSAGE value="Purchase pricing api changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Purchase pricing api changes" />
   </component>
 </project>
