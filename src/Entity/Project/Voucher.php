@@ -52,7 +52,7 @@ class Voucher
      * Link to the purchase where the certificate was used for payment.
      */
     #[ORM\ManyToOne(inversedBy: 'vouchersUsed')]
-    #[Groups(['purchase:write', 'voucher:read', 'voucher:write'])]
+    #[Groups(['voucher:read', 'voucher:write'])]
     private ?Purchase $purchaseUsed = null;
 
     #[ORM\Column(type: 'string', length: 255)]
