@@ -125,6 +125,7 @@ class Transportation implements Translatable
 
     #[ORM\ManyToOne(targetEntity: TransportationAction::class, cascade: ['persist'], inversedBy: 'transportations')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['transportation:read'])]
     private $action;
 
     /**
