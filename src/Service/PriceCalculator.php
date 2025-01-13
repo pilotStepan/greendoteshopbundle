@@ -102,7 +102,9 @@ class PriceCalculator
             $finalPrice += $serviceFee;
         }
 
-//        $finalPrice = $this->applyVoucher($finalPrice, $purchase, $voucherCalculationType, $currency);
+
+
+        $finalPrice = $this->applyVouchers($finalPrice, $purchase, $voucherCalculationType, $currency);
 
         if ($do_rounding) {
             $finalPrice = $this->roundToNearestHalf($finalPrice);
@@ -436,9 +438,8 @@ class PriceCalculator
         throw new Exception("Unknown Enum::discountCalculationType");
     }
 
-    public function applyVoucher(float|int|null         $finalPrice,
-//                                 Purchase               $purchase,
-                                 Voucher                $voucher,
+    public function applyVouchers(float|int|null         $finalPrice,
+                                 Purchase               $purchase,
                                  VoucherCalculationType $voucherCalculationType,
                                  Currency               $currency
     )
@@ -453,14 +454,19 @@ class PriceCalculator
 //            $overallDiscountAmount += $voucher->getState() == "paid" ? $voucher->getAmount() : 0;
 //        }
 
-        $discountAmount = $voucher->getState() == "paid" ? $voucher->getAmount() : 0;
+        foreach ($purchase->getVouchersUsed() as $voucher) {
 
-        if ($currency) {
-            $discountAmount = $this->convertCurrency($discountAmount, $currency);
-        }
-        $finalPrice -= $discountAmount;
-        if ($voucherCalculationType != VoucherCalculationType::WithVoucherToMinus) {
-            $finalPrice = max($finalPrice, 0);
+
+            $discountAmount = $voucher->getState() == "paid" ? $voucher->getAmount() : 0;
+
+            if ($currency) {
+                $discountAmount = $this->convertCurrency($discountAmount, $currency);
+            }
+            $finalPrice -= $discountAmount;
+            if ($voucherCalculationType != VoucherCalculationType::WithVoucherToMinus) {
+                $finalPrice = max($finalPrice, 0);
+            }
+
         }
         return $finalPrice;
     }

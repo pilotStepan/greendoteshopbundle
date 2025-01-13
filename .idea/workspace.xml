@@ -6,7 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Purchase pricing api changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/PriceCalculator.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/PriceCalculator.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -252,15 +253,7 @@
       <workItem from="1733479775263" duration="9810000" />
       <workItem from="1733909034370" duration="1358000" />
       <workItem from="1734685063046" duration="1869000" />
-      <workItem from="1735811832561" duration="8536000" />
-    </task>
-    <task id="LOCAL-00030" summary="Changes to cart handling">
-      <option name="closed" value="true" />
-      <created>1730725772522</created>
-      <option name="number" value="00030" />
-      <option name="presentableId" value="LOCAL-00030" />
-      <option name="project" value="LOCAL" />
-      <updated>1730725772522</updated>
+      <workItem from="1735811832561" duration="9534000" />
     </task>
     <task id="LOCAL-00031" summary="Changes to cart handling">
       <option name="closed" value="true" />
@@ -646,7 +639,15 @@
       <option name="project" value="LOCAL" />
       <updated>1736755351614</updated>
     </task>
-    <option name="localTasksCounter" value="79" />
+    <task id="LOCAL-00079" summary="Purchase pricing api changes">
+      <option name="closed" value="true" />
+      <created>1736757723570</created>
+      <option name="number" value="00079" />
+      <option name="presentableId" value="LOCAL-00079" />
+      <option name="project" value="LOCAL" />
+      <updated>1736757723570</updated>
+    </task>
+    <option name="localTasksCounter" value="80" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
