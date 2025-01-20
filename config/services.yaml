@@ -5,7 +5,7 @@ services:
 
   Greendot\EshopBundle\:
     resource: '../src/*'
-    exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+    exclude: '../src/{DependencyInjection,Migrations,Tests,Kernel.php}'
 
   Greendot\EshopBundle\Controller\:
     resource: '../src/Controller'

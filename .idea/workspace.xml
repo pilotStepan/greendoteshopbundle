@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Purchase pricing api changes">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="2">
+      <change beforePath="$PROJECT_DIR$/.idea/phpunit.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/phpunit.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Voucher.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,7 +15,9 @@
   </component>
   <component name="ComposerSettings" synchronizationState="SYNCHRONIZE">
     <pharConfigPath>$PROJECT_DIR$/composer.json</pharConfigPath>
-    <execution />
+    <execution>
+      <executable path="composer" />
+    </execution>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -25,13 +27,7 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="da651270288314f7607e300d93ea8fdc4dac521e" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -41,8 +37,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pilotStepan/GreendotEshopBundle.git&quot;,
-    &quot;accountId&quot;: &quot;b973daa2-4046-49f9-8e5a-4a327ffe925a&quot;
+    &quot;url&quot;: &quot;https://github.com/pilotStepan/greendoteshopbundle.git&quot;,
+    &quot;accountId&quot;: &quot;7a005ae7-095e-4e6b-b7f3-6c09f4638612&quot;
   }
 }</component>
   <component name="MarkdownSettingsMigration">
@@ -52,7 +48,7 @@
     <scope name="i18n Ally: Symfony/PHP source" pattern="file[GreendotEshopBundle]:src//*&amp;&amp;!file[GreendotEshopBundle]:src/DataFixtures//*" />
     <scope name="i18n Ally: Symfony/Twig templates" pattern="file[GreendotEshopBundle]:templates//*" />
   </component>
-  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\wamp64\bin\php\php8.1.0\php.exe">
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="PHP">
     <include_path>
       <path value="$PROJECT_DIR$/vendor/symfony/service-contracts" />
       <path value="$PROJECT_DIR$/vendor/composer" />
@@ -179,42 +175,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/stepa/PhpstormProjects/GreendotEshopBundle/src&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;php.override.implement.member.chooser.php.doc&quot;: &quot;NONE&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Repositories/greendoteshopbundle",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src" />
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\config" />
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\config\packages" />
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Service" />
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository\Project" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Resources\config" />
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Repository" />
+      <recent name="C:\Users\stepa\PhpstormProjects\GreendotEshopBundle\src\Entity" />
     </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PS-241.18034.69" />
-        <option value="bundled-php-predefined-ba97393d7c68-48a1a656d44e-com.jetbrains.php.sharedIndexes-PS-241.18034.69" />
-        <option value="php-doctrine_orm-37cbfb0ca1b6-073eaa2d" />
+        <option value="bundled-js-predefined-1d06a55b98c1-91d5c284f522-JavaScript-PS-241.15989.102" />
+        <option value="bundled-php-predefined-ba97393d7c68-c76157a7178b-com.jetbrains.php.sharedIndexes-PS-241.15989.102" />
       </set>
     </attachedChunks>
   </component>
@@ -233,474 +221,53 @@
       <workItem from="1712047273711" duration="6948000" />
       <workItem from="1713256372239" duration="3345000" />
       <workItem from="1713778153881" duration="302000" />
-      <workItem from="1726557533540" duration="5162000" />
-      <workItem from="1727288857403" duration="596000" />
-      <workItem from="1727423273085" duration="4002000" />
-      <workItem from="1727694111756" duration="2843000" />
-      <workItem from="1728299235183" duration="2862000" />
-      <workItem from="1728463375555" duration="597000" />
-      <workItem from="1728636273651" duration="1136000" />
-      <workItem from="1729496601370" duration="8055000" />
-      <workItem from="1730725517934" duration="6162000" />
-      <workItem from="1730887185648" duration="12003000" />
-      <workItem from="1731173321215" duration="595000" />
-      <workItem from="1731242224272" duration="6312000" />
-      <workItem from="1731576442264" duration="8303000" />
-      <workItem from="1731764738442" duration="11317000" />
-      <workItem from="1731834334148" duration="9132000" />
-      <workItem from="1733300771694" duration="1212000" />
-      <workItem from="1733479775263" duration="9810000" />
-      <workItem from="1733909034370" duration="1358000" />
-      <workItem from="1734685063046" duration="1869000" />
-      <workItem from="1735811832561" duration="8536000" />
+      <workItem from="1719824842206" duration="433000" />
+      <workItem from="1719827513247" duration="327000" />
+      <workItem from="1721816508993" duration="97000" />
+      <workItem from="1736756854536" duration="880000" />
+      <workItem from="1736757745031" duration="2422000" />
     </task>
-    <task id="LOCAL-00030" summary="Changes to cart handling">
+    <task id="LOCAL-00001" summary="Initial">
       <option name="closed" value="true" />
-      <created>1730725772522</created>
-      <option name="number" value="00030" />
-      <option name="presentableId" value="LOCAL-00030" />
+      <created>1712221174608</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
       <option name="project" value="LOCAL" />
-      <updated>1730725772522</updated>
+      <updated>1712221174608</updated>
     </task>
-    <task id="LOCAL-00031" summary="Changes to cart handling">
+    <task id="LOCAL-00002" summary="Initial">
       <option name="closed" value="true" />
-      <created>1730726959921</created>
-      <option name="number" value="00031" />
-      <option name="presentableId" value="LOCAL-00031" />
+      <created>1713256555885</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
       <option name="project" value="LOCAL" />
-      <updated>1730726959921</updated>
+      <updated>1713256555885</updated>
     </task>
-    <task id="LOCAL-00032" summary="Changes to cart handling">
+    <task id="LOCAL-00003" summary="2">
       <option name="closed" value="true" />
-      <created>1730727380019</created>
-      <option name="number" value="00032" />
-      <option name="presentableId" value="LOCAL-00032" />
+      <created>1713257526268</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
       <option name="project" value="LOCAL" />
-      <updated>1730727380019</updated>
+      <updated>1713257526268</updated>
     </task>
-    <task id="LOCAL-00033" summary="Changes to cart handling">
+    <task id="LOCAL-00004" summary="2">
       <option name="closed" value="true" />
-      <created>1730727512939</created>
-      <option name="number" value="00033" />
-      <option name="presentableId" value="LOCAL-00033" />
+      <created>1713259932909</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
       <option name="project" value="LOCAL" />
-      <updated>1730727512939</updated>
+      <updated>1713259932909</updated>
     </task>
-    <task id="LOCAL-00034" summary="Purchase session filter">
-      <option name="closed" value="true" />
-      <created>1730796785854</created>
-      <option name="number" value="00034" />
-      <option name="presentableId" value="LOCAL-00034" />
-      <option name="project" value="LOCAL" />
-      <updated>1730796785854</updated>
-    </task>
-    <task id="LOCAL-00035" summary="Fix for purchase">
-      <option name="closed" value="true" />
-      <created>1730799968248</created>
-      <option name="number" value="00035" />
-      <option name="presentableId" value="LOCAL-00035" />
-      <option name="project" value="LOCAL" />
-      <updated>1730799968248</updated>
-    </task>
-    <task id="LOCAL-00036" summary="Fix for purchase">
-      <option name="closed" value="true" />
-      <created>1730800850079</created>
-      <option name="number" value="00036" />
-      <option name="presentableId" value="LOCAL-00036" />
-      <option name="project" value="LOCAL" />
-      <updated>1730800850079</updated>
-    </task>
-    <task id="LOCAL-00037" summary="PurchaseStateProvider">
-      <option name="closed" value="true" />
-      <created>1731056201263</created>
-      <option name="number" value="00037" />
-      <option name="presentableId" value="LOCAL-00037" />
-      <option name="project" value="LOCAL" />
-      <updated>1731056201263</updated>
-    </task>
-    <task id="LOCAL-00038" summary="PurchaseStateProvider">
-      <option name="closed" value="true" />
-      <created>1731056967197</created>
-      <option name="number" value="00038" />
-      <option name="presentableId" value="LOCAL-00038" />
-      <option name="project" value="LOCAL" />
-      <updated>1731056967197</updated>
-    </task>
-    <task id="LOCAL-00039" summary="PurchaseStateProvider - variant total prices">
-      <option name="closed" value="true" />
-      <created>1731064296054</created>
-      <option name="number" value="00039" />
-      <option name="presentableId" value="LOCAL-00039" />
-      <option name="project" value="LOCAL" />
-      <updated>1731064296054</updated>
-    </task>
-    <task id="LOCAL-00040" summary="ProductVariant price for API">
-      <option name="closed" value="true" />
-      <created>1731066505543</created>
-      <option name="number" value="00040" />
-      <option name="presentableId" value="LOCAL-00040" />
-      <option name="project" value="LOCAL" />
-      <updated>1731066505543</updated>
-    </task>
-    <task id="LOCAL-00041" summary="ProductVariant price for API">
-      <option name="closed" value="true" />
-      <created>1731096602447</created>
-      <option name="number" value="00041" />
-      <option name="presentableId" value="LOCAL-00041" />
-      <option name="project" value="LOCAL" />
-      <updated>1731096602447</updated>
-    </task>
-    <task id="LOCAL-00042" summary="ParameterGroup API groups update">
-      <option name="closed" value="true" />
-      <created>1731243377039</created>
-      <option name="number" value="00042" />
-      <option name="presentableId" value="LOCAL-00042" />
-      <option name="project" value="LOCAL" />
-      <updated>1731243377039</updated>
-    </task>
-    <task id="LOCAL-00043" summary="Fixtures">
-      <option name="closed" value="true" />
-      <created>1731588911870</created>
-      <option name="number" value="00043" />
-      <option name="presentableId" value="LOCAL-00043" />
-      <option name="project" value="LOCAL" />
-      <updated>1731588911870</updated>
-    </task>
-    <task id="LOCAL-00044" summary="Fixtures">
-      <option name="closed" value="true" />
-      <created>1731589956159</created>
-      <option name="number" value="00044" />
-      <option name="presentableId" value="LOCAL-00044" />
-      <option name="project" value="LOCAL" />
-      <updated>1731589956159</updated>
-    </task>
-    <task id="LOCAL-00045" summary="Parameter filter API">
-      <option name="closed" value="true" />
-      <created>1731675372494</created>
-      <option name="number" value="00045" />
-      <option name="presentableId" value="LOCAL-00045" />
-      <option name="project" value="LOCAL" />
-      <updated>1731675372495</updated>
-    </task>
-    <task id="LOCAL-00046" summary="ProductStateProvider">
-      <option name="closed" value="true" />
-      <created>1731791340757</created>
-      <option name="number" value="00046" />
-      <option name="presentableId" value="LOCAL-00046" />
-      <option name="project" value="LOCAL" />
-      <updated>1731791340757</updated>
-    </task>
-    <task id="LOCAL-00047" summary="ProductStateProvider">
-      <option name="closed" value="true" />
-      <created>1731791501880</created>
-      <option name="number" value="00047" />
-      <option name="presentableId" value="LOCAL-00047" />
-      <option name="project" value="LOCAL" />
-      <updated>1731791501880</updated>
-    </task>
-    <task id="LOCAL-00048" summary="ProductStateProvider">
-      <option name="closed" value="true" />
-      <created>1731791832138</created>
-      <option name="number" value="00048" />
-      <option name="presentableId" value="LOCAL-00048" />
-      <option name="project" value="LOCAL" />
-      <updated>1731791832138</updated>
-    </task>
-    <task id="LOCAL-00049" summary="Product filters and ordering">
-      <option name="closed" value="true" />
-      <created>1731861514475</created>
-      <option name="number" value="00049" />
-      <option name="presentableId" value="LOCAL-00049" />
-      <option name="project" value="LOCAL" />
-      <updated>1731861514475</updated>
-    </task>
-    <task id="LOCAL-00050" summary="Product filters and ordering">
-      <option name="closed" value="true" />
-      <created>1731867668364</created>
-      <option name="number" value="00050" />
-      <option name="presentableId" value="LOCAL-00050" />
-      <option name="project" value="LOCAL" />
-      <updated>1731867668364</updated>
-    </task>
-    <task id="LOCAL-00051" summary="ProductController">
-      <option name="closed" value="true" />
-      <created>1731958018149</created>
-      <option name="number" value="00051" />
-      <option name="presentableId" value="LOCAL-00051" />
-      <option name="project" value="LOCAL" />
-      <updated>1731958018149</updated>
-    </task>
-    <task id="LOCAL-00052" summary="ProductController">
-      <option name="closed" value="true" />
-      <created>1731958103819</created>
-      <option name="number" value="00052" />
-      <option name="presentableId" value="LOCAL-00052" />
-      <option name="project" value="LOCAL" />
-      <updated>1731958103819</updated>
-    </task>
-    <task id="LOCAL-00053" summary="Update for purchase">
-      <option name="closed" value="true" />
-      <created>1732091660844</created>
-      <option name="number" value="00053" />
-      <option name="presentableId" value="LOCAL-00053" />
-      <option name="project" value="LOCAL" />
-      <updated>1732091660844</updated>
-    </task>
-    <task id="LOCAL-00054" summary="Cheap transportation state provider">
-      <option name="closed" value="true" />
-      <created>1732096000338</created>
-      <option name="number" value="00054" />
-      <option name="presentableId" value="LOCAL-00054" />
-      <option name="project" value="LOCAL" />
-      <updated>1732096000338</updated>
-    </task>
-    <task id="LOCAL-00055" summary="Cheap transportation state provider">
-      <option name="closed" value="true" />
-      <created>1732096019205</created>
-      <option name="number" value="00055" />
-      <option name="presentableId" value="LOCAL-00055" />
-      <option name="project" value="LOCAL" />
-      <updated>1732096019205</updated>
-    </task>
-    <task id="LOCAL-00056" summary="Revert &quot;Update pro maker&quot;&#10;&#10;This reverts commit 45222b39">
-      <option name="closed" value="true" />
-      <created>1732272530664</created>
-      <option name="number" value="00056" />
-      <option name="presentableId" value="LOCAL-00056" />
-      <option name="project" value="LOCAL" />
-      <updated>1732272530664</updated>
-    </task>
-    <task id="LOCAL-00057" summary="Catefory sub menu">
-      <option name="closed" value="true" />
-      <created>1733479852215</created>
-      <option name="number" value="00057" />
-      <option name="presentableId" value="LOCAL-00057" />
-      <option name="project" value="LOCAL" />
-      <updated>1733479852215</updated>
-    </task>
-    <task id="LOCAL-00058" summary="Cheap transportation">
-      <option name="closed" value="true" />
-      <created>1733487540333</created>
-      <option name="number" value="00058" />
-      <option name="presentableId" value="LOCAL-00058" />
-      <option name="project" value="LOCAL" />
-      <updated>1733487540333</updated>
-    </task>
-    <task id="LOCAL-00059" summary="Product variant filter type">
-      <option name="closed" value="true" />
-      <created>1733496701724</created>
-      <option name="number" value="00059" />
-      <option name="presentableId" value="LOCAL-00059" />
-      <option name="project" value="LOCAL" />
-      <updated>1733496701724</updated>
-    </task>
-    <task id="LOCAL-00060" summary="Product variant filter type">
-      <option name="closed" value="true" />
-      <created>1733497099984</created>
-      <option name="number" value="00060" />
-      <option name="presentableId" value="LOCAL-00060" />
-      <option name="project" value="LOCAL" />
-      <updated>1733497099984</updated>
-    </task>
-    <task id="LOCAL-00061" summary="SupplierController">
-      <option name="closed" value="true" />
-      <created>1733565686017</created>
-      <option name="number" value="00061" />
-      <option name="presentableId" value="LOCAL-00061" />
-      <option name="project" value="LOCAL" />
-      <updated>1733565686017</updated>
-    </task>
-    <task id="LOCAL-00062" summary="SupplierController">
-      <option name="closed" value="true" />
-      <created>1733566328125</created>
-      <option name="number" value="00062" />
-      <option name="presentableId" value="LOCAL-00062" />
-      <option name="project" value="LOCAL" />
-      <updated>1733566328125</updated>
-    </task>
-    <task id="LOCAL-00063" summary="SupplierController">
-      <option name="closed" value="true" />
-      <created>1733566681991</created>
-      <option name="number" value="00063" />
-      <option name="presentableId" value="LOCAL-00063" />
-      <option name="project" value="LOCAL" />
-      <updated>1733566681991</updated>
-    </task>
-    <task id="LOCAL-00064" summary="SupplierController">
-      <option name="closed" value="true" />
-      <created>1733567476979</created>
-      <option name="number" value="00064" />
-      <option name="presentableId" value="LOCAL-00064" />
-      <option name="project" value="LOCAL" />
-      <updated>1733567476979</updated>
-    </task>
-    <task id="LOCAL-00065" summary="SupplierController">
-      <option name="closed" value="true" />
-      <created>1733567602735</created>
-      <option name="number" value="00065" />
-      <option name="presentableId" value="LOCAL-00065" />
-      <option name="project" value="LOCAL" />
-      <updated>1733567602735</updated>
-    </task>
-    <task id="LOCAL-00066" summary="SupplierController">
-      <option name="closed" value="true" />
-      <created>1733567976926</created>
-      <option name="number" value="00066" />
-      <option name="presentableId" value="LOCAL-00066" />
-      <option name="project" value="LOCAL" />
-      <updated>1733567976926</updated>
-    </task>
-    <task id="LOCAL-00067" summary="Filter by supplier">
-      <option name="closed" value="true" />
-      <created>1733569044856</created>
-      <option name="number" value="00067" />
-      <option name="presentableId" value="LOCAL-00067" />
-      <option name="project" value="LOCAL" />
-      <updated>1733569044857</updated>
-    </task>
-    <task id="LOCAL-00068" summary="Filter by supplier">
-      <option name="closed" value="true" />
-      <created>1733569356415</created>
-      <option name="number" value="00068" />
-      <option name="presentableId" value="LOCAL-00068" />
-      <option name="project" value="LOCAL" />
-      <updated>1733569356415</updated>
-    </task>
-    <task id="LOCAL-00069" summary="Filter by supplier">
-      <option name="closed" value="true" />
-      <created>1733570089564</created>
-      <option name="number" value="00069" />
-      <option name="presentableId" value="LOCAL-00069" />
-      <option name="project" value="LOCAL" />
-      <updated>1733570089564</updated>
-    </task>
-    <task id="LOCAL-00070" summary="Filter by supplier">
-      <option name="closed" value="true" />
-      <created>1733911034096</created>
-      <option name="number" value="00070" />
-      <option name="presentableId" value="LOCAL-00070" />
-      <option name="project" value="LOCAL" />
-      <updated>1733911034096</updated>
-    </task>
-    <task id="LOCAL-00071" summary="Comment content string to text">
-      <option name="closed" value="true" />
-      <created>1733911410413</created>
-      <option name="number" value="00071" />
-      <option name="presentableId" value="LOCAL-00071" />
-      <option name="project" value="LOCAL" />
-      <updated>1733911410413</updated>
-    </task>
-    <task id="LOCAL-00072" summary="SessionPurchase">
-      <option name="closed" value="true" />
-      <created>1734685319518</created>
-      <option name="number" value="00072" />
-      <option name="presentableId" value="LOCAL-00072" />
-      <option name="project" value="LOCAL" />
-      <updated>1734685319519</updated>
-    </task>
-    <task id="LOCAL-00073" summary="SessionPurchase">
-      <option name="closed" value="true" />
-      <created>1735820842791</created>
-      <option name="number" value="00073" />
-      <option name="presentableId" value="LOCAL-00073" />
-      <option name="project" value="LOCAL" />
-      <updated>1735820842792</updated>
-    </task>
-    <task id="LOCAL-00074" summary="SessionPurchase">
-      <option name="closed" value="true" />
-      <created>1736243852907</created>
-      <option name="number" value="00074" />
-      <option name="presentableId" value="LOCAL-00074" />
-      <option name="project" value="LOCAL" />
-      <updated>1736243852907</updated>
-    </task>
-    <task id="LOCAL-00075" summary="Purchase pricing api changes">
-      <option name="closed" value="true" />
-      <created>1736421936947</created>
-      <option name="number" value="00075" />
-      <option name="presentableId" value="LOCAL-00075" />
-      <option name="project" value="LOCAL" />
-      <updated>1736421936947</updated>
-    </task>
-    <task id="LOCAL-00076" summary="Purchase pricing api changes">
-      <option name="closed" value="true" />
-      <created>1736496605483</created>
-      <option name="number" value="00076" />
-      <option name="presentableId" value="LOCAL-00076" />
-      <option name="project" value="LOCAL" />
-      <updated>1736496605483</updated>
-    </task>
-    <task id="LOCAL-00077" summary="Purchase pricing api changes">
-      <option name="closed" value="true" />
-      <created>1736498525491</created>
-      <option name="number" value="00077" />
-      <option name="presentableId" value="LOCAL-00077" />
-      <option name="project" value="LOCAL" />
-      <updated>1736498525491</updated>
-    </task>
-    <task id="LOCAL-00078" summary="Purchase pricing api changes">
-      <option name="closed" value="true" />
-      <created>1736755351614</created>
-      <option name="number" value="00078" />
-      <option name="presentableId" value="LOCAL-00078" />
-      <option name="project" value="LOCAL" />
-      <updated>1736755351614</updated>
-    </task>
-    <option name="localTasksCounter" value="79" />
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State>
-              <option name="FILTERS">
-                <map>
-                  <entry key="branch">
-                    <value>
-                      <list>
-                        <option value="origin/master" />
-                      </list>
-                    </value>
-                  </entry>
-                </map>
-              </option>
-            </State>
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Twig ext" />
-    <MESSAGE value="Update API" />
-    <MESSAGE value="Changes to cart handling" />
-    <MESSAGE value="Purchase session filter" />
-    <MESSAGE value="Fix for purchase" />
-    <MESSAGE value="PurchaseStateProvider" />
-    <MESSAGE value="PurchaseStateProvider - variant total prices" />
-    <MESSAGE value="ProductVariant price for API" />
-    <MESSAGE value="ParameterGroup API groups update" />
-    <MESSAGE value="Fixtures" />
-    <MESSAGE value="Parameter filter API" />
-    <MESSAGE value="ProductStateProvider" />
-    <MESSAGE value="Product filters and ordering" />
-    <MESSAGE value="ProductController" />
-    <MESSAGE value="Update for purchase" />
-    <MESSAGE value="Cheap transportation state provider" />
-    <MESSAGE value="Revert &quot;Update pro maker&quot;&#10;&#10;This reverts commit 45222b39" />
-    <MESSAGE value="Catefory sub menu" />
-    <MESSAGE value="Cheap transportation" />
-    <MESSAGE value="Product variant filter type" />
-    <MESSAGE value="SupplierController" />
-    <MESSAGE value="Filter by supplier" />
-    <MESSAGE value="Comment content string to text" />
-    <MESSAGE value="SessionPurchase" />
-    <MESSAGE value="Purchase pricing api changes" />
-    <option name="LAST_COMMIT_MESSAGE" value="Purchase pricing api changes" />
+    <MESSAGE value="Initial" />
+    <MESSAGE value="2" />
+    <option name="LAST_COMMIT_MESSAGE" value="2" />
   </component>
 </project>
