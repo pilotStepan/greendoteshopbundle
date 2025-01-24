@@ -173,6 +173,7 @@ class Purchase
     private Collection $payments;
 
     #[ORM\ManyToOne(inversedBy: 'purchases', targetEntity: ClientDiscount::class)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?ClientDiscount $clientDiscount;
 
