@@ -104,7 +104,9 @@ class PriceCalculator
 
 
 
-        $finalPrice = $this->applyVouchers($finalPrice, $purchase, $voucherCalculationType, $currency);
+        if($voucherCalculationType) {
+            $finalPrice = $this->applyVouchers($finalPrice, $purchase, $voucherCalculationType, $currency);
+        }
 
         if ($do_rounding) {
             $finalPrice = $this->roundToNearestHalf($finalPrice);
