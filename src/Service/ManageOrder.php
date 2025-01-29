@@ -22,6 +22,8 @@ use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
 use Twig\Extension\AbstractExtension;
+use Psr\Log\LoggerInterface;
+
 class ManageOrder extends AbstractExtension
 {
     private EntityManagerInterface $entityManager;
@@ -34,7 +36,7 @@ class ManageOrder extends AbstractExtension
     private PriceRepository $priceRepository;
     private CurrencyRepository $currencyRepository;
     private ClientRepository $clientRepository;
-
+    private LoggerInterface $logger;
 
     public function __construct(
         Registry                 $workflowRegistry,
@@ -48,7 +50,8 @@ class ManageOrder extends AbstractExtension
         TransportationRepository $transportationRepository,
         RequestStack             $requestStack,
         ClientRepository         $clientRepository,
-        private NoteRepository   $noteRepository
+        private NoteRepository   $noteRepository,
+        LoggerInterface          $logger,
     )
     {
         $this->entityManager = $entityManager;
@@ -61,6 +64,7 @@ class ManageOrder extends AbstractExtension
         $this->priceRepository = $priceRepository;
         $this->transportationRepository = $transportationRepository;
         $this->clientRepository = $clientRepository;
+        $this->logger = $logger;
 
 
         //this has to be here, for some reason this ManageOrderService is being called before session is even established
@@ -146,6 +150,33 @@ class ManageOrder extends AbstractExtension
             'from' => $from,
             'until' => $to
         ];
+    }
+
+    private function generateTransportData(Purchase $purchase, $purchasePrice): void
+    {
+        $transportationId = $purchase->getTransportation()->getId();
+        $parcelId         = null;
+
+        switch ($transportationId) {
+            case 4:
+                $parcelId = $this->czechPostParcel->createParcel($purchase, $purchasePrice);
+                break;
+            case 3:
+                $parcelId = $this->packeteryParcel->createParcel($purchase, $purchasePrice);
+                break;
+        }
+
+        if ($parcelId) {
+            $purchase->setTransportNumber($parcelId);
+        } else {
+            $purchaseFlow = $this->workflow->get($purchase);
+            if ($purchaseFlow->can($purchase, 'cancellation')) {
+                $purchaseFlow->apply($purchase, 'cancellation');
+                $this->logger->error('Failed to create parcel for purchase. Order cancelled.', ['purchaseId' => $purchase->getId()]);
+            } else {
+                $this->logger->error('Failed to create parcel for purchase and unable to cancel.', ['purchaseId' => $purchase->getId()]);
+            }
+        }
     }
 
 
