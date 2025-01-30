@@ -25,16 +25,6 @@ class VoucherListener implements EventSubscriberInterface
         ];
     }
 
-    public function handleVouchers(Purchase $purchase, string $state): void
-    {
-        $vouchers = $purchase->getVouchersIssued();
-        foreach ($vouchers as $voucher) {
-            $workflow = $this->registry->get($voucher);
-            if ($workflow->can($voucher, $state)) {
-                $workflow->apply($voucher, $state);
-            }
-        }
-    }
 
     public function onPayment(Event $event): void
     {
