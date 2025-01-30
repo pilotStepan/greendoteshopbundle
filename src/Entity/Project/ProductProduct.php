@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ProductProductRepository::class)]
 class ProductProduct
@@ -11,14 +12,16 @@ class ProductProduct
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['product_info:read', 'product_info:write'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'product1Products')]
+    #[ORM\ManyToOne(inversedBy: 'childrenProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Product $product1 = null;
+    private ?Product $parentProduct = null;
 
-    #[ORM\ManyToOne(inversedBy: 'product2Products')]
-    private ?Product $product2 = null;
+    #[ORM\ManyToOne(inversedBy: 'parentProducts')]
+    #[Groups(['product_info:read', 'product_info:write'])]
+    private ?Product $childrenProduct = null;
 
     #[ORM\Column]
     private ?int $type = null;
@@ -31,26 +34,26 @@ class ProductProduct
         return $this->id;
     }
 
-    public function getProduct1(): ?Product
+    public function getParentProduct(): ?Product
     {
-        return $this->product1;
+        return $this->parentProduct;
     }
 
-    public function setProduct1(?Product $product1): static
+    public function setParentProduct(?Product $product1): static
     {
-        $this->product1 = $product1;
+        $this->parentProduct = $product1;
 
         return $this;
     }
 
-    public function getProduct2(): ?Product
+    public function getChildrenProduct(): ?Product
     {
-        return $this->product2;
+        return $this->childrenProduct;
     }
 
-    public function setProduct2(?Product $product2): static
+    public function setChildrenProduct(?Product $product2): static
     {
-        $this->product2 = $product2;
+        $this->childrenProduct = $product2;
 
         return $this;
     }
