@@ -203,32 +203,5 @@ class ManagePurchase extends AbstractExtension
         return false;
     }
 
-    // checks if all vouchers and discounts are available, returns true if ok, false if not ok
-    public function checkVouchersAndDiscount(Purchase $purchase) : bool
-    {
-
-        // check vouchers
-        $vouchers = $purchase->getVouchersUsed();
-        if (!$vouchers->isEmpty())
-        {
-            foreach ($vouchers as $v){
-                if (!$this->workflow->can($v, "use")) {
-                    return false;
-                }
-            }
-        }
-
-        // check discount
-        $discount = $purchase->getClientDiscount();
-        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase))
-        {
-            return false;
-        }
-
-        // all is ok
-        return true;
-    }
-
-
 
 }

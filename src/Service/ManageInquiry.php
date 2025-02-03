@@ -36,7 +36,7 @@ class ManageInquiry
         private readonly Environment              $templating,
         private readonly PriceCalculator          $priceCalculator,
         private readonly ManagerRegistry          $managerRegistry,
-        private readonly ManageOrder              $manageOrder,
+        private readonly ManagePurchase           $manageOrder,
         private readonly ManageMails              $manageMails,
         private readonly ParameterRepository      $parameterRepository,
         private readonly ParameterGroupRepository $parameterGroupRepository,

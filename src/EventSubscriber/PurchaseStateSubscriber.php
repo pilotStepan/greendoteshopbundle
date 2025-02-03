@@ -8,7 +8,9 @@ use Greendot\EshopBundle\EventListener\VoucherListener;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\CzechPostParcel;
 use Greendot\EshopBundle\Service\InvoiceMaker;
+use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Greendot\EshopBundle\Service\ManageMails;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Service\PacketeryParcel;
 use Greendot\EshopBundle\Service\PriceCalculator;
@@ -18,6 +20,7 @@ use Symfony\Component\Workflow\Registry;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Event\TransitionEvent;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Symfony\Component\Workflow\Workflow;
 use Psr\Log\LoggerInterface;
 
 
@@ -39,6 +42,9 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
         private readonly ManageVoucher          $manageVoucher,
         private readonly VoucherListener        $voucherListener,
         private readonly ?SessionInterface      $session = null,
+        private readonly ManagePurchase         $manageOrder,
+        private readonly  Workflow              $workflow,
+        private readonly  ManageClientDiscount  $manageClientDiscount,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -79,6 +85,10 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
             }
         }
 
+        // use client discount
+        $clientDiscount = $purchase->getClientDiscount();
+        $this->manageClientDiscount->use($clientDiscount, $purchase);
+
         $this->manageMails->sendOrderReceiveEmail($purchase, $purchasePrice, 'mail/specific/order-receive.html.twig');
     }
 
@@ -90,12 +100,92 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
 
         if ($purchase->getProductVariants()->isEmpty()) {
             $event->setBlocked(true, 'Cannot create an empty purchase.');
+            return null;
         }
+
+        // check vouchers
+        $vouchers = $purchase->getVouchersUsed();
+        if (!$vouchers->isEmpty())
+        {
+            foreach ($vouchers as $v){
+                if (!$this->workflow->can($v, "use")) {
+                    $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
+                    return null;
+                }
+            }
+        }
+
+        // check discount
+        $discount = $purchase->getClientDiscount();
+        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase))
+        {
+            $event->setBlocked(true, "Purchase has invalid clientDiscount");
+            return null;
+        }
+
+        // check payment and transportation
+        $paymentType = $purchase->getPaymentType();
+        if ($paymentType === null)
+        {
+            $event->setBlocked(true, "Purchase paymentType is null");
+            return null;
+        }
+        if ($purchase->getTransportation() === null)
+        {
+            $event->setBlocked(true, "Purchase transportation is null");
+            return null;
+        }
+        if (!$this->manageOrder->isPaymentAvailable($paymentType, $purchase))
+        {
+            $event->setBlocked(true, "Purchase paymentType and transportation are not compatible");
+            return null;
+        }
+
     }
 
     public function guardReceive(GuardEvent $event)
     {
-        // logic
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+
+
+        // check vouchers
+        $vouchers = $purchase->getVouchersUsed();
+        if (!$vouchers->isEmpty())
+        {
+            foreach ($vouchers as $v){
+                if (!$this->workflow->can($v, "use")) {
+                    $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
+                    return null;
+                }
+            }
+        }
+
+        // check discount
+        $discount = $purchase->getClientDiscount();
+        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase))
+        {
+            $event->setBlocked(true, "Purchase has invalid clientDiscount");
+            return null;
+        }
+
+        // check payment and transportation
+        $paymentType = $purchase->getPaymentType();
+        if ($paymentType === null)
+        {
+            $event->setBlocked(true, "Purchase paymentType is null");
+            return null;
+        }
+        if ($purchase->getTransportation() === null)
+        {
+            $event->setBlocked(true, "Purchase transportation is null");
+            return null;
+        }
+        if (!$this->manageOrder->isPaymentAvailable($paymentType, $purchase))
+        {
+            $event->setBlocked(true, "Purchase paymentType and transportation are not compatible");
+            return null;
+        }
     }
 
     public function transitionCreate(TransitionEvent $event)

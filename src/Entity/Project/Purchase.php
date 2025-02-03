@@ -155,9 +155,11 @@ class Purchase
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseTracking::class, cascade: ['persist', 'remove'])]
     private Collection $purchaseTrackings;
 
+    // vouchers bought in the order
     #[ORM\OneToMany(mappedBy: 'Purchase_issued', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
     private Collection $VouchersIssued;
 
+    // vouchers used to pay the order
     #[ORM\OneToMany(mappedBy: 'purchaseUsed', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
     private Collection $vouchersUsed;

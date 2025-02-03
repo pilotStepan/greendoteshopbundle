@@ -18,7 +18,7 @@ use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
-use Greendot\EshopBundle\Service\ManageOrder;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -113,7 +113,7 @@ class ProductController extends AbstractController
         PurchaseProductVariantRepository $purchaseProductVariantRepository,
         TransportationRepository $transportationRepository,
         PaymentTypeRepository $paymentTypeRepository,
-        ManageOrder $manageOrder,
+        ManagePurchase $manageOrder,
         PurchaseRepository $purchaseRepository,
         EntityManagerInterface $entityManager,
     ): Response
@@ -186,7 +186,7 @@ class ProductController extends AbstractController
         RequestStack $requestStack,
         ClientRepository $clientRepository,
         ProductVariantRepository $productVariantRepository,
-        ManageOrder $manageOrder,
+        ManagePurchase $manageOrder,
         GoogleAnalytics $googleAnalytics
     )
     {

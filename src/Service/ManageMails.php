@@ -24,7 +24,7 @@ class ManageMails
 
     public function __construct(
         private readonly MailerInterface          $mailer,
-        private readonly ManageOrder              $manageOrder,
+        private readonly ManagePurchase           $manageOrder,
         private readonly PriceCalculator          $priceCalculator,
         private readonly CurrencyRepository       $currencyRepository,
         private readonly LocaleAwareInterface     $localeAware,
