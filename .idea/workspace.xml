@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updtare use">
+      <change afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailability.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailabilityValidator.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Category.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Category.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Product.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Product.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductProduct.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductProduct.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -258,6 +257,7 @@
       <workItem from="1735811832561" duration="9988000" />
       <workItem from="1737747118702" duration="2122000" />
       <workItem from="1738050896004" duration="12871000" />
+      <workItem from="1738574652830" duration="3134000" />
     </task>
     <task id="LOCAL-00035" summary="Fix for purchase">
       <option name="closed" value="true" />

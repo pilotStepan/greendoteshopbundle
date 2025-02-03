@@ -29,6 +29,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
+use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
@@ -176,6 +177,7 @@ class Purchase
 
     #[ORM\ManyToOne(inversedBy: 'purchases', targetEntity: ClientDiscount::class)]
     #[ORM\JoinColumn(nullable: true)]
+    #[ClientDiscountAvailability]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?ClientDiscount $clientDiscount;
 
