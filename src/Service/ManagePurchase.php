@@ -22,7 +22,7 @@ use http\Exception\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
-use Symfony\Component\Workflow\Workflow;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Twig\Extension\AbstractExtension;
 use Psr\Log\LoggerInterface;
 
@@ -32,7 +32,6 @@ class ManagePurchase extends AbstractExtension
     private PurchaseRepository $orderRepository;
     private PaymentTypeRepository $paymentRepository;
     private TransportationRepository $transportationRepository;
-    private Workflow $workflow;
     private PriceCalculator $priceCalculator;
     private Currency $selectedCurrency;
     private PriceRepository $priceRepository;
@@ -46,7 +45,7 @@ class ManagePurchase extends AbstractExtension
         EntityManagerInterface   $entityManager,
         PurchaseRepository       $orderRepository,
         PaymentTypeRepository    $paymentRepository,
-        Workflow                 $workflow,
+        private readonly  WorkflowInterface     $purchaseFlowStateMachine,
         PriceCalculator          $priceCalculator,
         PriceRepository          $priceRepository,
         CurrencyRepository       $currencyRepository,
@@ -62,7 +61,7 @@ class ManagePurchase extends AbstractExtension
         $this->entityManager = $entityManager;
         $this->orderRepository = $orderRepository;
         $this->paymentRepository = $paymentRepository;
-        $this->workflow = $workflow;
+
         $this->workflowRegistry = $workflowRegistry;
         $this->priceCalculator = $priceCalculator;
         $this->currencyRepository = $currencyRepository;
@@ -174,7 +173,7 @@ class ManagePurchase extends AbstractExtension
         if ($parcelId) {
             $purchase->setTransportNumber($parcelId);
         } else {
-            $purchaseFlow = $this->workflow->get($purchase);
+            $purchaseFlow = $this->purchaseFlowStateMachine->get($purchase);
             if ($purchaseFlow->can($purchase, 'cancellation')) {
                 $purchaseFlow->apply($purchase, 'cancellation');
                 $this->logger->error('Failed to create parcel for purchase. Order cancelled.', ['purchaseId' => $purchase->getId()]);

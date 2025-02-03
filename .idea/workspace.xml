@@ -4,11 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updtare use">
-      <change afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailability.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailabilityValidator.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ClientDiscount API check">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/PurchaseStateSubscriber.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/PurchaseStateSubscriber.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/ManagePurchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/ManagePurchase.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailabilityValidator.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailabilityValidator.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -257,15 +257,7 @@
       <workItem from="1735811832561" duration="9988000" />
       <workItem from="1737747118702" duration="2122000" />
       <workItem from="1738050896004" duration="12871000" />
-      <workItem from="1738574652830" duration="3134000" />
-    </task>
-    <task id="LOCAL-00035" summary="Fix for purchase">
-      <option name="closed" value="true" />
-      <created>1730799968248</created>
-      <option name="number" value="00035" />
-      <option name="presentableId" value="LOCAL-00035" />
-      <option name="project" value="LOCAL" />
-      <updated>1730799968248</updated>
+      <workItem from="1738574652830" duration="5215000" />
     </task>
     <task id="LOCAL-00036" summary="Fix for purchase">
       <option name="closed" value="true" />
@@ -651,7 +643,15 @@
       <option name="project" value="LOCAL" />
       <updated>1738232637402</updated>
     </task>
-    <option name="localTasksCounter" value="84" />
+    <task id="LOCAL-00084" summary="ClientDiscount API check">
+      <option name="closed" value="true" />
+      <created>1738590351729</created>
+      <option name="number" value="00084" />
+      <option name="presentableId" value="LOCAL-00084" />
+      <option name="project" value="LOCAL" />
+      <updated>1738590351730</updated>
+    </task>
+    <option name="localTasksCounter" value="85" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -693,7 +693,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Update API" />
     <MESSAGE value="Changes to cart handling" />
     <MESSAGE value="Purchase session filter" />
     <MESSAGE value="Fix for purchase" />
@@ -718,6 +717,7 @@
     <MESSAGE value="SessionPurchase" />
     <MESSAGE value="Purchase pricing api changes" />
     <MESSAGE value="Updtare use" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updtare use" />
+    <MESSAGE value="ClientDiscount API check" />
+    <option name="LAST_COMMIT_MESSAGE" value="ClientDiscount API check" />
   </component>
 </project>

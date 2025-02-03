@@ -14,9 +14,9 @@ final class ClientDiscountAvailabilityValidator extends ConstraintValidator
         $this->manageClientDiscount = $manageClientDiscount;
     }
 
-    public function validate(ClientDiscount $clientDiscount, Constraint $constraint): void
+    public function validate(mixed $clientDiscount, Constraint $constraint): void
     {
-        if(!$this->manageClientDiscount->isValid($clientDiscount)){
+        if($clientDiscount !== null && !$this->manageClientDiscount->isValid($clientDiscount)){
             $this->context->buildViolation($constraint->message)->addViolation();
         }
 

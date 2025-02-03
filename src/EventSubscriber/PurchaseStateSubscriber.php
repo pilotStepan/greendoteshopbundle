@@ -20,7 +20,7 @@ use Symfony\Component\Workflow\Registry;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Event\TransitionEvent;
 use Symfony\Component\Workflow\Event\CompletedEvent;
-use Symfony\Component\Workflow\Workflow;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Psr\Log\LoggerInterface;
 
 
@@ -43,7 +43,7 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
         private readonly VoucherListener        $voucherListener,
         private readonly ?SessionInterface      $session = null,
         private readonly ManagePurchase         $manageOrder,
-        private readonly  Workflow              $workflow,
+        private readonly  WorkflowInterface     $voucherFlowStateMachine,
         private readonly  ManageClientDiscount  $manageClientDiscount,
     ) {}
 
@@ -108,7 +108,7 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
         if (!$vouchers->isEmpty())
         {
             foreach ($vouchers as $v){
-                if (!$this->workflow->can($v, "use")) {
+                if (!$this->voucherFlowWorkflow->can($v, "use")) {
                     $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
                     return null;
                 }
@@ -154,7 +154,7 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
         if (!$vouchers->isEmpty())
         {
             foreach ($vouchers as $v){
-                if (!$this->workflow->can($v, "use")) {
+                if ($this->voucherFlowWorkflow->can($v, "use")) {
                     $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
                     return null;
                 }
