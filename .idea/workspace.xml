@@ -4,10 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Purchase pricing api changes">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updtare use">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Purchase.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Service/PriceCalculator.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/PriceCalculator.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Category.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Category.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ParameterGroup.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Product.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Product.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductProduct.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductProduct.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -254,31 +256,8 @@
       <workItem from="1733909034370" duration="1358000" />
       <workItem from="1734685063046" duration="1869000" />
       <workItem from="1735811832561" duration="9988000" />
-      <workItem from="1737747118702" duration="1465000" />
-    </task>
-    <task id="LOCAL-00032" summary="Changes to cart handling">
-      <option name="closed" value="true" />
-      <created>1730727380019</created>
-      <option name="number" value="00032" />
-      <option name="presentableId" value="LOCAL-00032" />
-      <option name="project" value="LOCAL" />
-      <updated>1730727380019</updated>
-    </task>
-    <task id="LOCAL-00033" summary="Changes to cart handling">
-      <option name="closed" value="true" />
-      <created>1730727512939</created>
-      <option name="number" value="00033" />
-      <option name="presentableId" value="LOCAL-00033" />
-      <option name="project" value="LOCAL" />
-      <updated>1730727512939</updated>
-    </task>
-    <task id="LOCAL-00034" summary="Purchase session filter">
-      <option name="closed" value="true" />
-      <created>1730796785854</created>
-      <option name="number" value="00034" />
-      <option name="presentableId" value="LOCAL-00034" />
-      <option name="project" value="LOCAL" />
-      <updated>1730796785854</updated>
+      <workItem from="1737747118702" duration="2122000" />
+      <workItem from="1738050896004" duration="12871000" />
     </task>
     <task id="LOCAL-00035" summary="Fix for purchase">
       <option name="closed" value="true" />
@@ -648,7 +627,31 @@
       <option name="project" value="LOCAL" />
       <updated>1736760924273</updated>
     </task>
-    <option name="localTasksCounter" value="81" />
+    <task id="LOCAL-00081" summary="Purchase pricing api changes">
+      <option name="closed" value="true" />
+      <created>1737748603239</created>
+      <option name="number" value="00081" />
+      <option name="presentableId" value="LOCAL-00081" />
+      <option name="project" value="LOCAL" />
+      <updated>1737748603239</updated>
+    </task>
+    <task id="LOCAL-00082" summary="Purchase pricing api changes">
+      <option name="closed" value="true" />
+      <created>1738229199279</created>
+      <option name="number" value="00082" />
+      <option name="presentableId" value="LOCAL-00082" />
+      <option name="project" value="LOCAL" />
+      <updated>1738229199279</updated>
+    </task>
+    <task id="LOCAL-00083" summary="Updtare use">
+      <option name="closed" value="true" />
+      <created>1738232637402</created>
+      <option name="number" value="00083" />
+      <option name="presentableId" value="LOCAL-00083" />
+      <option name="project" value="LOCAL" />
+      <updated>1738232637402</updated>
+    </task>
+    <option name="localTasksCounter" value="84" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -690,7 +693,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Twig ext" />
     <MESSAGE value="Update API" />
     <MESSAGE value="Changes to cart handling" />
     <MESSAGE value="Purchase session filter" />
@@ -715,6 +717,7 @@
     <MESSAGE value="Comment content string to text" />
     <MESSAGE value="SessionPurchase" />
     <MESSAGE value="Purchase pricing api changes" />
-    <option name="LAST_COMMIT_MESSAGE" value="Purchase pricing api changes" />
+    <MESSAGE value="Updtare use" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updtare use" />
   </component>
 </project>

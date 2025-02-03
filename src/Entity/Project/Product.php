@@ -192,10 +192,12 @@ class Product implements Translatable
     #[Groups(['product_info:read'])]
     private Collection $productParameterGroups;
 
-    #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
+    #[ORM\OneToMany(mappedBy: 'childrenProduct', targetEntity: ProductProduct::class)]
+    #[Groups(['product_info:read', 'product_info:write'])]
     private Collection $childrenProducts;
 
-    #[ORM\OneToMany(mappedBy: 'childProduct', targetEntity: ProductProduct::class)]
+
+    #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
     private Collection $parentProducts;
 
     #[ORM\Column(nullable: true)]
@@ -670,7 +672,7 @@ class Product implements Translatable
     {
         if (!$this->parentProducts->contains($productProduct)) {
             $this->parentProducts->add($productProduct);
-            $productProduct->setChildProduct($this);
+            $productProduct->setChildrenProduct($this);
         }
 
         return $this;
@@ -679,8 +681,8 @@ class Product implements Translatable
     public function removeParentProduct(ProductProduct $productProduct): self
     {
         if ($this->parentProducts->removeElement($productProduct)) {
-            if ($productProduct->getChildProduct() === $this) {
-                $productProduct->setChildProduct(null);
+            if ($productProduct->getChildrenProduct() === $this) {
+                $productProduct->setChildrenProduct(null);
             }
         }
 

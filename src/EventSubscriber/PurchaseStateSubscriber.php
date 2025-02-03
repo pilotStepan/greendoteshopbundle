@@ -14,9 +14,12 @@ use Greendot\EshopBundle\Service\PacketeryParcel;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Workflow\Registry;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Event\TransitionEvent;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Psr\Log\LoggerInterface;
+
 
 class PurchaseStateSubscriber implements EventSubscriberInterface
 {

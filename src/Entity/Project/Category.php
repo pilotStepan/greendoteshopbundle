@@ -39,19 +39,19 @@ class Category implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write', 'product_info:read'])]
     private $name;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'searchable'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'product_info:read'])]
     private $menu_name;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read'])]
     private $description;
 
     #[Gedmo\Translatable]
@@ -63,7 +63,7 @@ class Category implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read'])]
     private $title;
 
     #[ORM\ManyToMany(targetEntity: Label::class, inversedBy: 'categories')]
@@ -86,13 +86,13 @@ class Category implements Translatable
 
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'boolean', name: 'is_active')]
-    #[Groups('category_default', 'category:read')]
+    #[Groups('category_default', 'category:read', 'product_info:read')]
     private $isActive;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read'])]
     private $slug;
 
     #[ORM\Column(type: 'text', nullable: true)]

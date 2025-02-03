@@ -31,10 +31,6 @@ class ManageVoucher
         return $this->canVoucherBeUsed($voucher);
     }
 
-    private function isGiftVoucher(Voucher $voucher, string $couponType): bool
-    {
-        return $couponType === self::GIFT_VOUCHER && $voucher->getType() === self::GIFT_VOUCHER;
-    }
 
     private function canVoucherBeUsed(Voucher $voucher): bool
     {
@@ -61,5 +57,31 @@ class ManageVoucher
         $this->entityManager->flush();
 
         return $voucher;
+    }
+
+    public function enableVoucher(Voucher $voucher): void
+    {
+
+    }
+
+    public function disableVoucher(Voucher $voucher): void
+    {
+
+    }
+
+    public function useVoucher(Voucher $voucher): void
+    {
+
+    }
+
+    public function handleVouchers(Purchase $purchase, string $state): void
+    {
+        $vouchers = $purchase->getVouchersIssued();
+        foreach ($vouchers as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, $state)) {
+                $workflow->apply($voucher, $state);
+            }
+        }
     }
 }

@@ -41,6 +41,14 @@ class ParameterGroup
     #[Groups(['parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_info:read', 'category_parameter_group:read'])]
     private $unit;
 
+    /**
+     * @var
+     * Defines the class to specify for example icon.     *
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['parameter:read', 'parameter_group:read', 'product_variant:read', 'product_info:read', 'category_parameter_group:read'])]
+    private $class;
+
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: Parameter::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
     private $parameter;
@@ -54,13 +62,7 @@ class ParameterGroup
     #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'category_parameter_group:read'])]
     private ?ParameterGroupType $type = null;
 
-    /**
-     * @var bool|null
-     * TODO Obsolete, remove
-     */
-    #[ORM\Column(nullable: true)]
-    #[Groups(['parameter_group:read', 'searchable', 'category_parameter_group:read'])]
-    private ?bool $isProductParameter = null;
+
 
     #[ORM\Column(nullable: true)]
     #[Groups(['parameter:read', 'parameter_group:read', 'searchable', 'category_parameter_group:read'])]
@@ -121,6 +123,18 @@ class ParameterGroup
         return $this;
     }
 
+    public function getClass(): ?string
+    {
+        return $this->class;
+    }
+
+    public function setClass(?string $class): self
+    {
+        $this->class = $class;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Parameter>
      */
@@ -167,17 +181,6 @@ class ParameterGroup
         return $this;
     }
 
-    public function isIsProductParameter(): ?bool
-    {
-        return $this->isProductParameter;
-    }
-
-    public function setIsProductParameter(?bool $isProductParameter): self
-    {
-        $this->isProductParameter = $isProductParameter;
-
-        return $this;
-    }
 
     public function isIsFilter(): ?bool
     {
