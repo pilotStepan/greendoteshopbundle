@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service;
 
 
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
@@ -21,29 +22,31 @@ use http\Exception\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
+use Symfony\Component\Workflow\Workflow;
 use Twig\Extension\AbstractExtension;
 use Psr\Log\LoggerInterface;
 
-class ManageOrder extends AbstractExtension
+class ManagePurchase extends AbstractExtension
 {
     private EntityManagerInterface $entityManager;
     private PurchaseRepository $orderRepository;
     private PaymentTypeRepository $paymentRepository;
     private TransportationRepository $transportationRepository;
-    private Registry $workflow;
+    private Workflow $workflow;
     private PriceCalculator $priceCalculator;
     private Currency $selectedCurrency;
     private PriceRepository $priceRepository;
     private CurrencyRepository $currencyRepository;
     private ClientRepository $clientRepository;
     private LoggerInterface $logger;
+    private ManageClientDiscount $manageClientDiscount;
 
     public function __construct(
         Registry                 $workflowRegistry,
         EntityManagerInterface   $entityManager,
         PurchaseRepository       $orderRepository,
         PaymentTypeRepository    $paymentRepository,
-        Registry                 $workflow,
+        Workflow                 $workflow,
         PriceCalculator          $priceCalculator,
         PriceRepository          $priceRepository,
         CurrencyRepository       $currencyRepository,
@@ -52,6 +55,8 @@ class ManageOrder extends AbstractExtension
         ClientRepository         $clientRepository,
         private NoteRepository   $noteRepository,
         LoggerInterface          $logger,
+        ManageClientDiscount     $manageClientDiscount,
+
     )
     {
         $this->entityManager = $entityManager;
@@ -152,7 +157,7 @@ class ManageOrder extends AbstractExtension
         ];
     }
 
-    private function generateTransportData(Purchase $purchase, $purchasePrice): void
+    public function generateTransportData(Purchase $purchase, $purchasePrice): void
     {
         $transportationId = $purchase->getTransportation()->getId();
         $parcelId         = null;
@@ -178,6 +183,52 @@ class ManageOrder extends AbstractExtension
             }
         }
     }
+
+    // checks if paymentType and purchase.transportation are linked, returns true if ok, false if not ok
+    public function isPaymentAvailable(PaymentType $paymentType, Purchase $purchase) : bool
+    {
+        $transportation = $purchase->getTransportation();
+
+        // check empty
+        if ($transportation === null)
+        {
+            throw new  \Exception("Purchase has no transportation");
+        }
+
+        // check if ok
+        if($paymentType->getTransportations()->contains($transportation))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    // checks if all vouchers and discounts are available, returns true if ok, false if not ok
+    public function checkVouchersAndDiscount(Purchase $purchase) : bool
+    {
+
+        // check vouchers
+        $vouchers = $purchase->getVouchersUsed();
+        if (!$vouchers->isEmpty())
+        {
+            foreach ($vouchers as $v){
+                if (!$this->workflow->can($v, "use")) {
+                    return false;
+                }
+            }
+        }
+
+        // check discount
+        $discount = $purchase->getClientDiscount();
+        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase))
+        {
+            return false;
+        }
+
+        // all is ok
+        return true;
+    }
+
 
 
 }
