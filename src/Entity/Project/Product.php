@@ -192,12 +192,12 @@ class Product implements Translatable
     #[Groups(['product_info:read'])]
     private Collection $productParameterGroups;
 
-    #[ORM\OneToMany(mappedBy: 'childrenProduct', targetEntity: ProductProduct::class)]
+    #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
     #[Groups(['product_info:read', 'product_info:write'])]
     private Collection $childrenProducts;
 
 
-    #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
+    #[ORM\OneToMany(mappedBy: 'childrenProduct', targetEntity: ProductProduct::class)]
     private Collection $parentProducts;
 
     #[ORM\Column(nullable: true)]
