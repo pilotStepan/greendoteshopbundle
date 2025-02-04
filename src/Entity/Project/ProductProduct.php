@@ -39,9 +39,9 @@ class ProductProduct
         return $this->parentProduct;
     }
 
-    public function setParentProduct(?Product $product1): static
+    public function setParentProduct(?Product $parentProduct): static
     {
-        $this->parentProduct = $product1;
+        $this->parentProduct = $parentProduct;
 
         return $this;
     }
@@ -51,9 +51,9 @@ class ProductProduct
         return $this->childrenProduct;
     }
 
-    public function setChildrenProduct(?Product $product2): static
+    public function setChildrenProduct(?Product $childrenProduct): static
     {
-        $this->childrenProduct = $product2;
+        $this->childrenProduct = $childrenProduct;
 
         return $this;
     }

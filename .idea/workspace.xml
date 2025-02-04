@@ -6,9 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ClientDiscount API check">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/PurchaseStateSubscriber.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/PurchaseStateSubscriber.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Service/ManagePurchase.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/ManagePurchase.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailabilityValidator.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientDiscountAvailabilityValidator.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project/ProductProduct.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/ProductProduct.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -257,15 +255,8 @@
       <workItem from="1735811832561" duration="9988000" />
       <workItem from="1737747118702" duration="2122000" />
       <workItem from="1738050896004" duration="12871000" />
-      <workItem from="1738574652830" duration="5215000" />
-    </task>
-    <task id="LOCAL-00036" summary="Fix for purchase">
-      <option name="closed" value="true" />
-      <created>1730800850079</created>
-      <option name="number" value="00036" />
-      <option name="presentableId" value="LOCAL-00036" />
-      <option name="project" value="LOCAL" />
-      <updated>1730800850079</updated>
+      <workItem from="1738574652830" duration="5230000" />
+      <workItem from="1738669333866" duration="2028000" />
     </task>
     <task id="LOCAL-00037" summary="PurchaseStateProvider">
       <option name="closed" value="true" />
@@ -651,7 +642,15 @@
       <option name="project" value="LOCAL" />
       <updated>1738590351730</updated>
     </task>
-    <option name="localTasksCounter" value="85" />
+    <task id="LOCAL-00085" summary="ClientDiscount API check">
+      <option name="closed" value="true" />
+      <created>1738592711225</created>
+      <option name="number" value="00085" />
+      <option name="presentableId" value="LOCAL-00085" />
+      <option name="project" value="LOCAL" />
+      <updated>1738592711226</updated>
+    </task>
+    <option name="localTasksCounter" value="86" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
