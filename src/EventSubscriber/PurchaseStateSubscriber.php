@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\EventSubscriber;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\EventListener\VoucherListener;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\CzechPostParcel;
 use Greendot\EshopBundle\Service\InvoiceMaker;
@@ -14,14 +14,13 @@ use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Service\PacketeryParcel;
 use Greendot\EshopBundle\Service\PriceCalculator;
-use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Workflow\Registry;
+use Symfony\Component\Workflow\Event\CompletedEvent;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Event\TransitionEvent;
-use Symfony\Component\Workflow\Event\CompletedEvent;
+use Symfony\Component\Workflow\Registry;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Psr\Log\LoggerInterface;
 
 
 class PurchaseStateSubscriber implements EventSubscriberInterface
@@ -40,7 +39,7 @@ class PurchaseStateSubscriber implements EventSubscriberInterface
         private readonly PriceCalculator        $priceCalculator,
         private readonly PurchaseRepository     $purchaseRepository,
         private readonly ManageVoucher          $manageVoucher,
-        private readonly VoucherListener        $voucherListener,
+        private readonly VoucherSubscriber      $voucherListener,
         private readonly ?SessionInterface      $session = null,
         private readonly ManagePurchase         $manageOrder,
         private readonly  WorkflowInterface     $voucherFlowStateMachine,
