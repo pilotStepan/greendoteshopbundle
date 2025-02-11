@@ -1,15 +1,15 @@
 <?php
 
-namespace Greendot\EshopBundle\EventListener;
+namespace Greendot\EshopBundle\EventSubscriber;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\Voucher;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\Event;
+use Greendot\EshopBundle\Entity\Project\Voucher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Workflow\Event\Event;
+//use Symfony\Component\Workflow\Event\Event;
 use Symfony\Component\Workflow\Registry;
 
-class VoucherListener implements EventSubscriberInterface
+class VoucherSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly Registry               $registry,
@@ -21,6 +21,7 @@ class VoucherListener implements EventSubscriberInterface
         return [
             'workflow.voucher_flow.transition.payment' => ['onPayment'],
             'workflow.voucher_flow.transition.payment_issue' => ['onPaymentIssue'],
+            'workflow.voucher_flow.guard.use' => ['guardUse'],
             'workflow.voucher_flow.transition.use' => ['onUse'],
         ];
     }
@@ -47,7 +48,21 @@ class VoucherListener implements EventSubscriberInterface
     {
     }
 
+    public function guardUse(GuardEvent $event)
+    {
+        /** @var  Voucher $voucher */
+        $voucher = $event->getSubject();
+
+        // check date_until
+        $now = new \DateTime();
+        if ($now <= $voucher->getDateUntil()){
+            $event->setBlocked(true, "Voucher has expired");
+        }
+
+    }
+
     public function onUse(Event $event): void
     {
+
     }
 }
