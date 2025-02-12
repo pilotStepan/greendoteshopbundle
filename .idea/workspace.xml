@@ -4,16 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="ClientDiscount API check">
-      <change afterPath="$PROJECT_DIR$/src/StateProcessor/ClientRegistrationStateProcessor.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/StateProvider/ClientStateProvider.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Update login and registration">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/LoginController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/LoginController.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/Client.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Client.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/PurchaseRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/StateProcessor/SessionPurchaseStateProcessor.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProcessor/SessionPurchaseStateProcessor.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -264,15 +257,7 @@
       <workItem from="1738050896004" duration="12871000" />
       <workItem from="1738574652830" duration="5230000" />
       <workItem from="1738669333866" duration="5193000" />
-      <workItem from="1738753758132" duration="11808000" />
-    </task>
-    <task id="LOCAL-00039" summary="PurchaseStateProvider - variant total prices">
-      <option name="closed" value="true" />
-      <created>1731064296054</created>
-      <option name="number" value="00039" />
-      <option name="presentableId" value="LOCAL-00039" />
-      <option name="project" value="LOCAL" />
-      <updated>1731064296054</updated>
+      <workItem from="1738753758132" duration="13007000" />
     </task>
     <task id="LOCAL-00040" summary="ProductVariant price for API">
       <option name="closed" value="true" />
@@ -658,7 +643,15 @@
       <option name="project" value="LOCAL" />
       <updated>1738674654217</updated>
     </task>
-    <option name="localTasksCounter" value="88" />
+    <task id="LOCAL-00088" summary="Update login and registration">
+      <option name="closed" value="true" />
+      <created>1739365395123</created>
+      <option name="number" value="00088" />
+      <option name="presentableId" value="LOCAL-00088" />
+      <option name="project" value="LOCAL" />
+      <updated>1739365395123</updated>
+    </task>
+    <option name="localTasksCounter" value="89" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -700,7 +693,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Changes to cart handling" />
     <MESSAGE value="Purchase session filter" />
     <MESSAGE value="Fix for purchase" />
     <MESSAGE value="PurchaseStateProvider" />
@@ -725,6 +717,7 @@
     <MESSAGE value="Purchase pricing api changes" />
     <MESSAGE value="Updtare use" />
     <MESSAGE value="ClientDiscount API check" />
-    <option name="LAST_COMMIT_MESSAGE" value="ClientDiscount API check" />
+    <MESSAGE value="Update login and registration" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update login and registration" />
   </component>
 </project>

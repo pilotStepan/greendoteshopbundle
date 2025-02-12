@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\StateProcessor;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Greendot\EshopBundle\Entity\Project\Client;
 
 final readonly class ClientRegistrationStateProcessor implements ProcessorInterface
 {
