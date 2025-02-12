@@ -9,12 +9,27 @@ use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\StateProcessor\ClientRegistrationStateProcessor;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ApiResource(
+    operations: [
+        new GetCollection(security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new GetCollection(
+            uriTemplate: '/clients/session',
+            provider: ClientStateProvider::class
+        ),
+        new Post(processor: ClientRegistrationStateProcessor::class, validationContext: ['groups' => ['Default', 'client:write']]),
+        new Get(security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new Put(processor: ClientRegistrationStateProcessor::class,
+            security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new Patch(processor: ClientRegistrationStateProcessor::class,
+            security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new Delete(security: 'is_granted("ROLE_USER") and object.id == user.id'),
+    ],
     normalizationContext: ['groups' => ['client:read']],
     denormalizationContext: ['groups' => ['client:write']],
 )]
@@ -43,6 +58,8 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $phone;
 
+    #[Assert\NotBlank]
+    #[Assert\Email]
     #[ORM\Column(type: 'string', length: 55, nullable: true)]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $mail;
@@ -53,6 +70,10 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
     private $password;
+
+    #[Assert\NotBlank(groups: ['client:create'])]
+    #[Groups(['client:write'])]
+    private ?string $plainPassword = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Comment::class)]
     #[Groups(['client:read', 'client:write'])]
@@ -195,7 +216,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // TODO: Implement eraseCredentials() method.
+        $this->plainPassword = null;
     }
 
     public function getUserIdentifier(): string
@@ -206,6 +227,18 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function getPassword(): ?string
     {
         return $this->password;
+    }
+
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): self
+    {
+        $this->plainPassword = $plainPassword;
+
+        return $this;
     }
 
     /**

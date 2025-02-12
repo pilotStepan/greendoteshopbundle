@@ -10,9 +10,39 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class LoginController extends AbstractController
 {
+
+
+    #[Route('/login', name: 'custom_login', priority: 100)]
+    public function login(#[CurrentUser] $user = null, AuthenticationUtils $authenticationUtils): Response
+    {
+        // get the login error if there is one
+        $error = $authenticationUtils->getLastAuthenticationError();
+
+        // last username entered by the user
+        $lastUsername = $authenticationUtils->getLastUsername();
+
+        return $this->render('login/index.html.twig', [
+            'last_username' => $lastUsername,
+            'error'         => $error,
+        ]);
+    }
+
+    #[Route('/api_login', name: 'custom_api_login', methods: ['POST'], priority: 100)]
+    public function api_login(#[CurrentUser] $user = null): Response
+    {
+
+
+            return $this->json([
+                'user' => $user ? $user->getFullname() : null,
+            ]);
+
+    }
+    /*
     #[Route('/custom_login', name: 'shop_custom_login', priority: 100)]
     public function index(
         Request                     $request,
@@ -65,6 +95,7 @@ class LoginController extends AbstractController
 
         return $this->redirect($request->headers->get('referer'));
     }
+    */
 
     #[Route('/logout', name: 'shop_logout', priority: 100)]
     public function logout(): void

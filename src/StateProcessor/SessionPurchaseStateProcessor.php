@@ -25,7 +25,7 @@ class SessionPurchaseStateProcessor implements ProcessorInterface
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Purchase|null
     {
         $purchase =  $this->purchaseRepository->findOneBySession('purchase');
-        dump($context);
+
         if($purchase) {
             return $purchase;
         }else{

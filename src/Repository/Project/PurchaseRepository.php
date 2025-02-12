@@ -37,13 +37,13 @@ class PurchaseRepository extends ServiceEntityRepository
             ->setMaxResults(1)
             ->orderBy('p.date_issue', "DESC")
             ->andWhere("p.state != :inquiry")->setParameter('inquiry', 'inquiry')
-            ->andWhere("p.Client = :client")->setParameter("client", $client)
+            ->andWhere("p.client = :client")->setParameter("client", $client)
             ->getQuery()->getOneOrNullResult();
     }
 
     public function getClientPurchases(Client $client){
         return $this->createQueryBuilder('p')
-            ->andWhere('p.Client = :client')->setParameter('client', $client)
+            ->andWhere('p.client = :client')->setParameter('client', $client)
             ->andWhere('p.state != :state')->setParameter('state', 'inquiry')
             ->orderBy('p.date_issue', 'desc')
             ->getQuery()->getResult();
