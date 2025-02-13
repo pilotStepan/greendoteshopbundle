@@ -17,6 +17,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProcessor\ClientRegistrationStateProcessor;
+use Greendot\EshopBundle\Validator\Constraints\ClientMailUnique;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -29,7 +30,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             uriTemplate: '/clients/session',
             provider: ClientStateProvider::class
         ),
-        new Post(processor: ClientRegistrationStateProcessor::class, validationContext: ['groups' => ['Default', 'client:write']]),
+        new Post(processor: ClientRegistrationStateProcessor::class, validationContext: ['groups' => ['Default', 'client:create']]),
         new Get(security: 'is_granted("ROLE_USER") and object.id == user.id'),
         new Put(processor: ClientRegistrationStateProcessor::class,
             security: 'is_granted("ROLE_USER") and object.id == user.id'),
@@ -50,10 +51,12 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private $id;
 
     #[ORM\Column(type: 'string', length: 65, nullable: true)]
+    #[Assert\NotBlank]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $name;
 
     #[ORM\Column(type: 'string', length: 65, nullable: true)]
+    #[Assert\NotBlank]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $surname;
 
@@ -67,12 +70,13 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[Assert\NotBlank]
     #[Assert\Email]
+    #[ClientMailUnique]
     #[ORM\Column(type: 'string', length: 55, nullable: true)]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $mail;
 
-    #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Purchase::class)]
-    #[Groups(['client:read', 'client:write'])]
+    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Purchase::class)]
+    #[Groups(['client:read'])]
     private $orders;
 
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
@@ -83,7 +87,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $plainPassword = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Comment::class)]
-    #[Groups(['client:read', 'client:write'])]
+    #[Groups(['client:read'])]
     private Collection $comments;
 
     #[ORM\Column(type: 'boolean')]
@@ -99,7 +103,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private ?bool $agreeNewsletter = null;
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: ClientAddress::class)]
-    #[Groups(['client:read'])]
+    #[Groups(['client:read', 'client:write'])]
     private Collection $clientAddresses;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Purchase::class)]

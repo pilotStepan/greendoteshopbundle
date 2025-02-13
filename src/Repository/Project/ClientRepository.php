@@ -18,4 +18,17 @@ class ClientRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Client::class);
     }
+
+    public function emailAvailable($email) :bool
+    {
+        $qb = $this->createQueryBuilder('c');
+        $qb->select($qb->expr()->count('c.id'))
+            ->where('c.email = :email')
+            ->andWhere('c.isAnonymous = 0');
+        if($qb->getQuery()->getSingleScalarResult() > 0){
+            return false;
+        }else{
+            return true;
+        }
+    }
 }

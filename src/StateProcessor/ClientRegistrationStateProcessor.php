@@ -19,6 +19,7 @@ final readonly class ClientRegistrationStateProcessor implements ProcessorInterf
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Client
     {
+
         if (!$data->getPlainPassword()) {
             return $this->processor->process($data, $operation, $uriVariables, $context);
         }
