@@ -5,13 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Update login and registration">
-      <change afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientMailUnique.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Validator/Constraints/ClientMailUniqueValidator.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entity/Project/Client.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Client.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ClientRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ClientRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/StateProcessor/ClientRegistrationStateProcessor.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StateProcessor/ClientRegistrationStateProcessor.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/StateProcessor/SessionPurchaseStateProcessor.php" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -263,15 +258,7 @@
       <workItem from="1738574652830" duration="5230000" />
       <workItem from="1738669333866" duration="5193000" />
       <workItem from="1738753758132" duration="13007000" />
-      <workItem from="1739433887553" duration="2637000" />
-    </task>
-    <task id="LOCAL-00040" summary="ProductVariant price for API">
-      <option name="closed" value="true" />
-      <created>1731066505543</created>
-      <option name="number" value="00040" />
-      <option name="presentableId" value="LOCAL-00040" />
-      <option name="project" value="LOCAL" />
-      <updated>1731066505543</updated>
+      <workItem from="1739433887553" duration="3057000" />
     </task>
     <task id="LOCAL-00041" summary="ProductVariant price for API">
       <option name="closed" value="true" />
@@ -657,7 +644,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739365395123</updated>
     </task>
-    <option name="localTasksCounter" value="89" />
+    <task id="LOCAL-00089" summary="Update login and registration">
+      <option name="closed" value="true" />
+      <created>1739438052200</created>
+      <option name="number" value="00089" />
+      <option name="presentableId" value="LOCAL-00089" />
+      <option name="project" value="LOCAL" />
+      <updated>1739438052200</updated>
+    </task>
+    <option name="localTasksCounter" value="90" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
