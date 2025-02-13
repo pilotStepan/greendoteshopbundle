@@ -27,59 +27,59 @@ class ClientAddress
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $city = null;
 
     #[ORM\Column(length: 5, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $zip = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $country = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $company = null;
 
     #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ic = null;
 
     #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $dic = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_surname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_company = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_city = null;
 
     #[ORM\Column(length: 5, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_zip = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_country = null;
 
     #[ORM\ManyToOne(inversedBy: 'clientAddresses')]
@@ -87,7 +87,7 @@ class ClientAddress
     private ?Client $Client = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write'])]
+    #[Groups(['client:read',  'client:write', 'clientAddress:read', 'clientAddress:write'])]
     private ?\DateTimeInterface $date_created = null;
 
     #[ORM\OneToOne(targetEntity: self::class, cascade: ['persist', 'remove'])]
@@ -99,15 +99,15 @@ class ClientAddress
     private Collection $purchases;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write'])]
     private ?bool $is_primary = null;
 
     #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_ic = null;
 
     #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
+    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
     private ?string $ship_dic = null;
 
     public function __construct()

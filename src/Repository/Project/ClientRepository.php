@@ -23,8 +23,9 @@ class ClientRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('c');
         $qb->select($qb->expr()->count('c.id'))
-            ->where('c.email = :email')
-            ->andWhere('c.isAnonymous = 0');
+            ->where('c.mail = :email')
+            ->andWhere('c.isAnonymous = 0')
+            ->setParameter('email', $email);
         if($qb->getQuery()->getSingleScalarResult() > 0){
             return false;
         }else{
