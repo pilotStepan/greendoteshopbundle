@@ -36,7 +36,7 @@ class InvoiceMaker
 
         $html = $this->renderHtml($invoiceData);
         $pdfFilePath = $this->generatePdf($html, $invoiceData['order_number']);
-        $this->generateExcel($invoiceData);
+//        $this->generateExcel($invoiceData); FIXME: not ready yet
 
         return $pdfFilePath;
     }
@@ -61,8 +61,8 @@ class InvoiceMaker
             'is_proforma'     => $isProforma,
             'order_number'    => $purchase->getId(),
             'invoice_number'  => $isInvoice ? $purchase->getInvoiceNumber() : null,
-            'created_at'      => $isInvoice ? $purchase->getInvoiceDate() : $purchase->getDateIssue(),
-            'due_date'        => (clone($isInvoice ? $purchase->getInvoiceDate() : $purchase->getDateIssue()))->modify('+14 days'),
+            'created_at'      => $isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue(),
+            'due_date'        => (clone($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue()))->modify('+14 days'),
             'client'          => $purchase->getClient(),
             'payment_method'  => $purchase->getPaymentType()->getName(),
             'sum'             => $totalAmount
@@ -71,7 +71,8 @@ class InvoiceMaker
 
     private function renderHtml(array $data): string
     {
-        $template = $data['is_invoice'] ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig';
+//        $template = $data['is_invoice'] ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig'; FIXME: prepare templates
+        $template = 'pdf/test.html.twig';
         return $this->twig->render($template, $data);
     }
 

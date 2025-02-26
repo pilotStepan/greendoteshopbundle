@@ -18,7 +18,7 @@ class LoginController extends AbstractController
 
 
     #[Route('/login', name: 'custom_login', priority: 100)]
-    public function login(#[CurrentUser] $user = null, AuthenticationUtils $authenticationUtils): Response
+    public function login(AuthenticationUtils $authenticationUtils, #[CurrentUser] $user = null): Response
     {
         // get the login error if there is one
         $error = $authenticationUtils->getLastAuthenticationError();

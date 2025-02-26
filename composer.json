@@ -38,7 +38,9 @@
     "symfony/validator": "^7.1",
     "symfony/twig-bundle": "^7.1",
     "symfonycasts/verify-email-bundle": "^1.17",
-    "symfony/config": "^7.1"
+    "symfony/config": "^7.1",
+    "dompdf/dompdf": "^3.1",
+    "symfony/workflow": "^7.2"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

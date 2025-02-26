@@ -3,7 +3,6 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\CzechPostParcel;
@@ -17,33 +16,34 @@ use Greendot\EshopBundle\Service\PriceCalculator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Symfony\Component\Workflow\Event\Event;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Event\TransitionEvent;
 use Symfony\Component\Workflow\Registry;
 use Symfony\Component\Workflow\WorkflowInterface;
 
 
-class PurchaseStateSubscriber implements EventSubscriberInterface
+readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
 
 
     public function __construct
     (
-        private readonly ManageMails            $manageMails,
-        private readonly CzechPostParcel        $czechPostParcel,
-        private readonly PacketeryParcel        $packeteryParcel,
-        private readonly LoggerInterface        $logger,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly Registry               $registry,
-        private readonly InvoiceMaker           $invoiceMaker,
-        private readonly PriceCalculator        $priceCalculator,
-        private readonly PurchaseRepository     $purchaseRepository,
-        private readonly ManageVoucher          $manageVoucher,
-        private readonly VoucherSubscriber      $voucherListener,
-        private readonly ?SessionInterface      $session = null,
-        private readonly ManagePurchase         $manageOrder,
-        private readonly  WorkflowInterface     $voucherFlowStateMachine,
-        private readonly  ManageClientDiscount  $manageClientDiscount,
+        private ManageMails            $manageMails,
+        private CzechPostParcel        $czechPostParcel,
+        private PacketeryParcel        $packeteryParcel,
+        private LoggerInterface        $logger,
+        private EntityManagerInterface $entityManager,
+        private Registry               $registry,
+        private InvoiceMaker           $invoiceMaker,
+        private PriceCalculator        $priceCalculator,
+        private PurchaseRepository     $purchaseRepository,
+        private ManageVoucher          $manageVoucher,
+        private VoucherSubscriber      $voucherListener,
+        private ManagePurchase         $manageOrder,
+        private WorkflowInterface      $voucherFlowStateMachine,
+        private ManageClientDiscount   $manageClientDiscount,
+        private ?SessionInterface      $session = null,
     ) {}
 
     public static function getSubscribedEvents(): array
