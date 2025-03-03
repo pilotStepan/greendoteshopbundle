@@ -43,33 +43,6 @@ class CategoryController extends AbstractController
 
 
 
-
-
-
-
-    #[Route("/api/category-siblings/{categoryId}", name: 'api_category_siblings')]
-    public function fetchCategorySiblings(int $categoryId, CategoryRepository $categoryRepository): JsonResponse
-    {
-        $categoryData     = $categoryRepository->findCategorySiblings($categoryId);
-        $categoryParent   = $categoryData['parent'];
-        $categorySiblings = $categoryData['siblings'];
-
-        return $this->json([
-            'parent'   => $categoryParent,
-            'siblings' => $categorySiblings
-        ]);
-    }
-
-    #[Route("/api/category-filters/{categoryId}", name: 'api_category_filters')]
-    public function fetchCategoryFilters(int $categoryId, ParameterRepository $parameterRepository): JsonResponse
-    {
-        $categoryFilter = $parameterRepository->getFilterTree($categoryId);
-
-        return $this->json([
-            'categoryFilter' => $categoryFilter
-        ]);
-    }
-
     #[Route('/_fragment/allUnderCategories-{category}', name: 'under_categories')]
     public function fragUnderCategories(Category $category, CategoryInfoGetter $categoryInfoGetter): JsonResponse
     {

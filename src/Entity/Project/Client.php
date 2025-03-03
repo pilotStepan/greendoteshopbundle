@@ -95,12 +95,14 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private bool $isVerified = false;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['client:read'])]
     private ?bool $isAnonymous = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: ClientDiscount::class)]
     private Collection $clientDiscounts;
 
     #[ORM\Column(nullable: true, options: ['default' => 0])]
+    #[Groups(['client:read', 'client:write'])]
     private ?bool $agreeNewsletter = null;
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: ClientAddress::class)]
