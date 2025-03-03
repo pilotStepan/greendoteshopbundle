@@ -4,11 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Update login and registration">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/CategoryController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/CategoryController.php" afterDir="false" />
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Update unlog">
       <change beforePath="$PROJECT_DIR$/src/Controller/Shop/LoginController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/LoginController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Project/Client.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project/Client.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -261,15 +258,7 @@
       <workItem from="1738669333866" duration="5193000" />
       <workItem from="1738753758132" duration="13007000" />
       <workItem from="1739433887553" duration="6856000" />
-      <workItem from="1741006343223" duration="254000" />
-    </task>
-    <task id="LOCAL-00043" summary="Fixtures">
-      <option name="closed" value="true" />
-      <created>1731588911870</created>
-      <option name="number" value="00043" />
-      <option name="presentableId" value="LOCAL-00043" />
-      <option name="project" value="LOCAL" />
-      <updated>1731588911870</updated>
+      <workItem from="1741006343223" duration="877000" />
     </task>
     <task id="LOCAL-00044" summary="Fixtures">
       <option name="closed" value="true" />
@@ -655,7 +644,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739442433562</updated>
     </task>
-    <option name="localTasksCounter" value="92" />
+    <task id="LOCAL-00092" summary="Update unlog">
+      <option name="closed" value="true" />
+      <created>1741006609063</created>
+      <option name="number" value="00092" />
+      <option name="presentableId" value="LOCAL-00092" />
+      <option name="project" value="LOCAL" />
+      <updated>1741006609064</updated>
+    </task>
+    <option name="localTasksCounter" value="93" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -697,7 +694,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Purchase session filter" />
     <MESSAGE value="Fix for purchase" />
     <MESSAGE value="PurchaseStateProvider" />
     <MESSAGE value="PurchaseStateProvider - variant total prices" />
@@ -722,6 +718,7 @@
     <MESSAGE value="Updtare use" />
     <MESSAGE value="ClientDiscount API check" />
     <MESSAGE value="Update login and registration" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update login and registration" />
+    <MESSAGE value="Update unlog" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update unlog" />
   </component>
 </project>
