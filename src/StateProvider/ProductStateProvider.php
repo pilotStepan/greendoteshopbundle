@@ -67,6 +67,14 @@ class ProductStateProvider implements ProviderInterface
                 $this->productRepository->sortByReviewsQB($qb, $filters->orderBy->direction);
         }
 
+
+        //limit and offset
+        $limit = $filters->itemsPerPage ?? 30;
+        $page = $filters->page ?? 1;
+        $offset = ($page - 1) * $limit;
+        $qb->setMaxResults($limit);
+        $qb->setFirstResult($offset);
+
         return $qb->getQuery()->getResult();
     }
 }
