@@ -30,6 +30,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
+use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
@@ -163,6 +164,7 @@ class Purchase
     // vouchers used to pay the order
     #[ORM\OneToMany(mappedBy: 'purchaseUsed', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
+    #[VoucherUsedAvailability]
     private Collection $vouchersUsed;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'purchases')]
