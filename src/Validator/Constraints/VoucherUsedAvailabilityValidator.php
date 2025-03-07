@@ -3,6 +3,7 @@ namespace Greendot\EshopBundle\Validator\Constraints;
 
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
+use Greendot\EshopBundle\Service\ManageClientDiscount;
 
 final class VoucherUsedAvailabilityValidator extends ConstraintValidator
 {
