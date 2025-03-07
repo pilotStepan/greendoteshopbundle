@@ -36,7 +36,7 @@ class BlogController extends AbstractController
     }
 
     #[Route(path: '/blog/vse', name: 'web_blog_all', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null, 'slug' => null], priority: 2)]
-    #[Route(path: '/blog/vse/stranka-{page}', name: 'web_blog_all_paged', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null], priority: 2)]
+    #[Route(path: '/blog/vse/stranka-{page}', name: 'web_blog_all_paged', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null, 'slug' => null], priority: 2)]
     #[Route(path: '/blog/{slug}-c', name: 'web_blog_filter', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null], priority: 2)]
     #[Route(path: '/blog/{slug}-c/stranka-{page}', requirements: ['slug' => '[A-Za-z0-9\-]+'], name: 'web_blog_filter_paged', priority: 2)]
     public function blogCategory($slug, $page, CategoryRepository $categoryRepository, PaginatorInterface $paginator, LabelRepository $labelRepository): Response
