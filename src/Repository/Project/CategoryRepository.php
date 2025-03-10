@@ -215,6 +215,62 @@ class CategoryRepository extends ServiceEntityRepository
         return $result->getQuery()->getResult();
     }
 
+    public function getCategoryRelatedCategoriesBothWays(int|Category $category,bool $onlyActive = true,?int $categoryTypeID = null) : array
+    {
+        if ($category instanceof Category){
+            $category = $category->getId();
+        }
+        
+        /*
+         * query split to two - may come useful someday
+         *
+        $relatedAsSubResult = [];
+        $relatedAsSuperResult = [];
+        $relatedAsSub = $this->createQueryBuilder('relatedAsSub')
+            ->leftJoin('relatedAsSub.categorySubCategories', 'category_sub')
+            ->andWhere('category_sub.category_super = :category_id')
+                ->setParameter('category_id', $category)
+            ->andWhere('relatedAsSub.categoryType = :categoryTypeId')
+                ->setParameter('categoryTypeId', $categoryTypeID);
+        if ($onlyActive){
+            $relatedAsSub->andWhere('relatedAsSub.isActive = 1');
+        }
+        $relatedAsSubResult = $relatedAsSub->getQuery()->getResult();
+
+        $relatedAsSuper = $this->createQueryBuilder('relatedAsSuper')
+            ->leftJoin('relatedAsSuper.categoryCategories', 'category_super')
+            ->andWhere('category_super.category_sub = :category_id')
+                ->setParameter('category_id', $category)
+            ->andWhere('relatedAsSuper.categoryType = :categoryTypeId')
+                ->setParameter('categoryTypeId', $categoryTypeID)
+            ;
+        if ($onlyActive){
+            $relatedAsSuper
+            ->andWhere('relatedAsSuper.isActive = 1');
+        }
+        $relatedAsSuperResult = $relatedAsSuper->getQuery()->getResult();
+        return array_merge($relatedAsSuperResult, $relatedAsSubResult);
+        */
+
+        $relatedQueryBuilder = $this->createQueryBuilder('related')
+            ->leftJoin('related.categorySubCategories', 'category_sub')
+            ->leftJoin('related.categoryCategories', 'category_super')
+            ->where('category_sub.category_super = :category_id OR category_super.category_sub = :category_id')
+            ->andWhere('related.categoryType = :categoryTypeId')
+            ->setParameter('category_id', $category)
+            ->setParameter('categoryTypeId', $categoryTypeID);
+
+        if ($onlyActive) {
+            $relatedQueryBuilder->andWhere('related.isActive = 1');
+        }
+
+        $relatedResult = $relatedQueryBuilder->getQuery()->getResult();
+
+        return $relatedResult;
+
+    }
+
+
     /**
      * @throws Exception
      */
