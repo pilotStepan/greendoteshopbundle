@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use Gedmo\Mapping\Annotation\Slug;
 use Greendot\EshopBundle\Repository\Project\CommentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -56,8 +57,8 @@ class Comment
     #[ORM\Column(type: "boolean")]
     private bool $isActive = false;
 
-//    TODO: make this automatically generate on new comment creation
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 255, unique: true )]
+    #[Slug(fields: ['title'])]
     private ?string $slug = null;
 
     public function __construct()
