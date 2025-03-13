@@ -12,7 +12,7 @@ class TransportationIsEnabledFilter extends SQLFilter
     public function addFilterConstraint(ClassMetadata $targetEntity, string $targetTableAlias): string
     {
         // check if transportation
-        if ($targetEntity->name !== Transportation::class)
+        if ($targetEntity->getReflectionClass()->name !== Transportation::class)
         {
             return "";
         }
