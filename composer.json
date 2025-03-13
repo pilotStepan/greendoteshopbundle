@@ -40,7 +40,8 @@
     "symfonycasts/verify-email-bundle": "^1.17",
     "symfony/config": "^7.1",
     "dompdf/dompdf": "^3.1",
-    "symfony/workflow": "^7.2"
+    "symfony/workflow": "^7.2",
+    "stof/doctrine-extensions-bundle": "^1.13"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
