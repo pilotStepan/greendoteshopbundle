@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use SebastianBergmann\CodeCoverage\Report\Xml\Project;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
 class Comment
@@ -31,8 +32,8 @@ class Comment
     #[ORM\Column]
     private ?bool $isAdmin = null;
 
-    #[ORM\ManyToOne(inversedBy: 'comments')]
-    private ?Category $category = null;
+    #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'comments')]
+    private Collection $categories;
 
     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'underComment')]
     private ?self $comment = null;
@@ -43,10 +44,28 @@ class Comment
     #[ORM\ManyToMany(targetEntity: File::class, inversedBy: 'comments')]
     private Collection $file;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $name = null;
+
+    #[ORM\ManyToMany(targetEntity: Product::class, inversedBy: 'comments')]
+    private Collection $products;
+
+    #[ORM\Column(type: "boolean")]
+    private bool $isActive = false;
+
+//    TODO: make this automatically generate on new comment creation
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $slug = null;
+
     public function __construct()
     {
+        $this->categories = new ArrayCollection();
         $this->underComment = new ArrayCollection();
         $this->file = new ArrayCollection();
+        $this->products = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -114,14 +133,26 @@ class Comment
         return $this;
     }
 
-    public function getCategory(): ?Category
+    /**
+     * @return Collection<int, Category>
+     */
+    public function getCategories(): Collection
     {
-        return $this->category;
+        return $this->categories;
     }
 
-    public function setCategory(?Category $category): self
+    public function addCategory(Category $category): self
     {
-        $this->category = $category;
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+        }
+
+        return $this;
+    }
+
+    public function removeCategory(Category $category): self
+    {
+        $this->categories->removeElement($category);
 
         return $this;
     }
@@ -191,4 +222,74 @@ class Comment
 
         return $this;
     }
+
+    public function getEmail() : ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): self
+    {
+        $this->email = $email;
+        return $this;
+    }
+
+    public function getName() : ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): self
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Product>
+     */
+    public function getProducts(): Collection
+    {
+        return $this->products;
+    }
+
+    public function addProduct(Product $product): self
+    {
+        if (!$this->products->contains($product)) {
+            $this->products->add($product);
+        }
+
+        return $this;
+    }
+
+    public function removeProduct(Product $product): self
+    {
+        $this->products->removeElement($product);
+
+        return $this;
+    }
+
+    public  function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $isActive): self
+    {
+        $this->isActive = $isActive;
+        return $this;
+    }
+
+    public function getSlug() : ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): self
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
 }

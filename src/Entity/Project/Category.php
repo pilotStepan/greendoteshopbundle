@@ -130,7 +130,7 @@ class Category implements Translatable
     #[ORM\OneToMany(targetEntity: CategoryProduct::class, mappedBy: 'category')]
     private $categoryProducts;
 
-    #[ORM\OneToMany(mappedBy: 'category', targetEntity: Comment::class)]
+    #[ORM\ManyToMany(targetEntity: Comment::class, inversedBy: 'categories')]
     private Collection $comments;
 
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: CategoryPerson::class)]
@@ -503,7 +503,6 @@ class Category implements Translatable
     {
         if (!$this->comments->contains($comment)) {
             $this->comments->add($comment);
-            $comment->setCategory($this);
         }
 
         return $this;
@@ -511,12 +510,7 @@ class Category implements Translatable
 
     public function removeComment(Comment $comment): self
     {
-        if ($this->comments->removeElement($comment)) {
-            // set the owning side to null (unless already changed)
-            if ($comment->getCategory() === $this) {
-                $comment->setCategory(null);
-            }
-        }
+        $this->comments->removeElement($comment);
 
         return $this;
     }
