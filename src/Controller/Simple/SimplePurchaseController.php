@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Greendot\EshopBundle\Service\InvoiceMaker;
 use Symfony\Component\Workflow\Registry;
 
-#[Route('/api-simple/purchases', name: 'simple_purchases_')]
+#[Route('/simple/api/purchases', name: 'simple_api_purchases_')]
 class SimplePurchaseController extends AbstractController
 {
     #[Route('/{purchase}/make-transition', name: 'make_transition', methods: ['POST'])]
