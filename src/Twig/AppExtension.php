@@ -99,6 +99,8 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('format_price', [$this, 'formatPrice']),
             new TwigFunction('get_currency_from_session', [$this, 'getCurrencyFromSession']),
+
+            new TwigFunction('get_category_related_categories_both_ways', [$this, 'getCategoryRelatedCategoriesBothWays']),
         ];
     }
 
@@ -466,5 +468,10 @@ class AppExtension extends AbstractExtension
     public function getBlogArticlesByLabel(int $label, int $limit = 3)
     {
         return $this->categoryRepository->findBlogCategoriesByLabel($label, $limit);
+    }
+
+    public function getCategoryRelatedCategoriesBothWays(int|Category $category, bool $onlyActive = true, ?int $categoryTypeID = null)
+    {
+        return $this->categoryRepository->getCategoryRelatedCategoriesBothWays($category, $onlyActive, $categoryTypeID);
     }
 }
