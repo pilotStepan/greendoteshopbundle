@@ -12,7 +12,7 @@ class CommentIsActiveFilter extends SQLFilter
 
     public function addFilterConstraint(ClassMetadata $targetEntity, string $targetTableAlias): string
     {
-        // check if transportation
+        // check if comment
         if ($targetEntity->getReflectionClass()->name !== Comment::class)
         {
             return "";
