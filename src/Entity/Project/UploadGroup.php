@@ -21,6 +21,7 @@ class UploadGroup
     private Collection $upload;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['upload:read'])]
     private ?int $type = null;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: CategoryUploadGroup::class)]

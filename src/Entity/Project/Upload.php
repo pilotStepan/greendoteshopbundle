@@ -30,18 +30,23 @@ class Upload
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['upload:read'])]
     private ?string $extension = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['upload:read'])]
     private ?string $mime = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['upload:read'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['upload:read'])]
     private ?string $shortDescription = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['upload:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -61,6 +66,7 @@ class Upload
     private ?string $height = null;
 
     #[ORM\ManyToOne(inversedBy: 'upload')]
+    #[Groups(['upload:read'])]
     private ?UploadGroup $uploadGroup = null;
 
     #[ORM\Column(nullable: true)]
