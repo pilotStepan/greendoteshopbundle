@@ -99,6 +99,7 @@ class Transportation implements Translatable
     private Collection $paymentTypes;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['transportation:read'])]
     private ?bool $isEnabled = null;
 
     #[Gedmo\Locale]
@@ -334,6 +335,11 @@ class Transportation implements Translatable
     }
 
     public function isEnabled(): ?bool
+    {
+        return $this->isEnabled;
+    }
+
+    public function getIsEnabled(): ?bool
     {
         return $this->isEnabled;
     }

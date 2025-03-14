@@ -209,6 +209,9 @@ class Product implements Translatable
     #[ORM\ManyToOne(inversedBy: 'Products')]
     private ?ProductType $productType = null;
 
+    #[ORM\ManyToMany(targetEntity: Comment::class, inversedBy: 'products')]
+    private Collection $comments;
+
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -220,6 +223,7 @@ class Product implements Translatable
         $this->productParameterGroups = new ArrayCollection();
         $this->childrenProducts = new ArrayCollection();
         $this->parentProducts = new ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -734,4 +738,30 @@ class Product implements Translatable
     {
         $this->productParameterGroups = $productParameterGroups;
     }
+
+
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+        }
+
+        return $this;
+    }
+
+    public function removeComments(Comment $comment): static
+    {
+        $this->comments->removeElement($comment);
+
+        return $this;
+    }
+
 }

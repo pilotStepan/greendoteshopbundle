@@ -5,6 +5,10 @@ namespace Greendot\EshopBundle\Entity\Project;
 use Greendot\EshopBundle\Repository\Project\ContactMessageRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+/*
+ * TODO - probably remove?
+ */
+
 #[ORM\Entity(repositoryClass: ContactMessageRepository::class)]
 class ContactMessage
 {
