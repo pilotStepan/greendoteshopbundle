@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiResource;
 use Gedmo\Mapping\Annotation\Slug;
 use Greendot\EshopBundle\Repository\Project\CommentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -9,28 +10,39 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use SebastianBergmann\CodeCoverage\Report\Xml\Project;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['comment:read']],
+    denormalizationContext: ['groups' => ['comment:write']],
+    paginationEnabled: true
+)]
 class Comment
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?string $content = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['comment:read'])]
     private ?\DateTimeInterface $submitted = null;
 
     #[ORM\ManyToOne(inversedBy: 'comments')]
     private ?Client $client = null;
 
     #[ORM\Column]
+    #[Groups(['comment:read'])]
     private ?bool $isAdmin = null;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'comments')]
@@ -46,19 +58,23 @@ class Comment
     private Collection $file;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?string $name = null;
 
     #[ORM\ManyToMany(targetEntity: Product::class, inversedBy: 'comments')]
     private Collection $products;
 
     #[ORM\Column(type: "boolean")]
+    #[Groups(['comment:read'])]
     private bool $isActive = false;
 
     #[ORM\Column(length: 255, unique: true )]
     #[Slug(fields: ['title'])]
+    #[Groups(['comment:read'])]
     private ?string $slug = null;
 
     public function __construct()
