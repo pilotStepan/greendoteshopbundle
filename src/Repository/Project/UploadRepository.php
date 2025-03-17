@@ -49,9 +49,9 @@ class UploadRepository extends ServiceEntityRepository
             ->innerJoin($alias . '.uploadGroup', 'ug')
             ->leftJoin('ug.productUploadGroup', 'pug')
             ->leftJoin('pug.Product', 'p')
-            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
-            ->leftJoin('pvug.ProductVariant', 'pv')
-            ->leftJoin('pv.product', 'pvp')
+            // ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            // ->leftJoin('pvug.ProductVariant', 'pv')
+            // ->leftJoin('pv.product', 'pvp')
             ->andWhere('p.id = :productId OR pvp.id = :productId')
             ->setParameter('productId', $productId);
 
