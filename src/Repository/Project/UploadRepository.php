@@ -63,7 +63,7 @@ class UploadRepository extends ServiceEntityRepository
 
         $qb
             ->innerJoin($alias . '.uploadGroup', 'ug')
-            ->leftJoin('ug.productVariantUploadGroup', 'pvug')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
             ->leftJoin('pvug.ProductVariant', 'pv')
             ->andWhere('pv.id = :variantId')
             ->setParameter('variantId', $variantId);
