@@ -52,7 +52,7 @@ class UploadRepository extends ServiceEntityRepository
             // ->leftJoin('ug.productVariantUploadGroups', 'pvug')
             // ->leftJoin('pvug.ProductVariant', 'pv')
             // ->leftJoin('pv.product', 'pvp')
-            ->andWhere('p.id = :productId OR pvp.id = :productId')
+            ->andWhere('p.id = :productId')
             ->setParameter('productId', $productId);
 
         return $qb;
