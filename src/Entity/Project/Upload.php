@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\ProductUploads;
+use Greendot\EshopBundle\ApiResource\ProductVariantUploads;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,6 +19,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['upload:write']],
 )]
 #[ApiFilter(ProductUploads::class)]
+#[ApiFilter(ProductVariantUploads::class)]
 class Upload
 {
     #[ORM\Id]

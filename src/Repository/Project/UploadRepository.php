@@ -57,6 +57,19 @@ class UploadRepository extends ServiceEntityRepository
 
         return $qb;
     }
+    public function findUploadsForProductVariantQB(int $variantId, QueryBuilder $qb): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+
+        $qb
+            ->innerJoin($alias . '.uploadGroup', 'ug')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->leftJoin('pvug.ProductVariant', 'pv')
+            ->andWhere('pv.id = :variantId')
+            ->setParameter('variantId', $variantId);
+
+        return $qb;
+    }
 
     public function getUploadForProduct(Product $product)
     {
