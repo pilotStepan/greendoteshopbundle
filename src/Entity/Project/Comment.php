@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Gedmo\Mapping\Annotation\Slug;
 use Greendot\EshopBundle\Repository\Project\CommentRepository;
@@ -18,6 +20,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
     denormalizationContext: ['groups' => ['comment:write']],
     paginationEnabled: true
 )]
+#[ApiFilter(ExistsFilter::class, properties: ['comment'])] // set this to false, to filter only main comments
+
 class Comment
 {
     #[ORM\Id]
@@ -52,6 +56,7 @@ class Comment
     private ?self $comment = null;
 
     #[ORM\OneToMany(mappedBy: 'comment', targetEntity: self::class)]
+    #[Groups(['comment:read'])]
     private Collection $underComment;
 
     #[ORM\ManyToMany(targetEntity: File::class, inversedBy: 'comments')]
