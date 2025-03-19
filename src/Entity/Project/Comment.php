@@ -39,20 +39,23 @@ class Comment
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['comment:read'])]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?\DateTimeInterface $submitted = null;
 
     #[ORM\ManyToOne(inversedBy: 'comments')]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?Client $client = null;
 
     #[ORM\Column]
-    #[Groups(['comment:read'])]
+    #[Groups(['comment:read', 'comment:write'])]
     private ?bool $isAdmin = null;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'comments')]
+    #[Groups(['comment:read', 'comment:write'])]
     private Collection $categories;
 
     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'underComment')]
+    #[Groups('comment:write')]
     private ?self $comment = null;
 
     #[ORM\OneToMany(mappedBy: 'comment', targetEntity: self::class)]
@@ -71,10 +74,11 @@ class Comment
     private ?string $name = null;
 
     #[ORM\ManyToMany(targetEntity: Product::class, inversedBy: 'comments')]
+    #[Groups(['comment:read', 'comment:write'])]
     private Collection $products;
 
     #[ORM\Column(type: "boolean")]
-    #[Groups(['comment:read'])]
+    #[Groups(['comment:read', 'comment:write'])]
     private bool $isActive = false;
 
     #[ORM\Column(length: 255, unique: true )]
