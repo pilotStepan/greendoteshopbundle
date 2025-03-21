@@ -429,16 +429,11 @@ class PurchaseController extends AbstractController
         return new JsonResponse($status);
     }
 
-    #[Route('/objednavka/obsah', name: 'shop_order_first', options: ['expose' => true])]
-    #[Route('/objednavka/doprava', name: 'shop_order_second', options: ['expose' => true])]
-    #[Route('/objednavka/dodaci', name: 'shop_order_third', options: ['expose' => true])]
-    public function first(): Response
+    #[Route('/objednavka', name: 'shop_order_steps', options: ['expose' => true], priority: 100)]
+    public function orderSteps(): Response
     {
-        return $this->render('shop/cart/step1.html.twig');
+        return $this->render('shop/cart/steps.html.twig');
     }
-
-
-
 
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
     public function thankYou($id, SessionInterface $session): Response
