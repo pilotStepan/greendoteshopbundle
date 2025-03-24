@@ -30,6 +30,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
+use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
 
@@ -61,6 +62,7 @@ use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
 )]
 #[Get(provider: PurchaseStateProvider::class)]
 #[ApiFilter(PurchaseSession::class)]
+#[TransportationPaymentAvailability]
 class Purchase
 {
     #[ORM\Id]
