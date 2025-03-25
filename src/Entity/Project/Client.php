@@ -22,21 +22,18 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Greendot\EshopBundle\StateProvider\ClientStateProvider;
+use Symfony\Component\Serializer\Attribute\SerializedName;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ApiResource(
     operations: [
         new GetCollection(security: 'is_granted("ROLE_USER") and object.id == user.id'),
-        new GetCollection(
-            uriTemplate: '/clients/session',
-            provider: ClientStateProvider::class
-        ),
-        new Post(processor: ClientRegistrationStateProcessor::class, validationContext: ['groups' => ['Default', 'client:create']]),
+        new GetCollection(uriTemplate: '/clients/session', provider: ClientStateProvider::class),
+        new Post(validationContext: ['groups' => ['Default', 'client:create']], processor: ClientRegistrationStateProcessor::class),
         new Get(security: 'is_granted("ROLE_USER") and object.id == user.id'),
-        new Put(processor: ClientRegistrationStateProcessor::class,
-            security: 'is_granted("ROLE_USER") and object.id == user.id'),
-        new Patch(processor: ClientRegistrationStateProcessor::class,
-            security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new Put(security: 'is_granted("ROLE_USER") and object.id == user.id', processor: ClientRegistrationStateProcessor::class),
+        new Patch(security: 'is_granted("ROLE_USER") and object.id == user.id', processor: ClientRegistrationStateProcessor::class),
         new Delete(security: 'is_granted("ROLE_USER") and object.id == user.id'),
     ],
     normalizationContext: ['groups' => ['client:read']],
@@ -76,7 +73,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $mail;
 
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Purchase::class)]
+    #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'client')]
     #[Groups(['client:read'])]
     private $orders;
 
@@ -85,9 +82,10 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[Assert\NotBlank(groups: ['client:create'])]
     #[Groups(['client:write'])]
+    #[SerializedName('password')]
     private ?string $plainPassword = null;
 
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Comment::class)]
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'client')]
     #[Groups(['client:read'])]
     private Collection $comments;
 
@@ -95,21 +93,21 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private bool $isVerified = false;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['client:read'])]
-    private ?bool $isAnonymous = null;
+    #[Groups(['client:read', 'client:write'])]
+    private ?bool $is_anonymous = null;
 
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: ClientDiscount::class)]
+    #[ORM\OneToMany(targetEntity: ClientDiscount::class, mappedBy: 'client')]
     private Collection $clientDiscounts;
 
     #[ORM\Column(nullable: true, options: ['default' => 0])]
     #[Groups(['client:read', 'client:write'])]
     private ?bool $agreeNewsletter = null;
 
-    #[ORM\OneToMany(mappedBy: 'Client', targetEntity: ClientAddress::class)]
+    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'Client', cascade: ['persist'])]
     #[Groups(['client:read', 'client:write'])]
     private Collection $clientAddresses;
 
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Purchase::class)]
+    #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'client')]
     #[Groups(['clientAddress:read', 'clientAddress:write'])]
     private Collection $purchases;
 
@@ -195,7 +193,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection|Purchase[]
+     * @return Collection[Purchase]
      */
     public function getOrders(): Collection
     {
@@ -296,19 +294,19 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getFullname()
+    public function getFullname(): string
     {
         return $this->name . " " . $this->surname;
     }
 
     public function isIsAnonymous(): ?bool
     {
-        return $this->isAnonymous;
+        return $this->is_anonymous;
     }
 
-    public function setIsAnonymous(?bool $isAnonymous): self
+    public function setIsAnonymous(?bool $is_anonymous): static
     {
-        $this->isAnonymous = $isAnonymous;
+        $this->is_anonymous = $is_anonymous;
 
         return $this;
     }

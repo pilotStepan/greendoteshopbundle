@@ -36,12 +36,9 @@ class LoginController extends AbstractController
     #[Route('/api_login', name: 'custom_api_login', methods: ['POST'], priority: 100)]
     public function api_login(#[CurrentUser] $user = null): Response
     {
-
-
-            return $this->json([
-                'user' => $user ? $user->getFullname() : null,
-            ]);
-
+        return $this->json([
+            'user' => $user ? $user->getFullname() : null,
+        ]);
     }
     /*
     #[Route('/custom_login', name: 'shop_custom_login', priority: 100)]

@@ -19,17 +19,13 @@ class ClientRepository extends ServiceEntityRepository
         parent::__construct($registry, Client::class);
     }
 
-    public function emailAvailable($email) :bool
+    public function findNonAnonymousByEmail(string $email): ?Client
     {
-        $qb = $this->createQueryBuilder('c');
-        $qb->select($qb->expr()->count('c.id'))
+        return $this->createQueryBuilder('c')
             ->where('c.mail = :email')
-            ->andWhere('c.isAnonymous = 0')
-            ->setParameter('email', $email);
-        if($qb->getQuery()->getSingleScalarResult() > 0){
-            return false;
-        }else{
-            return true;
-        }
+            ->andWhere('c.isAnonymous = false')
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }
