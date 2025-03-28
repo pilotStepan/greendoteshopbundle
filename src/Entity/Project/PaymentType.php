@@ -24,7 +24,7 @@ class PaymentType implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write', 'transportation:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -223,7 +223,7 @@ class PaymentType implements Translatable
         return $this;
     }
 
-     public function getSequence(): ?int
+    public function getSequence(): ?int
     {
         return $this->sequence;
     }

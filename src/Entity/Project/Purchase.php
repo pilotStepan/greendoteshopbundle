@@ -388,6 +388,10 @@ class Purchase
 
     public function setTransportation(?Transportation $Transportation): self
     {
+        // If transportation is being removed, also remove dependent payment type
+        if ($Transportation === null && $this->Transportation !== null) {
+            $this->PaymentType = null;
+        }
         $this->Transportation = $Transportation;
 
         return $this;

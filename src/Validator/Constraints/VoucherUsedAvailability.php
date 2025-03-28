@@ -6,5 +6,5 @@ use Symfony\Component\Validator\Constraint;
 #[\Attribute]
 class VoucherUsedAvailability extends Constraint
 {
-    public $message = 'The voucher is not valid.';
+    public string $message = 'The voucher is not valid.';
 }

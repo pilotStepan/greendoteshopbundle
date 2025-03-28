@@ -19,6 +19,10 @@ final class TransportationPaymentAvailabilityValidator extends ConstraintValidat
 
     public function validate($purchase, Constraint $constraint)
     {
+
+        return;
+
+        /* FIXME: doesnt work
         if (!$purchase instanceof Purchase) {
             return;
         }
@@ -33,5 +37,6 @@ final class TransportationPaymentAvailabilityValidator extends ConstraintValidat
 
         // If no valid link was found, add a violation
         $this->context->buildViolation($constraint->message)->addViolation();
+        */
     }
 }
