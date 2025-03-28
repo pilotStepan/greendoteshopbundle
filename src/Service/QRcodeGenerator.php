@@ -25,16 +25,18 @@ class QRcodeGenerator
             '*CC:CZK*DT:' . $dueDate->format("Y.m.d") .
             '*X-VS:' . $purchase->getInvoiceNumber();
 
-        $result = Builder::create()
-            ->writer(new PngWriter())
-            ->writerOptions([])
-            ->data($qrContent)
-            ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(ErrorCorrectionLevel::High)
-            ->size(300)
-            ->margin(10)
-            ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-            ->build();
+        $result = new Builder(
+            writer: new PngWriter(),
+            writerOptions: [],
+            validateResult: false,
+            data: $qrContent,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 300,
+            margin: 10,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin
+        );
+        $result = $result->build();
 
         $filePath = sprintf('QRcodes/qr_code_%s.png', $purchase->getId());
         $fullPath = 'public/' . $filePath;
