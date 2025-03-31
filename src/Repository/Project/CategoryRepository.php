@@ -318,4 +318,16 @@ class CategoryRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getSubcategories(int|Category $category): array
+    {
+        if ($category instanceof Category) $category = $category->getId();
+
+        return $this->createQueryBuilder('category')
+            ->leftJoin('category.categorySubCategories', 'sub_categories')
+            ->andWhere('sub_categories.category_super = :cat')
+            ->setParameter('cat', $category)
+            ->getQuery()->getResult();
+
+    }
 }

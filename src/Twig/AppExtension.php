@@ -101,7 +101,24 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_currency_from_session', [$this, 'getCurrencyFromSession']),
 
             new TwigFunction('get_category_related_categories_both_ways', [$this, 'getCategoryRelatedCategoriesBothWays']),
+            new TwigFunction('get_all_parent_subcategories', [$this, 'getAllParentSubcategories']),
         ];
+    }
+
+    public function getAllParentSubcategories(Category $category): array
+    {
+        if ($category->getCategorySubCategories()->count() == 0) {
+            return [];
+        }
+
+        $parentCategory = $category?->getCategorySubCategories()->first();
+        if ($parentCategory and $parentCategory->getCategorySuper()){
+            $parentCategory = $parentCategory->getCategorySuper();
+        }else{
+            return [];
+        }
+
+        return $this->categoryRepository->getSubcategories($parentCategory);
     }
 
     public function formatPrice(float $price, ?Currency $currency = null): string
