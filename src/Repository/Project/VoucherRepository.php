@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -40,4 +41,13 @@ class VoucherRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+    public function findAllForClient(Client $client): array
+    {
+        return $this->createQueryBuilder('v')
+            ->join('v.Purchase_issued', 'p')
+            ->where('p.client = :client')
+            ->setParameter('client', $client)
+            ->getQuery()
+            ->getResult();
+    }
 }
