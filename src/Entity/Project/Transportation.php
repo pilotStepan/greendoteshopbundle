@@ -96,6 +96,7 @@ class Transportation implements Translatable
     private $section;
 
     #[ORM\ManyToMany(targetEntity: PaymentType::class, inversedBy: 'transportations')]
+    #[Groups(['transportation:read', 'purchase:read'])]
     private Collection $paymentTypes;
 
     #[ORM\Column(nullable: true)]

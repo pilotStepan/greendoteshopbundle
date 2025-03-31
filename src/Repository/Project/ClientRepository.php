@@ -23,7 +23,7 @@ class ClientRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('c')
             ->where('c.mail = :email')
-            ->andWhere('c.isAnonymous = false')
+            ->andWhere('c.is_anonymous = false')
             ->setParameter('email', $email)
             ->getQuery()
             ->getOneOrNullResult();
