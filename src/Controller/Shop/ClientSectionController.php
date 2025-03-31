@@ -15,6 +15,7 @@ use Greendot\EshopBundle\Form\ClientFormType;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\InvoiceMaker;
 use Greendot\EshopBundle\Service\PriceCalculator;
@@ -34,6 +35,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Workflow\Registry;
+
 
 class ClientSectionController extends AbstractController
 {
@@ -419,4 +422,40 @@ class ClientSectionController extends AbstractController
 
         return new JsonResponse($return);
     }
+
+    #[Route('/zakaznik/certifikaty', name: 'client_section_certificates')]
+    public function certificates(
+        ClientRepository $clientRepository,
+        VoucherRepository $voucherRepository,
+        Registry $workflowRegistry
+    ): Response {
+        // Get the client from the repository
+        $client = $clientRepository->find($this->getUser());
+        $vouchers = $voucherRepository->findAllForClient($client);
+
+        $voucherMetadata = [];
+
+        // Get metadata for the vouchers
+        foreach ($vouchers as $voucher) {
+            $workflow = $workflowRegistry->get($voucher);
+            $metadataStore = $workflow->getMetadataStore();
+
+            $description = $metadataStore->getMetadata('description', $voucher->getState()) ?? 'No description';
+            $short_description = $metadataStore->getMetadata('short_description', $voucher->getState()) ?? 'No short description';
+            $class = $metadataStore->getMetadata('class', $voucher->getState()) ?? 'default-class';
+
+            $voucherMetadata[$voucher->getId()] = [
+                'state' => $voucher->getState(),
+                'description' => $description,
+                'short_description' => $short_description,
+                'class' => $class,
+            ];
+        }
+
+        return $this->render('client-section/certificates.html.twig', [
+            'vouchers' => $vouchers,
+            'voucherMetadata' => $voucherMetadata
+        ]);
+    }
+
 }
