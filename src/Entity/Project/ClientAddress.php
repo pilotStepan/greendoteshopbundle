@@ -14,7 +14,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     normalizationContext: ['groups' => ['clientAddress:read']],
     denormalizationContext: ['groups' => ['clientAddress:write']],
-    order: ['id' => 'desc'],
+    order: ['id' => 'desc', 'is_primary' => 'desc']
 )]
 //#[ApiFilter(SearchFilter::class, properties: ['purchase' => 'exact'])]
 //#[ApiFilter(ClientAddressDateFilter::class)]

@@ -28,13 +28,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new GetCollection(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
         new GetCollection(uriTemplate: '/clients/session', provider: ClientStateProvider::class),
         new Post(validationContext: ['groups' => ['Default', 'client:create']], processor: ClientRegistrationStateProcessor::class),
-        new Get(security: 'is_granted("ROLE_USER") and object.id == user.id'),
-        new Put(security: 'is_granted("ROLE_USER") and object.id == user.id', processor: ClientRegistrationStateProcessor::class),
-        new Patch(security: 'is_granted("ROLE_USER") and object.id == user.id', processor: ClientRegistrationStateProcessor::class),
-        new Delete(security: 'is_granted("ROLE_USER") and object.id == user.id'),
+        new Get(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
+        new Put(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
+        new Patch(denormalizationContext: [
+            'groups' => ['client:write'],
+        ], security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
+        new Delete(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
     ],
     normalizationContext: ['groups' => ['client:read']],
     denormalizationContext: ['groups' => ['client:write']],
@@ -45,7 +47,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['client:read', 'order:read', 'purchase:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 65, nullable: true)]
@@ -101,9 +103,9 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true, options: ['default' => 0])]
     #[Groups(['client:read', 'client:write'])]
-    private ?bool $agreeNewsletter = null;
+    private ?bool $agree_newsletter = null;
 
-    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'Client', cascade: ['persist'])]
+    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'Client', cascade: ['persist', 'merge'])]
     #[Groups(['client:read', 'client:write'])]
     private Collection $clientAddresses;
 
@@ -342,12 +344,12 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isAgreeNewsletter(): ?bool
     {
-        return $this->agreeNewsletter;
+        return $this->agree_newsletter;
     }
 
     public function setAgreeNewsletter(?bool $agreeNewsletter): self
     {
-        $this->agreeNewsletter = $agreeNewsletter;
+        $this->agree_newsletter = $agreeNewsletter;
 
         return $this;
     }
