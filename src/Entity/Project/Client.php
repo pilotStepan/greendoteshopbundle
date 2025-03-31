@@ -105,7 +105,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['client:read', 'client:write'])]
     private ?bool $agree_newsletter = null;
 
-    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'Client', cascade: ['persist', 'merge'])]
+    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'Client', cascade: ['persist'])]
     #[Groups(['client:read', 'client:write'])]
     private Collection $clientAddresses;
 
