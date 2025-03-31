@@ -111,14 +111,20 @@ class AppExtension extends AbstractExtension
             return [];
         }
 
-        $parentCategory = $category?->getCategorySubCategories()->first();
-        if ($parentCategory and $parentCategory->getCategorySuper()){
+        $parentCategories = $category?->getCategorySubCategories();
+        if (!$parentCategories) return [];
+        $return  =  [];
+        foreach ($parentCategories as $parentCategory){
+            if (!$parentCategory or !$parentCategory?->getCategorySuper()){
+                continue;
+            }
             $parentCategory = $parentCategory->getCategorySuper();
-        }else{
-            return [];
+            $subCategories =  $this->categoryRepository->getSubcategories($parentCategory);
+            $parent = ['parent' => $parentCategory, 'subCategories' => $subCategories];
+            $return[] = $parent;
         }
 
-        return $this->categoryRepository->getSubcategories($parentCategory);
+        return $return;
     }
 
     public function formatPrice(float $price, ?Currency $currency = null): string
