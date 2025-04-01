@@ -93,18 +93,16 @@ class ClientSectionController extends AbstractController
     #[Route('/zakaznik', name: 'client_section_index', priority: 2)]
     public function index(
         ClientRepository   $clientRepository,
-        PurchaseRepository $purchaseRepository): Response
+        PurchaseRepository $purchaseRepository
+    ): Response
     {
-        $client = $clientRepository->find($this->getUser());
-
-        if (!$client) {
-            return $this->redirectToRoute('web_homepage');
-        }
+        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
+        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
 
         $lastOrder = $purchaseRepository->lastPurchaseOfUser($client);
 
         return $this->render('client-section/index.html.twig', [
-            'client'    => $client,
+            'client' => $client,
             'lastOrder' => $lastOrder,
         ]);
     }
@@ -118,6 +116,7 @@ class ClientSectionController extends AbstractController
         SessionInterface   $session
     ): Response
     {
+        // TODO: validate if client is present and allowed to see this purchase
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
 
@@ -153,6 +152,7 @@ class ClientSectionController extends AbstractController
         SessionInterface       $session
     ): RedirectResponse
     {
+        // TODO: validate if client is present and allowed to see this purchase
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
 
@@ -192,11 +192,11 @@ class ClientSectionController extends AbstractController
         PaginatorInterface $paginator,
         Request            $request): Response
     {
-        $client = $clientRepository->find($this->getUser());
+        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
+        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
+
         $orders = $orderRepository->getClientPurchases($client);
-
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
-
         $pagination->setTemplate('pagination/pagination.html.twig');
 
         return $this->render('client-section/orders.html.twig', [
@@ -213,8 +213,8 @@ class ClientSectionController extends AbstractController
         PriceCalculator    $priceCalculator,
         SessionInterface   $session): Response
     {
+        // TODO: validate if client is present and allowed to see this purchase
         $purchase = $purchaseRepository->find($id);
-
         $currency = $session->get('selectedCurrency');
 
         $totalPrice = $priceCalculator->calculatePurchasePrice(
@@ -242,15 +242,12 @@ class ClientSectionController extends AbstractController
     #[Route('/zakaznik/zmena-udaju', name: 'client_section_personal')]
     public function profileDataChange(
         Request                $request,
+        ClientRepository       $clientRepository,
         EntityManagerInterface $entityManager
     ): Response
     {
-
-        $client = $this->getUser();
-
-        if (!$client) {
-            throw $this->createNotFoundException('User not found');
-        }
+        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
+        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
 
         $lastAddress = $client->getClientAddresses()->last() ?: new ClientAddress();
 
@@ -429,10 +426,10 @@ class ClientSectionController extends AbstractController
         VoucherRepository $voucherRepository,
         Registry $workflowRegistry
     ): Response {
-        // Get the client from the repository
-        $client = $clientRepository->find($this->getUser());
-        $vouchers = $voucherRepository->findAllForClient($client);
+        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
+        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
 
+        $vouchers = $voucherRepository->findAllForClient($client);
         $voucherMetadata = [];
 
         // Get metadata for the vouchers

@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -35,6 +34,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Put(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
         new Patch(denormalizationContext: [
             'groups' => ['client:write'],
+            'api_allow_update' => true,
         ], security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
         new Delete(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
     ],
@@ -105,7 +105,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['client:read', 'client:write'])]
     private ?bool $agree_newsletter = null;
 
-    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'Client', cascade: ['persist'])]
+    #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'client', cascade: ['persist'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     #[Groups(['client:read', 'client:write'])]
     private Collection $clientAddresses;
 
@@ -115,8 +115,8 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
-        $this->orders          = new ArrayCollection();
-        $this->comments        = new ArrayCollection();
+        $this->orders = new ArrayCollection();
+        $this->comments = new ArrayCollection();
         $this->clientDiscounts = new ArrayCollection();
         $this->clientAddresses = new ArrayCollection();
         $this->purchases = new ArrayCollection();
@@ -354,7 +354,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-
     /**
      * @return Collection<int, ClientAddress>
      */
@@ -363,11 +362,22 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->clientAddresses;
     }
 
+    public function getPrimaryAddress(): ?ClientAddress
+    {
+        return $this->clientAddresses
+            ->filter(fn($address) => $address->getIsPrimary())
+            ->first() ?: null;
+    }
+
     public function addClientAddress(ClientAddress $clientAddress): static
     {
         if (!$this->clientAddresses->contains($clientAddress)) {
             $this->clientAddresses->add($clientAddress);
             $clientAddress->setClient($this);
+
+            if ($this->clientAddresses->count() === 1) {
+                $clientAddress->setIsPrimary(true);
+            }
         }
 
         return $this;
@@ -397,7 +407,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->purchases->contains($purchase)) {
             $this->purchases->add($purchase);
-            $purchase->setClientAddress($this);
+            $purchase->setClient($this);
         }
 
         return $this;
@@ -407,8 +417,8 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->purchases->removeElement($purchase)) {
             // set the owning side to null (unless already changed)
-            if ($purchase->getClientAddress() === $this) {
-                $purchase->setClientAddress(null);
+            if ($purchase->getClient() === $this) {
+                $purchase->setClient(null);
             }
         }
 

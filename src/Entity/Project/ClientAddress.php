@@ -3,390 +3,118 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Repository\Project\ClientAddressRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
+use ApiPlatform\Metadata\Patch;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: ClientAddressRepository::class)]
+/**
+ * Concrete address entity for client information, handling billing/shipping addresses with primary address management
+ */
+#[ORM\Entity]
 #[ApiResource(
-    normalizationContext: ['groups' => ['clientAddress:read']],
-    denormalizationContext: ['groups' => ['clientAddress:write']],
-    order: ['id' => 'desc', 'is_primary' => 'desc']
+    operations: [
+        new Patch()
+    ],
+    normalizationContext: [
+        'groups' => ['client_address:read'],
+        'order' => ['is_primary' => 'DESC'],
+    ],
+    denormalizationContext: [
+        'groups' => ['client_address:write'],
+        'allow_extra_attributes' => true,
+    ]
 )]
-//#[ApiFilter(SearchFilter::class, properties: ['purchase' => 'exact'])]
-//#[ApiFilter(ClientAddressDateFilter::class)]
-class ClientAddress
+class ClientAddress extends Address
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    #[Groups(['client:read', 'clientAddress:read'])]
-    private ?int $id = null;
+    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'clientAddresses')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotBlank]
+    private ?Client $client = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $street = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $city = null;
-
-    #[ORM\Column(length: 5, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $zip = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $country = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $company = null;
+    #[ORM\Column(nullable: false, options: ['default' => false])]
+    #[Groups(['client:read', 'client:write', 'client_address:write'])]
+    private ?bool $is_primary = false;
 
     #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ic = null;
-
-    #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $dic = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_name = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_surname = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_company = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_street = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_city = null;
-
-    #[ORM\Column(length: 5, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_zip = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_country = null;
-
-    #[ORM\ManyToOne(inversedBy: 'clientAddresses')]
-    #[Groups(['clientAddress:read', 'clientAddress:write'])]
-    private ?Client $Client = null;
-
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['client:read',  'client:write', 'clientAddress:read', 'clientAddress:write'])]
-    private ?\DateTimeInterface $date_created = null;
-
-    #[ORM\OneToOne(targetEntity: self::class, cascade: ['persist', 'remove'])]
-    #[Groups(['clientAddress:read', 'clientAddress:write'])]
-    private ?self $ClientAddress = null;
-
-    #[ORM\OneToMany(mappedBy: 'clientAddress', targetEntity: Purchase::class)]
-    #[Groups(['clientAddress:read', 'clientAddress:write'])]
-    private Collection $purchases;
-
-    #[ORM\Column(nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write'])]
-    private ?bool $is_primary = null;
-
-    #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_ic = null;
-
-    #[ORM\Column(length: 45, nullable: true)]
-    #[Groups(['client:read', 'client:write', 'clientAddress:read', 'clientAddress:write', 'purchase:read'])]
-    private ?string $ship_dic = null;
+    #[Groups(['client:read', 'client:write', 'client_address:write'])]
+    private ?string $name = null;
 
     public function __construct()
     {
-        $this->Purchase = new ArrayCollection();
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function getStreet(): ?string
-    {
-        return $this->street;
-    }
-
-    public function setStreet(?string $street): static
-    {
-        $this->street = $street;
-
-        return $this;
-    }
-
-    public function getCity(): ?string
-    {
-        return $this->city;
-    }
-
-    public function setCity(?string $city): static
-    {
-        $this->city = $city;
-
-        return $this;
-    }
-
-    public function getZip(): ?string
-    {
-        return $this->zip;
-    }
-
-    public function setZip(?string $zip): static
-    {
-        $this->zip = $zip;
-
-        return $this;
-    }
-
-    public function getCountry(): ?string
-    {
-        return $this->country;
-    }
-
-    public function setCountry(?string $country): static
-    {
-        $this->country = $country;
-
-        return $this;
-    }
-
-    public function getCompany(): ?string
-    {
-        return $this->company;
-    }
-
-    public function setCompany(?string $company): static
-    {
-        $this->company = $company;
-
-        return $this;
-    }
-
-    public function getIc(): ?string
-    {
-        return $this->ic;
-    }
-
-    public function setIc(?string $ic): static
-    {
-        $this->ic = $ic;
-
-        return $this;
-    }
-
-    public function getDic(): ?string
-    {
-        return $this->dic;
-    }
-
-    public function setDic(?string $dic): static
-    {
-        $this->dic = $dic;
-
-        return $this;
-    }
-
-    public function getShipName(): ?string
-    {
-        return $this->ship_name;
-    }
-
-    public function setShipName(?string $ship_name): static
-    {
-        $this->ship_name = $ship_name;
-
-        return $this;
-    }
-
-    public function getShipSurname(): ?string
-    {
-        return $this->ship_surname;
-    }
-
-    public function setShipSurname(?string $ship_surname): static
-    {
-        $this->ship_surname = $ship_surname;
-
-        return $this;
-    }
-
-    public function getShipCompany(): ?string
-    {
-        return $this->ship_company;
-    }
-
-    public function setShipCompany(?string $ship_company): static
-    {
-        $this->ship_company = $ship_company;
-
-        return $this;
-    }
-
-    public function getShipStreet(): ?string
-    {
-        return $this->ship_street;
-    }
-
-    public function setShipStreet(?string $ship_street): static
-    {
-        $this->ship_street = $ship_street;
-
-        return $this;
-    }
-
-    public function getShipCity(): ?string
-    {
-        return $this->ship_city;
-    }
-
-    public function setShipCity(?string $ship_city): static
-    {
-        $this->ship_city = $ship_city;
-
-        return $this;
-    }
-
-    public function getShipZip(): ?string
-    {
-        return $this->ship_zip;
-    }
-
-    public function setShipZip(?string $ship_zip): static
-    {
-        $this->ship_zip = $ship_zip;
-
-        return $this;
-    }
-
-    public function getShipCountry(): ?string
-    {
-        return $this->ship_country;
-    }
-
-    public function setShipCountry(?string $ship_country): static
-    {
-        $this->ship_country = $ship_country;
-
-        return $this;
+        parent::__construct();
     }
 
     public function getClient(): ?Client
     {
-        return $this->Client;
+        return $this->client;
     }
 
-    public function setClient(?Client $Client): static
+    public function setClient(?Client $client): static
     {
-        $this->Client = $Client;
-
+        $this->client = $client;
         return $this;
     }
 
-    public function getDateCreated(): ?\DateTimeInterface
-    {
-        return $this->date_created;
-    }
-
-    public function setDateCreated(?\DateTimeInterface $date_created): static
-    {
-        $this->date_created = $date_created;
-
-        return $this;
-    }
-
-    public function getClientAddress(): ?self
-    {
-        return $this->ClientAddress;
-    }
-
-    public function setClientAddress(?self $ClientAddress): static
-    {
-        $this->ClientAddress = $ClientAddress;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Purchase>
-     */
-    public function getPurchases(): Collection
-    {
-        return $this->purchases;
-    }
-
-    public function addPurchase(Purchase $purchase): static
-    {
-        if (!$this->purchases->contains($purchase)) {
-            $this->purchases->add($purchase);
-            $purchase->setClientAddress($this);
-        }
-
-        return $this;
-    }
-
-    public function removePurchase(Purchase $purchase): static
-    {
-        if ($this->purchases->removeElement($purchase)) {
-            // set the owning side to null (unless already changed)
-            if ($purchase->getClientAddress() === $this) {
-                $purchase->setClientAddress(null);
-            }
-        }
-
-        return $this;
-    }
-
-    public function isIsPrimary(): ?bool
+    public function getIsPrimary(): ?bool
     {
         return $this->is_primary;
     }
 
-    public function setIsPrimary(?bool $is_primary): static
+    // Ensures exactly one primary address exists per client while handling all edge cases
+    public function setIsPrimary(?bool $isPrimary): static
     {
-        $this->is_primary = $is_primary;
+        $client = $this->getClient();
 
+        if (!$isPrimary) {
+            if ($client && $client->getClientAddresses()->count() === 1) {
+                $this->is_primary = true;
+                return $this;
+            }
+
+            $this->is_primary = false;
+            return $this;
+        }
+
+        if (!$client) {
+            $this->is_primary = false;
+            return $this;
+        }
+
+        if ($this->is_primary === true) {
+            return $this;
+        }
+
+        if ($currentPrimary = $client->getPrimaryAddress()) {
+            if ($currentPrimary === $this) {
+                return $this;
+            }
+            $currentPrimary->is_primary = false;
+        }
+
+        $this->is_primary = true;
         return $this;
     }
 
-    public function getShipIc(): ?string
+    public function getName(): ?string
     {
-        return $this->ship_ic;
+        return $this->name;
     }
 
-    public function setShipIc(?string $ship_ic): static
+    public function setName(?string $name): static
     {
-        $this->ship_ic = $ship_ic;
-
+        $this->name = $name;
         return $this;
     }
 
-    public function getShipDic(): ?string
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function autoSetPrimary(): void
     {
-        return $this->ship_dic;
-    }
-
-    public function setShipDic(?string $ship_dic): static
-    {
-        $this->ship_dic = $ship_dic;
-
-        return $this;
+        if ($this->client && $this->client->getClientAddresses()->count() === 1 &&
+            !$this->client->getClientAddresses()->exists(fn($k, $a) => $a->getIsPrimary())
+        ) {
+            $this->is_primary = true;
+        }
     }
 }
