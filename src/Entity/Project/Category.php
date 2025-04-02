@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Doctrine\Odm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
