@@ -3,8 +3,11 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use App\Filter\MultipleFilter;
 use Gedmo\Mapping\Annotation\Slug;
 use Greendot\EshopBundle\Repository\Project\CommentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -21,7 +24,9 @@ use Symfony\Component\Serializer\Attribute\Groups;
     paginationEnabled: true
 )]
 #[ApiFilter(ExistsFilter::class, properties: ['comment'])] // set this to false, to filter only main comments
-
+#[ApiFilter(SearchFilter::class, properties: ['title' => 'partial'])]
+#[ApiFilter(OrderFilter::class, properties: ['submitted'])]
+#[ApiFilter(MultipleFilter::class, properties: ['categories'])]
 class Comment
 {
     #[ORM\Id]
@@ -48,7 +53,7 @@ class Comment
 
     #[ORM\Column]
     #[Groups(['comment:read', 'comment:write'])]
-    private ?bool $isAdmin = null;
+    private ?bool $isAdmin = false;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'comments')]
     #[Groups(['comment:read', 'comment:write'])]
