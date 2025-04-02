@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -12,17 +11,6 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
-use Greendot\EshopBundle\Entity\Project\Branch;
-use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
-use Greendot\EshopBundle\Entity\Project\Consent;
-use Greendot\EshopBundle\Entity\Project\Note;
-use Greendot\EshopBundle\Entity\Project\Payment;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
-use Greendot\EshopBundle\Entity\Project\PurchaseEvent;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -33,6 +21,7 @@ use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Table(name: '`purchase`')]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
@@ -48,9 +37,9 @@ use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
         new Patch(
             uriTemplate: '/purchases/session',
             //processor: SessionPurchaseStateProcessor::class,
-            provider: PurchaseStateProvider::class,
             denormalizationContext: ['groups' => ['purchase:write']],
             read: true,
+            provider: PurchaseStateProvider::class,
         ),
         new Put(),
         new Delete(),
@@ -146,25 +135,25 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $payment_price;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseProductVariant::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PurchaseProductVariant::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
     private Collection $ProductVariants;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseEvent::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PurchaseEvent::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     private Collection $purchaseEvents;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Note::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     private Collection $notes;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: PurchaseTracking::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PurchaseTracking::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     private Collection $purchaseTrackings;
 
     // vouchers bought in the order
-    #[ORM\OneToMany(mappedBy: 'Purchase_issued', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Voucher::class, mappedBy: 'Purchase_issued', cascade: ['persist', 'remove'])]
     private Collection $VouchersIssued;
 
     // vouchers used to pay the order
-    #[ORM\OneToMany(mappedBy: 'purchaseUsed', targetEntity: Voucher::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Voucher::class, mappedBy: 'purchaseUsed', cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
     #[VoucherUsedAvailability]
     private Collection $vouchersUsed;
@@ -172,14 +161,16 @@ class Purchase
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'purchases')]
     private Collection $Consents;
 
-    #[ORM\ManyToOne(inversedBy: 'purchases', targetEntity: ClientAddress::class)]
-    #[Groups(['purchase:read'])]
-    private ?ClientAddress $clientAddress = null;
+    #[ORM\OneToOne(targetEntity: PurchaseAddress::class, inversedBy: 'purchase')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotBlank]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?PurchaseAddress $purchaseAddress = null;
 
-    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: Payment::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Payment::class, mappedBy: 'purchase', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $payments;
 
-    #[ORM\ManyToOne(inversedBy: 'purchases', targetEntity: ClientDiscount::class)]
+    #[ORM\ManyToOne(targetEntity: ClientDiscount::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[ClientDiscountAvailability]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -660,19 +651,17 @@ class Purchase
         $this->payment_price = $payment_price;
     }
 
-    public function getClientAddress(): ?ClientAddress
+    public function getPurchaseAddress(): ?PurchaseAddress
     {
-        return $this->clientAddress;
+        return $this->purchaseAddress;
     }
 
-    public function setClientAddress(?ClientAddress $clientAddress): static
+    public function setPurchaseAddress(?PurchaseAddress $purchaseAddress): static
     {
-        $this->clientAddress = $clientAddress;
+        $this->purchaseAddress = $purchaseAddress;
 
         return $this;
     }
-
-
 
     public function getPayments(): Collection
     {

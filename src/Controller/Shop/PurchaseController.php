@@ -5,16 +5,12 @@ namespace Greendot\EshopBundle\Controller\Shop;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Entity\Project\Payment;
-use Greendot\EshopBundle\Entity\Project\PaymentAction;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
-use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Greendot\EshopBundle\Service\CzechPostParcel;
-use Greendot\EshopBundle\Service\PacketeryParcel;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -25,7 +21,6 @@ use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\PriceCalculator;
-use Greendot\EshopBundle\Service\ManageVoucher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -75,6 +70,7 @@ class PurchaseController extends AbstractController
             $entityManager->persist($client);
         }
 
+        // TODO: refactor it utilizing new PurchaseAddress entity
         $clientAddresses = $client->getClientAddresses();
         if ($clientAddresses->isEmpty()) {
             $clientAddress = new ClientAddress();

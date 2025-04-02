@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
@@ -15,6 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Serializer\Annotation\MaxDepth;
+use Symfony\Component\Validator\Constraints\Existence;
 
 /**
  * @Gedmo\Loggable()
@@ -28,6 +30,7 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
 )]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial', 'categoryProducts.product' => 'exact', 'categoryType.id' => 'exact'])]
 //#[ApiFilter(TranslationAwareSearchFilter::class)]
+#[ApiFilter(ExistsFilter::class, properties: ['comments'])]
 class Category implements Translatable
 {
     #[ORM\Id]
