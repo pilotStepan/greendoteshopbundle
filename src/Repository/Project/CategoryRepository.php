@@ -4,18 +4,20 @@ namespace Greendot\EshopBundle\Repository\Project;
 
 use Exception;
 use Doctrine\ORM\Query;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
+use Gedmo\Translatable\TranslatableListener;
 use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\MenuType;
-use Greendot\EshopBundle\Entity\Project\SubMenuType;
-use Greendot\EshopBundle\Entity\Project\CategoryCategory;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
-use Gedmo\Translatable\TranslatableListener;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Entity\Project\SubMenuType;
+use Greendot\EshopBundle\Entity\Project\CategoryType;
+use Greendot\EshopBundle\Entity\Project\CategoryProduct;
+use Greendot\EshopBundle\Entity\Project\CategoryCategory;
 use Gedmo\Translatable\Query\TreeWalker\TranslationWalker;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
@@ -329,5 +331,42 @@ class CategoryRepository extends ServiceEntityRepository
             ->setParameter('cat', $category)
             ->getQuery()->getResult();
 
+    }
+
+        /**
+     * returns categories of products related to given category/categories - if category entity is given excludes it from select
+     *
+     * @param array|Category $category
+     * @param bool $onlyActive //if related products and final categoris should be active
+     * @param array|null $categoryTypeIds //select only particular categoryType categories - should not be used with excludeCategoryTypeIds
+     * @param array|null $excludeCategoryTypeIds //select all categoryTypes but not these - should not be used with categoryTypeIds
+     * @return array
+     */
+    public function getCategoriesFromRelatedProducts(array|Category $category, bool $onlyActive = true, ?array $categoryTypeIds = null, ?array $excludeCategoryTypeIds = null): array
+    {
+        //three queries for few categories is a lot, but I was not able to figure out a better way
+        $excludeCategory = null;
+        //returns related products for category
+        $relatedProducts = $this->createQueryBuilder('c')
+            ->select('IDENTITY(category_products.product) as id')
+            ->leftJoin('c.categoryProducts', 'category_products');
+        if ($category instanceof Category){
+            $excludeCategory = $category->getId();
+            $relatedProducts = $relatedProducts->andWhere('c.id = :category')
+                ->setParameter('category', $excludeCategory);
+        }else{
+            $relatedProducts = $relatedProducts->andWhere('c.id in (:categories)')
+                ->setParameter('categories', $category);
+        }
+
+        $relatedProducts = $relatedProducts->getQuery()->getResult();
+        $relatedProducts = array_column($relatedProducts, 'id');
+        if (count($relatedProducts) < 1 || $relatedProducts[0] === null){
+            return [];
+        }
+        $categories = $this->entityManager->getRepository(CategoryProduct::class)->getProductRelatedCategories($relatedProducts, $excludeCategory, $onlyActive, $categoryTypeIds, $excludeCategoryTypeIds);
+
+        //hydrates category
+        return $this->createQueryBuilder('c')->andWhere('c.id in (:categorie)')->setParameter('categorie', $categories)->getQuery()->getResult();
     }
 }

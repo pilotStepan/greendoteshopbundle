@@ -26,7 +26,7 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
     denormalizationContext: ['groups' => ['category:write']],
     paginationEnabled: true
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial'])]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial', 'categoryProducts.product' => 'exact', 'categoryType.id' => 'exact'])]
 //#[ApiFilter(TranslationAwareSearchFilter::class)]
 class Category implements Translatable
 {
@@ -149,6 +149,7 @@ class Category implements Translatable
     private Collection $categoryUploadGroups;
 
     #[ORM\ManyToOne(inversedBy: 'Categories')]
+    #[Groups(['category_default', 'category:read'])]
     private ?CategoryType $categoryType = null;
 
     #[ORM\Column(nullable: true, options: ['default' => 1])]

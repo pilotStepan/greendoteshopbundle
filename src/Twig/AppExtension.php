@@ -2,34 +2,35 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use Twig\TwigFunction;
+use Twig\Extension\AbstractExtension;
+use Greendot\EshopBundle\Entity\Project\Note;
+use Symfony\Component\Routing\RouterInterface;
+use Greendot\EshopBundle\Entity\Project\Upload;
+use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\Note;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\Product;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Entity\Project\Upload;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\NoteRepository;
-use Greendot\EshopBundle\Repository\Project\ParameterRepository;
-use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use Greendot\EshopBundle\Repository\Project\CategoryRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
 use Greendot\EshopBundle\Service\ManageWorkflows;
 use Greendot\EshopBundle\Service\PriceCalculator;
-use Greendot\EshopBundle\Service\ProductInfoGetter;
-use Greendot\EshopBundle\Service\ValueAddedTaxCalculator;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Routing\RouterInterface;
-use Twig\TwigFunction;
-use Twig\Extension\AbstractExtension;
+use Greendot\EshopBundle\Service\ProductInfoGetter;
+use Greendot\EshopBundle\Service\CategoryInfoGetter;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Service\InformationBlockService;
+use Greendot\EshopBundle\Service\ValueAddedTaxCalculator;
+use Greendot\EshopBundle\Repository\Project\NoteRepository;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Repository\Project\CategoryRepository;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 
 class AppExtension extends AbstractExtension
 {
@@ -48,6 +49,7 @@ class AppExtension extends AbstractExtension
         private readonly CategoryRepository           $categoryRepository,
         private readonly RequestStack                 $requestStack,
         private readonly RouterInterface              $router,
+        private readonly InformationBlockService      $informationBlockService,
     )
     {
     }
@@ -102,6 +104,9 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('get_category_related_categories_both_ways', [$this, 'getCategoryRelatedCategoriesBothWays']),
             new TwigFunction('get_all_parent_subcategories', [$this, 'getAllParentSubcategories']),
+            new TwigFunction('get_categories_from_related_products', [$this, 'getCategoriesFromRelatedProducts']),
+
+            new TwigFunction('get_information_blocks', [$this, 'getInformationBlocksForEntity']),
         ];
     }
 
@@ -496,5 +501,18 @@ class AppExtension extends AbstractExtension
     public function getCategoryRelatedCategoriesBothWays(int|Category $category, bool $onlyActive = true, ?int $categoryTypeID = null)
     {
         return $this->categoryRepository->getCategoryRelatedCategoriesBothWays($category, $onlyActive, $categoryTypeID);
+    }
+
+    public function getCategoriesFromRelatedProducts(array|Category $category, bool $onlyActive = true, ?array $categoryTypeIds = null, ?array $excludeCategoryTypeIds = null): array
+    {
+        return $this->categoryRepository->getCategoriesFromRelatedProducts($category, $onlyActive, $categoryTypeIds, $excludeCategoryTypeIds);
+    }
+    /**
+     * @return InformationBlock[]
+     * @throws Exception
+     */
+    public function getInformationBlocksForEntity($entity, $onlyActive = true, $informationBlockTypeID = null): array
+    {
+        return $this->informationBlockService->getInformationBlocksForEntity($entity, $onlyActive, $informationBlockTypeID);
     }
 }
