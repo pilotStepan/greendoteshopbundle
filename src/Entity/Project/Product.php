@@ -75,13 +75,13 @@ class Product implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read'])]
+    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read'])]
+    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read', 'comment:read'])]
     private $name;
 
     #[Gedmo\Translatable]
