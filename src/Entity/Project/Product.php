@@ -209,7 +209,7 @@ class Product implements Translatable
     #[ORM\ManyToOne(inversedBy: 'Products')]
     private ?ProductType $productType = null;
 
-    #[ORM\ManyToMany(targetEntity: Comment::class, inversedBy: 'products')]
+    #[ORM\ManyToMany(targetEntity: Comment::class, mappedBy: 'products')]
     private Collection $comments;
 
     public function __construct()

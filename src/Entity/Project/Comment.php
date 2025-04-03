@@ -26,7 +26,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiFilter(ExistsFilter::class, properties: ['comment'])] // set this to false, to filter only main comments
 #[ApiFilter(SearchFilter::class, properties: ['title' => 'partial'])]
 #[ApiFilter(OrderFilter::class, properties: ['submitted'])]
-#[ApiFilter(MultipleFilter::class, properties: ['categories'])]
+#[ApiFilter(MultipleFilter::class, properties: ['categories', 'products'])]
 class Comment
 {
     #[ORM\Id]

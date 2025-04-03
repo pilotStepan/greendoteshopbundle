@@ -133,7 +133,7 @@ class Category implements Translatable
     #[ORM\OneToMany(targetEntity: CategoryProduct::class, mappedBy: 'category')]
     private $categoryProducts;
 
-    #[ORM\ManyToMany(targetEntity: Comment::class, inversedBy: 'categories')]
+    #[ORM\ManyToMany(targetEntity: Comment::class, mappedBy: 'categories')]
     private Collection $comments;
 
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: CategoryPerson::class)]
