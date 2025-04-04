@@ -75,13 +75,13 @@ class Product implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read'])]
+    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read'])]
+    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read', 'comment:read'])]
     private $name;
 
     #[Gedmo\Translatable]
@@ -148,7 +148,7 @@ class Product implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
-    #[Groups(['search_result','product_info:read', 'product_info:write', 'purchase:read'])]
+    #[Groups(['search_result','product_info:read', 'product_info:write', 'purchase:read', 'comment:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
@@ -159,7 +159,7 @@ class Product implements Translatable
     private $locale;
 
     #[ApiProperty]
-    #[Groups(['product_info:read'])]
+    #[Groups(['product_info:read', 'comment:read'])]
     private string $priceFrom;
 
     #[ApiProperty]
@@ -179,7 +179,7 @@ class Product implements Translatable
     #[Groups(['product_info:read', 'product_info:write', 'search_result'])]
     private Collection $labels;
 
-    #[Groups(['product_info:read', 'search_result'])]
+    #[Groups(['product_info:read', 'search_result', 'comment:read'])]
     private ?string $availability = null;
 
 
@@ -209,7 +209,7 @@ class Product implements Translatable
     #[ORM\ManyToOne(inversedBy: 'Products')]
     private ?ProductType $productType = null;
 
-    #[ORM\ManyToMany(targetEntity: Comment::class, inversedBy: 'products')]
+    #[ORM\ManyToMany(targetEntity: Comment::class, mappedBy: 'products')]
     private Collection $comments;
 
     public function __construct()
