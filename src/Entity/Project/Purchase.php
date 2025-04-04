@@ -21,7 +21,6 @@ use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Table(name: '`purchase`')]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
@@ -32,7 +31,10 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/purchases/session',
             provider: PurchaseStateProvider::class,
         ),
-        new Get(),
+        new Get(
+            uriTemplate: '/purchases/session',
+            provider: PurchaseStateProvider::class,
+        ),
         new Post(),
         new Patch(
             uriTemplate: '/purchases/session',
@@ -162,8 +164,7 @@ class Purchase
     private Collection $Consents;
 
     #[ORM\OneToOne(targetEntity: PurchaseAddress::class, inversedBy: 'purchase')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?PurchaseAddress $purchaseAddress = null;
 

@@ -19,11 +19,11 @@ class TransportationAction
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation_action:read'])]
+    #[Groups(['transportation_action:read', 'transportation:read', 'purchase:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation_action:read', 'transportation_action:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'purchase:read'])]
     private $name;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -31,7 +31,7 @@ class TransportationAction
     private $icon;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation_action:read', 'transportation_action:write'])]
+    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'purchase:read'])]
     private $country;
 
     #[ORM\OneToMany(targetEntity: Transportation::class, mappedBy: 'action')]

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -17,13 +18,17 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class PurchaseRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry, RequestStack $requestStack)
+    public function __construct(
+        private readonly RequestStack           $requestStack,
+        private readonly EntityManagerInterface $entityManager,
+        ManagerRegistry                         $registry,
+    )
     {
         parent::__construct($registry, Purchase::class);
-        $this->requestStack = $requestStack;
     }
 
-    public function lastInquiryOfUser($client){
+    public function lastInquiryOfUser($client)
+    {
         return $this->createQueryBuilder('p')
             ->setMaxResults(1)
             ->orderBy("p.date_issue", "DESC")
@@ -32,7 +37,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->getQuery()->getOneOrNullResult();
     }
 
-    public function lastPurchaseOfUser($client){
+    public function lastPurchaseOfUser($client)
+    {
         return $this->createQueryBuilder('p')
             ->setMaxResults(1)
             ->orderBy('p.date_issue', "DESC")
@@ -41,7 +47,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->getQuery()->getOneOrNullResult();
     }
 
-    public function getClientPurchases(Client $client){
+    public function getClientPurchases(Client $client)
+    {
         return $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')->setParameter('client', $client)
             ->andWhere('p.state != :state')->setParameter('state', 'inquiry')
@@ -56,16 +63,16 @@ class PurchaseRepository extends ServiceEntityRepository
 
         $result = $qb->getQuery()->getSingleScalarResult();
 
-        return $result !== null ? (int) $result + 1 : 1;
+        return $result !== null ? (int)$result + 1 : 1;
     }
 
     public function findBySession(QueryBuilder $queryBuilder): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
         $session = $this->requestStack->getCurrentRequest()->getSession();
-        if($session->has('purchase')){
+        if ($session->has('purchase')) {
             $purchaseId = $session->get('purchase');
-        }else{
+        } else {
             $purchaseId = 0;
         }
 
@@ -75,20 +82,39 @@ class PurchaseRepository extends ServiceEntityRepository
             ->setParameter('purchaseId', $purchaseId);
     }
 
-    public function findOneBySession(String $type): Purchase|null
+    public function findOneBySession(string $type): Purchase|null
     {
         $qb = $this->createQueryBuilder('p');
         $session = $this->requestStack->getCurrentRequest()->getSession();
-        if($session->has('purchase')){
+        if ($session->has('purchase')) {
             $purchaseId = $session->get('purchase');
             $qb->andWhere('p.id = :purchaseId')
                 ->setParameter('purchaseId', $purchaseId);
             return $qb->getQuery()->getOneOrNullResult();
-        }else{
+        } else {
             return null;
         }
-
-
-
     }
+
+    public function findCartForClient(?Client $client): ?Purchase
+    {
+        if (!$client) return null;
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.client = :client')
+            ->andWhere('p.state IN (:states)')
+            ->setParameter('client', $client)
+            ->setParameter('states', ['draft', 'new'])
+            ->orderBy('p.date_issue', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function remove(Purchase $purchase, bool $flush = false): void
+    {
+        $this->entityManager->remove($purchase);
+        if ($flush) $this->entityManager->flush();
+    }
+
 }
