@@ -9,69 +9,32 @@ use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\NoteRepository;
-use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\Repository\Project\TransportationRepository;
-use Doctrine\ORM\EntityManagerInterface;
-use Dompdf\Dompdf;
-use http\Exception\InvalidArgumentException;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceRegistry;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
-use Symfony\Component\Workflow\WorkflowInterface;
 use Twig\Extension\AbstractExtension;
 use Psr\Log\LoggerInterface;
 
 class ManagePurchase extends AbstractExtension
 {
-    private EntityManagerInterface $entityManager;
-    private PurchaseRepository $orderRepository;
-    private PaymentTypeRepository $paymentRepository;
-    private TransportationRepository $transportationRepository;
-    private PriceCalculator $priceCalculator;
     private Currency $selectedCurrency;
-    private PriceRepository $priceRepository;
-    private CurrencyRepository $currencyRepository;
-    private ClientRepository $clientRepository;
-    private LoggerInterface $logger;
-    private ManageClientDiscount $manageClientDiscount;
 
     public function __construct(
-        Registry                 $workflowRegistry,
-        EntityManagerInterface   $entityManager,
-        PurchaseRepository       $orderRepository,
-        PaymentTypeRepository    $paymentRepository,
-        private readonly  WorkflowInterface     $purchaseFlowStateMachine,
-        PriceCalculator          $priceCalculator,
-        PriceRepository          $priceRepository,
-        CurrencyRepository       $currencyRepository,
-        TransportationRepository $transportationRepository,
-        RequestStack             $requestStack,
-        ClientRepository         $clientRepository,
-        private NoteRepository   $noteRepository,
-        LoggerInterface          $logger,
-        ManageClientDiscount     $manageClientDiscount,
-
+        private readonly Registry                 $workflowRegistry,
+        private readonly PurchaseRepository       $purchaseRepository,
+        private readonly CurrencyRepository       $currencyRepository,
+        private NoteRepository                    $noteRepository,
+        private readonly LoggerInterface          $logger,
+        private readonly InvoiceMaker             $invoiceMaker,
+        private readonly ParcelServiceRegistry    $parcelServiceRegistry,
+        RequestStack                              $requestStack,
     )
     {
-        $this->entityManager = $entityManager;
-        $this->orderRepository = $orderRepository;
-        $this->paymentRepository = $paymentRepository;
-
-        $this->workflowRegistry = $workflowRegistry;
-        $this->priceCalculator = $priceCalculator;
-        $this->currencyRepository = $currencyRepository;
-        $this->priceRepository = $priceRepository;
-        $this->transportationRepository = $transportationRepository;
-        $this->clientRepository = $clientRepository;
-        $this->logger = $logger;
-
-
-        //this has to be here, for some reason this ManageOrderService is being called before session is even established
+        // this has to be here, for some reason this ManageOrderService is being called before session is even established
         try {
             if ($requestStack->getSession()->isStarted() and $requestStack->getSession()->get('selectedCurrency')) {
                 $this->selectedCurrency = $requestStack->getSession()->get('selectedCurrency');
@@ -112,9 +75,9 @@ class ManagePurchase extends AbstractExtension
         } else {
             if (strlen((string)$purchase) > 10) {
                 $purchaseId = substr((string)$purchase, 10);
-                return $this->orderRepository->find($purchaseId);
+                return $this->purchaseRepository->find($purchaseId);
             } else {
-                throw new InvalidArgumentException("Inquiry ID has a wrong format.", 500);
+                throw new \InvalidArgumentException("Inquiry ID has a wrong format.", 500);
             }
         }
     }
@@ -156,51 +119,47 @@ class ManagePurchase extends AbstractExtension
         ];
     }
 
-    public function generateTransportData(Purchase $purchase, $purchasePrice): void
+    public function generateTransportData(Purchase $purchase): void
     {
         $transportationId = $purchase->getTransportation()->getId();
-        $parcelId         = null;
-
-        switch ($transportationId) {
-            case 4:
-                $parcelId = $this->czechPostParcel->createParcel($purchase, $purchasePrice);
-                break;
-            case 3:
-                $parcelId = $this->packeteryParcel->createParcel($purchase, $purchasePrice);
-                break;
-        }
+        $parcelService = $this->parcelServiceRegistry->get($transportationId);
+        $parcelId = $parcelService->createParcel($purchase);
 
         if ($parcelId) {
             $purchase->setTransportNumber($parcelId);
+            return;
+        }
+
+        $workflow = $this->workflowRegistry->get($purchase);
+        if ($workflow->can($purchase, 'cancellation')) {
+            $workflow->apply($purchase, 'cancellation');
+            $this->logger->error('Failed to create parcel for purchase. Order cancelled.', ['purchaseId' => $purchase->getId()]);
         } else {
-            $purchaseFlow = $this->purchaseFlowStateMachine->get($purchase);
-            if ($purchaseFlow->can($purchase, 'cancellation')) {
-                $purchaseFlow->apply($purchase, 'cancellation');
-                $this->logger->error('Failed to create parcel for purchase. Order cancelled.', ['purchaseId' => $purchase->getId()]);
-            } else {
-                $this->logger->error('Failed to create parcel for purchase and unable to cancel.', ['purchaseId' => $purchase->getId()]);
-            }
+            $this->logger->error('Failed to create parcel for purchase and unable to cancel.', ['purchaseId' => $purchase->getId()]);
         }
     }
 
     // checks if paymentType and purchase.transportation are linked, returns true if ok, false if not ok
-    public function isPaymentAvailable(PaymentType $paymentType, Purchase $purchase) : bool
+    public function isPaymentAvailable(PaymentType $paymentType, Purchase $purchase): bool
     {
         $transportation = $purchase->getTransportation();
 
         // check empty
-        if ($transportation === null)
-        {
+        if ($transportation === null) {
             throw new  \Exception("Purchase has no transportation");
         }
 
         // check if ok
-        if($paymentType->getTransportations()->contains($transportation))
-        {
+        if ($paymentType->getTransportations()->contains($transportation)) {
             return true;
         }
         return false;
     }
 
-
+    public function generateInvoice(Purchase $purchase): string
+    {
+        $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
+        $purchase->setInvoiceNumber($invoiceNumber);
+        return $this->invoiceMaker->createInvoiceOrProforma($purchase);
+    }
 }

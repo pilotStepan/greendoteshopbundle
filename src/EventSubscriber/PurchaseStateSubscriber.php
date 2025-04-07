@@ -4,107 +4,50 @@ namespace Greendot\EshopBundle\EventSubscriber;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Service\CzechPostParcel;
-use Greendot\EshopBundle\Service\InvoiceMaker;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ManageVoucher;
-use Greendot\EshopBundle\Service\PacketeryParcel;
-use Greendot\EshopBundle\Service\PriceCalculator;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Workflow\Event\CompletedEvent;
 use Symfony\Component\Workflow\Event\Event;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Event\TransitionEvent;
-use Symfony\Component\Workflow\Registry;
-use Symfony\Component\Workflow\WorkflowInterface;
+use Symfony\Component\Workflow\Registry as WorkflowRegistry;
 
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
-
-
     public function __construct
     (
         private ManageMails            $manageMails,
-        private CzechPostParcel        $czechPostParcel,
-        private PacketeryParcel        $packeteryParcel,
-        private LoggerInterface        $logger,
         private EntityManagerInterface $entityManager,
-        private Registry               $registry,
-        private InvoiceMaker           $invoiceMaker,
-        private PriceCalculator        $priceCalculator,
-        private PurchaseRepository     $purchaseRepository,
         private ManageVoucher          $manageVoucher,
-        private VoucherSubscriber      $voucherListener,
-        private ManagePurchase         $manageOrder,
-        private WorkflowInterface      $voucherFlowStateMachine,
+        private ManagePurchase         $managePurchase,
+        private WorkflowRegistry       $workflowRegistry,
         private ManageClientDiscount   $manageClientDiscount,
-        private ?SessionInterface      $session = null,
-    ) {}
+    )
+    {
+    }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            'workflow.purchase_flow.guard.create'                  => ['guardCreate'],
-            'workflow.purchase_flow.guard.receive'                  => ['guardReceive'],
-            'workflow.purchase_flow.transition.receive'            => ['onReceive'],
-            'workflow.purchase_flow.transition.create'             => ['transitionCreate'],
-            'workflow.purchase_flow.completed.create'              => ['completedCreate'],
-            'workflow.purchase_flow.transition.payment'            => ['onPayment'],
-            'workflow.purchase_flow.transition.payment_issue'      => ['onPaymentIssue'],
-            'workflow.purchase_flow.transition.cancellation'       => ['onCancellation'],
+            'workflow.purchase_flow.guard.create' => ['onGuardCreate'],
+            'workflow.purchase_flow.guard.receive' => ['onGuardReceive'],
+            'workflow.purchase_flow.transition.create' => ['onCreate'],
+            'workflow.purchase_flow.transition.receive' => ['onReceive'],
+            'workflow.purchase_flow.transition.payment' => ['onPayment'],
+            'workflow.purchase_flow.transition.payment_issue' => ['onPaymentIssue'],
+            'workflow.purchase_flow.transition.cancellation' => ['onCancellation'],
             'workflow.purchase_flow.transition.prepare_for_pickup' => ['onPrepareForPickup'],
-            'workflow.purchase_flow.transition.send'               => ['onSend'],
-            'workflow.purchase_flow.transition.pick_up'            => ['onPickUp'],
+            'workflow.purchase_flow.transition.send' => ['onSend'],
+            'workflow.purchase_flow.transition.pick_up' => ['onPickUp'],
+            'workflow.purchase_flow.completed.create' => ['onCompletedCreate'],
         ];
     }
 
-
-    public function onReceive(Event $event): void
-    {
-        $subject = $event->getSubject();
-
-        if (!$subject instanceof Purchase) {
-            throw new \LogicException('Expected subject of type Purchase, got ' . get_class($subject));
-        }
-
-        $purchase = $subject;
-        /*
-         * TODO Nonexistent method - should be linked to PriceCalculatr
-         *
-         */
-        $purchasePrice = $this->getPurchasePrice($purchase);
-
-        /*
-         * TODO Nonexistent method - should be linked to ManagePurchase
-         *
-         */
-        $this->generateTransportData($purchase, $purchasePrice);
-        /*
-         * TODO invalid use of workflow - should be used as "can" and "apply"
-         *
-         */
-        $this->voucherListener->handleVouchers($purchase, 'used');
-
-        foreach ($purchase->getProductVariants() as $productVariant) {
-            if ($productVariant->getProductType()->getName() === 'Dárkový certifikát') {
-                $this->manageVoucher->initiateVoucher($productVariant, $purchase);
-            }
-        }
-
-        // use client discount
-        $clientDiscount = $purchase->getClientDiscount();
-        $this->manageClientDiscount->use($clientDiscount, $purchase);
-
-        $this->manageMails->sendOrderReceiveEmail($purchase, $purchasePrice, 'mail/specific/order-receive.html.twig');
-    }
-
-
-    public function guardCreate(GuardEvent $event)
+    public function onGuardCreate(GuardEvent $event)
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -116,14 +59,13 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         // check vouchers
         $vouchers = $purchase->getVouchersUsed();
-        if (!$vouchers->isEmpty())
-        {
-            foreach ($vouchers as $v){
+        if (!$vouchers->isEmpty()) {
+            foreach ($vouchers as $v) {
                 /*
                  * TODO nonexistent attribute
                  */
                 if (!$this->voucherFlowWorkflow->can($v, "use")) {
-                    $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
+                    $event->setBlocked(true, "Purchase has invalid voucher ID:" . $v->getId());
                     return null;
                 }
             }
@@ -131,48 +73,41 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         // check discount
         $discount = $purchase->getClientDiscount();
-        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase))
-        {
+        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase)) {
             $event->setBlocked(true, "Purchase has invalid clientDiscount");
             return null;
         }
 
         // check payment and transportation
         $paymentType = $purchase->getPaymentType();
-        if ($paymentType === null)
-        {
+        if ($paymentType === null) {
             $event->setBlocked(true, "Purchase paymentType is null");
             return null;
         }
-        if ($purchase->getTransportation() === null)
-        {
+        if ($purchase->getTransportation() === null) {
             $event->setBlocked(true, "Purchase transportation is null");
             return null;
         }
-        if (!$this->manageOrder->isPaymentAvailable($paymentType, $purchase))
-        {
+        if (!$this->managePurchase->isPaymentAvailable($paymentType, $purchase)) {
             $event->setBlocked(true, "Purchase paymentType and transportation are not compatible");
             return null;
         }
-
     }
 
-    public function guardReceive(GuardEvent $event)
+    public function onGuardReceive(GuardEvent $event)
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
 
-
         // check vouchers
         $vouchers = $purchase->getVouchersUsed();
-        if (!$vouchers->isEmpty())
-        {
-            foreach ($vouchers as $v){
+        if (!$vouchers->isEmpty()) {
+            foreach ($vouchers as $v) {
                 /*
                  * TODO nonexistent attribute
                  */
                 if ($this->voucherFlowWorkflow->can($v, "use")) {
-                    $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
+                    $event->setBlocked(true, "Purchase has invalid voucher ID:" . $v->getId());
                     return null;
                 }
             }
@@ -180,32 +115,28 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         // check discount
         $discount = $purchase->getClientDiscount();
-        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase))
-        {
+        if ($discount !== null && !$this->manageClientDiscount->isAvailable($discount, $purchase)) {
             $event->setBlocked(true, "Purchase has invalid clientDiscount");
             return null;
         }
 
         // check payment and transportation
         $paymentType = $purchase->getPaymentType();
-        if ($paymentType === null)
-        {
+        if ($paymentType === null) {
             $event->setBlocked(true, "Purchase paymentType is null");
             return null;
         }
-        if ($purchase->getTransportation() === null)
-        {
+        if ($purchase->getTransportation() === null) {
             $event->setBlocked(true, "Purchase transportation is null");
             return null;
         }
-        if (!$this->manageOrder->isPaymentAvailable($paymentType, $purchase))
-        {
+        if (!$this->managePurchase->isPaymentAvailable($paymentType, $purchase)) {
             $event->setBlocked(true, "Purchase paymentType and transportation are not compatible");
             return null;
         }
     }
 
-    public function transitionCreate(TransitionEvent $event)
+    public function onCreate(TransitionEvent $event)
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -213,84 +144,100 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->setState('new');
     }
 
-    public function completedCreate(CompletedEvent $event)
+    public function onReceive(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
 
-        $this->entityManager->persist($purchase);
-        $this->entityManager->flush();
-    }
+        $this->manageVoucher->handleUsedVouchers($purchase, 'used');
+        $this->manageClientDiscount->use($purchase->getClientDiscount(), $purchase);
+        $this->managePurchase->generateTransportData($purchase);
+        $this->manageVoucher->initiateVouchers($purchase);
 
+        $this->manageMails->sendOrderReceiveEmail($purchase, 'mail/specific/order-receive.html.twig');
+    }
 
     public function onPayment(Event $event): void
     {
-        $subject = $event->getSubject();
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
 
-        if (!$subject instanceof Purchase) {
-            throw new \LogicException('Expected subject of type Purchase, got ' . get_class($subject));
+        foreach ($purchase->getVouchersIssued() as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, 'paid')) {
+                $workflow->apply($voucher, 'paid');
+            }
         }
 
-        $purchase = $subject;
-
-        $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
-        $invoicePath   = $this->invoiceMaker->createInvoiceOrProforma($purchase);
-
-        $purchase->setInvoiceNumber($invoiceNumber);
+        $invoicePath = $this->managePurchase->generateInvoice($purchase);
         $this->manageMails->sendPaymentReceivedEmail($purchase, $invoicePath, 'mail/specific/payment-received.html.twig');
-        /*
-         * TODO invalid use of workflow - should be used as "can" and "apply"
-         */
-        $this->voucherListener->handleVouchers($purchase, 'paid');
+
         $this->entityManager->flush();
     }
 
 
     public function onPaymentIssue(Event $event): void
     {
+        /** @var Purchase $purchase */
         $purchase = $event->getSubject();
 
-        $this->manageMails->sendNotReceivedEmail($purchase, 'mail/specific/payment-not-received.html.twig');
-        /*
-         * TODO invalid use of workflow - should be used as "can" and "apply"
-         */
-        $this->voucherListener->handleVouchers($purchase, 'not_paid');
+        foreach ($purchase->getVouchersIssued() as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, 'not_paid')) {
+                $workflow->apply($voucher, 'not_paid');
+            }
+        }
+
+        $this->manageMails->sendEmail($purchase, 'mail/specific/payment-not-received.html.twig');
     }
 
     public function onCancellation(Event $event): void
     {
+        /** @var Purchase $purchase */
         $purchase = $event->getSubject();
+
+        foreach ($purchase->getVouchersIssued() as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, 'not_paid')) {
+                $workflow->apply($voucher, 'not_paid');
+            }
+        }
+
         $this->manageMails->sendEmail($purchase, 'mail/specific/order-canceled.html.twig');
-        /*
-         * TODO invalid use of workflow - should be used as "can" and "apply"
-         */
-        $this->voucherListener->handleVouchers($purchase, 'not_paid');
     }
 
     public function onPrepareForPickup(Event $event): void
     {
+        /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        /*
-         * TODO nonexistent method
-         */
-        $this->manageMails->sendOrderEmail($purchase, 'mail/specific/order-ready-for-pickup.html.twig');
+
+        $this->manageMails->sendEmail($purchase, 'mail/specific/order-ready-for-pickup.html.twig');
     }
 
     public function onSend(Event $event): void
     {
+        /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        /*
-         * TODO nonexistent method
-         */
-        $this->manageMails->sendOrderEmail($purchase, 'mail/specific/order-shipped.html.twig');
+
+        $this->manageMails->sendEmail($purchase, 'mail/specific/order-shipped.html.twig');
     }
 
     public function onPickUp(Event $event): void
     {
         $purchase = $event->getSubject();
-        /*
-         * TODO nonexistent method
-         */
-        $this->manageMails->sendOrderEmail($purchase, 'mail/specific/order-picked-up.html.twig');
+        if (!$purchase instanceof Purchase) {
+            throw new \LogicException('Expected subject of type Purchase, got ' . get_class($purchase));
+        }
+
+        $this->manageMails->sendEmail($purchase, 'mail/specific/order-picked-up.html.twig');
+    }
+
+    public function onCompletedCreate(CompletedEvent $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+
+        $this->entityManager->persist($purchase);
+        $this->entityManager->flush();
     }
 }

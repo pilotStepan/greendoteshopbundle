@@ -1,13 +1,13 @@
 <?php
 
-namespace Greendot\EshopBundle\Service;
+namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class CzechPostParcel
+class CzechPostParcel implements ParcelServiceInterface
 {
     private const API_BASE_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1/*';
 
@@ -16,7 +16,7 @@ class CzechPostParcel
         private readonly LoggerInterface     $logger
     ) {}
 
-    public function createParcel(Purchase $purchase, $purchasePrice): ?string
+    public function createParcel(Purchase $purchase): ?string
     {
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
@@ -24,7 +24,7 @@ class CzechPostParcel
             return null;
         }
 
-        $requestData = $this->prepareParcelData($purchase, $purchasePrice);
+        $requestData = $this->prepareParcelData($purchase);
 
         try {
             $response = $this->httpClient->request('POST', self::API_BASE_URL . '/parcelService', [
@@ -83,7 +83,7 @@ class CzechPostParcel
         }
     }
 
-    private function prepareParcelData(Purchase $purchase, $purchasePrice): array
+    private function prepareParcelData(Purchase $purchase): array
     {
         $client = $purchase->getClient();
         $totalWeight = 20;
@@ -109,7 +109,7 @@ class CzechPostParcel
                     'prefixParcelCode' => 'DR',
                     'weight' => number_format($totalWeight, 2),
                     'insuredValue' => 0,
-                    'amount' => $purchasePrice,
+                    'amount' => $purchase->getTotalPrice(),
                     'currency' => 'CZK',
                     'vsVoucher' => '',
                     'vsParcel' => '',

@@ -39,7 +39,7 @@ class GPWebpay
         $this->entityManager = $entityManager;
     }
 
-    public function getPayLink(Purchase $purchase, int $totalPrice): string
+    public function getPayLink(Purchase $purchase, mixed $varSymbol): string
     {
         $payment = new Payment();
         $payment->setDate(new \DateTime());
@@ -64,7 +64,7 @@ class GPWebpay
         $digestSigner = new DigestSigner($settings);
         $requestValues = CardPayRequestValues::createFromArray([
             'ORDERNUMBER' => $payment->getId(),
-            'AMOUNT'      => $totalPrice,
+            'AMOUNT'      => $purchase->getTotalPrice(),
             'CURRENCY'    => '203',
             'DEPOSITFLAG' => true,
             'MERORDERNUM' => $purchase->getId(),

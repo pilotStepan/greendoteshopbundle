@@ -7,6 +7,7 @@ use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Filesystem\Filesystem;
 
 class QRcodeGenerator
@@ -18,10 +19,10 @@ class QRcodeGenerator
         $this->filesystem = $filesystem;
     }
 
-    public function getUri($purchase, \DateTimeInterface $dueDate, float $totalAmount): string
+    public function getUri(Purchase $purchase, \DateTimeInterface $dueDate): string
     {
         $qrContent = 'SPD*1.0*ACC:CZ1020100000002802559702*AM:' .
-            number_format($totalAmount, 2, '.', '') .
+            number_format($purchase->getTotalPrice(), 2, '.', '') .
             '*CC:CZK*DT:' . $dueDate->format("Y.m.d") .
             '*X-VS:' . $purchase->getInvoiceNumber();
 

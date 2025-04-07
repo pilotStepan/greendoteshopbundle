@@ -2,31 +2,25 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Entity\Project\Payment;
-use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
-use Greendot\EshopBundle\Service\CzechPostParcel;
-use Greendot\EshopBundle\Service\PurchaseApiModel;
-use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Form\ClientFormType;
-use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
-use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GPWebpay;
+use Greendot\EshopBundle\Service\Parcel\CzechPostParcel;
 use Greendot\EshopBundle\Service\PriceCalculator;
-use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -46,6 +40,7 @@ class PurchaseController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
+        /* @var Client $loggedInUser */
         $loggedInUser = $this->getUser();
 
         if ($loggedInUser) {
@@ -106,9 +101,9 @@ class PurchaseController extends AbstractController
 
         $purchaseFlow = $workFlow->get($newPurchase);
 
-        if ($purchaseFlow->can($newPurchase, 'create')) {
-            $purchaseFlow->apply($newPurchase, 'create');
-        }
+//        if ($purchaseFlow->can($newPurchase, 'create')) {
+//            $purchaseFlow->apply($newPurchase, 'create');
+//        } ????
 
         $entityManager->persist($newPurchase);
         $entityManager->flush();
@@ -273,7 +268,11 @@ class PurchaseController extends AbstractController
         return new JsonResponse($status);
     }
 
-
+    #[Route('/objednavka/{path<.*>?}', name: 'shop_order_steps', options: ['expose' => true], priority: 100)]
+    public function orderSteps(): Response
+    {
+        return $this->render('shop/cart/steps.html.twig');
+    }
 
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
     public function thankYou($id, SessionInterface $session): Response
