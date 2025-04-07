@@ -6,6 +6,8 @@ use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -26,7 +28,15 @@ use Symfony\Component\Validator\Constraints\Existence;
 #[ApiResource(
     normalizationContext: ['groups' => ['category:read']],
     denormalizationContext: ['groups' => ['category:write']],
-    paginationEnabled: true
+    paginationEnabled: true,
+    operations: [
+        new GetCollection(),
+        new GetCollection(
+            uriTemplate: '/categories-with-parents',
+            normalizationContext: ['groups' => ['category_with_parents:read']],
+        ),
+        new Get(),
+    ]
 )]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial', 'categoryProducts.product' => 'exact', 'categoryType.id' => 'exact'])]
 //#[ApiFilter(TranslationAwareSearchFilter::class)]
@@ -36,13 +46,13 @@ class Category implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read', 'searchable', 'category_category:read', 'category_category:write'])]
+    #[Groups(['category_with_parents:read', 'category_default', 'category:read', 'category:write', 'product_info:read', 'searchable', 'category_category:read', 'category_category:write'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write', 'product_info:read'])]
+    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write', 'product_info:read'])]
     private $name;
 
     #[Gedmo\Translatable]
@@ -84,25 +94,26 @@ class Category implements Translatable
 
     #[ORM\OneToMany(mappedBy: 'category_sub', targetEntity: CategoryCategory::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
-    ##[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_with_parents:read'])]
+    #[MaxDepth(1)]
     private $categorySubCategories;
 
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'boolean', name: 'is_active')]
-    #[Groups('category_default', 'category:read', 'product_info:read')]
+    #[Groups('category_with_parents:read','category_default', 'category:read', 'product_info:read')]
     private $isActive;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['category_default', 'category:read', 'category:write', 'product_info:read'])]
+    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write', 'product_info:read'])]
     private $slug;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private $javascript;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write'])]
     private $sequence;
 
     #[ORM\Column(type: 'smallint', nullable: true, options: ['default' => 1])]
@@ -148,7 +159,7 @@ class Category implements Translatable
     private Collection $events;
 
     #[ORM\OneToMany(mappedBy: 'Category', targetEntity: CategoryUploadGroup::class, cascade: ['persist'])]
-    #[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write'])]
     private Collection $categoryUploadGroups;
 
     #[ORM\ManyToOne(inversedBy: 'Categories')]
@@ -159,6 +170,7 @@ class Category implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'categories')]
+    #[Groups(['category_with_parents:read'])]
     private ?Upload $upload = null;
 
     #[ORM\ManyToMany(targetEntity: MenuType::class, inversedBy: 'categories')]
