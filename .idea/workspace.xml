@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="TODO remove contact message">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="QRCodes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller/ClientController.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Service/QRcodeGenerator.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/QRcodeGenerator.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/PurchaseController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/PurchaseStateSubscriber.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/PurchaseStateSubscriber.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/VoucherSubscriber.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/VoucherSubscriber.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -263,15 +264,8 @@
       <workItem from="1741006343223" duration="1482000" />
       <workItem from="1741768568629" duration="1990000" />
       <workItem from="1741854806804" duration="5993000" />
-      <workItem from="1742377432617" duration="8651000" />
-    </task>
-    <task id="LOCAL-00046" summary="ProductStateProvider">
-      <option name="closed" value="true" />
-      <created>1731791340757</created>
-      <option name="number" value="00046" />
-      <option name="presentableId" value="LOCAL-00046" />
-      <option name="project" value="LOCAL" />
-      <updated>1731791340757</updated>
+      <workItem from="1742377432617" duration="9962000" />
+      <workItem from="1744015228472" duration="1489000" />
     </task>
     <task id="LOCAL-00047" summary="ProductStateProvider">
       <option name="closed" value="true" />
@@ -657,7 +651,15 @@
       <option name="project" value="LOCAL" />
       <updated>1741855848921</updated>
     </task>
-    <option name="localTasksCounter" value="95" />
+    <task id="LOCAL-00095" summary="QRCodes">
+      <option name="closed" value="true" />
+      <created>1743082107922</created>
+      <option name="number" value="00095" />
+      <option name="presentableId" value="LOCAL-00095" />
+      <option name="project" value="LOCAL" />
+      <updated>1743082107922</updated>
+    </task>
+    <option name="localTasksCounter" value="96" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -699,7 +701,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="PurchaseStateProvider" />
     <MESSAGE value="PurchaseStateProvider - variant total prices" />
     <MESSAGE value="ProductVariant price for API" />
     <MESSAGE value="ParameterGroup API groups update" />
@@ -724,6 +725,7 @@
     <MESSAGE value="Update login and registration" />
     <MESSAGE value="Update unlog" />
     <MESSAGE value="TODO remove contact message" />
-    <option name="LAST_COMMIT_MESSAGE" value="TODO remove contact message" />
+    <MESSAGE value="QRCodes" />
+    <option name="LAST_COMMIT_MESSAGE" value="QRCodes" />
   </component>
 </project>

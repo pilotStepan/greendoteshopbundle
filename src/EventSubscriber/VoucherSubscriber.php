@@ -48,7 +48,7 @@ class VoucherSubscriber implements EventSubscriberInterface
     {
     }
 
-    public function guardUse(GuardEvent $event)
+    public function guardUse(GuardEvent $event): void
     {
         /** @var  Voucher $voucher */
         $voucher = $event->getSubject();

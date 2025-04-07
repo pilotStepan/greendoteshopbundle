@@ -73,9 +73,21 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $purchase = $subject;
+        /*
+         * TODO Nonexistent method - should be linked to PriceCalculatr
+         *
+         */
         $purchasePrice = $this->getPurchasePrice($purchase);
 
+        /*
+         * TODO Nonexistent method - should be linked to ManagePurchase
+         *
+         */
         $this->generateTransportData($purchase, $purchasePrice);
+        /*
+         * TODO invalid use of workflow - should be used as "can" and "apply"
+         *
+         */
         $this->voucherListener->handleVouchers($purchase, 'used');
 
         foreach ($purchase->getProductVariants() as $productVariant) {
@@ -107,6 +119,9 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         if (!$vouchers->isEmpty())
         {
             foreach ($vouchers as $v){
+                /*
+                 * TODO nonexistent attribute
+                 */
                 if (!$this->voucherFlowWorkflow->can($v, "use")) {
                     $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
                     return null;
@@ -153,6 +168,9 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         if (!$vouchers->isEmpty())
         {
             foreach ($vouchers as $v){
+                /*
+                 * TODO nonexistent attribute
+                 */
                 if ($this->voucherFlowWorkflow->can($v, "use")) {
                     $event->setBlocked(true, "Purchase has invalid voucher ID:".$v->getId());
                     return null;
@@ -220,6 +238,9 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         $purchase->setInvoiceNumber($invoiceNumber);
         $this->manageMails->sendPaymentReceivedEmail($purchase, $invoicePath, 'mail/specific/payment-received.html.twig');
+        /*
+         * TODO invalid use of workflow - should be used as "can" and "apply"
+         */
         $this->voucherListener->handleVouchers($purchase, 'paid');
         $this->entityManager->flush();
     }
@@ -230,6 +251,9 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase = $event->getSubject();
 
         $this->manageMails->sendNotReceivedEmail($purchase, 'mail/specific/payment-not-received.html.twig');
+        /*
+         * TODO invalid use of workflow - should be used as "can" and "apply"
+         */
         $this->voucherListener->handleVouchers($purchase, 'not_paid');
     }
 
@@ -237,24 +261,36 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         $purchase = $event->getSubject();
         $this->manageMails->sendEmail($purchase, 'mail/specific/order-canceled.html.twig');
+        /*
+         * TODO invalid use of workflow - should be used as "can" and "apply"
+         */
         $this->voucherListener->handleVouchers($purchase, 'not_paid');
     }
 
     public function onPrepareForPickup(Event $event): void
     {
         $purchase = $event->getSubject();
+        /*
+         * TODO nonexistent method
+         */
         $this->manageMails->sendOrderEmail($purchase, 'mail/specific/order-ready-for-pickup.html.twig');
     }
 
     public function onSend(Event $event): void
     {
         $purchase = $event->getSubject();
+        /*
+         * TODO nonexistent method
+         */
         $this->manageMails->sendOrderEmail($purchase, 'mail/specific/order-shipped.html.twig');
     }
 
     public function onPickUp(Event $event): void
     {
         $purchase = $event->getSubject();
+        /*
+         * TODO nonexistent method
+         */
         $this->manageMails->sendOrderEmail($purchase, 'mail/specific/order-picked-up.html.twig');
     }
 }

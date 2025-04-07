@@ -206,23 +206,7 @@ class PurchaseController extends AbstractController
 
 
 
-    #[Route('/api/order', name: 'api_get_order', methods: ['GET'], options: ['expose' => true])]
-    public function getOrder(SessionInterface $session, ProductVariantRepository $productVariantRepository): JsonResponse
-    {
-        $purchase = $session->get('purchase');
 
-        if ($purchase != null) {
-            foreach ($purchase->getProductVariants() as $orderProductVariant) {
-                $productVariant       = $orderProductVariant->getProductVariant();
-                $productVariantFromDB = $productVariantRepository->find($productVariant);
-                $orderProductVariant->setProductVariant($productVariantFromDB);
-            }
-        }
-        $purchaseApiModel = new PurchaseApiModel();
-        $purchaseApiModel->parseEntity($purchase);
-
-        return new JsonResponse($purchaseApiModel, 200);
-    }
 
     #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]
     public function removeOrderItem(int $productVariantId, SessionInterface $session): JsonResponse
@@ -250,143 +234,7 @@ class PurchaseController extends AbstractController
         return new JsonResponse(['error' => 'Order not found'], 404);
     }
 
-    #[Route('/api/calculate-variant-price', name: 'api_calculate_price', methods: ['POST'], options: ['expose' => true])]
-    public function calculatePrice(Request $request, PriceCalculator $priceCalculator, ProductVariantRepository $repository, Session $session): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
 
-        $variantId = $data['variant'];
-        $amount    = $data['amount'];
-
-        $productVariant         = $repository->find($variantId);
-        $purchaseProductVariant = new PurchaseProductVariant();
-        $purchase               = new Purchase();
-
-        $purchaseProductVariant->setProductVariant($productVariant);
-        $purchaseProductVariant->setAmount($amount);
-        $purchaseProductVariant->setPurchase($purchase);
-
-        $currency            = $session->get('selectedCurrency');
-        $productVariantPrice = $priceCalculator->calculateProductVariantPrice(
-            $purchaseProductVariant,
-            $currency,
-            VatCalculationType::WithVAT,
-            DiscountCalculationType::WithDiscount,
-            false,
-            true
-        );
-
-        $productVariantPriceOld = $priceCalculator->calculateProductVariantPrice(
-            $purchaseProductVariant,
-            $currency,
-            VatCalculationType::WithVAT,
-            DiscountCalculationType::WithoutDiscount,
-            false,
-            true
-        );
-
-        if ($currency->getId() === 1) {
-            $numericVariantPrice = str_replace(',', '.', $productVariantPrice);
-            $productVariantPrice = round((float)$numericVariantPrice);
-
-            $numericVariantPriceOld = str_replace(',', '.', $productVariantPriceOld);
-            $productVariantPriceOld = round((float)$numericVariantPriceOld);
-        }
-
-        return new JsonResponse([
-            'price'     => $productVariantPrice,
-            'price_old' => $productVariantPriceOld
-        ], 200);
-    }
-
-    #[Route('/api/calculate-purchase-price', name: 'api_calculate_purchase_price', methods: ['POST'], options: ['expose' => true])]
-    public function calculatePurchasePrice(SessionInterface $session, PriceCalculator $priceCalculator): JsonResponse
-    {
-        $purchase = $session->get('purchase');
-        $currency = $session->get('selectedCurrency');
-
-        $purchasePrice = $priceCalculator->calculatePurchasePrice(
-            $purchase,
-            $currency,
-            VatCalculationType::WithVAT,
-            1,
-            DiscountCalculationType::WithDiscount,
-            true,
-            VoucherCalculationType::WithoutVoucher,
-            true
-        );
-
-        return new JsonResponse(['purchasePrice' => $purchasePrice], 200);
-    }
-
-    #[Route('/api/set-transportation', name: 'api_set_transportation', methods: ['POST'], options: ['expose' => true])]
-    public function setTransportation(
-        SessionInterface         $session,
-        TransportationRepository $transportationRepository,
-        Request                  $request,
-        HandlingPriceRepository  $handlingPriceRepository): JsonResponse
-    {
-        $purchase = $session->get('purchase');
-        $data     = json_decode($request->getContent(), true);
-
-        $transportationId = $data['transportationId'] ?? null;
-        $transportation   = $transportationRepository->find($transportationId);
-
-        $transportationPrice = $handlingPriceRepository->GetByDate($transportation);
-
-        $purchase->setTransportation($transportation);
-        $session->set('purchase', $purchase);
-
-        return new JsonResponse(['transportation_price' => $transportationPrice->getPrice()], 200);
-    }
-
-    #[Route('/api/set-payment', name: 'api_set_payment', methods: ['POST'], options: ['expose' => true])]
-    public function setPayment(
-        SessionInterface        $session,
-        PaymentTypeRepository   $paymentTypeRepository,
-        Request                 $request,
-        HandlingPriceRepository $handlingPriceRepository
-    ): JsonResponse
-    {
-        $purchase     = $session->get('purchase');
-        $data         = json_decode($request->getContent(), true);
-        $paymentId    = $data['paymentId'] ?? null;
-        $paymentType  = $paymentTypeRepository->find($paymentId);
-        $paymentPrice = $handlingPriceRepository->GetByDate($paymentType);
-
-        $purchase->setPaymentType($paymentType);
-
-        $session->set('purchase', $purchase);
-
-        return new JsonResponse(['payment_price' => $paymentPrice->getPrice()], 200);
-    }
-
-    #[Route('/api/update-session-amount', name: 'api_update_session_amount', methods: ['POST'], options: ['expose' => true])]
-    public function updateSessionAmount(Request $request, SessionInterface $session): JsonResponse
-    {
-        $data     = json_decode($request->getContent(), true);
-        $itemId   = $data['variant'];
-        $amount   = $data['amount'];
-        $purchase = $session->get('purchase');
-
-        if ($purchase) {
-            foreach ($purchase->getProductVariants() as $orderProductVariant) {
-                if ($orderProductVariant->getProductVariant()->getId() == $itemId) {
-                    $orderProductVariant->setAmount($amount);
-                    break;
-                }
-            }
-
-            $session->set('purchase', $purchase);
-
-            $purchaseApiModel = new PurchaseApiModel();
-            $purchaseApiModel->parseEntity($purchase);
-
-            return new JsonResponse($purchaseApiModel, 200);
-        }
-
-        return new JsonResponse(['error' => 'Order not found'], 404);
-    }
 
     #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
     public function createParcel(
@@ -425,11 +273,7 @@ class PurchaseController extends AbstractController
         return new JsonResponse($status);
     }
 
-    #[Route('/objednavka/{path<.*>?}', name: 'shop_order_steps', options: ['expose' => true], priority: 100)]
-    public function orderSteps(): Response
-    {
-        return $this->render('shop/cart/steps.html.twig');
-    }
+
 
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
     public function thankYou($id, SessionInterface $session): Response
