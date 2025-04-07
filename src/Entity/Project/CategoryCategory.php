@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\CategoryCategoryRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 
 #[ORM\Table(name: 'p_category_category')]
 #[ORM\Entity(repositoryClass: CategoryCategoryRepository::class)]
@@ -28,12 +29,14 @@ class CategoryCategory
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'categoryCategories')]
     #[ORM\JoinColumn(nullable: false)]
-    ##[Groups(['category_category:read', 'category_category:write'])]
+    #[Groups(['category_with_parents:read',])]
+    #[MaxDepth(1)]
     private $category_super;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'categorySubCategories')]
     #[ORM\JoinColumn(nullable: false)]
-    ##[Groups(['category_category:read', 'category_category:write'])]
+//    #[Groups(['category_with_parents:read',])]
+        ##[Groups(['category_category:read', 'category_category:write'])]
     private $category_sub;
 
     #[ORM\Column(type: 'boolean')]
