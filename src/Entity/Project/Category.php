@@ -34,6 +34,7 @@ use Symfony\Component\Validator\Constraints\Existence;
         new GetCollection(
             uriTemplate: '/categories-with-parents',
             normalizationContext: ['groups' => ['category_with_parents:read']],
+            forceEager: false
         ),
         new Get(),
     ]
@@ -95,7 +96,6 @@ class Category implements Translatable
     #[ORM\OneToMany(mappedBy: 'category_sub', targetEntity: CategoryCategory::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
     #[Groups(['category_with_parents:read'])]
-    #[MaxDepth(1)]
     private $categorySubCategories;
 
     #[Gedmo\Versioned]
@@ -159,7 +159,7 @@ class Category implements Translatable
     private Collection $events;
 
     #[ORM\OneToMany(mappedBy: 'Category', targetEntity: CategoryUploadGroup::class, cascade: ['persist'])]
-    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write'])]
+    #[Groups([/*'category_with_parents:read',*/'category_default', 'category:read', 'category:write'])]
     private Collection $categoryUploadGroups;
 
     #[ORM\ManyToOne(inversedBy: 'Categories')]
