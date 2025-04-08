@@ -17,14 +17,14 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Component\Workflow\WorkflowInterface;
+use Symfony\Component\Workflow\Registry;
 use Psr\Log\LoggerInterface;
 
 final readonly class PurchaseFinishProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private WorkflowInterface      $purchaseWorkflow,
+        private Registry               $workflowRegistry,
         private Security               $security,
         private ValidatorInterface     $validator,
         private GPWebpay               $gpWebpay,
@@ -83,13 +83,14 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
             }
 
             // 7. Validate and apply transition
-            if (!$this->purchaseWorkflow->can($purchase, 'receive')) {
-                $blockers = $this->purchaseWorkflow->buildTransitionBlockerList($purchase, 'receive');
+            $purchaseWorkflow = $this->workflowRegistry->get($purchase);
+            if (!$purchaseWorkflow->can($purchase, 'receive')) {
+                $blockers = $purchaseWorkflow->buildTransitionBlockerList($purchase, 'receive');
                 $errors = array_map(fn($b) => $b->getMessage(), iterator_to_array($blockers));
                 $this->logger->error('Workflow transition blocked', ['purchaseId' => $purchase->getId(), 'blockers' => $errors]);
                 throw new \RuntimeException(json_encode($errors));
             }
-            $this->purchaseWorkflow->apply($purchase, 'receive');
+            $purchaseWorkflow->apply($purchase, 'receive');
             $this->em->flush();
 
             // 8. Process payment after transition
