@@ -11,11 +11,13 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
+use Greendot\EshopBundle\Dto\PurchaseFinishInput;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\StateProcessor\PurchaseFinishProcessor;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
@@ -36,16 +38,24 @@ use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
             provider: PurchaseStateProvider::class,
         ),
         new Post(),
+        new Post(
+            uriTemplate: '/purchases/session/finish',
+            status: 200,
+            denormalizationContext: [
+                'groups' => ['purchase:finish']
+            ],
+            input: PurchaseFinishInput::class,
+            processor: PurchaseFinishProcessor::class
+        ),
         new Patch(
             uriTemplate: '/purchases/session',
-            //processor: SessionPurchaseStateProcessor::class,
             denormalizationContext: ['groups' => ['purchase:write']],
             read: true,
             provider: PurchaseStateProvider::class,
         ),
+        new Patch(),
         new Put(),
         new Delete(),
-        new Patch(),
     ],
     normalizationContext: ['groups' => ['purchase:read']],
     denormalizationContext: ['groups' => ['purchase:write']],

@@ -65,7 +65,6 @@ class PurchaseController extends AbstractController
             $entityManager->persist($client);
         }
 
-        // TODO: refactor it utilizing new PurchaseAddress entity
         $clientAddresses = $client->getClientAddresses();
         if ($clientAddresses->isEmpty()) {
             $clientAddress = new ClientAddress();
@@ -100,10 +99,6 @@ class PurchaseController extends AbstractController
         $newPurchase->setClient($client);
 
         $purchaseFlow = $workFlow->get($newPurchase);
-
-//        if ($purchaseFlow->can($newPurchase, 'create')) {
-//            $purchaseFlow->apply($newPurchase, 'create');
-//        } ????
 
         $entityManager->persist($newPurchase);
         $entityManager->flush();
@@ -196,11 +191,6 @@ class PurchaseController extends AbstractController
             return $this->redirectToRoute('thank_you', ['id' => $purchase->getId()]);
         }
     }
-
-
-
-
-
 
 
     #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]

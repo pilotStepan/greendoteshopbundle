@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Greendot\EshopBundle\Service\ManageMails;
@@ -73,7 +74,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $missingConsent = $this->entityManager
-            ->getRepository('GreendotEshopBundle:Project\Consent')
+            ->getRepository(Consent::class)
             ->findMissingRequiredConsent($purchase->getConsents());
         if ($missingConsent) {
             $event->setBlocked(true, "Povinný souhlas nebyl zaškrtnut: " . $missingConsent->getDescription());
