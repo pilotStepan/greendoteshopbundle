@@ -20,7 +20,7 @@ class CategoryCategory
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category_category:read', 'category_category:write'])]
+    #[Groups(['category_category:read', 'category_category:write', 'category_with_parents:read'])]
     private $id;
 
     #[ORM\Column(type: 'integer')]
@@ -29,14 +29,11 @@ class CategoryCategory
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'categoryCategories')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['category_with_parents:read',])]
-    #[MaxDepth(1)]
+    #[Groups(['category_with_parents:read'])]
     private $category_super;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'categorySubCategories')]
     #[ORM\JoinColumn(nullable: false)]
-//    #[Groups(['category_with_parents:read',])]
-        ##[Groups(['category_category:read', 'category_category:write'])]
     private $category_sub;
 
     #[ORM\Column(type: 'boolean')]
