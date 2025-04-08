@@ -2,9 +2,13 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Component\Workflow\Registry;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -14,31 +18,31 @@ class ManageVoucher
 
     public function __construct(
         private readonly Registry               $workflowRegistry,
-        private readonly EntityManagerInterface $entityManager
-    ){}
+        private readonly EntityManagerInterface $entityManager,
+    )
+    {
+    }
 
     public function generateHash(string $voucherCode): string
     {
         return hash('sha256', $voucherCode);
     }
 
-    public function validateVoucher(Voucher $voucher, string $couponType): bool
+    public function initiateVouchers(Purchase $purchase): Collection
     {
-        if (!$this->isGiftVoucher($voucher, $couponType)) {
-            return false;
+        $vouchers = new ArrayCollection();
+
+        /* @var PurchaseProductVariant $productVariant */
+        foreach ($purchase->getProductVariants() as $productVariant) {
+            if ($productVariant->getProductVariant()->getProduct()->getProductType()->getName() === 'Dárkový certifikát') {
+                $voucher = $this->initiateVoucher($productVariant, $purchase);
+                $vouchers->add($voucher);
+            }
         }
-
-        return $this->canVoucherBeUsed($voucher);
+        return $vouchers;
     }
 
-
-    private function canVoucherBeUsed(Voucher $voucher): bool
-    {
-        $workflow = $this->workflowRegistry->get($voucher);
-        return $workflow->can($voucher, 'use');
-    }
-
-    public function initiateVoucher(ProductVariant $productVariant, Purchase $purchase): Voucher
+    private function initiateVoucher(ProductVariant $productVariant, Purchase $purchase): Voucher
     {
         $voucher = new Voucher();
         $voucher->setHash($this->generateHash(uniqid()));
@@ -59,22 +63,18 @@ class ManageVoucher
         return $voucher;
     }
 
-    public function enableVoucher(Voucher $voucher): void
+    public function handleUsedVouchers(Purchase $purchase, string $state): void
     {
-
+        $vouchers = $purchase->getVouchersUsed();
+        foreach ($vouchers as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, $state)) {
+                $workflow->apply($voucher, $state);
+            }
+        }
     }
 
-    public function disableVoucher(Voucher $voucher): void
-    {
-
-    }
-
-    public function useVoucher(Voucher $voucher): void
-    {
-
-    }
-
-    public function handleVouchers(Purchase $purchase, string $state): void
+    public function handleIssuedVouchers(Purchase $purchase, string $state): void
     {
         $vouchers = $purchase->getVouchersIssued();
         foreach ($vouchers as $voucher) {

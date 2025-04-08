@@ -79,20 +79,20 @@ class ManageMails
         }
     }
 
-    public function sendOrderReceiveEmail(Purchase $purchase, float $purchasePrice, string $template): void
+    public function sendOrderReceiveEmail(Purchase $purchase, string $template): void
     {
         $varSymbol  = $this->paymentRepository->findByPurchaseId($purchase->getId());
         $dueDate    = new \DateTime('+14 days');
-        $qrCodeUri  = $this->qrCodeGenerator->getUri($purchase, $dueDate, $purchasePrice);
-        $paymentUrl = $this->webpay->getPayLink($purchase, $varSymbol, $purchasePrice);
+        $qrCodeUri  = $this->qrCodeGenerator->getUri($purchase, $dueDate);
+        $paymentUrl = $this->webpay->getPayLink($purchase, $varSymbol);
 
         $email = (new TemplatedEmail())
-            ->from('info@greendot.com')
+            ->from('info@greendot.com') // TODO: change email
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate($template)
             ->context([
-                'purchase_price'  => $purchasePrice,
+                'purchase_price'  => $purchase->getTotalPrice(),
                 'var_symbol'      => $varSymbol,
                 'bank_account'    => $purchase->getPaymentType()->getAccount(),
                 'payment_type'    => $purchase->getPaymentType(),
@@ -116,18 +116,6 @@ class ManageMails
                 'transportation_action' => $transportationAction
             ])
             ->attachFromPath($invoicePath, 'faktura.pdf', 'application/pdf');
-
-        $this->mailer->send($email);
-    }
-
-    public function sendNotReceivedEmail(Purchase $purchase, string $template): void
-    {
-        $email = (new TemplatedEmail())
-            ->from('info@greendot.com')
-            ->to($purchase->getClient()->getMail())
-            ->subject($this->getEmailSubject($purchase))
-            ->htmlTemplate($template)
-            ->context([]);
 
         $this->mailer->send($email);
     }

@@ -1,13 +1,13 @@
 <?php
 
-namespace Greendot\EshopBundle\Service;
+namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class PacketeryParcel
+class PacketeryParcel implements ParcelServiceInterface
 {
     private const API_URL = 'https://www.zasilkovna.cz/api/rest';
 
@@ -16,7 +16,7 @@ class PacketeryParcel
         private readonly LoggerInterface $logger
     ) {}
 
-    public function createParcel(Purchase $purchase, $purchasePrice): ?string
+    public function createParcel(Purchase $purchase): ?string
     {
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
@@ -24,7 +24,7 @@ class PacketeryParcel
             return null;
         }
 
-        $requestData = $this->prepareParcelData($purchase, $purchasePrice);
+        $requestData = $this->prepareParcelData($purchase);
 
         try {
             $response = $this->httpClient->request('POST', self::API_URL, [
@@ -57,7 +57,7 @@ class PacketeryParcel
         return [];
     }
 
-    private function prepareParcelData(Purchase $purchase, $purchasePrice): array
+    private function prepareParcelData(Purchase $purchase): array
     {
         $client = $purchase->getClient();
 
@@ -70,7 +70,7 @@ class PacketeryParcel
                 'email' => $client->getMail(),
                 'phone' => $client->getPhone(),
                 'addressId' => $purchase->getTransportation()->getToken(),
-                'value' => $purchasePrice,
+                'value' => $purchase->getTotalPrice(),
                 'eshop' => 'yogashop',
             ],
         ];

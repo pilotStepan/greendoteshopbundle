@@ -31,9 +31,7 @@ readonly class LoginSubscriber implements EventSubscriberInterface
         $session = $this->requestStack->getSession();
         $user = $event->getAuthenticationToken()->getUser();
 
-        if (!$user instanceof Client) {
-            return;
-        }
+        if (!$user instanceof Client) return;
 
         $sessionCart = $this->purchaseRepository->findOneBySession('purchase');
         $clientCart = $this->purchaseRepository->findCartForClient($user);
@@ -41,12 +39,8 @@ readonly class LoginSubscriber implements EventSubscriberInterface
         // Skip if carts are identical
         if ($sessionCart && $clientCart && $sessionCart->getId() === $clientCart->getId()) return;
 
-        // Case 1: Session cart has items - use it as primary, remove existing client cart
+        // Case 1: Session cart has items - use it as active, existing client cart remains untouched
         if ($sessionCart && !$sessionCart->getProductVariants()->isEmpty()) {
-            if ($clientCart) {
-                $this->purchaseRepository->remove($clientCart);
-            }
-
             $user->addOrder($sessionCart);
             $sessionCart->setClient($user);
             $this->entityManager->flush();

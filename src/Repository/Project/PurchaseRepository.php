@@ -110,11 +110,4 @@ class PurchaseRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
-
-    public function remove(Purchase $purchase, bool $flush = false): void
-    {
-        $this->entityManager->remove($purchase);
-        if ($flush) $this->entityManager->flush();
-    }
-
 }

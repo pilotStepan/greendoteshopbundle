@@ -132,7 +132,7 @@ class ClientSectionController extends AbstractController
         );
 
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
-        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate, $totalPrice);
+        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
         return $this->render('client-section/payment.html.twig', [
             'purchase'       => $purchase,
@@ -229,7 +229,7 @@ class ClientSectionController extends AbstractController
         );
 
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
-        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate, $totalPrice);
+        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
         return $this->render('client-section/order-detail.html.twig', [
             'purchase'       => $purchase,
