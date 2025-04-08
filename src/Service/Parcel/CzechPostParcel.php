@@ -175,4 +175,9 @@ class CzechPostParcel implements ParcelServiceInterface
 
         return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";
     }
+
+    public function supports(int $transportationId): bool
+    {
+        return $transportationId === 4;
+    }
 }

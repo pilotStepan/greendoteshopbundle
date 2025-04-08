@@ -94,4 +94,9 @@ class PacketeryParcel implements ParcelServiceInterface
             }
         }
     }
+
+    public function supports(int $transportationId): bool
+    {
+        return $transportationId === 3;
+    }
 }

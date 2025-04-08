@@ -601,6 +601,11 @@ class Purchase
         return $this->Consents;
     }
 
+    public function getCheckedRequiredConsents(): Collection
+    {
+        return $this->Consents->filter(fn(Consent $consent) => $consent->isRequired());
+    }
+
     public function addConsent(Consent $consent): static
     {
         if (!$this->Consents->contains($consent)) {

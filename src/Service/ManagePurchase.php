@@ -5,14 +5,13 @@ namespace Greendot\EshopBundle\Service;
 
 
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\NoteRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceRegistry;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
@@ -24,14 +23,14 @@ class ManagePurchase extends AbstractExtension
     private Currency $selectedCurrency;
 
     public function __construct(
-        private readonly Registry                 $workflowRegistry,
-        private readonly PurchaseRepository       $purchaseRepository,
-        private readonly CurrencyRepository       $currencyRepository,
-        private NoteRepository                    $noteRepository,
-        private readonly LoggerInterface          $logger,
-        private readonly InvoiceMaker             $invoiceMaker,
-        private readonly ParcelServiceRegistry    $parcelServiceRegistry,
-        RequestStack                              $requestStack,
+        private readonly Registry              $workflowRegistry,
+        private readonly PurchaseRepository    $purchaseRepository,
+        private readonly CurrencyRepository    $currencyRepository,
+        private NoteRepository                 $noteRepository,
+        private readonly LoggerInterface       $logger,
+        private readonly InvoiceMaker          $invoiceMaker,
+        private readonly ParcelServiceProvider $parcelServiceProvider,
+        RequestStack                           $requestStack,
     )
     {
         // this has to be here, for some reason this ManageOrderService is being called before session is even established
@@ -122,8 +121,7 @@ class ManagePurchase extends AbstractExtension
     public function generateTransportData(Purchase $purchase): void
     {
         $transportationId = $purchase->getTransportation()->getId();
-        $parcelService = $this->parcelServiceRegistry->get($transportationId);
-        $parcelId = $parcelService->createParcel($purchase);
+        $parcelId = $this->parcelServiceProvider->get($transportationId)->createParcel($purchase);
 
         if ($parcelId) {
             $purchase->setTransportNumber($parcelId);
@@ -137,23 +135,6 @@ class ManagePurchase extends AbstractExtension
         } else {
             $this->logger->error('Failed to create parcel for purchase and unable to cancel.', ['purchaseId' => $purchase->getId()]);
         }
-    }
-
-    // checks if paymentType and purchase.transportation are linked, returns true if ok, false if not ok
-    public function isPaymentAvailable(PaymentType $paymentType, Purchase $purchase): bool
-    {
-        $transportation = $purchase->getTransportation();
-
-        // check empty
-        if ($transportation === null) {
-            throw new  \Exception("Purchase has no transportation");
-        }
-
-        // check if ok
-        if ($paymentType->getTransportations()->contains($transportation)) {
-            return true;
-        }
-        return false;
     }
 
     public function generateInvoice(Purchase $purchase): string

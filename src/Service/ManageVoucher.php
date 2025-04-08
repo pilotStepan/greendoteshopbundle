@@ -5,10 +5,8 @@ namespace Greendot\EshopBundle\Service;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Component\Workflow\Registry;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -32,9 +30,9 @@ class ManageVoucher
     {
         $vouchers = new ArrayCollection();
 
-        /* @var PurchaseProductVariant $productVariant */
-        foreach ($purchase->getProductVariants() as $productVariant) {
-            if ($productVariant->getProductVariant()->getProduct()->getProductType()->getName() === 'Dárkový certifikát') {
+        foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
+            $productVariant = $purchaseProductVariant->getProductVariant();
+            if ($productVariant->getProduct()->getProductType()->getName() === 'Dárkový certifikát') {
                 $voucher = $this->initiateVoucher($productVariant, $purchase);
                 $vouchers->add($voucher);
             }
@@ -63,24 +61,44 @@ class ManageVoucher
         return $voucher;
     }
 
-    public function handleUsedVouchers(Purchase $purchase, string $state): void
+    public function validateIssuedVouchers(Purchase $purchase, string $transitionName): ?Voucher
     {
-        $vouchers = $purchase->getVouchersUsed();
-        foreach ($vouchers as $voucher) {
+        foreach ($purchase->getVouchersIssued() as $voucher) {
             $workflow = $this->workflowRegistry->get($voucher);
-            if ($workflow->can($voucher, $state)) {
-                $workflow->apply($voucher, $state);
+            if (!$workflow->can($voucher, $transitionName)) {
+                return $voucher;
+            }
+        }
+        return null;
+    }
+
+    public function handleIssuedVouchers(Purchase $purchase, string $transitionName): void
+    {
+        foreach ($purchase->getVouchersIssued() as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, $transitionName)) {
+                $workflow->apply($voucher, $transitionName);
             }
         }
     }
 
-    public function handleIssuedVouchers(Purchase $purchase, string $state): void
+    public function validateUsedVouchers(Purchase $purchase, string $transitionName): ?Voucher
     {
-        $vouchers = $purchase->getVouchersIssued();
-        foreach ($vouchers as $voucher) {
+        foreach ($purchase->getVouchersUsed() as $voucher) {
             $workflow = $this->workflowRegistry->get($voucher);
-            if ($workflow->can($voucher, $state)) {
-                $workflow->apply($voucher, $state);
+            if (!$workflow->can($voucher, $transitionName)) {
+                return $voucher;
+            }
+        }
+        return null;
+    }
+
+    public function handleUsedVouchers(Purchase $purchase, string $transitionName): void
+    {
+        foreach ($purchase->getVouchersUsed() as $voucher) {
+            $workflow = $this->workflowRegistry->get($voucher);
+            if ($workflow->can($voucher, $transitionName)) {
+                $workflow->apply($voucher, $transitionName);
             }
         }
     }
