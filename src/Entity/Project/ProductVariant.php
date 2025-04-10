@@ -24,17 +24,17 @@ class ProductVariant implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read'])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read'])]
     private $id;
 
     #[Gedmo\Versioned]
     #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_info:read', 'comment:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel"])]
     private $name;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(['product_variant:read', 'product_variant:write' , 'product_info:read', 'product_info:write', "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_variant:write' , 'product_info:read', 'comment:read', 'product_info:write', "SearchProductResultApiModel"])]
     private $stock;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -61,15 +61,15 @@ class ProductVariant implements Translatable
     private $video;
 
     #[ORM\ManyToOne(targetEntity: Availability::class, inversedBy: 'productVariants')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
     private $availability;
 
     #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
-    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_info:read', 'purchase:read'])]
+    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_info:read', 'comment:read', 'purchase:read'])]
     private $parameters;
 
     #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
-    #[Groups(['product_variant:read', 'product_info:read', "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_info:read', 'comment:read', "SearchProductResultApiModel"])]
     private Collection $price;
 
     #[ORM\Column(nullable: true)]

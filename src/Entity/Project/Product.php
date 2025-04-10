@@ -92,7 +92,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'text')]
-    #[Groups(['searchable', 'product_info:read'])]
+    #[Groups(['searchable', 'product_info:read', 'comment:read'])]
     private $description;
 
     #[Gedmo\Translatable]
@@ -103,7 +103,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'purchase:read'])]
+    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read'])]
     private $slug;
 
     #[ORM\Column(type: 'boolean')]
@@ -119,15 +119,15 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['product_info:read', 'product_info:write'])]
+    #[Groups(['product_info:read', 'product_info:write', 'comment:read'])]
     private $textGeneral;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVariant::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['product_info:read'])]
+    #[Groups(['product_info:read', 'comment:read'])]
     private $productVariants;
 
     #[ORM\ManyToOne(targetEntity: Producer::class, inversedBy: 'Product')]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result'])]
+    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'comment:read'])]
     private $producer;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: Review::class)]
@@ -137,7 +137,7 @@ class Product implements Translatable
     private $state = 'draft';
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: CategoryProduct::class, cascade: ['persist'])]
-    #[Groups(['searchable', 'product_info:read'])]
+    #[Groups(['searchable', 'product_info:read', 'comment:read'])]
     private Collection $categoryProducts;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -152,7 +152,7 @@ class Product implements Translatable
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read'])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
     private Collection $productUploadGroup;
 
     #[Gedmo\Locale]
@@ -163,7 +163,7 @@ class Product implements Translatable
     private string $priceFrom;
 
     #[ApiProperty]
-    #[Groups(['product_info:read'])]
+    #[Groups(['product_info:read', 'comment:read'])]
     private string $currencySymbol;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -176,7 +176,7 @@ class Product implements Translatable
      * @var Collection<int, Label>
      */
     #[ORM\ManyToMany(targetEntity: Label::class, inversedBy: 'products')]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result'])]
+    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'comment:read'])]
     private Collection $labels;
 
     #[Groups(['product_info:read', 'search_result', 'comment:read'])]
@@ -185,15 +185,15 @@ class Product implements Translatable
 
     private array $parameters = [];
 
-    #[Groups(['product_info:read', 'search_result'])]
+    #[Groups(['product_info:read', 'search_result', 'comment:read'])]
     private ?string $imagePath = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParameterGroup::class)]
-    #[Groups(['product_info:read'])]
+    #[Groups(['product_info:read', 'comment:read'])]
     private Collection $productParameterGroups;
 
     #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
-    #[Groups(['product_info:read', 'product_info:write'])]
+    #[Groups(['product_info:read', 'product_info:write', 'comment:read'])]
     private Collection $childrenProducts;
 
 
