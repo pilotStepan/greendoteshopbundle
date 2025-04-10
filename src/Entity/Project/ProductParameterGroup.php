@@ -26,7 +26,7 @@ class ProductParameterGroup
 
     #[ORM\ManyToOne(inversedBy: 'productParameterGroups')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['product_info:read'])]
+    #[Groups(['product_info:read', 'comment:read'])]
     private ?ParameterGroup $parameterGroup = null;
 
     /**
