@@ -154,8 +154,10 @@ class PriceCalculator
                 $amount = $purchaseProductVariant->getAmount();
             }
             $productVariant = $purchaseProductVariant->getProductVariant();
+//TODO: add discount on product-product
+            $purchase = $purchaseProductVariant->getPurchase();
 
-            $purchase_client = $purchaseProductVariant->getPurchase()->getClient();
+            $purchase_client = $purchase->getClient();
             /*
              * Proc kontrolujeme zda je objednavka v draftu
              */

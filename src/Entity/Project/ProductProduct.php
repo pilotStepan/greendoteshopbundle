@@ -29,6 +29,9 @@ class ProductProduct
     #[ORM\Column]
     private ?int $sequence = null;
 
+    #[ORM\Column]
+    private ?int $discount = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -78,6 +81,18 @@ class ProductProduct
     public function setSequence(int $sequence): static
     {
         $this->sequence = $sequence;
+
+        return $this;
+    }
+
+    public function getDiscount(): ?int
+    {
+        return $this->discount;
+    }
+
+    public function setDiscount(int $discount): static
+    {
+        $this->discount = $discount;
 
         return $this;
     }
