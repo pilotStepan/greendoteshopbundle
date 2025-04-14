@@ -265,11 +265,9 @@ class PurchaseController extends AbstractController
     }
 
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
-    public function thankYou($id, SessionInterface $session): Response
+    public function thankYou($id): Response
     {
         $orderDate = (new \DateTime())->modify('+2 weeks')->format('j.n.Y');
-
-        $session->remove('purchase');
 
         return $this->render('thank-you-pages/thank-you-cart.html.twig', [
             'orderId'   => $id,

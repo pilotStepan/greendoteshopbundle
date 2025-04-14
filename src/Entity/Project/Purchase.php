@@ -11,13 +11,13 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
-use Greendot\EshopBundle\Dto\PurchaseFinishInput;
+use Greendot\EshopBundle\Dto\PurchaseSendInput;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Greendot\EshopBundle\StateProcessor\PurchaseFinishProcessor;
+use Greendot\EshopBundle\StateProcessor\PurchaseSendProcessor;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
@@ -39,13 +39,13 @@ use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
         ),
         new Post(),
         new Post(
-            uriTemplate: '/purchases/session/finish',
+            uriTemplate: '/purchases/session/send',
             status: 200,
             denormalizationContext: [
-                'groups' => ['purchase:finish']
+                'groups' => ['purchase:send']
             ],
-            input: PurchaseFinishInput::class,
-            processor: PurchaseFinishProcessor::class
+            input: PurchaseSendInput::class,
+            processor: PurchaseSendProcessor::class
         ),
         new Patch(
             uriTemplate: '/purchases/session',

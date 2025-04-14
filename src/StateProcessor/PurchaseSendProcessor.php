@@ -15,12 +15,13 @@ use Greendot\EshopBundle\Service\GPWebpay;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Workflow\Registry;
 use Psr\Log\LoggerInterface;
 
-final readonly class PurchaseFinishProcessor implements ProcessorInterface
+final readonly class PurchaseSendProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
@@ -30,6 +31,7 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
         private GPWebpay               $gpWebpay,
         private UrlGeneratorInterface  $urlGenerator,
         private LoggerInterface        $logger,
+        private RequestStack           $requestStack,
     )
     {
     }
@@ -45,10 +47,10 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
             }
 
             // 1. Get existing purchase
-            $purchase = $this->em->find(Purchase::class, $data->id);
+            $purchase = $this->em->getRepository(Purchase::class)->findOneBySession();
             if (!$purchase) {
-                $this->logger->error('Purchase not found', ['purchaseId' => $data->id]);
-                throw new \InvalidArgumentException('Purchase not found');
+                $this->logger->error('Purchase not found in session');
+                throw new \InvalidArgumentException('Košík nenalezen');
             }
 
             // 2. Validate provided consents exist and store them
@@ -66,8 +68,8 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
             $purchase->setClient($client);
 
             // 4. Create purchase address
-            $address = $this->createAddress($data->address);
-            $purchase->setAddress($address);
+            $address = $this->createPurchaseAddress($data->address);
+            $purchase->setPurchaseAddress($address);
 
             // 5. Add consents
             foreach ($providedConsents as $consent) {
@@ -76,10 +78,8 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
 
             // 6. Add notes
             foreach ($data->notes as $noteText) {
-                $note = new Note();
-                $note->setText($noteText)->setType('order');
+                $note = $this->createNote($noteText);
                 $purchase->addNote($note);
-                $this->em->persist($note);
             }
 
             // 7. Validate and apply transition
@@ -95,6 +95,9 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
 
             // 8. Process payment after transition
             $redirectUrl = $this->generateRedirectUrl($purchase);
+
+            // 9. Remove purchase from session
+            $this->requestStack->getSession()->remove('purchase');
 
             return new JsonResponse(['redirect' => $redirectUrl], 200);
 
@@ -146,7 +149,7 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
         return $client;
     }
 
-    private function createAddress(array $addressData): PurchaseAddress
+    private function createPurchaseAddress(array $addressData): PurchaseAddress
     {
         $address = new PurchaseAddress();
 
@@ -159,6 +162,15 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
 
         $this->em->persist($address);
         return $address;
+    }
+
+    private function createNote(string $noteText): Note
+    {
+        $note = new Note();
+        $note->setText($noteText)->setType('order');
+
+        $this->em->persist($note);
+        return $note;
     }
 
     private function generateRedirectUrl(Purchase $purchase): string
@@ -175,8 +187,9 @@ final readonly class PurchaseFinishProcessor implements ProcessorInterface
         }
 
         return $this->urlGenerator->generate('thank_you', [
-//            'id' => $purchase->getId(),
+            'id' => $purchase->getId(),
             'created' => 'true'
         ], UrlGeneratorInterface::ABSOLUTE_URL);
     }
+
 }

@@ -16,7 +16,7 @@ class PaymentRepository extends ServiceEntityRepository
     public function findByPurchaseId($purchaseId)
     {
         return $this->createQueryBuilder('p')
-            ->andWhere('p.purchaseId = :val')
+            ->andWhere('p.purchase = :val')
             ->setParameter('val', $purchaseId)
             ->getQuery()
             ->getResult();

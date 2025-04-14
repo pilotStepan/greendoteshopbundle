@@ -32,7 +32,7 @@ class ManageVoucher
 
         foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
             $productVariant = $purchaseProductVariant->getProductVariant();
-            if ($productVariant->getProduct()->getProductType()->getName() === 'Dárkový certifikát') {
+            if ($productVariant->getProduct()?->getProductType()?->getName() === 'Dárkový certifikát') {
                 $voucher = $this->initiateVoucher($productVariant, $purchase);
                 $vouchers->add($voucher);
             }

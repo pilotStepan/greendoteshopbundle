@@ -82,7 +82,7 @@ class PurchaseRepository extends ServiceEntityRepository
             ->setParameter('purchaseId', $purchaseId);
     }
 
-    public function findOneBySession(string $type): Purchase|null
+    public function findOneBySession(): ?Purchase
     {
         $qb = $this->createQueryBuilder('p');
         $session = $this->requestStack->getCurrentRequest()->getSession();
