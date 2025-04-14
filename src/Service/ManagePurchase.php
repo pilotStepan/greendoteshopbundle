@@ -26,7 +26,7 @@ class ManagePurchase extends AbstractExtension
         private readonly Registry              $workflowRegistry,
         private readonly PurchaseRepository    $purchaseRepository,
         private readonly CurrencyRepository    $currencyRepository,
-        private NoteRepository                 $noteRepository,
+        private readonly NoteRepository        $noteRepository,
         private readonly LoggerInterface       $logger,
         private readonly InvoiceMaker          $invoiceMaker,
         private readonly ParcelServiceProvider $parcelServiceProvider,
@@ -67,20 +67,26 @@ class ManagePurchase extends AbstractExtension
         return $purchase;
     }
 
-    public function calculateInquiryNumber(Purchase|int $purchase)
+    public function generateInquiryNumber(Purchase $purchase): string
     {
-        if ($purchase instanceof Purchase) {
-            return $purchase->getDateIssue()->getTimestamp() . $purchase->getId();
-        } else {
-            if (strlen((string)$purchase) > 10) {
-                $purchaseId = substr((string)$purchase, 10);
-                return $this->purchaseRepository->find($purchaseId);
-            } else {
-                throw new \InvalidArgumentException("Inquiry ID has a wrong format.", 500);
-            }
-        }
+        return sprintf('%010d%s', $purchase->getDateIssue()->getTimestamp(), $purchase->getId());
     }
 
+    public function findPurchaseByInquiryNumber(string $inquiryNumber): Purchase
+    {
+        // The inquiry number is expected to be at least 11 characters (10 for timestamp, then the purchase ID)
+        if (strlen($inquiryNumber) <= 10) {
+            throw new \InvalidArgumentException("Inquiry ID has a wrong format.");
+        }
+
+        // Extract the purchase ID (after the first 10 characters)
+        $purchaseId = substr($inquiryNumber, 10);
+        $purchase = $this->purchaseRepository->find($purchaseId);
+        if (!$purchase) {
+            throw new \RuntimeException("Purchase not found for inquiry number: $inquiryNumber.");
+        }
+        return $purchase;
+    }
 
     public function getNotifyEmail(Purchase $purchase): ?string
     {
@@ -89,7 +95,7 @@ class ManagePurchase extends AbstractExtension
         return $note?->getText();
     }
 
-    public function getRangeOfCalendarWeek(int $calendarWeek)
+    public function getRangeOfCalendarWeek(int $calendarWeek): array
     {
         $currentYear = date('Y');
         $currentMonth = date('n');
@@ -145,5 +151,11 @@ class ManagePurchase extends AbstractExtension
         $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);
         return $this->invoiceMaker->createInvoiceOrProforma($purchase);
+    }
+
+    // Used for testing purposes
+    public function getSelectedCurrency(): Currency
+    {
+        return $this->selectedCurrency;
     }
 }

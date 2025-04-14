@@ -141,7 +141,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         $client
             ->setName($clientData['name'])
             ->setSurname($clientData['surname'])
-            ->setPhone($clientData['tel'])
+            ->setPhone($clientData['phone']) // ??
             ->setMail($clientData['mail'])
             ->setIsAnonymous(true);
 

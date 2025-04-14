@@ -66,9 +66,9 @@ class ProductVariant implements Translatable
 
     #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
     #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_info:read', 'comment:read', 'purchase:read'])]
-    private $parameters;
+    private Collection $parameters;
 
-    #[ORM\OneToMany(mappedBy: 'productVariant', targetEntity: Price::class)]
+    #[ORM\OneToMany(targetEntity: Price::class, mappedBy: 'productVariant')]
     #[Groups(['product_variant:read', 'product_info:read', 'comment:read', "SearchProductResultApiModel"])]
     private Collection $price;
 
@@ -96,6 +96,7 @@ class ProductVariant implements Translatable
     {
         $this->video = new ArrayCollection();
         $this->orderProductVariants = new ArrayCollection();
+        $this->parameters = new ArrayCollection();
         $this->price = new ArrayCollection();
         $this->productVariantUploadGroups = new ArrayCollection();
     }

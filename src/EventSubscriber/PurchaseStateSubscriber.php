@@ -106,7 +106,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $this->manageVoucher->initiateVouchers($purchase);
         });
 
-        // $this->manageMails->sendOrderReceiveEmail($purchase, 'mail/specific/order-receive.html.twig'); TODO: implement
+        // $this->manageMails->sendOrderReceiveEmail($purchase, 'mail/specific/order-receive.html.twig'); TODO: not ready
     }
 
     public function onPayment(Event $event): void
@@ -119,9 +119,8 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $invoicePath = $this->managePurchase->generateInvoice($purchase);
         });
 
-        $this->manageMails->sendPaymentReceivedEmail($purchase, $invoicePath, 'mail/specific/payment-received.html.twig');
+        // $this->manageMails->sendPaymentReceivedEmail($purchase, $invoicePath, 'mail/specific/payment-received.html.twig'); TODO: not ready
     }
-
 
     public function onPaymentIssue(Event $event): void
     {
@@ -132,7 +131,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
         });
 
-        $this->manageMails->sendEmail($purchase, 'mail/specific/payment-not-received.html.twig');
+        // $this->manageMails->sendEmail($purchase, 'mail/specific/payment-not-received.html.twig'); TODO: not ready
     }
 
     public function onCancellation(Event $event): void
@@ -144,27 +143,27 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
         });
 
-        $this->manageMails->sendEmail($purchase, 'mail/specific/order-canceled.html.twig');
+         // $this->manageMails->sendEmail($purchase, 'mail/specific/order-canceled.html.twig'); TODO: not ready
     }
 
     public function onPrepareForPickup(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        $this->manageMails->sendEmail($purchase, 'mail/specific/order-ready-for-pickup.html.twig');
+        // $this->manageMails->sendEmail($purchase, 'mail/specific/order-ready-for-pickup.html.twig'); TODO: not ready
     }
 
     public function onSend(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        $this->manageMails->sendEmail($purchase, 'mail/specific/order-shipped.html.twig');
+//         $this->manageMails->sendEmail($purchase, 'mail/specific/order-shipped.html.twig'); TODO: not ready
     }
 
     public function onPickUp(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        $this->manageMails->sendEmail($purchase, 'mail/specific/order-picked-up.html.twig');
+        // $this->manageMails->sendEmail($purchase, 'mail/specific/order-picked-up.html.twig'); TODO: not ready
     }
 }

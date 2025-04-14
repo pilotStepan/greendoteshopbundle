@@ -8,13 +8,10 @@ use Greendot\EshopBundle\Enum\DiscountType;
 
 class ManageClientDiscount
 {
-
-
-    // checks is_used and date, returns true if ok
+    // Returns true if the discount is not used and within the valid date range
     public function isValid(ClientDiscount $clientDiscount) : bool
     {
-        if ($clientDiscount->isIsUsed())
-        {
+        if ($clientDiscount->isIsUsed()) {
             return false;
         }
 
@@ -22,30 +19,34 @@ class ManageClientDiscount
         $dateEnd = $clientDiscount->getDateEnd();
         $now = new \DateTime();
 
-        if ($dateStart !== null && $dateEnd !== null){
-            return $dateStart <= $now && $now <= $clientDiscount->$dateEnd;
+        // Return true if current time is within the discount period
+        if ($dateStart !== null && $dateEnd !== null) {
+            return $dateStart <= $now && $now <= $dateEnd;
         }
-        return true;
 
+        return true;
     }
 
-    // check isValid() and client based on type, returns true if ok
+    // Returns true if the discount is valid and applicable to the purchase's client
     public function isAvailable(Purchase $purchase, ?ClientDiscount $clientDiscount) : bool
     {
         if (!$clientDiscount) return false;
         if (!$this->isValid($clientDiscount)) return false;
 
+        // Check if discount is client-specific
         $isClientSpecific = in_array($clientDiscount->getType(), [DiscountType::SingleClient, DiscountType::SingleUseClient], true);
 
+        // For client-specific discounts, ensure the client matches
         return !$isClientSpecific || $clientDiscount->getClient() === $purchase->getClient();
     }
 
-    // checks isAvailable and sets is_used=true based on type, returns false if failed, true if ok
+    // Applies the discount (marks as used) if available; returns true if successful
     public  function use(Purchase $purchase, ?ClientDiscount $clientDiscount) : bool
     {
         if (!$clientDiscount) return false;
         if (!$this->isAvailable($purchase, $clientDiscount)) return false;
 
+        // Mark discount as used for single-use discount types
         if (in_array($clientDiscount->getType(), [DiscountType::SingleUse, DiscountType::SingleUseClient], true)) {
             $clientDiscount->setIsUsed(true);
         }

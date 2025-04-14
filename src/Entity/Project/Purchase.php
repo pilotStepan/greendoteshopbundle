@@ -581,7 +581,7 @@ class Purchase
         return $this->vouchersUsed;
     }
 
-    public function addVouchersUsed(Voucher $voucher): static
+    public function addVoucherUsed(Voucher $voucher): static
     {
         if (!$this->vouchersUsed->contains($voucher)) {
             $this->vouchersUsed->add($voucher);
@@ -591,7 +591,7 @@ class Purchase
         return $this;
     }
 
-    public function removeVouchersUsed(Voucher $voucher): static
+    public function removeVoucherUsed(Voucher $voucher): static
     {
         if ($this->vouchersUsed->removeElement($voucher)) {
             // set the owning side to null (unless already changed)

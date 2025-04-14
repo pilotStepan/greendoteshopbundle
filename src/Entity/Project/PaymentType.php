@@ -76,7 +76,7 @@ class PaymentType implements Translatable
 
     #[ORM\Column(type: 'smallint')]
     #[Groups(['reservation_edit', 'order_edit', 'payment_type_edit'])]
-    private $action_group;
+    private $action_group; // TODO: make enums
 
     /**
      * @var Collection<int, HandlingPrice>
