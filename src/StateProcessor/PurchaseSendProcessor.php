@@ -115,8 +115,8 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         } catch (\Exception|ORMException $e) {
             // General exceptions or ORM errors
             $this->logger->error('Unexpected exception during purchase processing', ['exception' => $e]);
+            dd($e); // FIXME: for debugging purposes
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
-
         } finally {
             // Ensure the entity manager is closed in case of an ORM error
             if (isset($this->em)) $this->em->close();
@@ -141,7 +141,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         $client
             ->setName($clientData['name'])
             ->setSurname($clientData['surname'])
-            ->setPhone($clientData['phone']) // ??
+            ->setPhone($clientData['phone'])
             ->setMail($clientData['mail'])
             ->setIsAnonymous(true);
 
