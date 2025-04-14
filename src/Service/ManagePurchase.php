@@ -120,6 +120,9 @@ class ManagePurchase extends AbstractExtension
 
     public function generateTransportData(Purchase $purchase): void
     {
+        // Pokud objednávka musí být vyzvedena osobně nebo na pobočce, tak return
+        if (in_array($purchase->getTransportation()->getAction()->getId(), [1, 2])) return;
+
         $transportationId = $purchase->getTransportation()->getId();
         $parcelId = $this->parcelServiceProvider->get($transportationId)->createParcel($purchase);
 

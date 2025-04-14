@@ -88,7 +88,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $discount = $purchase->getClientDiscount();
-        if ($discount && !$this->manageClientDiscount->isAvailable($discount, $purchase)) {
+        if ($discount && !$this->manageClientDiscount->isAvailable($purchase, $discount)) {
             $event->setBlocked(true, "Objednávka má neplatnou klientskou slevu");
             return;
         }
@@ -101,12 +101,12 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         $this->entityManager->wrapInTransaction(function() use ($purchase) {
             $this->manageVoucher->handleUsedVouchers($purchase, 'use');
-            $this->manageClientDiscount->use($purchase->getClientDiscount(), $purchase);
+            $this->manageClientDiscount->use($purchase, $purchase->getClientDiscount());
             $this->managePurchase->generateTransportData($purchase);
             $this->manageVoucher->initiateVouchers($purchase);
         });
 
-        $this->manageMails->sendOrderReceiveEmail($purchase, 'mail/specific/order-receive.html.twig');
+        // $this->manageMails->sendOrderReceiveEmail($purchase, 'mail/specific/order-receive.html.twig'); TODO: implement
     }
 
     public function onPayment(Event $event): void

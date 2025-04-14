@@ -30,12 +30,10 @@ class ManageClientDiscount
     }
 
     // check isValid() and client based on type, returns true if ok
-    public function isAvailable(ClientDiscount $clientDiscount, Purchase $purchase) : bool
+    public function isAvailable(Purchase $purchase, ?ClientDiscount $clientDiscount) : bool
     {
-        if (!$this->isValid($clientDiscount))
-        {
-            return false;
-        }
+        if (!$clientDiscount) return false;
+        if (!$this->isValid($clientDiscount)) return false;
 
         $isClientSpecific = in_array($clientDiscount->getType(), [DiscountType::SingleClient, DiscountType::SingleUseClient], true);
 
@@ -43,19 +41,15 @@ class ManageClientDiscount
     }
 
     // checks isAvailable and sets is_used=true based on type, returns false if failed, true if ok
-    public  function use(ClientDiscount $clientDiscount, Purchase $purchase) : bool
+    public  function use(Purchase $purchase, ?ClientDiscount $clientDiscount) : bool
     {
-        if (!$this->isAvailable($clientDiscount, $purchase))
-        {
-            return false;
-        }
+        if (!$clientDiscount) return false;
+        if (!$this->isAvailable($purchase, $clientDiscount)) return false;
 
-        if (in_array($clientDiscount->getType(), [DiscountType::SingleUse, DiscountType::SingleUseClient], true))
-        {
+        if (in_array($clientDiscount->getType(), [DiscountType::SingleUse, DiscountType::SingleUseClient], true)) {
             $clientDiscount->setIsUsed(true);
         }
 
         return true;
     }
-
 }
