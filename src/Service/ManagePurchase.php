@@ -126,12 +126,11 @@ class ManagePurchase extends AbstractExtension
 
     public function generateTransportData(Purchase $purchase): void
     {
-        // Pokud objednávka musí být vyzvedena osobně nebo na pobočce, tak return
-        if (in_array($purchase->getTransportation()->getAction()->getId(), [1, 2])) return;
-
         $transportationId = $purchase->getTransportation()->getId();
-        $parcelId = $this->parcelServiceProvider->get($transportationId)->createParcel($purchase);
+        $parcelService = $this->parcelServiceProvider->get($transportationId);
+        if (!$parcelService) return;
 
+        $parcelId = $parcelService->createParcel($purchase);
         if ($parcelId) {
             $purchase->setTransportNumber($parcelId);
             return;
@@ -151,11 +150,5 @@ class ManagePurchase extends AbstractExtension
         $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);
         return $this->invoiceMaker->createInvoiceOrProforma($purchase);
-    }
-
-    // Used for testing purposes
-    public function getSelectedCurrency(): Currency
-    {
-        return $this->selectedCurrency;
     }
 }
