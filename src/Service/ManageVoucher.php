@@ -12,7 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class ManageVoucher
 {
-    private const GIFT_VOUCHER = 'giftVoucher';
+    public const GIFT_VOUCHER = 'giftVoucher';
 
     public function __construct(
         private readonly Registry               $workflowRegistry,

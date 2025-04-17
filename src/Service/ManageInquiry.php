@@ -55,7 +55,7 @@ class ManageInquiry
     function createPDFInquiry(Purchase $order, $mail): void
     {
         $dompdf = new Dompdf(array('enable_remote' => true));
-        $inquiryNumber = $this->manageOrder->calculateInquiryNumber($order);
+        $inquiryNumber = $this->manageOrder->generateInquiryNumber($order);
         $html = $this->templating->render(
             "pdf/inquiryPdf.html.twig",
             [
@@ -79,7 +79,7 @@ class ManageInquiry
      */
     function sendPDFMail(Purchase $order, $mail, $notifyMail, $mailContent, $subject): void
     {
-        $inquiryNumber = $this->manageOrder->calculateInquiryNumber($order);
+        $inquiryNumber = $this->manageOrder->generateInquiryNumber($order);
         $dompdf = new Dompdf(array('enable_remote' => true));
         $html = $this->templating->render("pdf/inquiryPdf.html.twig", ['purchase' => $order, 'mail' => $notifyMail, 'inquiry_number' => $inquiryNumber, 'parameter_group_repository' => $this->parameterGroupRepository, 'parameter_repository' => $this->parameterRepository,]);
         $dompdf->loadHtml($html);
@@ -201,7 +201,7 @@ class ManageInquiry
         $writer->save($tempFilePath);
         $response = new Response(file_get_contents($tempFilePath));
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $inquiryNumber = $this->manageOrder->calculateInquiryNumber($order);
+        $inquiryNumber = $this->manageOrder->generateInquiryNumber($order);
         $response->headers->set('Content-Disposition', $response->headers->makeDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
             'poptavka_' . $order->getId() . '.xlsx'

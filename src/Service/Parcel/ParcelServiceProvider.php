@@ -20,9 +20,9 @@ readonly class ParcelServiceProvider
      * Retrieves the parcel service that supports the given transportation ID.
      *
      * @param int $transportationId The transportation ID to find a service for.
-     * @return ParcelServiceInterface The parcel service that supports the transportation ID.
+     * @return ?ParcelServiceInterface The parcel service that supports the transportation ID.
      */
-    public function get(int $transportationId): ParcelServiceInterface
+    public function get(int $transportationId): ?ParcelServiceInterface
     {
         /* @var ParcelServiceInterface[] $service */
         foreach ($this->parcelServices as $service) {
@@ -30,7 +30,6 @@ readonly class ParcelServiceProvider
                 return $service;
             }
         }
-
-        throw new \InvalidArgumentException('No service found for transportation ID: ' . $transportationId);
+        return null;
     }
 }

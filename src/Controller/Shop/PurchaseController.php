@@ -275,44 +275,6 @@ class PurchaseController extends AbstractController
         ]);
     }
 
-    #[Route('/api/ares-{ic}', name: 'ares_api')]
-    public function aresTest($ic): JsonResponse
-    {
-        if (!$ic || strlen($ic) != 8 || !preg_match('/^\d+$/', $ic)) {
-            return new JsonResponse(['statusText' => 'Špatný formát IČO']);
-        }
-
-        $aresEndpoint = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{$ic}";
-
-        $data = file_get_contents($aresEndpoint);
-
-        if ($data === false) {
-            return new JsonResponse(['statusText' => 'Požadovaná data nenalezena']);
-        }
-
-        $data = json_decode($data, true);
-
-        if (!$data or !isset($data['sidlo']) or !isset($data["obchodniJmeno"])) {
-            return new JsonResponse(['statusText' => 'Nebylo možné načíst data']);
-        }
-
-        $street = $data["sidlo"]["nazevUlice"] . " " . $data["sidlo"]["cisloDomovni"];
-
-        if (isset($data["sidlo"]["cisloOrientacni"])) {
-            $street .= "/" . $data["sidlo"]["cisloOrientacni"];
-        }
-
-        $return = [
-            'city'    => $data["sidlo"]["nazevObce"],
-            'street'  => $street,
-            'zip'     => $data["sidlo"]["psc"],
-            'company' => $data["obchodniJmeno"],
-            'dic'     => $data["dic"] ?? null
-        ];
-
-        return new JsonResponse($return);
-    }
-
     #[Route('/api/client/form', name: 'api_client_form', methods: ['GET'])]
     public function getClientForm(SerializerInterface $serializer): Response|JsonResponse
     {
