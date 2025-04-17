@@ -5,7 +5,8 @@ namespace Greendot\EshopBundle\StateProvider;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use ApiPlatform\Metadata\CollectionOperationInterface;
-use Greendot\EshopBundle\Entity\Project\Currency;
+use ApiPlatform\Doctrine\Orm\Paginator as ApiPlatformPaginator;use Greendot\EshopBundle\Entity\Project\Currency;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -33,7 +34,7 @@ class ProductStateProvider implements ProviderInterface
         $this->productRepository = $productRepository;
     }
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|Product|null
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): iterable
     {
 
 
@@ -75,6 +76,8 @@ class ProductStateProvider implements ProviderInterface
         $qb->setMaxResults($limit);
         $qb->setFirstResult($offset);
 
-        return $qb->getQuery()->getResult();
+        $doctrinePaginator = new DoctrinePaginator($qb->getQuery(), true);
+        return new ApiPlatformPaginator($doctrinePaginator);
+//        return $qb->getQuery()->getResult();
     }
 }
