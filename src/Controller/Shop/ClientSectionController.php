@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\VoucherRepository;
+use Greendot\EshopBundle\Service\CertificateMaker;
 use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\InvoiceMaker;
 use Greendot\EshopBundle\Service\PriceCalculator;
@@ -454,5 +455,26 @@ class ClientSectionController extends AbstractController
             'voucherMetadata' => $voucherMetadata
         ]);
     }
+
+    #[Route('/voucher/download/{id}', name: 'voucher_download')]
+    public function downloadVoucher(
+        int $id,
+        VoucherRepository  $voucherRepository,
+        CertificateMaker   $certificateMaker
+    ): Response
+    {
+        $voucher = $voucherRepository->find($id);
+
+        // TODO : check user login
+
+
+        $pdfContent = $certificateMaker->createCertificate($voucher);
+
+        return new Response($pdfContent, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="voucher_' . $voucher->getId() . '.pdf"'
+        ]);
+    }
+
 
 }
