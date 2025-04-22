@@ -465,7 +465,8 @@ class ClientSectionController extends AbstractController
     {
         $voucher = $voucherRepository->find($id);
 
-        // TODO : check user login
+        // check user login
+        if ($voucher->getPurchaseIssued()->getClient() !== $this->getUser()) return $this->redirectToRoute('web_homepage');
 
 
         $pdfContent = $certificateMaker->createCertificate($voucher);
