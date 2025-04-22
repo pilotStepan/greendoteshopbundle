@@ -91,10 +91,6 @@ class Transportation implements Translatable
     #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $state_url;
 
-    #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
-    private $section;
-
     #[ORM\ManyToMany(targetEntity: PaymentType::class, inversedBy: 'transportations')]
     #[Groups(['transportation:read', 'purchase:read'])]
     private Collection $paymentTypes;
@@ -131,9 +127,17 @@ class Transportation implements Translatable
     private $action;
 
     /**
+     * @var Collection<int, TransportationGroup>
+     */
+    #[ORM\ManyToMany(targetEntity: TransportationGroup::class, inversedBy: 'transportations')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['transportation:read', 'purchase:read'])]
+    private Collection $groups;
+
+    /**
      * @var Collection<int, Branch>
      */
-    #[ORM\OneToMany(mappedBy: 'transportation', targetEntity: Branch::class, orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Branch::class, mappedBy: 'transportation', orphanRemoval: true)]
     private Collection $branches;
 
     public function __construct()
@@ -142,6 +146,7 @@ class Transportation implements Translatable
         $this->paymentTypes   = new ArrayCollection();
         $this->handlingPrices = new ArrayCollection();
         $this->branches = new ArrayCollection();
+        $this->groups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -299,18 +304,6 @@ class Transportation implements Translatable
         return $this;
     }
 
-    public function getSection(): ?int
-    {
-        return $this->section;
-    }
-
-    public function setSection(int $section): self
-    {
-        $this->section = $section;
-
-        return $this;
-    }
-
     /**
      * @return Collection<int, PaymentType>
      */
@@ -370,6 +363,32 @@ class Transportation implements Translatable
         return $this;
     }
 
+    /**
+     * @return Collection<int, TransportationGroup>
+     */
+    public function getGroups(): Collection
+    {
+        return $this->groups;
+    }
+
+    public function addGroup(TransportationGroup $group): static
+    {
+        if (!$this->groups->contains($group)) {
+            $this->groups->add($group);
+            $group->addTransportation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGroup(TransportationGroup $group): static
+    {
+        if ($this->groups->removeElement($group)) {
+            $group->removeTransportation($this);
+        }
+
+        return $this;
+    }
 
     /**
      * @return Collection<int, HandlingPrice>

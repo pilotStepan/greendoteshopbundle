@@ -24,18 +24,32 @@ class PaymentAction
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['payment_action:read', 'payment_action:write'])]
-    private $name;
+    private ?string $name;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['payment_action:read', 'payment_action:write'])]
+    private ?string $data;
+
+    #[ORM\Column(type: 'datetime')]
+    #[Groups(['payment_action:read', 'payment_action:write'])]
+    private \DateTimeInterface $date;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['payment_action:read', 'payment_action:write'])]
+    private ?string $description;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['payment_action:read', 'payment_action:write'])]
-    private $icon;
+    private ?string $performed_by; // client, admin, system
 
+    /* @var Collection<int, Payment> */
     #[ORM\OneToMany(targetEntity: Payment::class, mappedBy: 'action')]
-    private $payments;
+    private Collection $payments;
 
     public function __construct()
     {
         $this->payments = new ArrayCollection();
+        $this->date = new \DateTime();
     }
 
     public function getId(): ?int
@@ -54,14 +68,51 @@ class PaymentAction
         return $this;
     }
 
-    public function getIcon(): ?string
+    public function getData(): ?string
     {
-        return $this->icon;
+        return $this->data;
     }
 
-    public function setIcon(string $icon): self
+    public function setData(?string $data): self
     {
-        $this->icon = $icon;
+        $this->data = $data;
+
+        return $this;
+    }
+
+    public function getDate(): ?\DateTimeInterface
+    {
+        return $this->date;
+    }
+
+    public function setDate(\DateTimeInterface $date): self
+    {
+        $this->date = $date;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getPerformedBy(): ?string
+    {
+        return $this->performed_by;
+    }
+
+    public function setPerformedBy(string $performed_by): self
+    {
+        $this->performed_by = $performed_by;
+
         return $this;
     }
 
@@ -79,6 +130,7 @@ class PaymentAction
             $this->payments[] = $payment;
             $payment->setAction($this);
         }
+
         return $this;
     }
 
@@ -89,6 +141,7 @@ class PaymentAction
                 $payment->setAction(null);
             }
         }
+
         return $this;
     }
 }

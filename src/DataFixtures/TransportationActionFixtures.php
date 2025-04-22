@@ -7,6 +7,10 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
+/* @deprecated
+ * This belongs to TransportationGroup from now on.
+ * Fixtures should be updated.
+ */
 class TransportationActionFixtures extends Fixture implements FixtureGroupInterface
 {
     private array $dataArray = [

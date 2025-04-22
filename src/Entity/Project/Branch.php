@@ -86,6 +86,7 @@ class Branch
 
     /**
      * @var Collection<int, Purchase>
+     * TODO: check if its relevant and if so, fix mapping
      */
     #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'Consents')]
     private Collection $Purchases;

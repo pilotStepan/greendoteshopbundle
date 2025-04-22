@@ -71,7 +71,6 @@ class TransportationFixtures extends Fixture implements DependentFixtureInterfac
             $object->setSquence(0);
             $object->setCountry('');
             $object->setStateUrl('');
-            $object->setSection(0);
             $object->setAction($this->entityManager->getRepository(TransportationAction::class)->find($data['action_id']));
             foreach ($paymentTypes as $paymentType) $object->addPaymentType($paymentType);
             $manager->persist($object);
