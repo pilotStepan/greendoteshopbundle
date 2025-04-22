@@ -44,51 +44,51 @@ class Transportation implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write', 'branch:read'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write', 'branch:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Gedmo\Translatable]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write', 'branch:read'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write', 'branch:read'])]
     private $name;
 
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'Transportation')]
     private $purchases;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description_mail;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description_duration;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $html;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $icon;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $duration;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $squence;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $country;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['transportation_action:read', 'transportation_action:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $state_url;
 
     #[ORM\ManyToMany(targetEntity: PaymentType::class, inversedBy: 'transportations')]
@@ -117,14 +117,14 @@ class Transportation implements Translatable
     /**
      * @var Collection<int, HandlingPrice>
      */
-    #[ORM\OneToMany(mappedBy: 'transportation', targetEntity: HandlingPrice::class)]
-    #[Groups(['transportation:read', 'transportation_action:read'])]
+    #[ORM\OneToMany(targetEntity: HandlingPrice::class, mappedBy: 'transportation')]
+    #[Groups(['transportation:read', 'transportation_group:read'])]
     private Collection $handlingPrices;
 
     #[ORM\ManyToOne(targetEntity: TransportationAction::class, cascade: ['persist'], inversedBy: 'transportations')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['transportation:read', 'purchase:read'])]
-    private $action;
+    private ?TransportationAction $action;
 
     /**
      * @var Collection<int, TransportationGroup>

@@ -11,51 +11,51 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: HandlingPriceRepository::class)]
 #[ApiResource(
-    normalizationContext: ['groups' => ['handlingPrice:read']],
-    denormalizationContext: ['groups' => ['handlingPrice:write']],
+    normalizationContext: ['groups' => ['handling_price:read']],
+    denormalizationContext: ['groups' => ['handling_price:write']],
 )]
 class HandlingPrice
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?float $price = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?float $free_from_price = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?float $discount = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['transportation:read', 'payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['transportation:read', 'payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?int $vat = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?DateTimeInterface $validFrom = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?DateTimeInterface $validUntil = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['payment:read', 'transportation_action:read', 'handlingPrice:read'])]
+    #[Groups(['payment:read', 'transportation_group:read', 'handling_price:read'])]
     private ?DateTimeInterface $created = null;
 
     #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'handlingPrices')]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['handling_price:read'])]
     private ?Transportation $transportation = null;
 
     #[ORM\ManyToOne(targetEntity: PaymentType::class, inversedBy: 'handlingPrices')]
-    #[Groups(['handlingPrice:read'])]
+    #[Groups(['handling_price:read'])]
     private ?PaymentType $paymentType = null;
 
     public function getId(): ?int
