@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Service\Price;
+namespace Greendot\EshopBundle\Service\Price;
 
-use App\Entity\Project\Client;
-use App\Entity\Project\Currency;
-use App\Entity\Project\Price;
-use App\Entity\Project\ProductVariant;
-use App\Entity\Project\PurchaseProductVariant;
-use App\Enum\DiscountCalculationType;
-use App\Enum\VatCalculationType;
-use App\Repository\Project\PriceRepository;
-use App\Service\DiscountService;
+use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Price;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Service\DiscountService;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -162,13 +162,11 @@ class ProductVariantPrice
 
     private function recalculateNoQuery(): void
     {
-        if (!$this->price) {
-            return;
-        }
+        if (!$this->price) return;
+
         $totalDiscountedPercentage = 0;
         switch ($this->discountCalculationType) {
             case DiscountCalculationType::WithoutDiscount:
-                $totalDiscountedPercentage = 0;
                 break;
             case DiscountCalculationType::WithDiscount:
                 $totalDiscountedPercentage = $this->discountPercentage + $this->clientDiscount;
@@ -185,8 +183,6 @@ class ProductVariantPrice
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
                 $totalDiscountedPercentage = self::AFTER_REGISTRATION_BONUS;
                 break;
-            default:
-                throw new \Exception("Unknown " . DiscountCalculationType::class . " case");
         }
 
         $fullDiscountValue = $this->priceUtils->calculatePercentage($this->price, $totalDiscountedPercentage);
@@ -204,8 +200,6 @@ class ProductVariantPrice
             case VatCalculationType::OnlyVAT:
                 $price = $this->priceUtils->calculatePercentage($price, $this->vatPercentage);
                 break;
-            default:
-                throw new \Exception("Unknown " . VatCalculationType::class . " case");
         }
 
         $this->calculatedPrice = $this->priceUtils->convertCurrency($price, $this->currency);
@@ -356,9 +350,6 @@ class ProductVariantPrice
         $this->discountPercentage = $this->priceUtils->calculatePercentage($priceAmount, null, $discountedAmount);
     }
 
-    /**
-     * @return array
-     */
     #[ArrayShape(['price' => "int", 'discountedAmount' => "int", 'vatAmount' => "int"])]
     private function calculateValues(int $amount, Price $price): array
     {

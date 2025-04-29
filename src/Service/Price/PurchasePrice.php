@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Service\Price;
+namespace Greendot\EshopBundle\Service\Price;
 
-use App\Entity\Project\Currency;
-use App\Entity\Project\PaymentType;
-use App\Entity\Project\Purchase;
-use App\Entity\Project\Transportation;
-use App\Enum\DiscountCalculationType;
-use App\Enum\VatCalculationType;
-use App\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 
 class PurchasePrice
 {
@@ -26,13 +27,14 @@ class PurchasePrice
 
 
     public function __construct(
-        private Purchase                    $purchase,
-        private VatCalculationType          $vatCalculationType,
-        private DiscountCalculationType     $discountCalculationType,
-        private Currency                    $currency,
-        private ProductVariantPriceFactory  $productVariantPriceFactory,
-        private readonly CurrencyRepository $currencyRepository,
-        private readonly PriceUtils         $priceUtils
+        private Purchase                            $purchase,
+        private VatCalculationType                  $vatCalculationType,
+        private DiscountCalculationType             $discountCalculationType,
+        private Currency                            $currency,
+        private readonly ProductVariantPriceFactory $productVariantPriceFactory,
+        private readonly CurrencyRepository         $currencyRepository,
+        private readonly HandlingPriceRepository    $handlingPriceRepository,
+        private readonly PriceUtils                 $priceUtils
     )
     {
         $this->defaultCurrency = $this->currencyRepository->findOneBy(['conversionRate' => 1]);
@@ -150,22 +152,23 @@ class PurchasePrice
 
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
     {
+        $handlingPrice = $this->handlingPriceRepository->GetByDate($paymentType);
 
-        if ($purchasePrice >= $paymentType->getFreeFromPrice() or $paymentType->getPrice() < 1) {
+        if ($purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
             $this->paymentPrice = 0;
             return;
         }
 
-        switch ($this->vatCalculationType){
+        switch ($this->vatCalculationType) {
             case VatCalculationType::WithoutVAT:
-                $price = $paymentType->getPrice();
+                $price = $handlingPrice->getPrice();
                 break;
             case VatCalculationType::WithVAT:
-                $vatValue = $this->priceUtils->calculatePercentage($paymentType->getPrice(), $paymentType->getVat());
-                $price = $paymentType->getPrice()+$vatValue;
+                $vatValue = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
+                $price = $handlingPrice->getPrice() + $vatValue;
                 break;
             case VatCalculationType::OnlyVAT:
-                $price = $this->priceUtils->calculatePercentage($paymentType->getPrice(), $paymentType->getVat());
+                $price = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
                 break;
             default:
                 throw new \Exception('Unknown Enum:VatCalculationType case');
@@ -177,21 +180,23 @@ class PurchasePrice
 
     private function setTransportationPrice(float $purchasePrice, Transportation $transportation): void
     {
-        if ($purchasePrice >= $transportation->getFreeFromPrice() or $transportation->getPrice() < 1) {
+        $handlingPrice = $this->handlingPriceRepository->GetByDate($transportation);
+
+        if ($purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
             $this->transportationPrice = 0;
             return;
         }
 
-        switch ($this->vatCalculationType){
+        switch ($this->vatCalculationType) {
             case VatCalculationType::WithoutVAT:
-                $price = $transportation->getPrice();
+                $price = $handlingPrice->getPrice();
                 break;
             case VatCalculationType::WithVAT:
-                $vatValue = $this->priceUtils->calculatePercentage($transportation->getPrice(), $transportation->getVat());
-                $price = $transportation->getPrice()+$vatValue;
+                $vatValue = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
+                $price = $handlingPrice->getPrice() + $vatValue;
                 break;
             case VatCalculationType::OnlyVAT:
-                $price = $this->priceUtils->calculatePercentage($transportation->getPrice(), $transportation->getVat());
+                $price = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
                 break;
             default:
                 throw new \Exception('Unknown Enum:VatCalculationType case');

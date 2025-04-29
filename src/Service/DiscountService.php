@@ -2,14 +2,14 @@
 
 namespace Greendot\EshopBundle\Service;
 
-use App\Entity\Project\Client;
-use App\Entity\Project\ClientDiscount;
-use App\Enum\DiscountType;
-use App\Repository\Project\ClientDiscountRepository;
+use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
+use Greendot\EshopBundle\Enum\DiscountType;
+use Greendot\EshopBundle\Repository\Project\ClientDiscountRepository;
 
-class DiscountService
+readonly class DiscountService
 {
-    public function __construct(private readonly ClientDiscountRepository $clientDiscountRepository){}
+    public function __construct(private ClientDiscountRepository $clientDiscountRepository){}
 
     public function getValidClientDiscount(Client $client):?ClientDiscount
     {
@@ -56,6 +56,9 @@ class DiscountService
                 break;
             case DiscountType::MultiUse:
                 break;
+            case DiscountType::SingleUseClient:
+                // TODO: validation for SingleUseClient discount (?)
+                throw new \Exception('To be implemented');
         }
 
         return true;

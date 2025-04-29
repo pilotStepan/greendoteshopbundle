@@ -1,19 +1,21 @@
 <?php
 
-namespace App\Service\Price;
+namespace Greendot\EshopBundle\Service\Price;
 
-use App\Entity\Project\Currency;
-use App\Entity\Project\Purchase;
-use App\Enum\DiscountCalculationType;
-use App\Enum\VatCalculationType;
-use App\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 
-class PurchasePriceFactory
+readonly class PurchasePriceFactory
 {
     public function __construct(
-        private ProductVariantPriceFactory  $productVariantPriceFactory,
-        private readonly CurrencyRepository $currencyRepository,
-        private readonly PriceUtils         $priceUtils
+        private ProductVariantPriceFactory $productVariantPriceFactory,
+        private CurrencyRepository         $currencyRepository,
+        private HandlingPriceRepository    $handlingPriceRepository,
+        private PriceUtils                 $priceUtils,
     )
     {
     }
@@ -32,8 +34,8 @@ class PurchasePriceFactory
             $currency,
             $this->productVariantPriceFactory,
             $this->currencyRepository,
-            $this->priceUtils
+            $this->handlingPriceRepository,
+            $this->priceUtils,
         );
     }
-
 }

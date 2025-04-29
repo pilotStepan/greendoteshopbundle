@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Service\Price;
+namespace Greendot\EshopBundle\Service\Price;
 
-use App\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Currency;
 
 class PriceUtils
 {

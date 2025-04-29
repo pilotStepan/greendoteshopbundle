@@ -1,23 +1,23 @@
 <?php
 
-namespace App\Service\Price;
+namespace Greendot\EshopBundle\Service\Price;
 
-use App\Entity\Project\Currency;
-use App\Entity\Project\ProductVariant;
-use App\Entity\Project\PurchaseProductVariant;
-use App\Enum\DiscountCalculationType;
-use App\Enum\VatCalculationType;
-use App\Repository\Project\PriceRepository;
-use App\Service\DiscountService;
+use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Service\DiscountService;
 use Symfony\Bundle\SecurityBundle\Security;
 
-class ProductVariantPriceFactory
+readonly class ProductVariantPriceFactory
 {
     public function __construct(
-        private readonly Security                         $security,
-        private readonly PriceRepository                  $priceRepository,
-        private readonly DiscountService                  $discountService,
-        private readonly PriceUtils                       $priceUtils
+        private Security        $security,
+        private PriceRepository $priceRepository,
+        private DiscountService $discountService,
+        private PriceUtils      $priceUtils
     ){}
 
     public function create(
@@ -40,7 +40,4 @@ class ProductVariantPriceFactory
             $this->priceUtils
         );
     }
-
-
-
 }
