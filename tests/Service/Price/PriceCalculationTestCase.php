@@ -6,23 +6,29 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
 use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
+use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
 
-class PriceCalculationTestCase extends TestCase
+abstract class PriceCalculationTestCase extends TestCase
 {
-    private $priceUtils;
-    private $priceRepository;
-    private $security;
-    private $discountService;
+    protected $priceUtils;
+    protected $priceRepository;
+    protected $security;
+    protected $discountService;
+    protected $currencyRepository;
+    protected $handlingPriceRepository;
+    protected $productVariantPriceFactory;
 
     protected function setUp(): void
     {
@@ -30,67 +36,25 @@ class PriceCalculationTestCase extends TestCase
         $this->priceRepository = $this->createMock(PriceRepository::class);
         $this->security = $this->createMock(Security::class);
         $this->discountService = $this->createMock(DiscountService::class);
-    }
 
-    /**
-     * Create a variant based on a product type
-     */
-    protected function createVariant(string $productType, int $amount, array $prices, ?float $clientDiscount): object
-    {
-        $variant = match ($productType) {
-            'pv' => $this->createProductVariantMock($clientDiscount),
-            'ppv' => $this->createPurchaseProductVariantMock($amount, $clientDiscount),
-        };
-        $this->priceRepository->method('findPricesByDateAndProductVariantNew')
-            ->with($variant)
-            ->willReturn($prices);
+        $this->currencyRepository = $this->createMock(CurrencyRepository::class);
+        $this->currencyRepository->method('findOneBy')
+            ->with(['conversionRate' => 1])
+            ->willReturn(FactoryUtil::czk());
 
-        return $variant;
-    }
-
-    /**
-     * Create a ProductVariant mock with client discount if needed
-     */
-    private function createProductVariantMock(?float $clientDiscount): ProductVariant
-    {
-        $variant = $this->createMock(ProductVariant::class);
-
-        if ($clientDiscount !== null) {
-            $this->setupClientDiscountForProductVariant($clientDiscount);
-        } else {
-            $this->security->method('getUser')->willReturn(null);
-        }
-
-        return $variant;
-    }
-
-    /**
-     * Create a PurchaseProductVariant mock with necessary dependencies
-     */
-    private function createPurchaseProductVariantMock(int $amount, ?float $clientDiscount): PurchaseProductVariant
-    {
-        $variant = $this->createMock(PurchaseProductVariant::class);
-        $productVariantMock = $this->createMock(ProductVariant::class);
-
-        $variant->method('getProductVariant')->willReturn($productVariantMock);
-        $variant->method('getAmount')->willReturn($amount);
-
-        if ($clientDiscount !== null) {
-            $purchase = $this->createMock(Purchase::class);
-            $clientDiscountObj = $this->createMock(ClientDiscount::class);
-
-            $clientDiscountObj->method('getDiscount')->willReturn($clientDiscount);
-            $purchase->method('getClientDiscount')->willReturn($clientDiscountObj);
-            $variant->method('getPurchase')->willReturn($purchase);
-        }
-
-        return $variant;
+        $this->handlingPriceRepository = $this->createMock(HandlingPriceRepository::class);
+        $this->productVariantPriceFactory = new ProductVariantPriceFactory(
+            $this->security,
+            $this->priceRepository,
+            $this->discountService,
+            $this->priceUtils
+        );
     }
 
     /**
      * Set up client discount for ProductVariant
      */
-    private function setupClientDiscountForProductVariant(float $clientDiscount): void
+    protected function setupClientDiscountForProductVariant(float $clientDiscount): void
     {
         $client = $this->createMock(Client::class);
         $clientDiscountObject = $this->createMock(ClientDiscount::class);

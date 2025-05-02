@@ -15,9 +15,11 @@ class ProductVariantPriceDataProvider
             /* W01 ─ simple happy-path 3 × 100 @ 21 % */
             'W01' => [
                 'productType' => 'pv',
-                'prices' => [[
-                    'price' => FactoryUtil::makePrice(100, 21),
-                ]],
+                'prices' => [
+                    [
+                        'price' => FactoryUtil::makePrice(100, 21),
+                    ]
+                ],
                 'amount' => 3,
                 'vatCalc' => VatCalc::WithVAT,
                 'currency' => FactoryUtil::czk(),
@@ -29,15 +31,17 @@ class ProductVariantPriceDataProvider
             /* W02 ─ rounding edge-case 2 × 49.91 @ 15 % */
             'W02-round' => [
                 'productType' => 'pv',
-                'prices' => [[
-                    'price' => FactoryUtil::makePrice(49.91, 15),
-                ]],
+                'prices' => [
+                    [
+                        'price' => FactoryUtil::makePrice(49.91, 15),
+                    ]
+                ],
                 'amount' => 2,
                 'vatCalc' => VatCalc::WithVAT,
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::WithoutDiscount,
                 'clientDiscount' => 0,
-                'expectedPrice' => 114.8,  // 99.82 × 1.15 → 114.793 → round(1)
+                'expectedPrice' => 114.8,  // 99.82 × 1.15 -> 114.793 -> round(1)
             ],
 
             /* W03 ─ tier / package price 10 × 90 @ 20 % (package size 5) */
@@ -48,8 +52,8 @@ class ProductVariantPriceDataProvider
                         unitPrice: 90,
                         vatPercentage: 20,
                         minimalAmount: 5,
-                        minPrice: 90,
                         discount: 0,
+                        minPrice: 90,
                         isPackage: true,
                     ),
                 ]],
@@ -61,7 +65,7 @@ class ProductVariantPriceDataProvider
                 'expectedPrice' => 1080.0, // 900 + 20 % VAT
             ],
 
-            /* W04 ─ CZK→EUR conversion 1 × 100 @ 21 % */
+            /* W04 ─ CZK->EUR conversion 1 × 100 @ 21 % */
             'W04-eur' => [
                 'productType' => 'pv',
                 'prices' => [[
@@ -72,7 +76,7 @@ class ProductVariantPriceDataProvider
                 'currency' => FactoryUtil::eur(),
                 'discCalc' => DiscCalc::WithoutDiscount,
                 'clientDiscount' => 0,
-                'expectedPrice' => 4.84,   // 121 × 0.04 → 4.84 (EUR rounding 2 dec.)
+                'expectedPrice' => 4.84,   // 121 × 0.04 -> 4.84 (EUR rounding 2 dec.)
             ],
         ];
     }
@@ -140,18 +144,23 @@ class ProductVariantPriceDataProvider
     public static function onlyProductDiscount(): array
     {
         return [
-            // FIXME: FAILS
+            /* FIXME: discountValue pocita se na zaklade amount
+                * amount:1 & discount:10 = discountValue:10
+                * amount:3 & discount:10 = discountValue:30
+             */
             'DP1' => [
                 'productType' => 'pv',
-                'prices' => [[
-                    'price' => FactoryUtil::makePrice(100, 20, discount: 10),
-                ]],
-                'amount' => 2,
+                'prices' => [
+                    1 => [
+                        'price' => FactoryUtil::makePrice(100, 20, discount: 0),
+                        'discounted' => FactoryUtil::makePrice(100, 20, discount: 10),
+                    ]],
+                'amount' => 3,
                 'vatCalc' => VatCalc::WithVAT,
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::OnlyProductDiscount,
                 'clientDiscount' => 0,
-                'expectedDiscountValue' => 10.0,
+                'expectedDiscountValue' => 30.0,
                 'expectedPrice' => 216.0, // (200 –10 %) +20 %
             ],
         ];
@@ -163,9 +172,12 @@ class ProductVariantPriceDataProvider
             // FIXME: FAILS
             'DC1' => [
                 'productType' => 'pv',
-                'prices' => [[
-                    'price' => FactoryUtil::makePrice(100, 20, discount: 10),
-                ]],
+                'prices' => [
+                    1 => [
+                        'price' => FactoryUtil::makePrice(100, 20, discount: 0),
+                        'discounted' => FactoryUtil::makePrice(100, 20, discount: 10),
+                    ]
+                ],
                 'amount' => 2,
                 'vatCalc' => VatCalc::WithVAT,
                 'currency' => FactoryUtil::czk(),

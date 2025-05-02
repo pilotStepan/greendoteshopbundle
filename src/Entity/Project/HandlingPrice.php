@@ -143,6 +143,7 @@ class HandlingPrice
     public function setTransportation(?Transportation $transportation): static
     {
         $this->transportation = $transportation;
+        $transportation?->addHandlingPrice($this);
 
         return $this;
     }
@@ -155,6 +156,7 @@ class HandlingPrice
     public function setPaymentType(?PaymentType $paymentType): static
     {
         $this->paymentType = $paymentType;
+        $paymentType?->addHandlingPrice($this);
 
         return $this;
     }

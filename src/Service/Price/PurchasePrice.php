@@ -113,7 +113,9 @@ class PurchasePrice
     {
         $price = null;
         foreach ($this->productVariantPrices as $productVariantPrice) {
-            if ($productVariantPrice->getVatPercentage() == $vat) $price += $productVariantPrice->getPrice();
+            if ($productVariantPrice->getVatPercentage() == $vat) {
+                $price += $productVariantPrice->getPrice();
+            }
         }
         return $price;
     }
