@@ -23,6 +23,7 @@ use Exception;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\SerializerInterface;
 
+/* @deprecated */
 class PriceCalculator
 {
     private ProductRepository $productRepository;

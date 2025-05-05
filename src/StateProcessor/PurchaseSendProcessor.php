@@ -84,13 +84,8 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
 
             // 7. Validate and apply transition
             $purchaseWorkflow = $this->workflowRegistry->get($purchase);
-            if (!$purchaseWorkflow->can($purchase, 'receive')) {
-                $blockers = $purchaseWorkflow->buildTransitionBlockerList($purchase, 'receive');
-                $errors = array_map(fn($b) => $b->getMessage(), iterator_to_array($blockers));
-                $this->logger->error('Workflow transition blocked', ['purchaseId' => $purchase->getId(), 'blockers' => $errors]);
-                throw new \RuntimeException(json_encode($errors));
-            }
-            $purchaseWorkflow->apply($purchase, 'receive');
+            $this->applyTransition($purchaseWorkflow, $purchase, 'create');
+            $this->applyTransition($purchaseWorkflow, $purchase, 'receive');
             $this->em->flush();
 
             // 8. Process payment after transition
@@ -115,7 +110,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         } catch (\Exception|ORMException $e) {
             // General exceptions or ORM errors
             $this->logger->error('Unexpected exception during purchase processing', ['exception' => $e]);
-            dd($e); // FIXME: for debugging purposes
+            dd($e); // FIXME: left for debugging purposes
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
         } finally {
             // Ensure the entity manager is closed in case of an ORM error
@@ -192,4 +187,19 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         ], UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
+    private function applyTransition($workflow, Purchase $purchase, string $transition): void
+    {
+        if (!$workflow->can($purchase, $transition)) {
+            $blockers = $workflow->buildTransitionBlockerList($purchase, $transition);
+            $errors = array_map(fn($b) => $b->getMessage(), iterator_to_array($blockers));
+            $this->logger->error('Workflow transition blocked', [
+                'purchaseId' => $purchase->getId(),
+                'transition' => $transition,
+                'blockers' => $errors
+            ]);
+            throw new \RuntimeException(json_encode($errors));
+        }
+
+        $workflow->apply($purchase, $transition);
+    }
 }

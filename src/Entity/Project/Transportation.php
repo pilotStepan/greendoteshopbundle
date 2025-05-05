@@ -481,9 +481,11 @@ class Transportation implements Translatable
     /**
      * @param float $price
      */
-    public function setPrice($price): void
+    public function setPrice(float $price): static
     {
         $this->price = $price;
+
+        return $this;
     }
 
     /**
@@ -497,8 +499,10 @@ class Transportation implements Translatable
     /**
      * @param float $free_from_price
      */
-    public function setFreeFromPrice($free_from_price): void
+    public function setFreeFromPrice($free_from_price): static
     {
         $this->free_from_price = $free_from_price;
+
+        return $this;
     }
 }
