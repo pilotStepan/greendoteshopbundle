@@ -378,8 +378,7 @@ class ProductRepository extends ServiceEntityRepository
                 $queryBuilder
                     ->andWhere('price.validFrom <= :date')
                     ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
-                    ->groupBy('pv.id')
-                    ->having('price.price BETWEEN :minPrice AND :maxPrice')
+                    ->andWhere('price.price BETWEEN :minPrice AND :maxPrice')
                     ->setParameter('minPrice', $parameter->selectedParameters[0]) // expected: [min, max]
                     ->setParameter('maxPrice', $parameter->selectedParameters[1])
                     ->setParameter('date', new \DateTime());
