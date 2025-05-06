@@ -29,7 +29,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
     ): void
     {
         // ARRANGE
-        $purchase = $this->createPurchase($ppv);
+        $purchase = $this->createPurchase($ppv, clientDiscount: null);
 
         // ACT
         $pp = $this->createPurchasePrice($purchase, $vatCalc, $discCalc, $currency);
@@ -38,7 +38,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $expectedPurchasePrice,
             $pp->getPrice(),
-            0.01,
+            0.001,
             "Purchase price calculation mismatch"
         );
     }
@@ -57,7 +57,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
     ): void
     {
         // ARRANGE
-        $purchase = $this->createPurchase($ppv);
+        $purchase = $this->createPurchase($ppv, clientDiscount: null);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getPaymentType')->willReturn($paymentType);
         $this->handlingPriceRepository->method('GetByDate')
@@ -73,19 +73,19 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $expectedPurchasePrice,
             $pp->getPrice(true),
-            0.01,
+            0.001,
             "Purchase price calculation mismatch"
         );
         $this->assertEqualsWithDelta(
             $expectedTransportationPrice,
             $pp->getTransportationPrice(),
-            0.01,
+            0.001,
             "Transportation price calculation mismatch"
         );
         $this->assertEqualsWithDelta(
             $expectedPaymentPrice,
             $pp->getPaymentPrice(),
-            0.01,
+            0.001,
             "Payment price calculation mismatch"
         );
     }
@@ -110,7 +110,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $expectedPurchasePrice,
             $pp->getPrice(),
-            0.01,
+            0.001,
             "Purchase price calculation mismatch"
         );
     }
@@ -151,28 +151,28 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $expectedSumPV,
             $pp->getPrice(),
-            0.01,
+            0.001,
             "Sum of product variant prices mismatch"
         );
 
         $this->assertEqualsWithDelta(
             $expectedPriceByVat15,
             $pp->getPrice(vat: 15),
-            0.01,
+            0.001,
             "Price for 15% VAT products mismatch"
         );
 
         $this->assertEqualsWithDelta(
             $expectedPriceByVat21,
             $pp->getPrice(vat: 21.0),
-            0.01,
+            0.001,
             "Price for 21% VAT products mismatch"
         );
 
         $this->assertEqualsWithDelta(
             $expectedTotalWithServices,
             $pp->getPrice(true),
-            0.01,
+            0.001,
             "Total price with services mismatch"
         );
 
@@ -181,7 +181,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $expectedTotalWithServicesEUR,
             $pp->getPrice(true),
-            0.01,
+            0.001,
             "Total price with services mismatch after currency change"
         );
 
@@ -190,28 +190,28 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $withClientDiscountExpectedSumPV,
             $pp->getPrice(true),
-            0.01,
+            0.001,
             "Total price with services mismatch after discount calculation type change"
         );
 
         $this->assertEqualsWithDelta(
             $withClientDiscountExpectedPriceByVat15,
             $pp->getPrice(vat: 15),
-            0.01,
+            0.001,
             "Price for 15% VAT products mismatch"
         );
 
         $this->assertEqualsWithDelta(
             $withClientDiscountExpectedPriceByVat21,
             $pp->getPrice(vat: 21.0),
-            0.01,
+            0.001,
             "Price for 21% VAT products mismatch"
         );
 
         $this->assertEqualsWithDelta(
             $withClientDiscountExpectedTotalWithServices,
             $pp->getPrice(true),
-            0.01,
+            0.001,
             "Total price with services mismatch"
         );
 
@@ -219,7 +219,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
         $this->assertEqualsWithDelta(
             $withClientDiscountExpectedTotalWithServicesEUR,
             $pp->getPrice(true),
-            0.01,
+            0.001,
             "Total price with services mismatch after currency change"
         );
     }

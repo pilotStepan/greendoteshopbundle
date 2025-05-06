@@ -181,10 +181,10 @@ class PurchasePriceDataProvider
                 ...$baseConfig,
                 'ppv' => $s03Ppv,
                 'currency' => FactoryUtil::eur(),
-                'transportation' => FactoryUtil::makeTransportation(99, 15, 511.9036), // není free from price
+                'transportation' => FactoryUtil::makeTransportation(99, 15, 511.9036), // free from price
                 'paymentType' => null,
-                'expectedPurchasePrice' => 29.06, // (170.6345 * 3 + transportationPrice) * 0.04 * 1.15 = 29.0579... -> round(2) -> 29.06 // FIXME: Actual: 28.1
-                'expectedTransportationPrice' => 4.79, // 99 * 0.04 * 1.21 = 4.7916 -> round(2) -> 4.79 | 119.79 v CZK // FIXME: Actual: 4.55
+                'expectedPurchasePrice' => 28.10, // (170.6345 * 3 + transportationPrice) * 0.04 * 1.15 = 28.1015... -> round(2) -> 28.10
+                'expectedTransportationPrice' => 4.55, // 99 * 0.04 * 1.15 = 5.554 -> round(2) -> 4.55
                 'expectedPaymentPrice' => 0.0,
             ],
         ];
@@ -311,6 +311,12 @@ class PurchasePriceDataProvider
                 ],
                 'clientDiscount' => 15,
                 'expectedPurchasePrice' => 925.7, // 100 * 10 * 0.90 * 0.85 * 1.21 = 925.65 -> round(1) -> 925.7 // FIXME: Actual:907.5
+                // (10 * 100) - 0.90
+
+
+                // - 15% - 10% + 21%
+
+
             ],
         ];
     }
