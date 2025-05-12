@@ -46,14 +46,14 @@ class OAuthController extends AbstractController
     public function authCallback(Request $request): Response
     {
         $token = $request->query->get('token');
-        $frontendUrl = $this->getParameter('FRONTEND_URL');
+        $origin = $request->getSchemeAndHttpHost();
 
         $content = <<<HTML
             <!DOCTYPE html>
             <html>
             <body>
                 <script>
-                    window.opener.postMessage({ token: "$token" }, "$frontendUrl");
+                    window.opener.postMessage({ token: "$token" }, "$origin");
                     window.close();
                 </script>
             </body>
