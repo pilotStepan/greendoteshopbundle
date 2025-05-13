@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filter;
+namespace Greendot\EshopBundle\ApiResource;
 
 use ApiPlatform\Doctrine\Orm\Filter\AbstractFilter;
 use ApiPlatform\Doctrine\Orm\Util\QueryNameGeneratorInterface;
