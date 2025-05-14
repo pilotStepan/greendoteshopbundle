@@ -363,6 +363,7 @@ class ProductRepository extends ServiceEntityRepository
 
     public function productsByParameters(QueryBuilder $queryBuilder, iterable $parameters): QueryBuilder
     {
+
         $alias = $queryBuilder->getRootAliases()[0];
         $queryBuilder
             ->innerJoin($alias . '.productVariants', 'pv');
