@@ -182,6 +182,22 @@ class ParameterRepository extends ServiceEntityRepository
             ->setParameter('categoryId', $categoryId)
             ->groupBy($alias.'.data');
     }
+
+    public function getProductParametersByProducer(QueryBuilder $queryBuilder, int $producerId) : QueryBuilder
+    {
+        // HACK: there is redundant join on pv,pr and pg. Merge with the "getProductParametersByTopCategory" function?
+        $alias = $queryBuilder->getRootAliases()[0];
+        return $queryBuilder->join($alias.'.productVariant', 'pv2')
+            ->join('pv2.product', 'pr2')
+            ->join('pr2.producer', 'pc')
+            ->join($alias.'.parameterGroup', 'pg2')
+            ->orWhere('pc.id = :producerId')
+            ->andWhere('pg2.isFilter=1')
+            ->setParameter('producerId', $producerId)
+            ->groupBy($alias.'.data');
+
+    }
+
     public function getByManufacturerGroupAndMostSuperiorCategoryQB(QueryBuilder $queryBuilder, int $category){
 
         $category = $this->categoryRepository->find($category);

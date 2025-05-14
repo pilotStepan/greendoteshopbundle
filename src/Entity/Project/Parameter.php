@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
 use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
+use Greendot\EshopBundle\ApiResource\ParameterSupplierFilter;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -16,6 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationEnabled: false
 )]
 #[ApiFilter(ParameterCategoryFilter::class)]
+#[ApiFilter(ParameterSupplierFilter::class)]
 class Parameter
 {
     #[ORM\Id]
