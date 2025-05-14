@@ -47,7 +47,7 @@ class GoogleAuthenticator extends OAuth2Authenticator
                 $email = $googleUser->getEmail();
 
                 $existingUser = $this->entityManager->getRepository(Client::class)
-                    ->findOneBy(['email' => $email]);
+                    ->findOneBy(['mail' => $email]);
 
                 if ($existingUser) return $existingUser;
 

@@ -47,7 +47,7 @@ class FacebookAuthenticator extends OAuth2Authenticator
                 $email = $facebookUser->getEmail();
 
                 $existingUser = $this->entityManager->getRepository(Client::class)
-                    ->findOneBy(['email' => $email]);
+                    ->findOneBy(['mail' => $email]);
 
                 if ($existingUser) return $existingUser;
 

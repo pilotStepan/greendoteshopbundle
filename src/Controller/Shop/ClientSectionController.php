@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Greendot\EshopBundle\Service\CertificateMaker;
 use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\InvoiceMaker;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -211,23 +212,15 @@ class ClientSectionController extends AbstractController
         int                $id,
         PurchaseRepository $purchaseRepository,
         QRcodeGenerator    $qrCodeGenerator,
-        PriceCalculator    $priceCalculator,
+        PurchasePriceFactory    $purchasePriceFactory,
         SessionInterface   $session): Response
     {
         // TODO: validate if client is present and allowed to see this purchase
         $purchase = $purchaseRepository->find($id);
         $currency = $session->get('selectedCurrency');
 
-        $totalPrice = $priceCalculator->calculatePurchasePrice(
-            $purchase,
-            $currency,
-            VatCalculationType::WithVAT,
-            1,
-            DiscountCalculationType::WithDiscount,
-            true,
-            VoucherCalculationType::WithoutVoucher,
-            true
-        );
+
+        $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount);
 
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
@@ -235,7 +228,7 @@ class ClientSectionController extends AbstractController
         return $this->render('client-section/order-detail.html.twig', [
             'purchase'       => $purchase,
             'QRcode'         => $qrCodePath,
-            'totalPrice'     => $totalPrice,
+            'priceCalculator'     => $priceCalculator,
             'currencySymbol' => $currency->getSymbol()
         ]);
     }
