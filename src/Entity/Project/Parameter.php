@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
 use Greendot\EshopBundle\ApiResource\ParameterSupplierFilter;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
@@ -47,6 +48,10 @@ class Parameter
 
     #[ORM\Column(nullable: true)]
     private ?int $sequence = null;
+
+    #[ApiProperty]
+    #[Groups(['product_info:read', 'parameter:read'])]
+    private ?string $colorName = null;
 
     public function getId(): ?int
     {
@@ -124,4 +129,17 @@ class Parameter
 
         return $this;
     }
+
+    public function getColorName(): ?string
+    {
+        return $this->colorName;
+    }
+
+    public function setColorName(?string $ColorName): self
+    {
+        $this->colorName = $ColorName;
+
+        return $this;
+    }
+
 }
