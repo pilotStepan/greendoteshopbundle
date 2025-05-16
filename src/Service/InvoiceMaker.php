@@ -71,8 +71,8 @@ class InvoiceMaker
 
     private function renderHtml(array $data): string
     {
-//        $template = $data['is_invoice'] ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig'; FIXME: prepare templates
-        $template = 'pdf/test.html.twig';
+        $template = $data['is_invoice'] ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig';
+//        $template = 'pdf/test.html.twig';
         return $this->twig->render($template, $data);
     }
 

@@ -4,10 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updates to purchase">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updates to purchaseCalculation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/ClientSectionController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/ClientSectionController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Service/Price/PurchasePrice.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/Price/PurchasePrice.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/InvoiceMaker.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/InvoiceMaker.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Twig/AppExtension.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Twig/AppExtension.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -274,15 +274,7 @@
       <workItem from="1742377432617" duration="9962000" />
       <workItem from="1744015228472" duration="9385000" />
       <workItem from="1747131515277" duration="6495000" />
-      <workItem from="1747380256326" duration="2854000" />
-    </task>
-    <task id="LOCAL-00049" summary="Product filters and ordering">
-      <option name="closed" value="true" />
-      <created>1731861514475</created>
-      <option name="number" value="00049" />
-      <option name="presentableId" value="LOCAL-00049" />
-      <option name="project" value="LOCAL" />
-      <updated>1731861514475</updated>
+      <workItem from="1747380256326" duration="5552000" />
     </task>
     <task id="LOCAL-00050" summary="Product filters and ordering">
       <option name="closed" value="true" />
@@ -668,7 +660,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747217390039</updated>
     </task>
-    <option name="localTasksCounter" value="98" />
+    <task id="LOCAL-00098" summary="Updates to purchaseCalculation">
+      <option name="closed" value="true" />
+      <created>1747387663570</created>
+      <option name="number" value="00098" />
+      <option name="presentableId" value="LOCAL-00098" />
+      <option name="project" value="LOCAL" />
+      <updated>1747387663570</updated>
+    </task>
+    <option name="localTasksCounter" value="99" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -710,7 +710,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="ProductVariant price for API" />
     <MESSAGE value="ParameterGroup API groups update" />
     <MESSAGE value="Fixtures" />
     <MESSAGE value="Parameter filter API" />
@@ -735,6 +734,7 @@
     <MESSAGE value="TODO remove contact message" />
     <MESSAGE value="QRCodes" />
     <MESSAGE value="Updates to purchase" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updates to purchase" />
+    <MESSAGE value="Updates to purchaseCalculation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updates to purchaseCalculation" />
   </component>
 </project>
