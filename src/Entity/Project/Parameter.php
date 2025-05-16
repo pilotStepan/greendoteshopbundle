@@ -17,6 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['parameter:write']],
     paginationEnabled: false
 )]
+// FIXME: doesn't fetch params from subcategories
 #[ApiFilter(ParameterCategoryFilter::class)]
 #[ApiFilter(ParameterSupplierFilter::class)]
 class Parameter

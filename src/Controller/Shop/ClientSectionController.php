@@ -216,12 +216,18 @@ class ClientSectionController extends AbstractController
         QRcodeGenerator    $qrCodeGenerator,
         PurchasePriceFactory    $purchasePriceFactory,
         ProductVariantPriceFactory  $productVariantPriceFactory,
-        SessionInterface   $session): Response
+
+        SessionInterface   $session,
+        Request     $request): Response
     {
         // TODO: validate if client is present and allowed to see this purchase
+
+
+
         $purchase = $purchaseRepository->find($id);
         $currency = $session->get('selectedCurrency');
 
+        $created = $request->query->get('created');
 
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
 
@@ -234,8 +240,8 @@ class ClientSectionController extends AbstractController
             'QRcode'         => $qrCodePath,
             'priceCalculator'     => $priceCalculator,
             'productPriceCalculator' => $productVariantPriceFactory,
-            'currencySymbol' => $currency->getSymbol(),
             'currency' => $currency,
+            'created' => $created,
         ]);
     }
 
