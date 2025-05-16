@@ -3,13 +3,25 @@
 namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
-use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
+use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 class GreendotEshopBundle extends AbstractBundle
 {
+
+    public function configure(DefinitionConfigurator $definition): void
+    {
+        $definition->rootNode()
+            ->children()
+                ->arrayNode('price_calculation')
+                    ->children()
+                        ->integerNode('after_registration_discount')->defaultValue(0)->end()
+                    ->end()
+                ->end()
+            ->end();
+    }
 
     public function getPath(): string
     {
@@ -56,5 +68,12 @@ class GreendotEshopBundle extends AbstractBundle
     {
         // load an XML, PHP or YAML file
         $container->import('../config/services.yaml');
+
+
+        $afterRegistrationDiscount = $config['price_calculation']['after_registration_discount'] ?? 0;
+        $builder->setParameter(
+            'greendot_eshop.price_calculation.after_registration_discount',
+            $afterRegistrationDiscount
+        );
     }
 }

@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ProductVariantPrice
 {
@@ -44,7 +45,7 @@ class ProductVariantPrice
     private DiscountCalculationType $discountCalculationType;
 
     private Currency $currency;
-    const AFTER_REGISTRATION_BONUS = 20;
+    private readonly int $afterRegistrationBonus;
 
 
     public function __construct(
@@ -53,6 +54,7 @@ class ProductVariantPrice
         Currency                              $currency,
         VatCalculationType                    $vatCalculationType,
         DiscountCalculationType               $discountCalculationType,
+        private readonly ParameterBagInterface                 $parameterBag,
         private readonly Security             $security,
         private readonly PriceRepository      $priceRepository,
         private readonly DiscountService      $discountService,
@@ -62,6 +64,8 @@ class ProductVariantPrice
         if ($productVariant instanceof PurchaseProductVariant and !is_null($setAmount)) {
             throw new \Exception('Cannot set amount for ' . PurchaseProductVariant::class);
         }
+
+        $this->afterRegistrationBonus = $parameterBag->get('greendot_eshop.price_calculation.after_registration_discount') ?? 0;
 
         $this->vatCalculationType = $vatCalculationType;
         $this->discountCalculationType = $discountCalculationType;
@@ -107,14 +111,14 @@ class ProductVariantPrice
         switch ($this->discountCalculationType) {
             case DiscountCalculationType::WithDiscount:
             case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $clientDiscount = $this->clientDiscount ?? self::AFTER_REGISTRATION_BONUS;
+                $clientDiscount = $this->clientDiscount ?? $this->afterRegistrationBonus;
                 return $this->discountPercentage + $clientDiscount;
             case DiscountCalculationType::WithoutDiscount:
                 return null;
             case DiscountCalculationType::OnlyProductDiscount:
                 return $this->discountPercentage;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                return self::AFTER_REGISTRATION_BONUS;
+                return $this->afterRegistrationBonus;
         }
         return $this->discountPercentage;
     }
@@ -177,11 +181,11 @@ class ProductVariantPrice
             case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
                 $totalDiscountedPercentage = $this->discountPercentage;
                 if (!$this->clientDiscount) {
-                    $totalDiscountedPercentage += self::AFTER_REGISTRATION_BONUS;
+                    $totalDiscountedPercentage += $this->afterRegistrationBonus;
                 }
                 break;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = self::AFTER_REGISTRATION_BONUS;
+                $totalDiscountedPercentage = $this->afterRegistrationBonus;
                 break;
         }
 
