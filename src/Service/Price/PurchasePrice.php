@@ -159,7 +159,7 @@ class PurchasePrice
     {
         $handlingPrice = $this->handlingPriceRepository->GetByDate($paymentType);
 
-        if ($purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
+        if (!$handlingPrice or $purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
             $this->paymentPrice = 0;
             return;
         }
