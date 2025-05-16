@@ -19,6 +19,8 @@ use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Greendot\EshopBundle\Service\CertificateMaker;
 use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\InvoiceMaker;
+use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
@@ -213,6 +215,7 @@ class ClientSectionController extends AbstractController
         PurchaseRepository $purchaseRepository,
         QRcodeGenerator    $qrCodeGenerator,
         PurchasePriceFactory    $purchasePriceFactory,
+        ProductVariantPriceFactory  $productVariantPriceFactory,
         SessionInterface   $session): Response
     {
         // TODO: validate if client is present and allowed to see this purchase
@@ -220,7 +223,8 @@ class ClientSectionController extends AbstractController
         $currency = $session->get('selectedCurrency');
 
 
-        $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount);
+        $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
+
 
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
@@ -229,7 +233,9 @@ class ClientSectionController extends AbstractController
             'purchase'       => $purchase,
             'QRcode'         => $qrCodePath,
             'priceCalculator'     => $priceCalculator,
-            'currencySymbol' => $currency->getSymbol()
+            'productPriceCalculator' => $productVariantPriceFactory,
+            'currencySymbol' => $currency->getSymbol(),
+            'currency' => $currency,
         ]);
     }
 

@@ -72,22 +72,25 @@ class PurchasePrice
         return $this->paymentPrice;
     }
 
-    public function setVatCalculationType(VatCalculationType $vatCalculationType): void
+    public function setVatCalculationType(VatCalculationType $vatCalculationType): PurchasePrice
     {
         $this->vatCalculationType = $vatCalculationType;
         $this->recalculatePrices();
+        return $this;
     }
 
-    public function setDiscountCalculationType(DiscountCalculationType $discountCalculationType): void
+    public function setDiscountCalculationType(DiscountCalculationType $discountCalculationType): PurchasePrice
     {
         $this->discountCalculationType = $discountCalculationType;
         $this->recalculatePrices();
+        return $this;
     }
 
-    public function setCurrency(Currency $currency): void
+    public function setCurrency(Currency $currency): PurchasePrice
     {
         $this->currency = $currency;
         $this->recalculatePrices();
+        return $this;
     }
 
 
