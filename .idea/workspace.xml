@@ -7,7 +7,7 @@
     <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updates to purchase">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Controller/Shop/ClientSectionController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/ClientSectionController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/Price/PurchasePrice.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/Price/PurchasePrice.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -273,15 +273,8 @@
       <workItem from="1741854806804" duration="5993000" />
       <workItem from="1742377432617" duration="9962000" />
       <workItem from="1744015228472" duration="9385000" />
-      <workItem from="1747131515277" duration="6268000" />
-    </task>
-    <task id="LOCAL-00048" summary="ProductStateProvider">
-      <option name="closed" value="true" />
-      <created>1731791832138</created>
-      <option name="number" value="00048" />
-      <option name="presentableId" value="LOCAL-00048" />
-      <option name="project" value="LOCAL" />
-      <updated>1731791832138</updated>
+      <workItem from="1747131515277" duration="6495000" />
+      <workItem from="1747380256326" duration="2854000" />
     </task>
     <task id="LOCAL-00049" summary="Product filters and ordering">
       <option name="closed" value="true" />
@@ -667,7 +660,15 @@
       <option name="project" value="LOCAL" />
       <updated>1744016747149</updated>
     </task>
-    <option name="localTasksCounter" value="97" />
+    <task id="LOCAL-00097" summary="Updates to purchase">
+      <option name="closed" value="true" />
+      <created>1747217390039</created>
+      <option name="number" value="00097" />
+      <option name="presentableId" value="LOCAL-00097" />
+      <option name="project" value="LOCAL" />
+      <updated>1747217390039</updated>
+    </task>
+    <option name="localTasksCounter" value="98" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
