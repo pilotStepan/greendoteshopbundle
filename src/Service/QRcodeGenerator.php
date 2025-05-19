@@ -8,6 +8,7 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Exception;
 use Symfony\Component\Filesystem\Filesystem;
 
 class QRcodeGenerator
@@ -21,8 +22,10 @@ class QRcodeGenerator
 
     public function getUri(Purchase $purchase, \DateTimeInterface $dueDate): string
     {
+        $iban = $purchase->getPaymentType()->getIban();
+        if (!$iban) throw new Exception('Missing IBAN in paymentType id'.$purchase->getPaymentType()->getId());
 
-        $qrContent = 'SPD*1.0*ACC:CZ1020100000002802559702*AM:' .
+        $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($purchase->getTotalPrice(), 2, '.', '') .
             '*CC:CZK*DT:' . $dueDate->format("Y.m.d") .
             '*X-VS:' . $purchase->getInvoiceNumber();
