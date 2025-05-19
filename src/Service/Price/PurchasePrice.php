@@ -72,22 +72,25 @@ class PurchasePrice
         return $this->paymentPrice;
     }
 
-    public function setVatCalculationType(VatCalculationType $vatCalculationType): void
+    public function setVatCalculationType(VatCalculationType $vatCalculationType): PurchasePrice
     {
         $this->vatCalculationType = $vatCalculationType;
         $this->recalculatePrices();
+        return $this;
     }
 
-    public function setDiscountCalculationType(DiscountCalculationType $discountCalculationType): void
+    public function setDiscountCalculationType(DiscountCalculationType $discountCalculationType): PurchasePrice
     {
         $this->discountCalculationType = $discountCalculationType;
         $this->recalculatePrices();
+        return $this;
     }
 
-    public function setCurrency(Currency $currency): void
+    public function setCurrency(Currency $currency): PurchasePrice
     {
         $this->currency = $currency;
         $this->recalculatePrices();
+        return $this;
     }
 
 
@@ -156,7 +159,7 @@ class PurchasePrice
     {
         $handlingPrice = $this->handlingPriceRepository->GetByDate($paymentType);
 
-        if ($purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
+        if (!$handlingPrice or $purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
             $this->paymentPrice = 0;
             return;
         }
@@ -184,7 +187,7 @@ class PurchasePrice
     {
         $handlingPrice = $this->handlingPriceRepository->GetByDate($transportation);
 
-        if ($purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
+        if (!$handlingPrice or $purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
             $this->transportationPrice = 0;
             return;
         }

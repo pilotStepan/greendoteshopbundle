@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 readonly class ProductVariantPriceFactory
 {
@@ -17,7 +18,8 @@ readonly class ProductVariantPriceFactory
         private Security        $security,
         private PriceRepository $priceRepository,
         private DiscountService $discountService,
-        private PriceUtils      $priceUtils
+        private PriceUtils      $priceUtils,
+        private ParameterBagInterface $parameterBag
     ){}
 
     public function create(
@@ -34,6 +36,7 @@ readonly class ProductVariantPriceFactory
             $currency,
             $vatCalculationType,
             $discountCalculationType,
+            $this->parameterBag,
             $this->security,
             $this->priceRepository,
             $this->discountService,
