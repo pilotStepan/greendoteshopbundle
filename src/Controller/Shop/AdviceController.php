@@ -30,7 +30,7 @@ class AdviceController extends AbstractController
 
 
         return $this->render('advice/comment-detail.html.twig', [
-            $comment
+            "comment" => $comment
         ]);
     }
 

@@ -120,9 +120,10 @@ class ClientSectionController extends AbstractController
         SessionInterface   $session
     ): Response
     {
-        // TODO: validate if client is present and allowed to see this purchase
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
+
+        if (!($user = $this->getUser()) || $user === $purchase->getClient()) return $this->redirectToRoute('web_homepage');
 
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
@@ -156,13 +157,10 @@ class ClientSectionController extends AbstractController
         SessionInterface       $session
     ): RedirectResponse
     {
-        // TODO: validate if client is present and allowed to see this purchase
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
 
-        if (!$purchase) {
-            throw $this->createNotFoundException('Objednávka nenalezena');
-        }
+        if (!($user = $this->getUser()) || $user === $purchase->getClient()) return $this->redirectToRoute('web_homepage');
 
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
@@ -216,15 +214,16 @@ class ClientSectionController extends AbstractController
         QRcodeGenerator    $qrCodeGenerator,
         PurchasePriceFactory    $purchasePriceFactory,
         ProductVariantPriceFactory  $productVariantPriceFactory,
+        ClientRepository    $clientRepository,
 
         SessionInterface   $session,
         Request     $request): Response
     {
-        // TODO: validate if client is present and allowed to see this purchase
-
-
 
         $purchase = $purchaseRepository->find($id);
+        // check user and purchase match
+        if (!($user = $this->getUser()) || $user === $purchase->getClient()) return $this->redirectToRoute('web_homepage');
+
         $currency = $session->get('selectedCurrency');
 
         $created = $request->query->get('created');
