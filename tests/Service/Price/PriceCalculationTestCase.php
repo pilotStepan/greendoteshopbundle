@@ -86,6 +86,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $currency,
             $vatType,
             $discCalc,
+            $this->parameterBag,
             $this->security,
             $this->priceRepository,
             $this->discountService,

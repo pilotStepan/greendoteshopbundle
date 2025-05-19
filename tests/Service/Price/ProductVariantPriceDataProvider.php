@@ -161,7 +161,7 @@ class ProductVariantPriceDataProvider
                 'discCalc' => DiscCalc::OnlyProductDiscount,
                 'clientDiscount' => 0,
                 'expectedDiscountValue' => 30.0,
-                'expectedPrice' => 216.0, // (200 –10 %) +20 %
+                'expectedPrice' => 324.0, //((100 * 3) + 20%) -10% = 324
             ],
         ];
     }
