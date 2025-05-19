@@ -11,7 +11,7 @@ class PaymentTypeByTransportationFilter extends AbstractFilter
 {
     private const FILTER_LABEL = 'PaymentTypeByTransportation';
 
-    protected function filterProperty(string $property, $value, QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $resourceClass, Operation $operation = null, array $context = []
+    protected function filterProperty(string $property, $value, QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $resourceClass, ?Operation $operation = null, array $context = []
     ): void
     {
         if ($property !== self::FILTER_LABEL) {
