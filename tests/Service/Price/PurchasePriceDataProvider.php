@@ -160,8 +160,8 @@ class PurchasePriceDataProvider
         ];
         return [
             'S01: Transport free, payment paid' => [
-                ...$baseConfig,
                 'ppv' => $s01Ppv,
+                ...$baseConfig,
                 'transportation' => FactoryUtil::makeTransportation(99, 21, 300),
                 'paymentType' => FactoryUtil::makePaymentType(30, 21, 500),
                 'expectedPurchasePrice' => 252.9, // (80 + 99 + 30) * 1.21 = 252.89 -> round(1) -> 252.9
@@ -169,8 +169,8 @@ class PurchasePriceDataProvider
                 'expectedPaymentPrice' => 36.3, // 30 * 1.21 = 36.3
             ],
             'S02: Payment paid, transport free' => [
-                ...$baseConfig,
                 'ppv' => $s01Ppv,
+                ...$baseConfig,
                 'transportation' => FactoryUtil::makeTransportation(99, 21, 79.9),
                 'paymentType' => FactoryUtil::makePaymentType(30, 21, 80.1), // TODO: free from price pocita se bez DPH (?)
                 'expectedPurchasePrice' => 133.1, // (80 + 0 + 30) * 1.21 = 133.1
@@ -178,8 +178,8 @@ class PurchasePriceDataProvider
                 'expectedPaymentPrice' => 36.3,
             ],
             'S03-EUR: Currency conversion and rounding' => [
-                ...$baseConfig,
                 'ppv' => $s03Ppv,
+                ...$baseConfig,
                 'currency' => FactoryUtil::eur(),
                 'transportation' => FactoryUtil::makeTransportation(99, 15, 511.9036), // free from price
                 'paymentType' => null,
@@ -201,7 +201,6 @@ class PurchasePriceDataProvider
 
         return [
             'D01: No product discount at all' => [
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 10,
@@ -213,10 +212,10 @@ class PurchasePriceDataProvider
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'expectedPurchasePrice' => 1210.0 // 100 * 10 * 1.21 = 1,210.0
             ],
             'D02: Only a discounted price exists (no base price)' => [
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 11,
@@ -228,10 +227,10 @@ class PurchasePriceDataProvider
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'expectedPurchasePrice' => 1197.9, // 100 * 11 * 0.90 * 1.21 = 1,197.9
             ],
             'D03: Both normal and discounted rows for the same minimalAmount' => [
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 9,
@@ -243,31 +242,27 @@ class PurchasePriceDataProvider
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'expectedPurchasePrice' => 980.1, // 100 * 9 * 1.21 * 0.90 = 980.1
             ],
             'D04: Two tiers, discount only on the second tier' => [
-                /* TODO: upresnit chovani
-                    Expected: 1262.2 (2 price + 10 discounted)
-                    Actual:   1771.3 (12 price)
-                */
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 12,
                         'prices' => [
-                            1 => [
-                                'price' => FactoryUtil::makePrice(121.99, 21, 1, discount: 0),
-                            ],
                             10 => [
                                 'discounted' => FactoryUtil::makePrice(99.9, 21, 10, discount: 20, isPackage: true)
+                            ],
+                            1 => [
+                                'price' => FactoryUtil::makePrice(121.99, 21, 1, discount: 0),
                             ]
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'expectedPurchasePrice' => 1262.2, // (121.99 * 2 + 99.9 * 10 * 0.8) * 1.21 = 1,262.2478 -> round(1) -> 1,262.2
             ],
             'D04: Package price (minimalAmount 5, isPackage=true) with both base & discounted rows' => [
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 10,
@@ -279,10 +274,10 @@ class PurchasePriceDataProvider
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'expectedPurchasePrice' => 1450.2, // 141 * 10 * 0.85 * 1.21 = 1,450.185 -> round(1) -> 1,450.2
             ],
             'D05: Discount price' => [
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 10,
@@ -293,11 +288,11 @@ class PurchasePriceDataProvider
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'clientDiscount' => 15,
                 'expectedPurchasePrice' => 1028.5, // 10 * 100 * 0.85 * 1.21 = 1,028.5
             ],
             'D06: Discount price & Product Price' => [
-                ...$baseConfig,
                 'ppv' => [
                     [
                         'amount' => 10,
@@ -309,13 +304,26 @@ class PurchasePriceDataProvider
                         ]
                     ],
                 ],
+                ...$baseConfig,
                 'clientDiscount' => 15,
-                'expectedPurchasePrice' => 925.7, // 100 * 10 * 0.90 * 0.85 * 1.21 = 925.65 -> round(1) -> 925.7 // FIXME: Actual:907.5
-                // (10 * 100) - 0.90
-
-
-                // - 15% - 10% + 21%
-
+                'expectedPurchasePrice' => 907.5,
+                /**
+                 * How to calculate:
+                 *
+                 * formula:
+                 * pcs * price + 21% - (clientDiscount + productDiscount)
+                 *
+                 * formula used with this example:
+                 * step 1:
+                 * 10pcs * 100 (price) + 21% (vat) - (15 + 10)
+                 *
+                 * step 2:
+                 * 1000 + 21% - 25%
+                 *
+                 * step 3:
+                 * 1210 - 25% = 907.5
+                 *
+                 **/
 
             ],
         ];
@@ -360,18 +368,18 @@ class PurchasePriceDataProvider
                 'transportation' => FactoryUtil::makeTransportation(99, 21, INF),
                 'paymentType' => FactoryUtil::makePaymentType(0, 0, 0),
 
-                'expectedSumPV' => 552.2, // 242 + 106.95 + 203.28 = 552.23 -> round(1) -> 552.2 // FIXME: Actual:552.3
-                'expectedPriceByVat15' => 107.0, // pocita se jen druhy produkt
-                'expectedPriceByVat21' => 445.2, // pocita se jen prvni a treti produkt // FIXME: treti produkt se nepocita (vat 21.000...4 != vat 21.0)
-                'expectedTotalWithServices' => 672.1, // 552.3 + 99 * 1.21 = 672.09 -> round(1) -> 672.1
+                'expectedSumPV' => 552.2, // 242 + 106.95 + 203.28 = 552.23 -> round(1) -> 552.2
+                'expectedPriceByVat15' => 107.0,
+                'expectedPriceByVat21' => 445.3,
+                'expectedTotalWithServices' => 672.0, // 552,23 [with vat (15% and 21%)]  + (99 + 21%) = 672.02 -> round(1) -> 672.0
                 'expectedTotalWithServicesEUR' => 26.88, // 672.09 * 0.04 = 26.8836 -> round(2) -> 26.88
 
                 'clientDiscount' => 15,
-                'withClientDiscountExpectedSumPV' => 469.4, // 552.23 * 0.85 = 469.3955 -> round(1) -> 469.4
-                'withClientDiscountExpectedPriceByVat15' => 91.0, // 107.0 * 0.85 = 90.95 -> round(1) -> 91.0
-                'withClientDiscountExpectedPriceByVat21' => 378.4, // 445.2 * 0.85 = 378.42 -> round(1) -> 378.4
-                'withClientDiscountExpectedTotalWithServices' => 571.3, // 672.09 * 0.85 = 571.2765 -> round(1) -> 571.3
-                'withClientDiscountExpectedTotalWithServicesEUR' => 22.85, // 26.8836 * 0.85 = 22.85106 -> round(2) -> 22.85
+                'withClientDiscountExpectedSumPV' => 581.6, // 461,7725 + (99 +21%) = 581,5625 -> round(1) -> 581,6
+                'withClientDiscountExpectedPriceByVat15' => 90.9, // 106,95 * 0.85 = 90.9075 -> round(1) -> 90.9
+                'withClientDiscountExpectedPriceByVat21' => 370.9, // (242 - 15%) + (254,1 - (15+20)%) = 370.865 -> round(1) -> 370.9
+                'withClientDiscountExpectedTotalWithServices' => 581.6, //(242-15%) + (106,95-15%) + (254,1 - (20 + 15)%) = 461,7725 + (99 + 21%) = 581,5625 -> round(1) ->581,6
+                'withClientDiscountExpectedTotalWithServicesEUR' => 23.26, // assertion above * 0.04 = 23.2625 -> round(2) -> 23,26
             ],
         ];
     }

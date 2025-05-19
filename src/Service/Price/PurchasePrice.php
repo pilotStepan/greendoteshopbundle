@@ -51,7 +51,7 @@ class PurchasePrice
             $price += $this->transportationPrice;
             $price += $this->paymentPrice;
         }
-        return $price;
+        return $this->priceUtils->convertCurrency($price, $this->currency);
     }
 
     /**
@@ -59,17 +59,23 @@ class PurchasePrice
      */
     public function getMinPrice(): ?float
     {
-        return $this->minPrice;
+        return $this->priceUtils->convertCurrency($this->minPrice, $this->currency);
     }
 
     public function getTransportationPrice(): ?float
     {
-        return $this->transportationPrice;
+        if (!$this->transportationPrice) {
+            return null;
+        }
+        return $this->priceUtils->convertCurrency($this->transportationPrice, $this->currency);
     }
 
     public function getPaymentPrice(): ?float
     {
-        return $this->paymentPrice;
+        if (!$this->paymentPrice) {
+            return null;
+        }
+        return $this->priceUtils->convertCurrency($this->paymentPrice, $this->currency);
     }
 
     public function setVatCalculationType(VatCalculationType $vatCalculationType): PurchasePrice
@@ -116,11 +122,14 @@ class PurchasePrice
     {
         $price = null;
         foreach ($this->productVariantPrices as $productVariantPrice) {
-            if ($productVariantPrice->getVatPercentage() == $vat) {
-                $price += $productVariantPrice->getPrice();
+
+            //basically $productVariantPrice->getVatPercentage() == $vat but with a tolerance for float (edge-case where one value can be 21.0 and the other 20.9999... because of how computers handle floating points)
+            if (abs((float)$productVariantPrice->getVatPercentage() - $vat) < 0.001) {
+                $price += $productVariantPrice->getPrice(true);
             }
         }
-        return $price;
+        return $this->priceUtils->convertCurrency($price, $this->currency);
+//        return $price;
     }
 
     private function loadPrice(): void
@@ -128,8 +137,8 @@ class PurchasePrice
         $price = null;
         $minPrice = null;
         foreach ($this->productVariantPrices as $productVariantPrice) {
-            $price += $productVariantPrice->getPrice();
-            $minPrice += $productVariantPrice->getMinPrice();
+            $price += $productVariantPrice->getPrice(true);
+            $minPrice += $productVariantPrice->getMinPrice(true);
         }
         $this->purchasePrice = $price;
         $this->minPrice = $minPrice;
@@ -143,7 +152,7 @@ class PurchasePrice
             $clonedProductVariantPrice = clone $productVariantPrice;
             $clonedProductVariantPrice->setCurrency($this->defaultCurrency);
             $clonedProductVariantPrice->setVatCalculationType(VatCalculationType::WithoutVAT);
-            $purchasePrice += $clonedProductVariantPrice->getPrice();
+            $purchasePrice += $clonedProductVariantPrice->getPrice(true);
         }
 
         if ($this->purchase->getTransportation()) {
@@ -179,7 +188,7 @@ class PurchasePrice
                 throw new \Exception('Unknown Enum:VatCalculationType case');
         }
 
-        $this->paymentPrice = $this->priceUtils->convertCurrency($price, $this->currency);
+        $this->paymentPrice = $price;
 
     }
 
@@ -207,7 +216,7 @@ class PurchasePrice
                 throw new \Exception('Unknown Enum:VatCalculationType case');
         }
 
-        $this->transportationPrice = $this->priceUtils->convertCurrency($price, $this->currency);
+        $this->transportationPrice = $price;
     }
 
 
