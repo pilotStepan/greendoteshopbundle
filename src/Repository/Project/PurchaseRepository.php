@@ -52,6 +52,16 @@ class PurchaseRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')->setParameter('client', $client)
             ->andWhere('p.state != :state')->setParameter('state', 'inquiry')
+            ->andWhere('p.state != :state')->setParameter('state', 'draft')
+            ->orderBy('p.date_issue', 'desc')
+            ->getQuery()->getResult();
+    }
+
+    public function getClientDrafts(Client $client)
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.client = :client')->setParameter('client', $client)
+            ->andWhere('p.state = :state')->setParameter('state', 'draft')
             ->orderBy('p.date_issue', 'desc')
             ->getQuery()->getResult();
     }

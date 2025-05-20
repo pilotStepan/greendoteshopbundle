@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use FontLib\Table\Type\name;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -241,6 +242,27 @@ class ClientSectionController extends AbstractController
             'productPriceCalculator' => $productVariantPriceFactory,
             'currency' => $currency,
             'created' => $created,
+        ]);
+    }
+
+    #[Route('/zakaznik/nedokoncene-objednavky', name: 'client_section_draft_orders')]
+    public function draftOrders(
+        ClientRepository   $clientRepository,
+        PurchaseRepository $orderRepository,
+        PaginatorInterface $paginator,
+        Request            $request): Response
+    {
+        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
+        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
+
+        $orders = $orderRepository->getClientDrafts($client);
+
+        $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
+        $pagination->setTemplate('pagination/pagination.html.twig');
+
+        return $this->render('client-section/draft-orders.html.twig', [
+            'orders'     => $orders,
+            'pagination' => $pagination
         ]);
     }
 
