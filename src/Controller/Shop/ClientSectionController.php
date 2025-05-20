@@ -223,7 +223,7 @@ class ClientSectionController extends AbstractController
 
         $purchase = $purchaseRepository->find($id);
         // check user and purchase match
-        if (!($user = $this->getUser()) || $user === $purchase->getClient()) return $this->redirectToRoute('web_homepage');
+        if (!($user = $this->getUser()) || $user !== $purchase->getClient()) return $this->redirectToRoute('web_homepage');
 
         $currency = $session->get('selectedCurrency');
 
