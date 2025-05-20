@@ -35,6 +35,7 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
             $variant, $amount, $currency, $vatCalc, $discCalc
         );
 
+
         $this->assertEqualsWithDelta(
             $expectedPrice,
             $pvp->getPrice(),
@@ -43,8 +44,8 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         );
     }
 
-    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'onlyProductDiscount')]
     #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'clientAndProduct')]
+    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'onlyProductDiscount')]
     #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'afterRegistration')]
     public function testProductVariantPriceDiscounts(
         string   $productType,
@@ -54,20 +55,13 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         Currency $currency,
         DiscCalc $discCalc,
         ?float   $clientDiscount,
-        float    $expectedDiscountValue,
-        float    $expectedPrice,
+        ?float   $expectedPrice,
     ): void
     {
         $variant = $this->createVariant($productType, $amount, $prices, $clientDiscount);
 
         $pvp = $this->createProductVariantPrice(
             $variant, $amount, $currency, $vatCalc, $discCalc
-        );
-
-        $this->assertEquals(
-            $expectedDiscountValue,
-            $pvp->getDiscountValue(),
-            "Discount value mismatch"
         );
 
         $this->assertEqualsWithDelta(

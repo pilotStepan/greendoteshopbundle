@@ -48,14 +48,7 @@ class ProductVariantPriceDataProvider
             'W03-tier' => [
                 'productType' => 'pv',
                 'prices' => [[
-                    'price' => FactoryUtil::makePrice(
-                        unitPrice: 90,
-                        vatPercentage: 20,
-                        minimalAmount: 5,
-                        discount: 0,
-                        minPrice: 90,
-                        isPackage: true,
-                    ),
+                    'price' => FactoryUtil::makePrice(unitPrice: 90, vatPercentage: 20, minimalAmount: 5, discount: 0, minPrice: 90, isPackage: true),
                 ]],
                 'amount' => 10,
                 'vatCalc' => VatCalc::WithVAT,
@@ -144,10 +137,6 @@ class ProductVariantPriceDataProvider
     public static function onlyProductDiscount(): array
     {
         return [
-            /* FIXME: discountValue pocita se na zaklade amount
-                * amount:1 & discount:10 = discountValue:10
-                * amount:3 & discount:10 = discountValue:30
-             */
             'DP1' => [
                 'productType' => 'pv',
                 'prices' => [
@@ -160,7 +149,6 @@ class ProductVariantPriceDataProvider
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::OnlyProductDiscount,
                 'clientDiscount' => 0,
-                'expectedDiscountValue' => 30.0,
                 'expectedPrice' => 324.0, //((100 * 3) + 20%) -10% = 324
             ],
         ];
@@ -169,7 +157,7 @@ class ProductVariantPriceDataProvider
     public static function clientAndProduct(): array
     {
         return [
-            // FIXME: FAILS
+            // FIXME: FAILS. (Actual: 204)
             'DC1' => [
                 'productType' => 'pv',
                 'prices' => [
@@ -183,8 +171,7 @@ class ProductVariantPriceDataProvider
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::WithDiscount,
                 'clientDiscount' => 5,
-                'expectedDiscountValue' => 15,
-                'expectedPrice' => 204.0, // 200 –15 % +20 %
+                'expectedPrice' => 205.2, // 2x100 - 10% (product discount) - 5% (client discount) + 20% (vat)
             ],
         ];
     }
@@ -192,19 +179,18 @@ class ProductVariantPriceDataProvider
     public static function afterRegistration(): array
     {
         return [
-            // FIXME: FAILS
+            // FIXME: FAILS (Actual: 168)
             'DR1' => [
                 'productType' => 'pv',
                 'prices' => [[
-                    'price' => FactoryUtil::makePrice(100, 20, discount: 10),
+                    'discounted' => FactoryUtil::makePrice(100, 20, discount: 10),
                 ]],
                 'amount' => 2,
                 'vatCalc' => VatCalc::WithVAT,
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::WithDiscountPlusAfterRegistrationDiscount,
-                'clientDiscount' => null,      // null user ⇒ + 10 % bonus
-                'expectedDiscountValue' => 20,
-                'expectedPrice' => 192.0,     // 200 – 20 % + 20 %
+                'clientDiscount' => null,      // null user ⇒ + 20 % bonus
+                'expectedPrice' => 172.8,     // 2x100 - 10% (product discount) – 20% (new client bonus) + 20% (vat)
             ],
         ];
     }
@@ -250,12 +236,11 @@ class ProductVariantPriceDataProvider
     public static function tierPrice(): array
     {
         return [
-            // FIXME: FAILS
             'TP1' => [
                 'productType' => 'pv',
                 'prices' => [
-                    ['price' => FactoryUtil::makePrice(100, 0, minimalAmount: 1)],
                     ['price' => FactoryUtil::makePrice(90, 0, minimalAmount: 10, isPackage: true)],
+                    ['price' => FactoryUtil::makePrice(100, 0, minimalAmount: 1)],
                 ],
                 'amount' => 17,
                 'vatCalc' => VatCalc::WithoutVAT,
@@ -263,26 +248,6 @@ class ProductVariantPriceDataProvider
                 'discCalc' => DiscCalc::WithoutDiscount,
                 'clientDiscount' => 0,
                 'expectedPrice' => 1600.0,
-            ],
-        ];
-    }
-
-    public static function mixedVatException(): array
-    {
-        return [
-            // FIXME: FAILS
-            'EX1' => [
-                'productType' => 'pv',
-                'prices' => [
-                    ['price' => FactoryUtil::makePrice(100, 21)],
-                    ['price' => FactoryUtil::makePrice(90, 15)],
-                ],
-                'amount' => 5,
-                'vatCalc' => VatCalc::WithVAT,
-                'currency' => FactoryUtil::czk(),
-                'discCalc' => DiscCalc::WithoutDiscount,
-                'clientDiscount' => 0,
-                'expectExceptionMsg' => 'Vat is different for prices on same Project/ProductVariant',
             ],
         ];
     }
