@@ -77,22 +77,29 @@ class ProductVariantPrice
     }
 
 
-    public function getPrice(): ?float
+    public function getPrice(bool $noConversion = false): ?float
     {
-        return $this->calculatedPrice;
+        if ($noConversion){
+            return $this->calculatedPrice;
+        }
+        return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->currency);
     }
 
     public function getPiecePrice(): ?float
     {
-        $price = $this->getPrice();
+        $price = $this->getPrice(true);
         if (!$price) {
             return null;
         }
-        return $price / $this->amount;
+        $piecePrice =  $price / $this->amount;
+        return $this->priceUtils->convertCurrency($piecePrice, $this->currency);
     }
 
-    public function getMinPrice(): ?float
+    public function getMinPrice(bool $noConversion = false): ?float
     {
+        if ($noConversion){
+            return $this->minPrice;
+        }
         return $this->priceUtils->convertCurrency($this->minPrice, $this->currency);
     }
 
@@ -103,7 +110,7 @@ class ProductVariantPrice
 
     public function getVatValue(): ?float
     {
-        return $this->vatValue;
+        return $this->priceUtils->convertCurrency($this->vatValue, $this->currency);
     }
 
     public function getDiscountPercentage(): ?float
@@ -125,7 +132,7 @@ class ProductVariantPrice
 
     public function getDiscountValue(): ?float
     {
-        return $this->discountValue;
+        return $this->priceUtils->convertCurrency($this->discountValue, $this->currency);
     }
 
     public function getDiscountTimeUntil(): ?\DateTime
@@ -206,7 +213,7 @@ class ProductVariantPrice
                 break;
         }
 
-        $this->calculatedPrice = $this->priceUtils->convertCurrency($price, $this->currency);
+        $this->calculatedPrice = $price;
         $this->vatValue = $this->priceUtils->convertCurrency($this->priceUtils->calculatePercentage($this->calculatedPrice, $this->vatPercentage), $this->currency);
         $this->discountValue = $fullDiscountValue;
     }
