@@ -151,4 +151,18 @@ class ManagePurchase extends AbstractExtension
         $purchase->setInvoiceNumber($invoiceNumber);
         return $this->invoiceMaker->createInvoiceOrProforma($purchase);
     }
+
+    // check if all products in purchase are available
+    public function isPurchaseValid(Purchase $purchase): bool
+    {
+        $purchaseProductVariants = $purchase->getProductVariants();
+
+        foreach ($purchaseProductVariants as $purchaseProductVariant){
+            $productVariant = $purchaseProductVariant->getProductVariant();
+            if ($productVariant->getAvailability()->getId() !== 1){
+                return false;
+            }
+        }
+        return true;
+    }
 }

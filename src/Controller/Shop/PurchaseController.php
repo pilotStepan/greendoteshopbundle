@@ -13,21 +13,29 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Form\ClientFormType;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\GPWebpay;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\Parcel\CzechPostParcel;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Workflow\Registry;
+use Exception;
 
 class PurchaseController extends AbstractController
 {
+
     #[Route('/api/client/submit', name: 'api_client_submit', methods: ['POST'])]
     public function submitClientForm(
         Request                  $request,
@@ -296,4 +304,40 @@ class PurchaseController extends AbstractController
             'conversion_rate' => $currency->getConversionRate()
         ], 200);
     }
+
+    #[Route('/api/purchase/{id}/continue', name: 'purchase_continue')]
+    public function setDraftAsCart(
+        Purchase $purchase,
+        SessionInterface $session,
+        Request $request,
+        ManagePurchase $managePurchase,
+    ): RedirectResponse {
+        // Check user login and ownership
+        $user = $this->getUser();
+        $returnTo = $request->query->get('returnTo', '/');
+
+        if (!$user || $user !== $purchase->getClient()) {
+            throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
+        }
+
+        // Check if state is 'draft'
+        if ($purchase->getState() !== 'draft') {
+            throw new BadRequestHttpException("Purchase ID {$purchase->getId()} is not in draft state.");
+        }
+
+
+        // Check if purchase is valid
+        if (!$managePurchase->isPurchaseValid($purchase)){
+            $this->addFlash('error', 'Produkty v objednávce jsou již nedostupné.');
+            return $this->redirect($returnTo);
+        }
+
+        // Set session variable
+        $session->set('purchase', $purchase->getId());
+
+        // Redirect to page
+        return $this->redirect('/objednavka/obsah');
+    }
 }
+
+
