@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
@@ -334,6 +335,52 @@ class PurchaseController extends AbstractController
 
         // Set session variable
         $session->set('purchase', $purchase->getId());
+
+        // Redirect to page
+        return $this->redirect('/objednavka/obsah');
+    }
+
+    #[Route('/api/purchase/{id}/repeat', name: 'purchase_repeat')]
+    public function putPurchaseProductsToCart(
+        Purchase $purchase,
+        SessionInterface $session,
+        Request $request,
+        ManagePurchase $managePurchase,
+        EntityManagerInterface $entityManager,
+    ): RedirectResponse {
+        // Check user login and ownership
+        $user = $this->getUser();
+        $returnTo = $request->query->get('returnTo', '/');
+
+        if (!$user || $user !== $purchase->getClient()) {
+            throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
+        }
+
+        // Check if purchase is valid
+        if (!$managePurchase->isPurchaseValid($purchase)){
+            $this->addFlash('error', 'Produkty v objednávce jsou již nedostupné.');
+            return $this->redirect($returnTo);
+        }
+        // set cart purchase
+        $cartPurchase = new Purchase();
+        $cartPurchase->setDateIssue(new \DateTime());
+        $cartPurchase->setState('draft');
+        $cartPurchase->setClient($user);
+
+        // Put product variants to cart
+        $purchaseProductVariants = $purchase->getProductVariants();
+        foreach ($purchaseProductVariants as $purchaseProductVariant){
+            $productVariant = $purchaseProductVariant->getProductVariant();
+            $amount = $purchaseProductVariant->getAmount();
+            $managePurchase->addProductVariantToPurchase($cartPurchase, $productVariant, $amount);
+        }
+
+        // persist
+        $entityManager->persist($cartPurchase);
+        $entityManager->flush();
+
+        // set session purchase
+        $session->set('purchase', $cartPurchase->getId());
 
         // Redirect to page
         return $this->redirect('/objednavka/obsah');
