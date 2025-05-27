@@ -215,6 +215,7 @@ class Product implements Translatable
 
 
     #[ORM\OneToMany(targetEntity: ProductInformationBlock::class, mappedBy: 'product')]
+    #[Groups(['product_item:read'])]
     private Collection $productInformationBlocks;
 
     public function __construct()
