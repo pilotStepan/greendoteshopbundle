@@ -54,7 +54,7 @@ class ProductInfoGetter
         }
     }
 
-    //returns string that is used in vue renders, (example results: od 90kč, 5€, 0)
+    //returns string that is used in vue renders, (example results: od 90 Kč, €5, zdarma)
     public function getProductPriceString(Product $product, Currency $currency, $discount = true): string|int
     {
         $finalString = "";
@@ -66,8 +66,15 @@ class ProductInfoGetter
         }
 
         $prices          = [];
+        /*
+         * TODO change to normal product variant listing, no need to use repository and load these again
+         */
         $productVaraints = $this->productVariantRepository->findBy(['product' => $product]);
         foreach ($productVaraints as $variant) {
+            /*
+             * TODO create array of prices, do not round (should be rounded by frontend)
+             * $prices[] = ['priceNoVat' => $calculatedPriceNoVat, 'priceVat' => $calculatedPriceVat, 'priceNoVatNoDiscount' => $calculatedPriceNoVatNoDiscount, 'priceVatNoDiscount' => $calculatedPriceVatNoDiscount]
+             */
             $calculatedPrice = $this->priceCalculator->calculateProductVariantPrice($variant, $currency, VatCalculationType::WithoutVAT, $discountType, true, true);
             if (!in_array($calculatedPrice, $prices) and $calculatedPrice != 0) {
                 $prices[] = $calculatedPrice;
@@ -80,6 +87,9 @@ class ProductInfoGetter
             if (count($prices) > 1) {
                 $finalString .= "Od ";
             }
+            /*
+             * TODO porovnat podle priceNoVat
+             */
             $finalString .= min($prices) . " " . $currency->getSymbol();
         }
 

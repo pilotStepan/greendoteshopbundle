@@ -35,6 +35,9 @@ class ProductEventListener
             }
 
             $currencySymbol = $currency->getSymbol();
+            /*
+             * TODO remove the strings and change to array
+             */
             $priceString    = $this->productInfoGetter->getProductPriceString($entity, $currency);
 
             $entity->setPriceFrom($priceString);

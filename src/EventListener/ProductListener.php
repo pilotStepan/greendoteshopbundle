@@ -23,6 +23,9 @@ class ProductListener
             return;
         }
 
+        /*
+         * TODO do we need to search for the product variants, if we send them anyway?
+         */
         $availability = $this->productRepository->findAvailabilityByProduct($entity);
         $parameters = $this->productRepository->calculateParameters($entity);
 

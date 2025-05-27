@@ -63,6 +63,7 @@ class Price
     private ?float $minPrice = null;
 
 
+
     public function __construct()
     {
 
