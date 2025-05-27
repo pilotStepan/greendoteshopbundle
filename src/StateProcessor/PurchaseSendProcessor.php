@@ -11,6 +11,7 @@ use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
+use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\Service\GPWebpay;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -78,8 +79,8 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
 
             // 6. Add notes
             foreach ($data->notes as $noteText) {
-                $note = $this->createNote($noteText);
-                $purchase->addNote($note);
+                $note = $this->createDiscussion($noteText);
+                $purchase->addDiscussion($note);
             }
 
             // 7. Validate and apply transition
@@ -89,7 +90,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             $this->em->flush();
 
             // 8. Process payment after transition
-            $redirectUrl = $this->generateRedirectUrl($purchase);
+            $redirectUrl = $this->generateRedirectUrl($purchase, $client);
 
             // 9. Remove purchase from session
             $this->requestStack->getSession()->remove('purchase');
@@ -159,16 +160,18 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         return $address;
     }
 
-    private function createNote(string $noteText): Note
+    // Save note as PurchaseDiscussion object, Note entity is not used here.
+    private function createDiscussion(string $noteText): PurchaseDiscussion
     {
-        $note = new Note();
-        $note->setText($noteText)->setType('order');
+        $note = (new PurchaseDiscussion())
+            ->setContent($noteText)
+            ->setIsAdmin(false);
 
         $this->em->persist($note);
         return $note;
     }
 
-    private function generateRedirectUrl(Purchase $purchase): string
+    private function generateRedirectUrl(Purchase $purchase, Client $client): string
     {
         /** - FIXME
          *  - Add relation between PaymentType and PaymentAction
@@ -181,7 +184,12 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             );
         }
 
-        return $this->urlGenerator->generate('thank_you', [
+        $route = $client->isIsAnonymous()
+            ? 'thank_you'
+            : 'client_section_order_detail'
+        ;
+
+        return $this->urlGenerator->generate($route, [
             'id' => $purchase->getId(),
             'created' => 'true'
         ], UrlGeneratorInterface::ABSOLUTE_URL);
