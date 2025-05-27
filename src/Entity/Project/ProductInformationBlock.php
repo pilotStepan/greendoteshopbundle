@@ -17,7 +17,7 @@ class ProductInformationBlock
     #[ORM\JoinColumn(nullable: false)]
     private ?InformationBlock $informationBlock = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'productInformationBlocks')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 

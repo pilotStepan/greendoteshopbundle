@@ -17,7 +17,7 @@ class ProductParameterGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'productParameterGroups')]
@@ -26,7 +26,7 @@ class ProductParameterGroup
 
     #[ORM\ManyToOne(inversedBy: 'productParameterGroups')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private ?ParameterGroup $parameterGroup = null;
 
     /**
@@ -36,7 +36,7 @@ class ProductParameterGroup
      * This ParameterGroup should be required for each ProductVariant
      */
     #[ORM\Column]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private ?bool $isVariant = null;
 
     public function getId(): ?int

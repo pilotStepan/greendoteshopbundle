@@ -15,35 +15,35 @@ class Price
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?float $price = null;
 
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?int $vat = null;
 
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?int $minimalAmount = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?float $discount = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?\DateTimeInterface $validFrom = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?\DateTimeInterface $validUntil = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?\DateTimeInterface $created = null;
 
     #[ORM\ManyToOne(inversedBy: 'price')]

@@ -25,15 +25,15 @@ class Parameter
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'comment:read','parameter:read', 'searchable', "SearchProductResultApiModel"])]
+    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','parameter:read', 'searchable', "SearchProductResultApiModel"])]
     private $id;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
+    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
     private $data;
 
     #[ORM\ManyToOne(targetEntity: ParameterGroup::class, inversedBy: 'parameter')]
-    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
+    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
     private $parameterGroup;
 
     #[Groups(['parameter:read', 'parameter:write'])]
@@ -51,7 +51,7 @@ class Parameter
     private ?int $sequence = null;
 
     #[ApiProperty]
-    #[Groups(['product_info:read', 'parameter:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'parameter:read'])]
     private ?string $colorName = null;
 
     public function getId(): ?int

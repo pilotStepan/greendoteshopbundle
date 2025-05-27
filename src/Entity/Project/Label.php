@@ -20,11 +20,11 @@ class Label
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['label:read', 'label:write', 'product_info:read', 'product_info:write'])]
+    #[Groups(['label:read', 'label:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 150)]
-    #[Groups(['category:read', 'category:write', 'product_info:read', 'product_info:write'])]
+    #[Groups(['category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private $name;
 
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'labels')]
@@ -38,7 +38,7 @@ class Label
 
     #[ORM\ManyToOne(inversedBy: 'labels')]
     #[ORM\JoinColumn(name: 'label_type_id', referencedColumnName: 'id', nullable: true)]
-    #[Groups(['label:read', 'label:write', 'category:read', 'category:write', 'product_info:read', 'product_info:write'])]
+    #[Groups(['label:read', 'label:write', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private ?LabelType $labelType = null;
 
     

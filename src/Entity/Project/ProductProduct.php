@@ -12,7 +12,7 @@ class ProductProduct
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_info:read', 'product_info:write'])]
+    #[Groups(['product_item:read', 'product_info:write'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'childrenProducts')]
@@ -20,7 +20,7 @@ class ProductProduct
     private ?Product $parentProduct = null;
 
     #[ORM\ManyToOne(inversedBy: 'parentProducts')]
-    #[Groups(['product_info:read', 'product_info:write'])]
+    #[Groups(['product_item:read', 'product_info:write'])]
     private ?Product $childrenProduct = null;
 
     #[ORM\Column]
