@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
 use Greendot\EshopBundle\Entity\Project\Note;
@@ -24,7 +25,6 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Service\InformationBlockService;
 use Greendot\EshopBundle\Service\ValueAddedTaxCalculator;
-use Greendot\EshopBundle\Repository\Project\NoteRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
@@ -35,21 +35,21 @@ use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 class AppExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly ProductRepository            $productRepository,
-        private readonly PriceCalculator              $priceCalculator,
-        private readonly ProductInfoGetter            $productInfoGetter,
-        private readonly CurrencyRepository           $currencyRepository,
-        private readonly ParameterRepository          $parameterRepository,
-        private readonly PriceRepository              $priceRepository,
-        private readonly ValueAddedTaxCalculator      $addedTaxCalculator,
-        private readonly CategoryInfoGetter           $categoryInfoGetter,
-        private readonly ManageWorkflows              $manageWorkflows,
-        private readonly NoteRepository               $noteRepository,
-        private readonly GoogleAnalytics              $googleAnalytics,
-        private readonly CategoryRepository           $categoryRepository,
-        private readonly RequestStack                 $requestStack,
-        private readonly RouterInterface              $router,
-        private readonly InformationBlockService      $informationBlockService,
+        private readonly ProductRepository       $productRepository,
+        private readonly PriceCalculator         $priceCalculator,
+        private readonly ProductInfoGetter       $productInfoGetter,
+        private readonly CurrencyRepository      $currencyRepository,
+        private readonly ParameterRepository     $parameterRepository,
+        private readonly PriceRepository         $priceRepository,
+        private readonly ValueAddedTaxCalculator $addedTaxCalculator,
+        private readonly CategoryInfoGetter      $categoryInfoGetter,
+        private readonly ManageWorkflows         $manageWorkflows,
+        private readonly MessageRepository       $messageRepository,
+        private readonly GoogleAnalytics         $googleAnalytics,
+        private readonly CategoryRepository      $categoryRepository,
+        private readonly RequestStack            $requestStack,
+        private readonly RouterInterface         $router,
+        private readonly InformationBlockService $informationBlockService,
     )
     {
     }
@@ -269,7 +269,7 @@ class AppExtension extends AbstractExtension
 
     public function getNote(Purchase $purchase, string $type): Note
     {
-        return $this->noteRepository->findOneBy(['purchase' => $purchase->getId(), 'type' => $type]);
+        return $this->messageRepository->findOneBy(['purchase' => $purchase->getId(), 'type' => $type]);
     }
 
     public function getSizedImage(Upload $upload, string|null $sizeString = null): string

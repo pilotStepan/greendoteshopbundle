@@ -11,7 +11,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Entity\Project\TransportationAction;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\NoteRepository;
+use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\InvoiceMaker;
 use Greendot\EshopBundle\Service\ManagePurchase;
@@ -35,7 +35,7 @@ class ManagePurchaseTest extends TestCase
         $workflowRegistry = $this->createMock(Registry::class);
         $this->purchaseRepository = $this->createMock(PurchaseRepository::class);
         $currencyRepository = $this->createMock(CurrencyRepository::class);
-        $noteRepository = $this->createMock(NoteRepository::class);
+        $messageRepository = $this->createMock(MessageRepository::class);
         $logger = $this->createMock(LoggerInterface::class);
         $invoiceMaker = $this->createMock(InvoiceMaker::class);
         $this->parcelServiceProvider = $this->createMock(ParcelServiceProvider::class);
@@ -50,7 +50,7 @@ class ManagePurchaseTest extends TestCase
             $workflowRegistry,
             $this->purchaseRepository,
             $currencyRepository,
-            $noteRepository,
+            $messageRepository,
             $logger,
             $invoiceMaker,
             $this->parcelServiceProvider,
