@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 
 #[ORM\Entity(repositoryClass: ProductProductRepository::class)]
 class ProductProduct
@@ -17,10 +18,12 @@ class ProductProduct
 
     #[ORM\ManyToOne(inversedBy: 'childrenProducts')]
     #[ORM\JoinColumn(nullable: false)]
+    #[MaxDepth(1)]
     private ?Product $parentProduct = null;
 
     #[ORM\ManyToOne(inversedBy: 'parentProducts')]
     #[Groups(['product_item:read', 'product_info:write'])]
+    #[MaxDepth(1)]
     private ?Product $childrenProduct = null;
 
     #[ORM\Column]

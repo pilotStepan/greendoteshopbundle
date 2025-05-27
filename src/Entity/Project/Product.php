@@ -42,6 +42,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new GetCollection(normalizationContext: ['groups'=>['product_list:read']]),
         new GetCollection(
             uriTemplate: '/products/filter',
+            normalizationContext: ['groups'=>['product_list:read']],
             provider: ProductStateProvider::class,
         ),
         new Get(normalizationContext: ['groups'=>['product_item:read']]),
@@ -193,7 +194,7 @@ class Product implements Translatable
     private Collection $productParameterGroups;
 
     #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
-    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_info:write', 'comment:read'])]
     private Collection $childrenProducts;
 
 
@@ -213,7 +214,7 @@ class Product implements Translatable
     private Collection $comments;
 
 
-    #[ORM\ManyToMany(targetEntity: ProductInformationBlock::class, mappedBy: 'products')]
+    #[ORM\OneToMany(targetEntity: ProductInformationBlock::class, mappedBy: 'product')]
     private Collection $productInformationBlocks;
 
     public function __construct()

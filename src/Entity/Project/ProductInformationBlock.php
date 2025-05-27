@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\ProductInformationBlockRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProductInformationBlockRepository::class)]
 class ProductInformationBlock
@@ -15,6 +16,7 @@ class ProductInformationBlock
 
     #[ORM\ManyToOne(inversedBy: 'productInformationBlocks')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['product_item:read'])]
     private ?InformationBlock $informationBlock = null;
 
     #[ORM\ManyToOne(inversedBy: 'productInformationBlocks')]
