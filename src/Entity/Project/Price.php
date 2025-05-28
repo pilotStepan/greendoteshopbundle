@@ -19,7 +19,7 @@ class Price
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read', 'product_list:read'])]
     private ?float $price = null;
 
     #[ORM\Column]
