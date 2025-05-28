@@ -68,15 +68,13 @@ class ProductRepository extends ServiceEntityRepository
 
     public function findAvailabilityByProduct(Product $product): ?string
     {
-        $availabilityCheckQb = $this->createQueryBuilder('p')
-            ->select('COUNT(pv.id)')
-            ->join('p.productVariants', 'pv')
-            ->where('p.id = :productId')
-            ->andWhere('pv.availability = 1')
-            ->setParameter('productId', $product->getId());
-
-        $hasAvailability = $availabilityCheckQb->getQuery()->getSingleScalarResult() > 0;
-
+        $hasAvailability = false;
+        foreach ($product->getProductVariants() as $variant) {
+            if ($variant->getAvailability() === 'skladem') {
+                $hasAvailability = true;
+                break;
+            }
+        }
         return $hasAvailability ? 'skladem' : 'vyprodáno';
     }
 
