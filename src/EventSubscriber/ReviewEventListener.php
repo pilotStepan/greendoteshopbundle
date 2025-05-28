@@ -1,12 +1,12 @@
 <?php
 
-namespace Greendot\EshopBundle\EventListener;
+namespace Greendot\EshopBundle\EventSubscriber;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Greendot\EshopBundle\Entity\Project\Review;
 use Greendot\EshopBundle\Repository\Project\ReviewPointsRepository;
 
-class ReviewListener
+class ReviewEventListener
 {
     private $reviewPointsRepository;
 
