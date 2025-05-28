@@ -52,9 +52,10 @@ abstract class Message
         return $this->content;
     }
 
-    public function setContent(string $content): void
+    public function setContent(string $content): self
     {
         $this->content = $content;
+        return $this;
     }
 
     public function getCreatedAt(): \DateTimeImmutable
@@ -62,9 +63,10 @@ abstract class Message
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): void
+    public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
+        return $this;
     }
 
     public function getMessageType(): string

@@ -43,9 +43,10 @@ class PurchaseDiscussion extends Message
         return $this->isAdmin;
     }
 
-    public function setIsAdmin(bool $isAdmin): void
+    public function setIsAdmin(bool $isAdmin): self
     {
         $this->isAdmin = $isAdmin;
+        return $this;
     }
 
 
@@ -54,9 +55,10 @@ class PurchaseDiscussion extends Message
         return $this->isRead;
     }
 
-    public function setIsRead(bool $isRead): void
+    public function setIsRead(bool $isRead): self
     {
         $this->isRead = $isRead;
+        return $this;
     }
 
     public function getPurchase(): Purchase
@@ -64,8 +66,9 @@ class PurchaseDiscussion extends Message
         return $this->purchase;
     }
 
-    public function setPurchase(Purchase $purchase): void
+    public function setPurchase(?Purchase $purchase): self
     {
         $this->purchase = $purchase;
+        return $this;
     }
 }

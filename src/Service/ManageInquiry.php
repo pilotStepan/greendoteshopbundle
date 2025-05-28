@@ -237,7 +237,7 @@ class ManageInquiry
             $newNote = new Note();
             $newNote->setPurchase($order);
             $newNote->setType('Poznámka');
-            $newNote->setText($note);
+            $newNote->setContent($note);
             $this->managerRegistry->getManager()->persist($newNote);
             $this->managerRegistry->getManager()->flush();
         }
@@ -246,7 +246,7 @@ class ManageInquiry
             $newNote = new Note();
             $newNote->setPurchase($order);
             $newNote->setType('E-mail pro notifikace');
-            $newNote->setText($notifyMail);
+            $newNote->setContent($notifyMail);
             $this->managerRegistry->getManager()->persist($newNote);
             $this->managerRegistry->getManager()->flush();
         }

@@ -187,6 +187,10 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?ClientDiscount $clientDiscount;
 
+    #[ORM\OneToMany(targetEntity: PurchaseDiscussion::class, mappedBy: 'purchase')]
+    #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
+    private Collection $purchaseDiscussions;
+
     #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'Purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -215,6 +219,7 @@ class Purchase
         $this->vouchersUsed = new ArrayCollection();
         $this->Consents = new ArrayCollection();
         $this->payments = new ArrayCollection();
+        $this->purchaseDiscussions = new ArrayCollection();
     }
 
     public function getProducts(): Collection
@@ -613,7 +618,7 @@ class Purchase
 
     public function getCheckedRequiredConsents(): Collection
     {
-        return $this->Consents->filter(fn(Consent $consent) => $consent->isRequired());
+        return $this->Consents->filter(fn(Consent $consent) => $consent->isIsRequired());
     }
 
     public function addConsent(Consent $consent): static
@@ -749,4 +754,33 @@ class Purchase
         $this->total_price_no_services = $total_price_no_services;
     }
 
+    /**
+     * @return Collection<int, PurchaseDiscussion>
+     */
+    public function getPurchaseDiscussions(): Collection
+    {
+        return $this->purchaseDiscussions;
+    }
+
+    public function addDiscussion(PurchaseDiscussion $discussion): static
+    {
+        if (!$this->purchaseDiscussions->contains($discussion)) {
+            $this->purchaseDiscussions->add($discussion);
+            $discussion->setPurchase($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDiscussion(PurchaseDiscussion $discussion): static
+    {
+        if ($this->purchaseDiscussions->removeElement($discussion)) {
+            // set the owning side to null (unless already changed)
+            if ($discussion->getPurchase() === $this) {
+                $discussion->setPurchase(null);
+            }
+        }
+
+        return $this;
+    }
 }
