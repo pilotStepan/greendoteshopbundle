@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiProperty;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -62,6 +63,17 @@ class Price
     #[Groups(["SearchProductResultApiModel"])]
     private ?float $minPrice = null;
 
+    /**
+     * @var array<string, float>
+     *
+     * Structure:
+     * - priceNoVat:            basePrice + discount
+     * - priceVat:              basePrice + discount + VAT
+     * - priceNoVatNoDiscount:  basePrice
+     * - priceVatNoDiscount:    basePrice + VAT
+     */
+    #[ApiProperty]
+    private array $calculatedPrices = [];
 
     public function __construct()
     {
@@ -203,6 +215,17 @@ class Price
     {
         $this->minPrice = $minPrice;
 
+        return $this;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
         return $this;
     }
 }
