@@ -3,14 +3,9 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Entity\Project\Price;
-use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\PriceCalculator;
-use Greendot\EshopBundle\Service\ProductInfoGetter;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 class PriceEventListener
 {
