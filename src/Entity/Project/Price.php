@@ -64,6 +64,7 @@ class Price
     private ?float $minPrice = null;
 
     /**
+     * Precalculated price values.
      * @var array<string, float>
      *
      * Structure:
