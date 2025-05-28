@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\ProductVariantFilter;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
@@ -91,6 +92,19 @@ class ProductVariant implements Translatable
 
     #[Gedmo\Locale]
     private $locale;
+
+    /**
+     * Precalculated price values for price with the lowest minimalAmount.
+     * @var array<string, float>
+     *
+     * Structure:
+     * - priceNoVat:            basePrice + discount
+     * - priceVat:              basePrice + discount + VAT
+     * - priceNoVatNoDiscount:  basePrice
+     * - priceVatNoDiscount:    basePrice + VAT
+     */
+    #[ApiProperty]
+    private array $calculatedPrices = [];
 
     public function __construct()
     {
@@ -370,5 +384,16 @@ class ProductVariant implements Translatable
     public function setTranslatableLocale($locale)
     {
         $this->locale = $locale;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
+        return $this;
     }
 }
