@@ -20,13 +20,16 @@ class ProductVariantEventListener
 
             // filter prices to current date
             $now = new \DateTimeImmutable();
-            $activePrices = array_filter($prices, function ($price) use ($now) {
+            $activePrices = [];
+            foreach ($prices as $price){
                 $validFrom = $price->getValidFrom();
                 $validUntil = $price->getValidUntil();
 
-                return ($validFrom === null || $validFrom <= $now) &&
-                    ($validUntil === null || $validUntil >= $now);
-            });
+                if (($validFrom === null || $validFrom <= $now) &&
+                    ($validUntil === null || $validUntil >= $now)){
+                    $activePrices[] = $price;
+                };
+            }
 
 
             // get the lowest minimalAmount price
