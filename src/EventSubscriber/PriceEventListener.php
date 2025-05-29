@@ -33,7 +33,7 @@ class PriceEventListener
             // basePrice + discount + vat
             $priceVat = $this->priceCalculator->applyVat($priceNoVat, $vat, VatCalculationType::WithVAT);;
 
-            $prices[] = [
+            $prices = [
                 'priceNoVat' => $priceNoVat,
                 'priceVat' => $priceVat,
                 'priceNoVatNoDiscount' => $priceNoVatNoDiscount,
