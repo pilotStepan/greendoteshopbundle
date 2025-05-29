@@ -5,14 +5,12 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Greendot\EshopBundle\Service\ProductInfoGetter;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 class ProductEventListener
 {
     public function __construct(
-        private ProductInfoGetter  $productInfoGetter,
         private RequestStack       $requestStack,
         private CurrencyRepository $currencyRepository,
         private ProductRepository  $productRepository,
