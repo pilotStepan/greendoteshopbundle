@@ -159,6 +159,9 @@ class Product implements Translatable
     #[Gedmo\Locale]
     private $locale;
 
+    /**
+     * @deprecated Use calculatedPrices['priceNoVat'] instead
+     */
     #[ApiProperty]
     #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private string $priceFrom;
@@ -218,6 +221,18 @@ class Product implements Translatable
     #[Groups(['product_item:read'])]
     private Collection $productInformationBlocks;
 
+    /**
+     * Precalculated price values from the variant with the lowest priceNoVat.
+     * @var array<string, float>
+     *
+     * Structure:
+     * - priceNoVat:            basePrice + discount
+     * - priceVat:              basePrice + discount + VAT
+     * - priceNoVatNoDiscount:  basePrice
+     * - priceVatNoDiscount:    basePrice + VAT
+     */
+    #[ApiProperty]
+    private array $calculatedPrices = [];
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -792,6 +807,17 @@ class Product implements Translatable
     {
         $this->productInformationBlocks->removeElement($productInformationBlock);
 
+        return $this;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
         return $this;
     }
 }

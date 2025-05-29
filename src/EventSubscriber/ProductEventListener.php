@@ -36,15 +36,24 @@ class ProductEventListener
                 $currency = $this->currencyRepository->findOneBy(['isDefault' => 1]);
             }
 
+            // get calculated prices with lowest priceNoVat from among variants
+            $variants = $entity->getProductVariants();
+            $lowestCalculatedPrices = null;
+            foreach ($variants as $variant){
+                if ($lowestCalculatedPrices === null || $variant->getCalculatedPrices()['priceNoVat'] < $lowestCalculatedPrices['priceNoVat']){
+                    $lowestCalculatedPrices=$variant->getCalculatedPrices();
+                }
+            }
+
             $currencySymbol = $currency->getSymbol();
-            $priceString    = $this->productInfoGetter->getProductPriceString($entity, $currency);
             $availability = $this->productRepository->findAvailabilityByProduct($entity);
             $parameters = $this->productRepository->calculateParameters($entity);
 
-            $entity->setPriceFrom($priceString);
+            $entity->setPriceFrom($lowestCalculatedPrices['priceNoVat']);
             $entity->setCurrencySymbol($currencySymbol);
             $entity->setAvailability($availability);
             $entity->setParameters($parameters);
+            $entity->setCalculatedPrices($lowestCalculatedPrices);
         }
     }
 }
