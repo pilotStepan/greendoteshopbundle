@@ -74,6 +74,7 @@ class Price
      * - priceVatNoDiscount:    basePrice + VAT
      */
     #[ApiProperty]
+    #[Groups(['product_item:read', 'product_variant:read'])]
     private array $calculatedPrices = [];
 
     public function __construct()
