@@ -9,7 +9,7 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\NoteRepository;
+use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
@@ -26,7 +26,7 @@ class ManagePurchase extends AbstractExtension
         private readonly Registry              $workflowRegistry,
         private readonly PurchaseRepository    $purchaseRepository,
         private readonly CurrencyRepository    $currencyRepository,
-        private readonly NoteRepository        $noteRepository,
+        private readonly MessageRepository     $messageRepository,
         private readonly LoggerInterface       $logger,
         private readonly InvoiceMaker          $invoiceMaker,
         private readonly ParcelServiceProvider $parcelServiceProvider,
@@ -90,7 +90,7 @@ class ManagePurchase extends AbstractExtension
 
     public function getNotifyEmail(Purchase $purchase): ?string
     {
-        $note = $this->noteRepository->findOneBy(["type" => "E-mail pro notifikace", 'purchase' => $purchase]);
+        $note = $this->messageRepository->findOneBy(["type" => "E-mail pro notifikace", 'purchase' => $purchase]);
         //returns null or text of note in this case email
         return $note?->getText();
     }

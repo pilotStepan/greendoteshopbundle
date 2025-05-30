@@ -16,11 +16,11 @@ class Availability
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write','searchable', "search_result", "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write','searchable', "search_result", "SearchProductResultApiModel"])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_info:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
     private $name;
 
     #[ORM\Column(type: 'text')]

@@ -19,7 +19,7 @@ class LabelType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_info:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write'])]
+    #[Groups(['product_item:read', 'product_list:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]

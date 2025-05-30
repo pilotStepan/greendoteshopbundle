@@ -24,11 +24,11 @@ class Producer
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'producer_info:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'producer_info:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['producer_info:read','product_info:read', 'product_info:write', 'search_result'])]
+    #[Groups(['producer_info:read','product_item:read', 'product_list:read', 'product_info:write', 'search_result'])]
     private $name;
 
     #[Groups(['producer_info:read'])]
@@ -52,7 +52,7 @@ class Producer
     #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'producer')]
     private $Product;
 
-    #[Groups(['product_info:read', 'producer_info:read','product_info:write', 'search_result'])]
+    #[Groups(['product_item:read', 'product_list:read', 'producer_info:read','product_info:write', 'search_result'])]
     #[ORM\ManyToOne(inversedBy: 'producers')]
     private ?Upload $upload = null;
 

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -35,9 +36,11 @@ class ManageMails
         private readonly TransportationRepository $transportationRepository,
         private readonly QRcodeGenerator          $qrCodeGenerator,
         private readonly GPWebpay                 $webpay,
+        private readonly string                   $fromEmail,
+        private readonly string                   $fromName,
     )
     {
-        $this->fromAddress = new Address('info@bdl.cz', 'BDL');
+        $this->fromAddress = new Address($this->fromEmail, $this->fromName);
     }
 
 
@@ -226,5 +229,29 @@ class ManageMails
         }
 
         $email->addCc("matyas@greendot.cz");
+    }
+
+    public function sendFreeSampleMailToInfo($formData, Product $product)
+    {
+        $email = new TemplatedEmail();
+        $email
+            ->subject("Žádost o vzorek zdarma")
+            ->addFrom($formData['mail'])
+            ->addTo($this->fromAddress);
+
+//        TODO: make this
+//        $email->htmlTemplate('mailing/free-sample.html.twig')
+//            ->context([
+//                'content'     => $content,
+//                'href'        => $link,
+//                'button_name' => $buttonName
+//            ]);
+
+
+        try {
+            $this->mailer->send($email);
+        } catch (\Exception $exception) {
+            dd($exception);
+        }
     }
 }

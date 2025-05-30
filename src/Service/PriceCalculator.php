@@ -381,7 +381,7 @@ class PriceCalculator
     }
 
 
-    private function applyVat(float $price, int $vatRate, VatCalculationType $vatCalculationType): ?float
+    public function applyVat(float $price, int $vatRate, VatCalculationType $vatCalculationType): ?float
     {
         switch ($vatCalculationType) {
             case VatCalculationType::WithVAT:

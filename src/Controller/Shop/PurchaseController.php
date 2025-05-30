@@ -114,7 +114,7 @@ class PurchaseController extends AbstractController
 
         if (!empty($data['order_note'])) {
             $note = new Note();
-            $note->setText($data['order_note']);
+            $note->setContent($data['order_note']);
             $note->setType('order');
             $note->setPurchase($newPurchase);
 

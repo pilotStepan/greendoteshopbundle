@@ -16,12 +16,12 @@ class CategoryProduct
 
     #[ORM\ManyToOne(cascade: ['persist'], inversedBy: 'categoryProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['searchable', 'product_info:read'])]
+    #[Groups(['searchable', 'product_item:read'])]
     private ?Product $product = null;
 
     #[ORM\ManyToOne(cascade: ['persist'], inversedBy: 'categoryProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['searchable', 'product_info:read'])]
+    #[Groups(['searchable', 'product_item:read'])]
     private ?Category $category = null;
 
     #[ORM\Column(nullable: true)]

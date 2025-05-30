@@ -39,12 +39,13 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(normalizationContext: ['groups'=>['product_list:read']]),
         new GetCollection(
             uriTemplate: '/products/filter',
+            normalizationContext: ['groups'=>['product_list:read']],
             provider: ProductStateProvider::class,
         ),
-        new Get(),
+        new Get(normalizationContext: ['groups'=>['product_item:read']]),
         new Post(
             uriTemplate: '/products/filterPost',
             provider: ProductStateProvider::class,
@@ -54,7 +55,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Delete(),
         new Patch(),
     ],
-    normalizationContext: ['groups' => ['product_info:read']],
+//    normalizationContext: ['groups' => ['product_info:read']],
     denormalizationContext: ['groups' => ['product_info:write']],
     paginationClientItemsPerPage: true
 )]
@@ -75,13 +76,13 @@ class Product implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_info:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'searchable', 'search_result', 'purchase:read', 'comment:read'])]
     private $name;
 
     #[Gedmo\Translatable]
@@ -92,7 +93,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'text')]
-    #[Groups(['searchable', 'product_info:read', 'comment:read'])]
+    #[Groups(['searchable', 'product_item:read', 'product_list:read', 'comment:read'])]
     private $description;
 
     #[Gedmo\Translatable]
@@ -103,11 +104,11 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read'])]
     private $slug;
 
     #[ORM\Column(type: 'boolean')]
-    #[Groups(['product_info:read', 'product_info:write'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write'])]
     private $isActive;
 
     #[ORM\Column(type: 'integer')]
@@ -119,15 +120,15 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['product_info:read', 'product_info:write', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'comment:read'])]
     private $textGeneral;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVariant::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private $productVariants;
 
     #[ORM\ManyToOne(targetEntity: Producer::class, inversedBy: 'Product')]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'comment:read'])]
     private $producer;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: Review::class)]
@@ -137,7 +138,7 @@ class Product implements Translatable
     private $state = 'draft';
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: CategoryProduct::class, cascade: ['persist'])]
-    #[Groups(['searchable', 'product_info:read', 'comment:read'])]
+    #[Groups(['searchable', 'product_item:read', 'comment:read'])]
     private Collection $categoryProducts;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -148,7 +149,7 @@ class Product implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
-    #[Groups(['search_result','product_info:read', 'product_info:write', 'purchase:read', 'comment:read'])]
+    #[Groups(['search_result','product_item:read', 'product_list:read', 'product_info:write', 'purchase:read', 'comment:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
@@ -158,12 +159,15 @@ class Product implements Translatable
     #[Gedmo\Locale]
     private $locale;
 
+    /**
+     * @deprecated Use calculatedPrices['priceNoVat'] instead
+     */
     #[ApiProperty]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private string $priceFrom;
 
     #[ApiProperty]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private string $currencySymbol;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -176,24 +180,24 @@ class Product implements Translatable
      * @var Collection<int, Label>
      */
     #[ORM\ManyToMany(targetEntity: Label::class, inversedBy: 'products')]
-    #[Groups(['product_info:read', 'product_info:write', 'search_result', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'comment:read'])]
     private Collection $labels;
 
-    #[Groups(['product_info:read', 'search_result', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'search_result', 'comment:read'])]
     private ?string $availability = null;
 
 
     private array $parameters = [];
 
-    #[Groups(['product_info:read', 'search_result', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'search_result', 'comment:read'])]
     private ?string $imagePath = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParameterGroup::class)]
-    #[Groups(['product_info:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private Collection $productParameterGroups;
 
     #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
-    #[Groups(['product_info:read', 'product_info:write', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_info:write', 'comment:read'])]
     private Collection $childrenProducts;
 
 
@@ -212,6 +216,24 @@ class Product implements Translatable
     #[ORM\ManyToMany(targetEntity: Comment::class, mappedBy: 'products')]
     private Collection $comments;
 
+
+    #[ORM\OneToMany(targetEntity: ProductInformationBlock::class, mappedBy: 'product')]
+    #[Groups(['product_item:read'])]
+    private Collection $productInformationBlocks;
+
+    /**
+     * Precalculated price values from the variant with the lowest priceNoVat.
+     * @var array<string, float>
+     *
+     * Structure:
+     * - priceNoVat:            basePrice + discount
+     * - priceVat:              basePrice + discount + VAT
+     * - priceNoVatNoDiscount:  basePrice
+     * - priceVatNoDiscount:    basePrice + VAT
+     */
+    #[ApiProperty]
+    #[Groups(['product_item:read, product_list:read'])]
+    private array $calculatedPrices = [];
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -224,6 +246,7 @@ class Product implements Translatable
         $this->childrenProducts = new ArrayCollection();
         $this->parentProducts = new ArrayCollection();
         $this->comments = new ArrayCollection();
+        $this->productInformationBlocks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -764,4 +787,38 @@ class Product implements Translatable
         return $this;
     }
 
+    /**
+     * @return Collection<int, ProductInformationBlock>
+     */
+    public function getProductInformationBlocks(): Collection
+    {
+        return $this->productInformationBlocks;
+    }
+
+    public function addProductInformationBlock(ProductInformationBlock $productInformationBlock): static
+    {
+        if (!$this->productInformationBlocks->contains($productInformationBlock)){
+            $this->productInformationBlocks->add($productInformationBlock);
+        }
+
+        return $this;
+    }
+
+    public function removeProductInformationBlock(ProductInformationBlock $productInformationBlock): static
+    {
+        $this->productInformationBlocks->removeElement($productInformationBlock);
+
+        return $this;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
+        return $this;
+    }
 }

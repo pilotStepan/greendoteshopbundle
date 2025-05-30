@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Repository\Project\InformationBlockTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: InformationBlockTypeRepository::class)]
 class InformationBlockType
@@ -13,9 +14,11 @@ class InformationBlockType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['product_item:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['product_item:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]

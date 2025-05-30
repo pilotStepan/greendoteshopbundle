@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiProperty;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -15,35 +16,35 @@ class Price
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read', 'product_list:read'])]
     private ?float $price = null;
 
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?int $vat = null;
 
     #[ORM\Column]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?int $minimalAmount = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?float $discount = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?\DateTimeInterface $validFrom = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?\DateTimeInterface $validUntil = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["SearchProductResultApiModel", "product_info:read"])]
+    #[Groups(["SearchProductResultApiModel",'product_item:read'])]
     private ?\DateTimeInterface $created = null;
 
     #[ORM\ManyToOne(inversedBy: 'price')]
@@ -62,6 +63,19 @@ class Price
     #[Groups(["SearchProductResultApiModel"])]
     private ?float $minPrice = null;
 
+    /**
+     * Precalculated price values.
+     * @var array<string, float>
+     *
+     * Structure:
+     * - priceNoVat:            basePrice + discount
+     * - priceVat:              basePrice + discount + VAT
+     * - priceNoVatNoDiscount:  basePrice
+     * - priceVatNoDiscount:    basePrice + VAT
+     */
+    #[ApiProperty]
+    #[Groups(['product_item:read', 'product_variant:read'])]
+    private array $calculatedPrices = [];
 
 
     public function __construct()
@@ -204,6 +218,17 @@ class Price
     {
         $this->minPrice = $minPrice;
 
+        return $this;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
         return $this;
     }
 }
