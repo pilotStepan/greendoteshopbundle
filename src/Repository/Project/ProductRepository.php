@@ -515,7 +515,7 @@ class ProductRepository extends ServiceEntityRepository
             ->andWhere('price.validFrom <= :date')
             ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
             ->setParameter('date', $date)
-            ->groupBy('pv')
+            ->groupBy('p')
             ->addSelect('MIN(price.price) AS hidden minPrice')
             ->orderBy('minPrice', strtoupper($sort));
 
