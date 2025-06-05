@@ -376,7 +376,7 @@ class ProductRepository extends ServiceEntityRepository
                 // Apply range filter using MIN(price.price)
                 $queryBuilder
                     ->andWhere('pv_price.validFrom <= :date')
-                    ->andWhere('pv_price.validUntil >= :date OR price.validUntil IS NULL')
+                    ->andWhere('pv_price.validUntil >= :date OR pv_price.validUntil IS NULL')
                     ->andWhere('pv_price.price BETWEEN :minPrice AND :maxPrice')
                     ->setParameter('minPrice', $parameter->selectedParameters[0]) // expected: [min, max]
                     ->setParameter('maxPrice', $parameter->selectedParameters[1])
