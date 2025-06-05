@@ -371,13 +371,13 @@ class ProductRepository extends ServiceEntityRepository
                 ->innerJoin('pv.parameters', 'pa'.$i);
             if($parameter->parameterGroup->id === 'price'){
                 // Join prices for price filtering
-                $queryBuilder->innerJoin('pv.price', 'price');
+                $queryBuilder->innerJoin('pv.price', 'pv_price');
 
                 // Apply range filter using MIN(price.price)
                 $queryBuilder
-                    ->andWhere('price.validFrom <= :date')
-                    ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
-                    ->andWhere('price.price BETWEEN :minPrice AND :maxPrice')
+                    ->andWhere('pv_price.validFrom <= :date')
+                    ->andWhere('pv_price.validUntil >= :date OR price.validUntil IS NULL')
+                    ->andWhere('pv_price.price BETWEEN :minPrice AND :maxPrice')
                     ->setParameter('minPrice', $parameter->selectedParameters[0]) // expected: [min, max]
                     ->setParameter('maxPrice', $parameter->selectedParameters[1])
                     ->setParameter('date', new \DateTime());
