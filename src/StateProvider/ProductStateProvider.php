@@ -62,7 +62,6 @@ class ProductStateProvider implements ProviderInterface
                 }
                 break;
             case 'price':
-                //FIXME: this doesnt work
                 $this->productRepository->sortProductsByPrice($qb, new \DateTime(), $filters->orderBy->direction);
                 break;
             case 'default':
