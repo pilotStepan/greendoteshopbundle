@@ -32,6 +32,7 @@ class ProductProduct
      * @var ProductProductType
      * Type for the purpose of the relation from ENUM.
      */
+    #[Groups(['product_item:read'])]
     #[ORM\Column(type: "string", enumType: ProductProductType::class)]
     private ProductProductType $type;
 
