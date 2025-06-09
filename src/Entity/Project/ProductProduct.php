@@ -71,7 +71,7 @@ class ProductProduct
         return $this;
     }
 
-    public function getType(): ?int
+    public function getType(): ProductProductType
     {
         return $this->type;
     }
