@@ -69,7 +69,7 @@ class PurchaseRepository extends ServiceEntityRepository
     public function getNextInvoiceNumber(): ?int
     {
         $qb = $this->createQueryBuilder('p')
-            ->select('MAX(CAST(p.invoice_number AS int)) as max_invoice_number');
+            ->select('MAX(p.invoice_number) as max_invoice_number');
 
         $result = $qb->getQuery()->getSingleScalarResult();
 
