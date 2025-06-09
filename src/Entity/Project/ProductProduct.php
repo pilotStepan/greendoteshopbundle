@@ -32,7 +32,7 @@ class ProductProduct
      * @var ProductProductType
      * Type for the purpose of the relation from ENUM.
      */
-    #[ORM\Column(type: "string", enumType: DiscountType::class)]
+    #[ORM\Column(type: "string", enumType: ProductProductType::class)]
     private ProductProductType $type;
 
     #[ORM\Column]
