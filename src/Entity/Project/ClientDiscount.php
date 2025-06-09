@@ -52,8 +52,8 @@ class ClientDiscount
      * @var Collection|ArrayCollection
      * Purchases during which the coupon was used.
      */
-    #[ORM\OneToMany(mappedBy: 'clientDiscount', targetEntity: Purchase::class)]
-    private Collection $purchase;
+    #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'clientDiscount')]
+    private Collection $purchases;
 
     /**
      * @var DiscountType
@@ -77,7 +77,7 @@ class ClientDiscount
 
     public function __construct()
     {
-        $this->purchase = new ArrayCollection();
+        $this->purchases = new ArrayCollection();
         $this->type = DiscountType::SingleUse;
     }
 
@@ -137,15 +137,15 @@ class ClientDiscount
     /**
      * @return Collection<int, Purchase>
      */
-    public function getPurchase(): Collection
+    public function getPurchases(): Collection
     {
-        return $this->purchase;
+        return $this->purchases;
     }
 
     public function addPurchase(Purchase $purchase): static
     {
-        if (!$this->purchase->contains($purchase)) {
-            $this->purchase->add($purchase);
+        if (!$this->purchases->contains($purchase)) {
+            $this->purchases->add($purchase);
             $purchase->setClientDiscount($this);
         }
 
@@ -154,7 +154,7 @@ class ClientDiscount
 
     public function removePurchase(Purchase $purchase): static
     {
-        if ($this->purchase->removeElement($purchase)) {
+        if ($this->purchases->removeElement($purchase)) {
             // set the owning side to null (unless already changed)
             if ($purchase->getClientDiscount() === $this) {
                 $purchase->setClientDiscount(null);

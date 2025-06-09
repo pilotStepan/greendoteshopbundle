@@ -19,9 +19,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class PurchaseRepository extends ServiceEntityRepository
 {
     public function __construct(
-        private readonly RequestStack           $requestStack,
-        private readonly EntityManagerInterface $entityManager,
-        ManagerRegistry                         $registry,
+        private readonly RequestStack $requestStack,
+        ManagerRegistry               $registry,
     )
     {
         parent::__construct($registry, Purchase::class);
@@ -106,6 +105,20 @@ class PurchaseRepository extends ServiceEntityRepository
         }
     }
 
+    public function findWishlistBySession(): ?Purchase
+    {
+        $qb = $this->createQueryBuilder('p');
+        $session = $this->requestStack->getCurrentRequest()->getSession();
+        if ($session->has('wishlist')) {
+            $purchaseId = $session->get('wishlist');
+            $qb->andWhere('p.id = :purchaseId')
+                ->setParameter('purchaseId', $purchaseId);
+            return $qb->getQuery()->getOneOrNullResult();
+        } else {
+            return null;
+        }
+    }
+
     public function findCartForClient(?Client $client): ?Purchase
     {
         if (!$client) return null;
@@ -115,6 +128,21 @@ class PurchaseRepository extends ServiceEntityRepository
             ->andWhere('p.state IN (:states)')
             ->setParameter('client', $client)
             ->setParameter('states', ['draft', 'new'])
+            ->orderBy('p.date_issue', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findWishlistForClient(?Client $client): ?Purchase
+    {
+        if (!$client) return null;
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.client = :client')
+            ->andWhere('p.state = :state')
+            ->setParameter('client', $client)
+            ->setParameter('state', 'wishlist')
             ->orderBy('p.date_issue', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
