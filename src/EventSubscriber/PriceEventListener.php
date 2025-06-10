@@ -5,17 +5,21 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Service\PriceCalculator;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
+use Doctrine\ORM\Event\PostLoadEventArgs;
+use Doctrine\ORM\Events;
 
+#[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: Price::class)]
 class PriceEventListener
 {
     public function __construct(
         private priceCalculator $priceCalculator
     ) {}
 
-    public function postLoad(LifecycleEventArgs $args): void
+    public function postLoad(Price $price, PostLoadEventArgs $args): void
     {
-        $entity = $args->getObject();
+        $entity = $price;
 
         if ($entity instanceof Price) {
 

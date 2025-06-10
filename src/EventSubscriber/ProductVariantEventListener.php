@@ -3,16 +3,19 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
+use Doctrine\ORM\Event\PostLoadEventArgs;
+use Doctrine\ORM\Events;
 
+#[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: ProductVariant::class)]
 class ProductVariantEventListener
 {
     public function __construct(
     ) {}
 
-    public function postLoad(LifecycleEventArgs $args): void
+    public function postLoad(ProductVariant $productVariant, PostLoadEventArgs $event): void
     {
-        $entity = $args->getObject();
+        $entity = $productVariant;
 
         if ($entity instanceof ProductVariant) {
 
