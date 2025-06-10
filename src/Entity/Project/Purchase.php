@@ -19,6 +19,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProcessor\PurchaseSendProcessor;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
+use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -28,6 +29,7 @@ use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
     operations: [
+        new Get(),
         new GetCollection(),
         new GetCollection(
             uriTemplate: '/purchases/session',
@@ -36,6 +38,14 @@ use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
         new Get(
             uriTemplate: '/purchases/session',
             provider: PurchaseStateProvider::class,
+        ),
+        new Get(
+            uriTemplate: '/purchases/wishlist',
+            provider: PurchaseWishlistStateProvider::class,
+        ),
+        new GetCollection(
+            uriTemplate: '/purchases/wishlist',
+            provider: PurchaseWishlistStateProvider::class,
         ),
         new Post(),
         new Post(

@@ -367,22 +367,23 @@ class ProductRepository extends ServiceEntityRepository
             ->innerJoin($alias . '.productVariants', 'pv');
         $i = 1;
         foreach ($parameters as $parameter) {
-            $queryBuilder
-                ->innerJoin('pv.parameters', 'pa'.$i);
             if($parameter->parameterGroup->id === 'price'){
                 // Join prices for price filtering
-                $queryBuilder->innerJoin('pv.price', 'price');
+                $queryBuilder->leftJoin('pv.price', 'pv_price');
 
                 // Apply range filter using MIN(price.price)
                 $queryBuilder
-                    ->andWhere('price.validFrom <= :date')
-                    ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
-                    ->andWhere('price.price BETWEEN :minPrice AND :maxPrice')
-                    ->setParameter('minPrice', $parameter->selectedParameters[0]) // expected: [min, max]
-                    ->setParameter('maxPrice', $parameter->selectedParameters[1])
+                    ->andWhere('pv_price.validFrom <= :date')
+                    ->andWhere('pv_price.validUntil >= :date OR pv_price.validUntil IS NULL')
+                    ->addSelect('MIN(pv_price.price) AS hidden pv_minPrice')
+                    ->groupBy('p')
+                    ->having('pv_minPrice BETWEEN :minPrice AND :maxPrice')
+                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]) // expected: [min, max]
+                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1])
                     ->setParameter('date', new \DateTime());
 
             }else {
+                $queryBuilder->innerJoin('pv.parameters', 'pa'.$i);
                 $queryBuilder->andWhere('pa'.$i.'.data in (?'.$i.')');
                 $queryBuilder->setParameter($i++, $parameter->selectedParameters);
             }
@@ -515,7 +516,7 @@ class ProductRepository extends ServiceEntityRepository
             ->andWhere('price.validFrom <= :date')
             ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
             ->setParameter('date', $date)
-            ->groupBy('pv')
+            ->groupBy('p')
             ->addSelect('MIN(price.price) AS hidden minPrice')
             ->orderBy('minPrice', strtoupper($sort));
 
