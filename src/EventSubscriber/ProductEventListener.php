@@ -5,7 +5,9 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
+use Greendot\EshopBundle\Service\SessionService;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
@@ -17,51 +19,21 @@ class ProductEventListener
 {
 
     public function __construct(
-        private RequestStack       $requestStack,
-        private CurrencyRepository $currencyRepository,
-        private ProductRepository  $productRepository,
-        private ProductInfoGetter $productInfoGetter,
+        private readonly ProductRepository       $productRepository,
+        private readonly CalculatedPricesService $calculatedPricesService,
+        private readonly SessionService          $sessionService,
     ) {}
 
     public function postLoad(Product $product, PostLoadEventArgs $args): void
     {
-        $entity = $product;
+        $currencySymbol = $this->sessionService->getCurrency(true);;
+        $availability = $this->productRepository->findAvailabilityByProduct($product);
+        $parameters = $this->productRepository->calculateParameters($product);
 
-        if ($entity instanceof Product) {
-
-            $request  = $this->requestStack->getCurrentRequest();
-            $currency = false;
-
-            if ($request) {
-                $session  = $request->getSession();
-                $currency = $session->get('selectedCurrency');
-            }
-
-            if (!$currency) {
-                $currency = $this->currencyRepository->findOneBy(['isDefault' => 1]);
-            }
-
-            // TODO: fix somehow
-            // get calculated prices with lowest priceNoVat from among variants
-            $variants = $entity->getProductVariants();
-            $lowestCalculatedPrices = null;
-            foreach ($variants as $variant){
-                /*if ($lowestCalculatedPrices === null || $variant->getCalculatedPrices()['priceNoVat'] < $lowestCalculatedPrices['priceNoVat']){
-                    $lowestCalculatedPrices=$variant->getCalculatedPrices();
-                }*/
-            }
-
-            $currencySymbol = $currency->getSymbol();
-            $availability = $this->productRepository->findAvailabilityByProduct($entity);
-            $parameters = $this->productRepository->calculateParameters($entity);
-            $priceString    = $this->productInfoGetter->getProductPriceString($entity, $currency);
-
-
-            $entity->setPriceFrom($priceString); // $lowestCalculatedPrices['priceNoVat']
-            $entity->setCurrencySymbol($currencySymbol);
-            $entity->setAvailability($availability);
-            $entity->setParameters($parameters);
-            $entity->setCalculatedPrices($lowestCalculatedPrices);
-        }
+        $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
+        $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
+        $product->setCurrencySymbol($currencySymbol);
+        $product->setAvailability($availability);
+        $product->setParameters($parameters);
     }
 }
