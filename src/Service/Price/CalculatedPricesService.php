@@ -30,7 +30,7 @@ class CalculatedPricesService
 
         $variantMinimalAmount = 0;
         foreach ($variant->getPrice() as $price) {
-            if ($price->getValidFrom() > $now || $now > $price->getValidUntil()) {
+            if ($price->getValidFrom() > $now || ($price->getValidUntil() !== null && $now > $price->getValidUntil())) {
                 continue;
             }
 
@@ -73,6 +73,13 @@ class CalculatedPricesService
             $this->makeCalculatedPricesForProductVariant($variant);
 
             $variantCalculatedPrices = $variant->getCalculatedPrices();
+
+            // debug
+            if (empty($variantCalculatedPrices))
+            {
+                dd($product);
+            }
+
             if ($minimalPrice === 0 || $minimalPrice > $variantCalculatedPrices['priceNoVat'])
             {
                 $minimalPrice = $variantCalculatedPrices['priceNoVat'];
