@@ -132,26 +132,12 @@ class ProductController extends AbstractController
                 $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
             }
 
-//            if ($purchase->getProductVariants()->isEmpty()) {
-//                $session->remove('purchase');
-//                $entityManager->remove($purchase);
-//                $purchase = new Purchase();
-//                $purchase->setDateIssue(new \DateTime());
-//                $purchase->setState('draft');
-//                if ($this->getUser()) {
-//                    $client = $this->getUser();
-//                    $client = $clientRepository->find($client);
-//                    $purchase->setClient($client);
-//                }
-//                $session->set('purchase', $purchase->getId());
-//            }
-
             $entityManager->persist($purchase);
             $entityManager->flush();
         } else {
             $productVariant = $productVariantRepository->find($variant_id);
 
-            $purchase = new \Greendot\EshopBundle\Entity\Project\Purchase();
+            $purchase = new Purchase();
             $purchase->setDateIssue(new \DateTime());
             $purchase->setState('draft');
 
@@ -169,6 +155,43 @@ class ProductController extends AbstractController
             $session->set('purchase', $purchase->getId());
         }
 
+        return new Response();
+    }
+
+    #[Route('/shop/api/wishlist/add-{variant_id}/amount-{amount}', name: 'add_to_wishlist', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
+    public function addToWishlist
+    (
+        $variant_id,
+        $amount,
+        RequestStack $requestStack,
+        ProductVariantRepository $productVariantRepository,
+        PurchaseProductVariantRepository $purchaseProductVariantRepository,
+        ManagePurchase $manageOrder,
+        PurchaseRepository $purchaseRepository,
+        EntityManagerInterface $entityManager,
+    ): Response
+    {
+        $session = $requestStack->getSession();
+        if (!$this->getUser() || !$session->has('wishlist')) {
+            // Wishlist should be already initialized if the user is logged in
+            return $this->json(['error' => 'Nepodařilo se najít seznam přání'], 400);
+        }
+
+        $wishlist = $purchaseRepository->find($session->get('wishlist'));
+        $productVariant = $productVariantRepository->find($variant_id);
+        $purchaseProductVariant = $purchaseProductVariantRepository->findOneBy(['ProductVariant' => $productVariant, 'purchase' => $wishlist]);
+        if ($purchaseProductVariant) {
+            $wishlist->removeProductVariant($purchaseProductVariant);
+        }
+
+        if ($amount > 0) {
+            $wishlist = $manageOrder->addProductVariantToPurchase($wishlist, $productVariant, $amount);
+        }
+
+        $entityManager->persist($wishlist);
+        $entityManager->flush();
+
+//        return $this->json($purchaseProductVariant);
         return new Response();
     }
 
