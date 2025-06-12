@@ -132,19 +132,19 @@ class ProductController extends AbstractController
                 $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
             }
 
-            if ($purchase->getProductVariants()->isEmpty()) {
-                $session->remove('purchase');
-                $entityManager->remove($purchase);
-                $purchase = new Purchase();
-                $purchase->setDateIssue(new \DateTime());
-                $purchase->setState('draft');
-                if ($this->getUser()) {
-                    $client = $this->getUser();
-                    $client = $clientRepository->find($client);
-                    $purchase->setClient($client);
-                }
-                $session->set('purchase', $purchase->getId());
-            }
+//            if ($purchase->getProductVariants()->isEmpty()) {
+//                $session->remove('purchase');
+//                $entityManager->remove($purchase);
+//                $purchase = new Purchase();
+//                $purchase->setDateIssue(new \DateTime());
+//                $purchase->setState('draft');
+//                if ($this->getUser()) {
+//                    $client = $this->getUser();
+//                    $client = $clientRepository->find($client);
+//                    $purchase->setClient($client);
+//                }
+//                $session->set('purchase', $purchase->getId());
+//            }
 
             $entityManager->persist($purchase);
             $entityManager->flush();
