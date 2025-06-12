@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
@@ -137,17 +138,8 @@ class ProductController extends AbstractController
         } else {
             $productVariant = $productVariantRepository->find($variant_id);
 
-            $purchase = new Purchase();
-            $purchase->setDateIssue(new \DateTime());
-            $purchase->setState('draft');
-
-            if ($this->getUser()) {
-                $client = $this->getUser();
-                $client = $clientRepository->find($client);
-                $purchase->setClient($client);
-            }
+            $purchase = $this->createCart($this->getUser());
             $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
-
 
             $entityManager->persist($purchase);
             $entityManager->flush();
@@ -156,6 +148,26 @@ class ProductController extends AbstractController
         }
 
         return new Response();
+    }
+
+    #[Route('/shop/api/cart/add_modal', name: 'cart_add_modal')]
+    public function cart_add_modal(RequestStack $requestStack, ProductVariantRepository $productVariantRepository): Response
+    {
+        $session         = $requestStack->getSession();
+        $purchase        = $session->get('purchase');
+        $productVariants = [];
+        foreach ($purchase->getProductVariants() as $orderProductVariant) {
+            $productVariant = $orderProductVariant->getProductVariant()->getId();
+            $productVariant = $productVariantRepository->find($productVariant);
+            array_push($productVariants, $productVariant);
+        }
+        return $this->json(
+            $this->render('shop/cart/_add_to_cart_modal.html.twig', [
+                'productVariants' => $productVariants,
+                'order'           => $purchase
+            ]),
+            headers: ['Content-Type' => 'application/json;charset=UTF-8']
+        );
     }
 
     #[Route('/shop/api/wishlist/add-{variant_id}/amount-{amount}', name: 'add_to_wishlist', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
@@ -195,24 +207,64 @@ class ProductController extends AbstractController
         return new Response();
     }
 
-    #[Route('/shop/api/cart/add_modal', name: 'cart_add_modal')]
-    public function cart_add_modal(RequestStack $requestStack, ProductVariantRepository $productVariantRepository): Response
+    #[Route('/shop/api/wishlist/move-all-to-cart', name: 'move_all_wishlist_to_cart', priority: 2)]
+    public function moveAllWishlistToCart
+    (
+        RequestStack             $requestStack,
+        PurchaseRepository       $purchaseRepository,
+        EntityManagerInterface   $entityManager
+    ): Response
     {
-        $session         = $requestStack->getSession();
-        $purchase        = $session->get('purchase');
-        $productVariants = [];
-        foreach ($purchase->getProductVariants() as $orderProductVariant) {
-            $productVariant = $orderProductVariant->getProductVariant()->getId();
-            $productVariant = $productVariantRepository->find($productVariant);
-            array_push($productVariants, $productVariant);
+        /* @var $client Client */
+        $client = $this->getUser();
+        $session = $requestStack->getSession();
+        $wishlist = $purchaseRepository->find($session->get('wishlist'));
+
+        // Wishlist should be already initialized if the user is logged in
+        if (!$client || !$wishlist) {
+            return $this->json(['error' => 'Nepodařilo se najít seznam přání'], 400);
         }
-        return $this->json(
-            $this->render('shop/cart/_add_to_cart_modal.html.twig', [
-                'productVariants' => $productVariants,
-                'order'           => $purchase
-            ]),
-            headers: ['Content-Type' => 'application/json;charset=UTF-8']
-        );
+
+        // If the cart is not initialized, create a new one
+        $cart = $purchaseRepository->find($session->get('purchase')) ?? $this->createCart($client);
+        $wishlist = $purchaseRepository->find($session->get('wishlist'));
+
+        // Collect wishlist items
+        $items = [];
+        foreach ($wishlist->getProductVariants() as $ppv) {
+            $items[] = [
+                'variant' => $ppv->getProductVariant(),
+                'amount'  => $ppv->getAmount()
+            ];
+        }
+
+        // Clear current cart items
+        foreach ($cart->getProductVariants() as $ppv) {
+            $cart->removeProductVariant($ppv);
+        }
+
+        // Re-add wishlist items into cart
+        foreach ($items as $data) {
+            $newPPV = new PurchaseProductVariant();
+            $newPPV
+                ->setProductVariant($data['variant'])
+                ->setAmount($data['amount']);
+            $cart->addProductVariant($newPPV);
+        }
+
+        // Clear the wishlist
+        foreach ($wishlist->getProductVariants() as $ppv) {
+            $wishlist->removeProductVariant($ppv);
+        }
+
+        // Persist and update session
+        $entityManager->persist($cart);
+        $entityManager->persist($wishlist);
+        $entityManager->flush();
+
+        $session->set('purchase', $cart->getId());
+
+        return new Response();
     }
 
     #[Route('/shop/api/inquiry/add-{variant_id}/amount-{amount}', name: 'add_to_inquiry', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
@@ -369,6 +421,15 @@ class ProductController extends AbstractController
         }, $validPrices);
 
         return $this->json($priceData);
+    }
+
+    private function createCart(?Client $client): Purchase
+    {
+        $cart = new Purchase();
+        $cart->setState('draft')
+            ->setDateIssue(new \DateTime())
+            ->setClient($client);
+        return $cart;
     }
 
 }
