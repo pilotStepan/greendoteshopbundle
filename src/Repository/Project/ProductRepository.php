@@ -70,7 +70,7 @@ class ProductRepository extends ServiceEntityRepository
     {
         $hasAvailability = false;
         foreach ($product->getProductVariants() as $variant) {
-            if ($variant->getAvailability() === 'skladem') {
+            if ($variant->getAvailability()->getName() === 'skladem') {
                 $hasAvailability = true;
                 break;
             }
