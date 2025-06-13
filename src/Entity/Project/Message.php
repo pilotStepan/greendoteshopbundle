@@ -19,6 +19,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[DiscriminatorMap(typeProperty: "message_type", mapping: [
     "purchasediscussion" => PurchaseDiscussion::class,
     "note" => Note::class,
+    "contactmessage" => ContactMessage::class,
 ])]
 abstract class Message
 {
