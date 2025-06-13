@@ -226,7 +226,11 @@ class ProductController extends AbstractController
         }
 
         // If the cart is not initialized, create a new one
-        $cart = $purchaseRepository->find($session->get('purchase')) ?? $this->createCart($client);
+        if ($session->has('purchase')) {
+            $cart = $purchaseRepository->find($session->get('purchase'));
+        } else {
+            $cart = $this->createCart($client);
+        }
         $wishlist = $purchaseRepository->find($session->get('wishlist'));
 
         // Collect wishlist items
