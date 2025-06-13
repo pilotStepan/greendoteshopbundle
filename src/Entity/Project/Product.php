@@ -142,7 +142,7 @@ class Product implements Translatable
     private Collection $categoryProducts;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['searchable', 'search_result'])]
+    #[Groups(['searchable', 'search_result', 'product_item:read'])]
     private ?string $externalId = null;
 
     #[ORM\Column(nullable: true)]
