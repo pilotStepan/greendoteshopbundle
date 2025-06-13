@@ -385,6 +385,16 @@ class PurchaseController extends AbstractController
         // Redirect to page
         return $this->redirect('/objednavka/obsah');
     }
+
+    #[Route('/seznam-prani', name: 'shop_wishlist', priority: 2)]
+    public function wishlist(): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirect('/');
+        }
+
+        return $this->render('wishlist/index.html.twig');
+    }
 }
 
 
