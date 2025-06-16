@@ -107,9 +107,19 @@ class Product implements Translatable
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read'])]
     private $slug;
 
+    /**
+     * @var boolean $isActive If true, then it can be viewed through direct URL
+     */
     #[ORM\Column(type: 'boolean')]
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write'])]
     private $isActive;
+
+    /**
+     * @var boolean $isVisible If true, then it is shown in product listing and isActive is true.
+     */
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write'])]
+    private $isVisible;
 
     #[ORM\Column(type: 'integer')]
     private $sequence = 999;
@@ -322,6 +332,18 @@ class Product implements Translatable
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    public function getIsVisible(): ?bool
+    {
+        return $this->isVisible;
+    }
+
+    public function setIsVisible(bool $isVisible): self
+    {
+        $this->isVisible = $isVisible;
 
         return $this;
     }
