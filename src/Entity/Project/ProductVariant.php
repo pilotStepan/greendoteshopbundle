@@ -79,6 +79,7 @@ class ProductVariant implements Translatable
     private ?int $AvgRestockDays = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(["product_item:read"])]
     private ?\DateTime $expectedRestockDate = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariants')]
