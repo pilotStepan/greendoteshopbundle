@@ -193,6 +193,9 @@ class Product implements Translatable
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'comment:read'])]
     private Collection $labels;
 
+    /**
+     * @deprecated get availability from product variants
+     */
     #[Groups(['product_item:read', 'product_list:read', 'search_result', 'comment:read'])]
     private ?string $availability = null;
 

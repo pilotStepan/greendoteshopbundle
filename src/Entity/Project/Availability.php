@@ -40,6 +40,7 @@ class Availability
      * @var int $sequence is used when determining product availability from variants. Lower sequence value takes priority.
      */
     #[ORM\Column(type: 'integer')]
+    #[Groups(['product_list:read', 'product_item:read'])]
     private $sequence = 1;
 
     #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'availability')]
