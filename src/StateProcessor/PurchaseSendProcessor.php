@@ -178,10 +178,17 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
          *  - Then check if ($purchase->getPaymentType()->getPaymentAction()->getId() === 7);
          */
         if ($purchase->getPaymentType()->getId() === 2) {
-            return $this->gpWebpay->getPayLink(
-                $purchase,
-                $purchase->getTotalPrice()
-            );
+            try {
+                return $this->gpWebpay->getPayLink(
+                    $purchase,
+                    $purchase->getTotalPrice()
+                );
+            } catch (\Exception $e) {
+                $this->logger->error('Payment gateway error', [
+                    'purchaseId' => $purchase->getId(),
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
 
         $route = $client->isIsAnonymous()

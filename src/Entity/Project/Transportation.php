@@ -23,8 +23,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TransportationRepository::class)]
 #[ApiResource(
-    normalizationContext: ['groups' => ['transportation:read']],
-    denormalizationContext: ['groups' => ['transportation:write']],
     operations: [
         new GetCollection(),
         new GetCollection(
@@ -37,8 +35,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Delete(),
         new Patch(),
     ],
+    normalizationContext: ['groups' => ['transportation:read']],
+    denormalizationContext: ['groups' => ['transportation:write']],
 )]
-#[ApiFilter(SearchFilter::class, properties: ['action' => "exact"])]
+#[ApiFilter(SearchFilter::class, properties: ['groups.id' => 'exact'])]
 class Transportation implements Translatable
 {
     #[ORM\Id]
@@ -96,7 +96,7 @@ class Transportation implements Translatable
     private Collection $paymentTypes;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['transportation:read'])]
+    #[Groups(['transportation:read', 'branch:read'])]
     private ?bool $isEnabled = null;
 
     #[Gedmo\Locale]
@@ -123,7 +123,7 @@ class Transportation implements Translatable
 
     #[ORM\ManyToOne(targetEntity: TransportationAction::class, cascade: ['persist'], inversedBy: 'transportations')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['transportation:read', 'purchase:read'])]
+//    #[Groups(['transportation:read', 'purchase:read'])]
     private ?TransportationAction $action;
 
     /**
