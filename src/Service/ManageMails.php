@@ -15,9 +15,11 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
+use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 
 class ManageMails
 {
@@ -253,5 +255,23 @@ class ManageMails
         } catch (\Exception $exception) {
             dd($exception);
         }
+    }
+
+    /**
+     * Sends a password reset email to the user.
+     * @throws TransportExceptionInterface
+     */
+    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): void
+    {
+        $email = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($recipientEmail)
+            ->subject('Žádost o obnovu hesla')
+            ->htmlTemplate('reset_password/email.html.twig')
+            ->context([
+                'resetToken' => $resetToken,
+            ]);
+
+        $this->mailer->send($email);
     }
 }

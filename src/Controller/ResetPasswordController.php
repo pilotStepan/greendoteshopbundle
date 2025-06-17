@@ -2,51 +2,52 @@
 
 namespace Greendot\EshopBundle\Controller;
 
-use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Form\ChangePasswordFormType;
 use Greendot\EshopBundle\Form\ResetPasswordRequestFormType;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Greendot\EshopBundle\Service\PasswordResetService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
-#[Route('/reset-password', name: 'reset_password', priority: 99)]
+#[Route('/reset-password', name: '', priority: 99)]
 class ResetPasswordController extends AbstractController
 {
     use ResetPasswordControllerTrait;
 
     public function __construct(
         private readonly ResetPasswordHelperInterface $resetPasswordHelper,
-        private readonly EntityManagerInterface       $entityManager
-    ) {
+        private readonly EntityManagerInterface       $entityManager,
+        private readonly PasswordResetService         $passwordResetService
+    )
+    {
     }
 
     /**
      * Display & process form to request a password reset.
      */
     #[Route('', name: 'app_forgot_password_request')]
-    public function request(Request $request, MailerInterface $mailer, TranslatorInterface $translator): Response
+    public function request(Request $request): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            return $this->processSendingPasswordResetEmail(
-                $form->get('mail')->getData(),
-                $mailer,
-                $translator
-            );
+            try {
+                $email = $form->get('mail')->getData();
+                $resetToken = $this->passwordResetService->processSendingPasswordResetEmail($email);
+                $this->setTokenObjectInSession($resetToken);
+            } catch (\RuntimeException $e) {
+                $this->addFlash('reset_password_error', $e->getMessage());
+            } finally {
+                return $this->redirectToRoute('app_check_email');
+            }
         }
 
         return $this->render('reset_password/request.html.twig', [
@@ -131,45 +132,5 @@ class ResetPasswordController extends AbstractController
         return $this->render('reset_password/reset.html.twig', [
             'resetForm' => $form->createView(),
         ]);
-    }
-
-    /**
-     * @throws TransportExceptionInterface
-     */
-    private function processSendingPasswordResetEmail(string $emailFormData, MailerInterface $mailer, TranslatorInterface $translator): RedirectResponse
-    {
-        $user = $this->entityManager->getRepository(Client::class)->findOneBy([
-            'mail' => $emailFormData,
-            'isAnonymous' => 0
-        ]);
-        // Do not reveal whether a user account was found or not.
-        if (!$user) {
-            $this->addFlash('reset_password_error', 'Uživatel s tímto e-mailem nebyl nalezen');
-            return $this->redirectToRoute('app_check_email');
-        }
-
-        try {
-            $resetToken = $this->resetPasswordHelper->generateResetToken($user);
-        } catch (ResetPasswordExceptionInterface $e) {
-            dd($e->getReason());
-            return $this->redirectToRoute('app_check_email');
-        }
-
-        $email = (new TemplatedEmail())
-            ->from(new Address('info@bdl.cz', 'BDL Obnova hesla'))
-            ->to($user->getMail())
-            ->subject('Žádost o obnovu hesla')
-            ->htmlTemplate('reset_password/email.html.twig')
-            ->context([
-                'resetToken' => $resetToken,
-            ])
-        ;
-
-        $mailer->send($email);
-
-        // Store the token object in session for retrieval in check-email route.
-        $this->setTokenObjectInSession($resetToken);
-
-        return $this->redirectToRoute('app_check_email');
     }
 }
