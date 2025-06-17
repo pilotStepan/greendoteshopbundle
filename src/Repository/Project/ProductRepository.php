@@ -24,17 +24,12 @@ use Doctrine\Persistence\ManagerRegistry;
 class ProductRepository extends ServiceEntityRepository
 {
     public function __construct(
-        ManagerRegistry             $registry,
-        PriceRepository             $priceRepository,
-        private CategoryRepository  $categoryRepository,
-        private CategoryInfoGetter  $categoryInfoGetter,
-        private ParameterRepository $parameterRepository,
-        private EntityManagerInterface      $entityManager,
-
+        ManagerRegistry                     $registry,
+        private readonly CategoryRepository $categoryRepository,
+        private readonly CategoryInfoGetter $categoryInfoGetter,
     )
     {
         parent::__construct($registry, Product::class);
-        $this->priceRepository = $priceRepository;
     }
 
     public function calculateParameters(Product $product): array
@@ -70,7 +65,7 @@ class ProductRepository extends ServiceEntityRepository
     {
         $hasAvailability = false;
         foreach ($product->getProductVariants() as $variant) {
-            if ($variant->getAvailability() === 'skladem') {
+            if ($variant->getAvailability()->getName() === 'skladem') {
                 $hasAvailability = true;
                 break;
             }
@@ -341,7 +336,7 @@ class ProductRepository extends ServiceEntityRepository
         $qb->setParameter('categoryId', $categoryId);
 
 
-        $qb->andWhere($alias . '.isActive = :val');
+        $qb->andWhere($alias . '.isVisible = :val');
         $qb->setParameter('val', 1);
 
         $qb->distinct();

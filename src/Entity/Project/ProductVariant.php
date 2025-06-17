@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use Doctrine\DBAL\Types\Types;
 use Greendot\EshopBundle\ApiResource\ProductVariantFilter;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -73,9 +74,13 @@ class ProductVariant implements Translatable
     #[Groups(['product_variant:read', 'product_list:read', 'product_item:read', 'comment:read', "SearchProductResultApiModel"])]
     private Collection $price;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: "integer", nullable: true)]
     #[Groups(["SearchProductResultApiModel"])]
     private ?int $AvgRestockDays = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(["product_item:read"])]
+    private ?\DateTime $expectedRestockDate = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariants')]
     //#[Groups(["SearchProductResultApiModel"])]
@@ -323,6 +328,18 @@ class ProductVariant implements Translatable
     public function setAvgRestockDays(?int $AvgRestockDays): self
     {
         $this->AvgRestockDays = $AvgRestockDays;
+
+        return $this;
+    }
+
+    public function getExpectedRestockDate(): ?\DateTime
+    {
+        return $this->expectedRestockDate;
+    }
+
+    public function setExpectedRestockDate(?\DateTime $expectedRestockDate): self
+    {
+        $this->expectedRestockDate = $expectedRestockDate;
 
         return $this;
     }

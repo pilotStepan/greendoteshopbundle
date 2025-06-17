@@ -24,10 +24,28 @@ class Availability
     private $name;
 
     #[ORM\Column(type: 'text')]
+    #[Groups(['product_list:read', 'product_item:read'])]
     private $description;
+
+    #[ORM\Column(type: 'text')]
+    #[Groups(['product_list:read', 'product_item:read'])]
+    private $class;
+
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['product_list:read', 'product_item:read'])]
+    private $isPurchasable;
+
+
+    /**
+     * @var int $sequence is used when determining product availability from variants. Lower sequence value takes priority.
+     */
+    #[ORM\Column(type: 'integer')]
+    #[Groups(['product_list:read', 'product_item:read'])]
+    private $sequence = 1;
 
     #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'availability')]
     private $productVariants;
+
 
     public function __construct()
     {
@@ -59,6 +77,42 @@ class Availability
     public function setDescription(string $description): self
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getClass(): ?string
+    {
+        return $this->class;
+    }
+
+    public function setClass(string $class): self
+    {
+        $this->class = $class;
+
+        return $this;
+    }
+
+    public function getIsPurchasable(): ?bool
+    {
+        return $this->isPurchasable;
+    }
+
+    public function setIsPurchasable(bool $isPurchasable): self
+    {
+        $this->isPurchasable = $isPurchasable;
+
+        return $this;
+    }
+
+    public function getSequence(): int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(int $sequence): self
+    {
+        $this->sequence = $sequence;
 
         return $this;
     }

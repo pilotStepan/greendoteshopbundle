@@ -35,7 +35,10 @@ class CheapTransportationStateProvider implements ProviderInterface
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): Transportation|null
     {
-        $transportation =  $this->transportationRepository->findOneByLowFree();
+
+        // TODO: fetch country
+        $country = "CZ";
+        $transportation =  $this->transportationRepository->findOneByLowFree($country);
         if($transportation) {
             /*
              * TO-DO find currency in session

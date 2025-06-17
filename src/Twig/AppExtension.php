@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Twig;
 
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
+use Greendot\EshopBundle\Service\SessionService;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
 use Greendot\EshopBundle\Entity\Project\Note;
@@ -50,6 +51,7 @@ class AppExtension extends AbstractExtension
         private readonly RequestStack            $requestStack,
         private readonly RouterInterface         $router,
         private readonly InformationBlockService $informationBlockService,
+        private readonly SessionService          $sessionService,
     )
     {
     }
@@ -144,9 +146,11 @@ class AppExtension extends AbstractExtension
     }
 
     public function getCurrencyFromSession($symbolOnly = false): Currency|string {
-        $currency = $this->requestStack->getCurrentRequest()->getSession()?->get('selectedCurrency')
-            ?? $this->currencyRepository->findOneBy(['isDefault' => true]);
-        return $symbolOnly ? $currency->getSymbol() : $currency;
+
+        return $this->sessionService->getCurrency($symbolOnly);
+//        $currency = $this->requestStack->getCurrentRequest()->getSession()?->get('selectedCurrency')
+//            ?? $this->currencyRepository->findOneBy(['isDefault' => true]);
+//        return $symbolOnly ? $currency->getSymbol() : $currency;
     }
 
     public function getRouteForLocale(string $locale): string

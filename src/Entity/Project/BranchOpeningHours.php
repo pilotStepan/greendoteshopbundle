@@ -13,7 +13,7 @@ class BranchOpeningHours
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'BranchOpeningHours')]
+    #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'BranchOpeningHours')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Branch $branch = null;
 

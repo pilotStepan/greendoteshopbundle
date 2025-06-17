@@ -107,9 +107,19 @@ class Product implements Translatable
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read'])]
     private $slug;
 
+    /**
+     * @var boolean $isActive If true, then it can be viewed through direct URL
+     */
     #[ORM\Column(type: 'boolean')]
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write'])]
     private $isActive;
+
+    /**
+     * @var boolean $isVisible If true, then it is shown in product listing and isActive is true.
+     */
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write'])]
+    private $isVisible;
 
     #[ORM\Column(type: 'integer')]
     private $sequence = 999;
@@ -142,7 +152,7 @@ class Product implements Translatable
     private Collection $categoryProducts;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['searchable', 'search_result'])]
+    #[Groups(['searchable', 'search_result', 'product_item:read'])]
     private ?string $externalId = null;
 
     #[ORM\Column(nullable: true)]
@@ -183,6 +193,9 @@ class Product implements Translatable
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'comment:read'])]
     private Collection $labels;
 
+    /**
+     * @deprecated get availability from product variants
+     */
     #[Groups(['product_item:read', 'product_list:read', 'search_result', 'comment:read'])]
     private ?string $availability = null;
 
@@ -232,7 +245,7 @@ class Product implements Translatable
      * - priceVatNoDiscount:    basePrice + VAT
      */
     #[ApiProperty]
-    #[Groups(['product_item:read, product_list:read'])]
+    #[Groups(['product_item:read', 'product_list:read'])]
     private array $calculatedPrices = [];
     public function __construct()
     {
@@ -322,6 +335,18 @@ class Product implements Translatable
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    public function getIsVisible(): ?bool
+    {
+        return $this->isVisible;
+    }
+
+    public function setIsVisible(bool $isVisible): self
+    {
+        $this->isVisible = $isVisible;
 
         return $this;
     }

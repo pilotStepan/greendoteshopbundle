@@ -64,7 +64,7 @@ class Branch
     #[Groups(['branch:read', 'branch:write'])]
     private ?int $provider_id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'Branch')]
+    #[ORM\ManyToOne(targetEntity: BranchType::class, inversedBy: 'Branch')]
     #[Groups(['branch:read', 'branch:write'])]
     private ?BranchType $BranchType = null;
 
@@ -75,20 +75,19 @@ class Branch
     /**
      * @var Collection<int, BranchOpeningHours>
      */
-    #[ORM\OneToMany(mappedBy: 'branch', targetEntity: BranchOpeningHours::class)]
+    #[ORM\OneToMany(targetEntity: BranchOpeningHours::class, mappedBy: 'branch')]
     #[Groups(['branch:read', 'branch:write'])]
     private Collection $BranchOpeningHours;
 
-    #[ORM\ManyToOne(inversedBy: 'branches')]
+    #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'branches')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['branch:read', 'branch:write'])]
     private ?Transportation $transportation = null;
 
     /**
      * @var Collection<int, Purchase>
-     * TODO: check if its relevant and if so, fix mapping
      */
-    #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'branch')]
+    #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'branch')]
     private Collection $Purchases;
 
 

@@ -16,7 +16,7 @@ class ContactFormType extends AbstractType
         $builder
             ->add('name', null, ['label'=>'Jméno'])
             ->add('email', EmailType::class, ['label'=>'E-mail'])
-            ->add('text', null, ['label'=>'Vaše zpráva'])
+            ->add('content', null, ['label'=>'Vaše zpráva'])
             ->add('submit', SubmitType::class, ['label'=>'Odeslat'])
         ;
     }

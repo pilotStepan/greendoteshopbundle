@@ -30,7 +30,7 @@ class ParameterGroup
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read'])]
     private $name;
 
     /**

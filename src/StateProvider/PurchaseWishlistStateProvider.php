@@ -56,6 +56,7 @@ readonly class PurchaseWishlistStateProvider implements ProviderInterface
         $workflow = $this->workflowRegistry->get($wishlist);
         if ($workflow->can($wishlist, 'create_wishlist')) {
             $workflow->apply($wishlist, 'create_wishlist');
+            $this->em->flush();
         }
 
         return $wishlist;
