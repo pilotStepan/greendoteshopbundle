@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updates to purchaseCalculation">
+    <list default="true" id="713c40eb-aecd-4603-9a5a-4cfcaf0575b6" name="Changes" comment="Updates to postload events">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/PriceEventListener.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/PriceEventListener.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/ProductEventListener.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/ProductEventListener.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/EventSubscriber/ProductVariantEventListener.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventSubscriber/ProductVariantEventListener.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Shop/CategoryController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Shop/CategoryController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/Project/ProductRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -277,15 +276,8 @@
       <workItem from="1747131515277" duration="6495000" />
       <workItem from="1747380256326" duration="6537000" />
       <workItem from="1748335581604" duration="7372000" />
-      <workItem from="1749463708761" duration="2838000" />
-    </task>
-    <task id="LOCAL-00053" summary="Update for purchase">
-      <option name="closed" value="true" />
-      <created>1732091660844</created>
-      <option name="number" value="00053" />
-      <option name="presentableId" value="LOCAL-00053" />
-      <option name="project" value="LOCAL" />
-      <updated>1732091660844</updated>
+      <workItem from="1749463708761" duration="3795000" />
+      <workItem from="1750058629241" duration="1899000" />
     </task>
     <task id="LOCAL-00054" summary="Cheap transportation state provider">
       <option name="closed" value="true" />
@@ -671,7 +663,15 @@
       <option name="project" value="LOCAL" />
       <updated>1748341259367</updated>
     </task>
-    <option name="localTasksCounter" value="102" />
+    <task id="LOCAL-00102" summary="Updates to postload events">
+      <option name="closed" value="true" />
+      <created>1749543090330</created>
+      <option name="number" value="00102" />
+      <option name="presentableId" value="LOCAL-00102" />
+      <option name="project" value="LOCAL" />
+      <updated>1749543090330</updated>
+    </task>
+    <option name="localTasksCounter" value="103" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -713,7 +713,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="ParameterGroup API groups update" />
     <MESSAGE value="Fixtures" />
     <MESSAGE value="Parameter filter API" />
     <MESSAGE value="ProductStateProvider" />
@@ -738,6 +737,7 @@
     <MESSAGE value="QRCodes" />
     <MESSAGE value="Updates to purchase" />
     <MESSAGE value="Updates to purchaseCalculation" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updates to purchaseCalculation" />
+    <MESSAGE value="Updates to postload events" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updates to postload events" />
   </component>
 </project>

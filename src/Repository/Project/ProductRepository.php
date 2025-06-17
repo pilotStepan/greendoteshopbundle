@@ -124,7 +124,7 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findCategoryProducts(Category $category)
+    public function findCategoryProducts(Category $category, $limit = null)
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -147,6 +147,9 @@ class ProductRepository extends ServiceEntityRepository
         $qb->andWhere('p.isActive = :val');
         $qb->distinct();
         $qb->orderBy('p.sequence', 'ASC');
+        if($limit !== null){
+            $qb->setMaxResults($limit);
+        }
         return $qb->getQuery()->getResult();
     }
 
