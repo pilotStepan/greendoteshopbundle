@@ -10,10 +10,10 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ProductVariantPrice
 {
@@ -54,7 +54,7 @@ class ProductVariantPrice
         Currency                              $currency,
         VatCalculationType                    $vatCalculationType,
         DiscountCalculationType               $discountCalculationType,
-        private readonly ParameterBagInterface                 $parameterBag,
+        private readonly SettingsRepository   $settingsRepository,
         private readonly Security             $security,
         private readonly PriceRepository      $priceRepository,
         private readonly DiscountService      $discountService,
@@ -65,7 +65,7 @@ class ProductVariantPrice
             throw new \Exception('Cannot set amount for ' . PurchaseProductVariant::class);
         }
 
-        $this->afterRegistrationBonus = $parameterBag->get('greendot_eshop.price_calculation.after_registration_discount') ?? 0;
+        $this->afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
 
         $this->vatCalculationType = $vatCalculationType;
         $this->discountCalculationType = $discountCalculationType;
