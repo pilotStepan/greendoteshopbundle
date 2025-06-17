@@ -26,18 +26,21 @@ class CategoryController extends AbstractController
         PaginatorInterface $paginator,
         Request            $request): Response
     {
-        $products = $productRepository->findCategoryProducts($category);
+        /*
+         * TODO rework top selling products - join category products and tops selling in one query.
+         */
+        $topSellingProducts = $productRepository->findCategoryProducts($category, 2);
 
-        $topSellingProducts = $productRepository->findTopSellingProducts($products, 2);
+        //$topSellingProducts = $productRepository->findTopSellingProducts($products, 2);
         $categoryTemplate   = $category->getCategoryType()->getTemplate();
 
-        $pagination = $paginator->paginate($products, $request->query->getInt('page', 1), 24);
-        $pagination->setTemplate('pagination/pagination.html.twig');
+        //$pagination = $paginator->paginate($products, $request->query->getInt('page', 1), 24);
+        //$pagination->setTemplate('pagination/pagination.html.twig');
 
         return $this->render($categoryTemplate, [
             'category'           => $category,
             'topSellingProducts' => $topSellingProducts,
-            'pagination'         => $pagination
+            //'pagination'         => $pagination
         ]);
     }
 

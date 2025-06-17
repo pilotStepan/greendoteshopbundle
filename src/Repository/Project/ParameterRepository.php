@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Doctrine\ORM\NoResultException;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\CategoryParameterGroup;
 use Greendot\EshopBundle\Entity\Project\Parameter;
@@ -176,8 +177,8 @@ class ParameterRepository extends ServiceEntityRepository
             ->join('cp.category', 'ca')
             ->leftJoin('ca.categoryCategories', 'cc')
             ->join($alias.'.parameterGroup', 'pg')
-            ->andWhere('ca.id = :categoryId')
-            ->orWhere('cc.category_super = :categoryId')
+            ->andWhere('ca.id = :categoryId OR cc.category_super = :categoryId')
+//            ->orWhere('cc.category_super = :categoryId')
             ->andWhere('pg.isFilter=1')
             ->setParameter('categoryId', $categoryId)
             ->groupBy($alias.'.data');

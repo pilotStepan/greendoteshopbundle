@@ -24,17 +24,12 @@ use Doctrine\Persistence\ManagerRegistry;
 class ProductRepository extends ServiceEntityRepository
 {
     public function __construct(
-        ManagerRegistry             $registry,
-        PriceRepository             $priceRepository,
-        private CategoryRepository  $categoryRepository,
-        private CategoryInfoGetter  $categoryInfoGetter,
-        private ParameterRepository $parameterRepository,
-        private EntityManagerInterface      $entityManager,
-
+        ManagerRegistry                     $registry,
+        private readonly CategoryRepository $categoryRepository,
+        private readonly CategoryInfoGetter $categoryInfoGetter,
     )
     {
         parent::__construct($registry, Product::class);
-        $this->priceRepository = $priceRepository;
     }
 
     public function calculateParameters(Product $product): array
@@ -129,7 +124,7 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findCategoryProducts(Category $category)
+    public function findCategoryProducts(Category $category, $limit = null)
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -152,6 +147,9 @@ class ProductRepository extends ServiceEntityRepository
         $qb->andWhere('p.isActive = :val');
         $qb->distinct();
         $qb->orderBy('p.sequence', 'ASC');
+        if($limit !== null){
+            $qb->setMaxResults($limit);
+        }
         return $qb->getQuery()->getResult();
     }
 
@@ -338,7 +336,7 @@ class ProductRepository extends ServiceEntityRepository
         $qb->setParameter('categoryId', $categoryId);
 
 
-        $qb->andWhere($alias . '.isActive = :val');
+        $qb->andWhere($alias . '.isVisible = :val');
         $qb->setParameter('val', 1);
 
         $qb->distinct();
