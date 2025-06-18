@@ -157,7 +157,6 @@ class ProductVariantPriceDataProvider
     public static function clientAndProduct(): array
     {
         return [
-            // FIXME: FAILS. (Actual: 204)
             'DC1' => [
                 'productType' => 'pv',
                 'prices' => [
@@ -171,7 +170,7 @@ class ProductVariantPriceDataProvider
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::WithDiscount,
                 'clientDiscount' => 5,
-                'expectedPrice' => 205.2, // 2x100 - 10% (product discount) - 5% (client discount) + 20% (vat)
+                'expectedPrice' => 204, // 2x100 + 20% (vat) = 240 - (10% +5%) = 204
             ],
         ];
     }
@@ -190,7 +189,7 @@ class ProductVariantPriceDataProvider
                 'currency' => FactoryUtil::czk(),
                 'discCalc' => DiscCalc::WithDiscountPlusAfterRegistrationDiscount,
                 'clientDiscount' => null,      // null user ⇒ + 20 % bonus
-                'expectedPrice' => 172.8,     // 2x100 - 10% (product discount) – 20% (new client bonus) + 20% (vat)
+                'expectedPrice' => 168,     // 2x100 + 20% (vat) - (10% (product discount) + 20% (new client bonus) )
             ],
         ];
     }

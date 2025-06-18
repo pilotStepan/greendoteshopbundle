@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
@@ -19,7 +20,6 @@ use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class PriceCalculationTestCase extends TestCase
 {
@@ -31,15 +31,15 @@ abstract class PriceCalculationTestCase extends TestCase
     protected $handlingPriceRepository;
     protected $productVariantPriceFactory;
 
-    protected $parameterBag;
+    protected $settingsRepository;
     protected function setUp(): void
     {
         $this->priceUtils = new PriceUtils();
         $this->priceRepository = $this->createMock(PriceRepository::class);
         $this->security = $this->createMock(Security::class);
         $this->discountService = $this->createMock(DiscountService::class);
-        $this->parameterBag = $this->createMock(ParameterBagInterface::class);
-        $this->parameterBag->method('get')->willReturn(20);
+        $this->settingsRepository = $this->createMock(SettingsRepository::class);
+        $this->settingsRepository->method('findParameterValueWithName')->willReturn(20);
 
         $this->currencyRepository = $this->createMock(CurrencyRepository::class);
         $this->currencyRepository->method('findOneBy')
@@ -52,7 +52,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
-            $this->parameterBag
+            $this->settingsRepository
         );
     }
 
@@ -86,7 +86,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $currency,
             $vatType,
             $discCalc,
-            $this->parameterBag,
+            $this->settingsRepository,
             $this->security,
             $this->priceRepository,
             $this->discountService,

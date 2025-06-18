@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\MenuType;
+use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Entity\Project\SubMenuType;
 use Greendot\EshopBundle\Entity\Project\CategoryType;
@@ -59,19 +60,31 @@ class CategoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function searchByName($name)
+
+    /**
+     * @return Category[]
+     */
+    public function searchByName(string $name, ?CategoryTypeEnum $type = null, int $limit = 20): array
     {
-        $query = $this->createQueryBuilder('c')
-            ->andWhere('c.name LIKE :name')->setParameter('name', '%' . $name . '%')
-            ->getQuery();
-        $query->setHint(
-            Query::HINT_CUSTOM_OUTPUT_WALKER,
-            TranslationWalker::class
-        );
-        $query->setHint(
-            TranslatableListener::HINT_TRANSLATABLE_LOCALE,
-            $this->requestStack->getCurrentRequest()->getLocale() // take locale from session or request etc.
-        );
+        $qb = $this->createQueryBuilder('c')
+            ->andWhere('c.name LIKE :name')
+            ->setParameter('name', '%' . $name . '%')
+            ->setMaxResults($limit);
+
+        if ($type !== null) {
+            $qb->andWhere('c.categoryType = :typeId')
+                ->setParameter('typeId', $type->value);
+        }
+
+        $query = $qb->getQuery();
+//        $query->setHint(
+//            Query::HINT_CUSTOM_OUTPUT_WALKER,
+//            TranslationWalker::class
+//        );
+//        $query->setHint(
+//            TranslatableListener::HINT_TRANSLATABLE_LOCALE,
+//            $this->requestStack->getCurrentRequest()->getLocale()
+//        );
         return $query->getResult();
     }
 
