@@ -88,6 +88,26 @@ class CategoryRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+    /* @param string $name
+     * @param CategoryTypeEnum[] $types
+     * @param int $limit
+     * @return Category[]
+     */
+    public function searchByNameAndTypes(string $name, array $types, int $limit = 20): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->andWhere('c.name LIKE :name')
+            ->setParameter('name', '%' . $name . '%')
+            ->setMaxResults($limit);
+
+        if (!empty($types)) {
+            $qb->andWhere('c.categoryType IN (:types)')
+                ->setParameter('types', array_map(fn($type) => $type?->value, $types));
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function findCategorySiblings(int $categoryId): array
     {
         $category = $this->find($categoryId);

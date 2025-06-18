@@ -71,10 +71,15 @@ class CategoryController extends AbstractController
     public function searchCategories(Request $request, CategoryRepository $categoryRepository): JsonResponse
     {
         $name = $request->query->getString('name');
-        $typeEnum = CategoryTypeEnum::tryFrom(
-            $request->query->getInt('type')
+        $types = $request->query->all('type');
+
+        /* @var CategoryTypeEnum[] $typeEnums */
+        $typeEnums = array_map(
+            fn($type) => CategoryTypeEnum::tryFrom((int)$type),
+            $types
         );
-        $categories = $categoryRepository->searchByName($name, $typeEnum, 20);
+
+        $categories = $categoryRepository->searchByNameAndTypes($name, $typeEnums, 20);
 
         $categories = array_map(function (Category $category) {
             return [
