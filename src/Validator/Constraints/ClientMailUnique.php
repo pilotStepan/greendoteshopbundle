@@ -6,5 +6,5 @@ use Symfony\Component\Validator\Constraint;
 #[\Attribute]
 class ClientMailUnique extends Constraint
 {
-    public string $message = 'Email "{{ email }}" is already registered.';
+    public string $message = 'Email "{{ email }}" je již registrován';
 }

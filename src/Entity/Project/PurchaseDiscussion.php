@@ -11,13 +11,17 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\StateProcessor\PurchaseDiscussionProcessor;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
     operations: [
         new GetCollection(normalizationContext: ['groups' => ['purchase_discussion:read']]),
         new Get(normalizationContext: ['groups' => ['purchase_discussion:read']]),
-        new Post(denormalizationContext: ['groups' => ['purchase_discussion:write']]),
+        new Post(
+            denormalizationContext: ['groups' => ['purchase_discussion:write']],
+            processor: PurchaseDiscussionProcessor::class,
+        ),
         new Patch(denormalizationContext: ['groups' => ['purchase_discussion:write']]),
     ]
 )]
