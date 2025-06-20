@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Repository\Project\UploadGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -20,9 +21,15 @@ class UploadGroup
     #[Groups(['category_default', 'category:read', 'category:write'])]
     private Collection $upload;
 
-    #[ORM\Column(nullable: true)]
+
+
+    /**
+     * @var UploadGroupTypeEnum
+     * Type for the purpose of the upload group.
+     */
     #[Groups(['upload:read'])]
-    private ?int $type = null;
+    #[ORM\Column(type: "integer", enumType: UploadGroupTypeEnum::class)]
+    private UploadGroupTypeEnum $type;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: CategoryUploadGroup::class)]
     private Collection $categoryUploadGroups;
@@ -84,12 +91,12 @@ class UploadGroup
         return $this;
     }
 
-    public function getType(): ?int
+    public function getType(): UploadGroupTypeEnum
     {
         return $this->type;
     }
 
-    public function setType(?int $type): self
+    public function setType(UploadGroupTypeEnum $type): self
     {
         $this->type = $type;
 
