@@ -175,7 +175,7 @@ class ParameterRepository extends ServiceEntityRepository
             ->join('pv.product', 'pr')
             ->join('pr.categoryProducts', 'cp')
             ->join('cp.category', 'ca')
-            ->leftJoin('ca.categoryCategories', 'cc')
+            ->leftJoin('ca.categorySubCategories', 'cc')
             ->join($alias.'.parameterGroup', 'pg')
             ->andWhere('ca.id = :categoryId OR cc.category_super = :categoryId')
 //            ->orWhere('cc.category_super = :categoryId')
