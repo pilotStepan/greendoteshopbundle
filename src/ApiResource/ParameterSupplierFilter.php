@@ -23,6 +23,9 @@ class ParameterSupplierFilter extends AbstractFilter
     ): void
     {
         if ($property !== self::FILTER_LABEL) { return;}
+        dump($property);
+        dump($queryBuilder);
+        dd($value);
         $entityManager = $this->getManagerRegistry()->getManagerForClass(Parameter::class);
         $repository    = $entityManager->getRepository(Parameter::class);
         $repository->getProductParametersByProducer($queryBuilder, $value);
