@@ -88,15 +88,18 @@ class Category implements Translatable
     #[Groups('category_default')]
     private $categoryFiles;
 
+    /** @var ArrayCollection these are the child categories, ei. this entity is the super_category */
     #[ORM\OneToMany(mappedBy: 'category_super', targetEntity: CategoryCategory::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
     #[Groups(['category_default', 'category:read', 'category:write'])]
-    private $categoryCategories;
+    private $categorySubCategories;
 
+
+    /** @var ArrayCollection these are the parent categories, ei. this entity is the sub_category */
     #[ORM\OneToMany(mappedBy: 'category_sub', targetEntity: CategoryCategory::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
     #[Groups(['category_with_parents:read'])]
-    private $categorySubCategories;
+    private $categoryCategories;
 
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'boolean', name: 'is_active')]

@@ -331,7 +331,7 @@ class ProductRepository extends ServiceEntityRepository
         $qb->join($alias . '.categoryProducts', 'cp');
         //$qb->join('p.categories', 'c');
         $qb->join('cp.category', 'ca');
-        $qb->leftJoin('ca.categorySubCategories', 'cc');
+        $qb->leftJoin('ca.categoryCategories', 'cc');
         $qb->where('cp.category = :categoryId OR cc.category_super = :categoryId');
         $qb->setParameter('categoryId', $categoryId);
 
