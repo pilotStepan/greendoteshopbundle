@@ -111,14 +111,17 @@ class Transportation implements Translatable
     #[Groups(['transportation:read'])]
     private $free_from_price;
 
-    #[Groups(['transportation:read'])]
-    private $price;
+    #[Groups(['transportation:read', 'payment:read'])]
+    private ?float $price = null;
+
+    #[Groups(['transportation:read', 'transportation_group:read', 'payment:read'])]
+    private ?float $priceForCart = null;
 
     /**
      * @var Collection<int, HandlingPrice>
      */
     #[ORM\OneToMany(targetEntity: HandlingPrice::class, mappedBy: 'transportation')]
-    #[Groups(['transportation:read', 'transportation_group:read'])]
+    #[Groups(['transportation:read', 'transportation_group:read'])] // TODO: Remove from serialization
     private Collection $handlingPrices;
 
     #[ORM\ManyToOne(targetEntity: TransportationAction::class, cascade: ['persist'], inversedBy: 'transportations')]
@@ -470,21 +473,26 @@ class Transportation implements Translatable
         return $this;
     }
 
-    /**
-     * @return float
-     */
-    public function getPrice()
+    public function getPrice(): ?float
     {
         return $this->price;
     }
 
-    /**
-     * @param float $price
-     */
-    public function setPrice(float $price): static
+    public function setPrice(?float $price): static
     {
         $this->price = $price;
 
+        return $this;
+    }
+
+    public function getPriceForCart(): ?float
+    {
+        return $this->priceForCart;
+    }
+
+    public function setPriceForCart(?float $priceForCart): static
+    {
+        $this->priceForCart = $priceForCart;
         return $this;
     }
 

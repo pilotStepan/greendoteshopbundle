@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\PaymentTypeByTransportationFilter;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -81,9 +82,15 @@ class PaymentType implements Translatable
     /**
      * @var Collection<int, HandlingPrice>
      */
-    #[ORM\OneToMany(mappedBy: 'paymentType', targetEntity: HandlingPrice::class)]
-    #[Groups(['payment:read', 'payment:write'])]
+    #[ORM\OneToMany(targetEntity: HandlingPrice::class, mappedBy: 'paymentType')]
+    #[Groups(['payment:read', 'payment:write'])] // TODO: Remove from serialization
     private Collection $handlingPrices;
+
+    #[Groups(['payment:read', 'payment:read'])]
+    private ?float $price = null;
+
+    #[Groups(['payment:read', 'purchase:read'])]
+    private ?float $priceForCart = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $account = null;
@@ -96,6 +103,9 @@ class PaymentType implements Translatable
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $bank_name = null;
+
+    #[ORM\Column(type: 'string', nullable: true, enumType: PaymentTechnicalAction::class)]
+    private ?PaymentTechnicalAction $paymentTechnicalAction = null;
 
     public function __construct()
     {
@@ -331,6 +341,29 @@ class PaymentType implements Translatable
         return $this;
     }
 
+    public function getPrice(): ?float
+    {
+        return $this->price;
+    }
+
+    public function setPrice(?float $price): static
+    {
+        $this->price = $price;
+
+        return $this;
+    }
+
+    public function getPriceForCart(): ?float
+    {
+        return $this->priceForCart;
+    }
+
+    public function setPriceForCart(?float $priceForCart): static
+    {
+        $this->priceForCart = $priceForCart;
+        return $this;
+    }
+
 
     public function getAccount(): ?string
     {
@@ -377,6 +410,17 @@ class PaymentType implements Translatable
     {
         $this->bank_name = $bank_name;
 
+        return $this;
+    }
+
+    public function getPaymentTechnicalAction(): ?PaymentTechnicalAction
+    {
+        return $this->paymentTechnicalAction;
+    }
+
+    public function setPaymentTechnicalAction(?PaymentTechnicalAction $action): self
+    {
+        $this->paymentTechnicalAction = $action;
         return $this;
     }
 }
