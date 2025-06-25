@@ -6,8 +6,10 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 
@@ -23,6 +25,9 @@ class PurchasePrice
     private ?float $paymentPrice = null;
     private Currency $defaultCurrency;
 
+    private float $vouchersValue = 0;
+    private array $vouchersUsed = [];
+
     private ?float $minPrice = null;
 
 
@@ -31,14 +36,19 @@ class PurchasePrice
         private VatCalculationType                  $vatCalculationType,
         private DiscountCalculationType             $discountCalculationType,
         private Currency                            $currency,
+        private VoucherCalculationType              $voucherCalculationType,
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
         private readonly CurrencyRepository         $currencyRepository,
         private readonly HandlingPriceRepository    $handlingPriceRepository,
         private readonly PriceUtils                 $priceUtils
     )
     {
+        foreach ($this->purchase->getVouchersUsed() as $voucher){
+            $this->vouchersUsed[] = $voucher;
+        }
         $this->defaultCurrency = $this->currencyRepository->findOneBy(['conversionRate' => 1]);
         $this->loadVariants();
+        $this->calculateVouchersValue();
     }
 
     public function getPrice(bool $includeServices = false, ?float $vat = null): ?float
@@ -51,6 +61,7 @@ class PurchasePrice
             $price += $this->transportationPrice;
             $price += $this->paymentPrice;
         }
+        $price = $this->applyVoucher($price);
         return $this->priceUtils->convertCurrency($price, $this->currency);
     }
 
@@ -76,6 +87,34 @@ class PurchasePrice
             return null;
         }
         return $this->priceUtils->convertCurrency($this->paymentPrice, $this->currency);
+    }
+
+    /**
+     * @return Voucher[]
+     */
+    public function getVouchersUsed(): array
+    {
+        return $this->vouchersUsed;
+    }
+
+    public function getVouchersUsedValue(): float
+    {
+        if ($this->vouchersValue > 0){
+            return $this->priceUtils->convertCurrency($this->vouchersValue, $this->currency);
+        }
+        return 0;
+    }
+
+    public function addVoucher(Voucher $voucher): self
+    {
+        $this->vouchersUsed[] = $voucher;
+        $this->calculateVouchersValue();
+        return $this;
+    }
+    public function setVoucherCalculationType(VoucherCalculationType $voucherCalculationType): self
+    {
+        $this->voucherCalculationType = $voucherCalculationType;
+        return $this;
     }
 
     public function setVatCalculationType(VatCalculationType $vatCalculationType): PurchasePrice
@@ -219,6 +258,28 @@ class PurchasePrice
         }
 
         $this->transportationPrice = $price;
+    }
+
+    private function applyVoucher(float $price):float
+    {
+        if ($this->vouchersValue === 0 or $this->voucherCalculationType === VoucherCalculationType::WithoutVoucher){
+            return $price;
+        }
+        $priceAppliedVoucher = $price - $this->vouchersValue;
+        if ($this->voucherCalculationType === VoucherCalculationType::WithVoucherToMinus){
+            return $priceAppliedVoucher;
+        }
+        return max($priceAppliedVoucher, 0);
+    }
+
+    private function calculateVouchersValue() : void
+    {
+        $finalVouchersValue = 0;
+        foreach ($this->vouchersUsed as $voucher){
+            assert($voucher instanceof Voucher);
+            $finalVouchersValue += $voucher->getAmount();
+        }
+        $this->vouchersValue = $finalVouchersValue;
     }
 
 
