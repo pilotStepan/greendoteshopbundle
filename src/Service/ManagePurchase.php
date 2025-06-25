@@ -145,7 +145,7 @@ class ManagePurchase extends AbstractExtension
         }
     }
 
-    public function generateInvoice(Purchase $purchase): string
+    public function generateInvoice(Purchase $purchase): ?string
     {
         $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);

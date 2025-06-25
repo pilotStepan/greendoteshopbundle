@@ -116,7 +116,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         $this->entityManager->wrapInTransaction(function() use ($purchase, &$invoicePath) {
             $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
-            $invoicePath = $this->managePurchase->generateInvoice($purchase);
+            $invoicePath = $this->managePurchase->generateInvoice($purchase); // TODO: handle $invoicePath=null case
         });
 
         // $this->manageMails->sendPaymentReceivedEmail($purchase, $invoicePath, 'mail/specific/payment-received.html.twig'); TODO: not ready

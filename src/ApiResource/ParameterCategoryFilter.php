@@ -22,6 +22,7 @@ class ParameterCategoryFilter extends AbstractFilter
         array                       $context = []
     ): void
     {
+        if ($property !== self::FILTER_LABEL) {return;}
         $entityManager = $this->getManagerRegistry()->getManagerForClass(Parameter::class);
         $repository    = $entityManager->getRepository(Parameter::class);
         $repository->getProductParametersByTopCategory($queryBuilder, $value);

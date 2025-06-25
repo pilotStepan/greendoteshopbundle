@@ -9,13 +9,37 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Routing\Annotation\Route;
 use Greendot\EshopBundle\Service\InvoiceMaker;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Workflow\Registry;
 
 #[Route('/simple/api/purchases', name: 'simple_api_purchases_')]
 class SimplePurchaseController extends AbstractController
 {
+    #[Route(path: '/workflow-places', name: 'workflow_places')]
+    public function getPurchaseWorkflowPlaces(Registry $registry, Request $request): JsonResponse
+    {
+        $purchase = new Purchase();
+        $pFlow = $registry->get($purchase);
+        $places = $pFlow->getDefinition()->getPlaces();
+        $placesMetaData = [];
+        foreach ($places as $place) {
+            $placesMetaData[$place]['desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['description'];
+            $placesMetaData[$place]['short_desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['short_description'];
+            $placesMetaData[$place]['icon'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['icon'];
+            $placesMetaData[$place]['name'] = $place;
+        }
+        return $this->json($placesMetaData, 200);
+    }
+    #[Route(path: '/workflow-transitions', name: 'workflow_transitions')]
+    public function getPurchaseWorkflowTransitions(Registry $registry, Request $request): JsonResponse
+    {
+        $purchase = new Purchase();
+        $pFlow = $registry->get($purchase);
+        $transitions = $pFlow->getDefinition()->getTransitions();
+        return $this->json($transitions, 200);
+    }
+
     #[Route('/{purchase}/make-transition', name: 'make_transition', methods: ['POST'])]
     public function makePurchaseTransition(Purchase $purchase, Request $request, Registry $registry, EntityManagerInterface $em): JsonResponse
     {

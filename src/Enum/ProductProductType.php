@@ -4,6 +4,8 @@ namespace Greendot\EshopBundle\Enum;
 
 enum ProductProductType : string
 {
-    case Complement = "COMPLEMENT"; // zobrazuje se u "přidat do košíku"
-    case  Related = "RELATED"; // zobrazuje se v detailu produktu jakožto "související produkty"
+    /** A product that is intended to be bought with the parent product. Shows near "add to cart" */
+    case Complement = "COMPLEMENT";
+    /** A product that is intended to be shown as a recommendation with the parent product. Shows in product detail as "related products"  */
+    case  Related = "RELATED";
 }

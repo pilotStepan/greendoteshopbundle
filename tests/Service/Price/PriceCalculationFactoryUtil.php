@@ -37,10 +37,15 @@ class PriceCalculationFactoryUtil
         ?float $discount = 0.0,
     ): Transportation
     {
-        $transportation = (new Transportation());
-        self::makeHandlingPrice($transportation, $price, $vatPercentage, $freeFromPrice, $discount);
-
-        return $transportation;
+        return (new Transportation())
+            ->addHandlingPrice(
+                self::makeHandlingPrice(
+                    $price,
+                    $vatPercentage,
+                    $freeFromPrice,
+                    $discount
+                )
+            );
     }
 
     public static function makePaymentType(
@@ -50,10 +55,15 @@ class PriceCalculationFactoryUtil
         ?float $discount = 0.0,
     ): PaymentType
     {
-        $paymentType = (new PaymentType());
-        self::makeHandlingPrice($paymentType, $price, $vatPercentage, $freeFromPrice, $discount);
-
-        return $paymentType;
+        return (new PaymentType())
+            ->addHandlingPrice(
+                self::makeHandlingPrice(
+                    $price,
+                    $vatPercentage,
+                    $freeFromPrice,
+                    $discount
+                )
+            );
     }
 
     public static function czk(): Currency
@@ -75,7 +85,6 @@ class PriceCalculationFactoryUtil
     }
 
     private static function makeHandlingPrice(
-        Transportation|PaymentType $type,
         float                      $price,
         float                      $vat,
         float                      $freeFromPrice = INF,
@@ -89,7 +98,6 @@ class PriceCalculationFactoryUtil
             ->setDiscount($discount)
             ->setValidFrom(new \DateTime('-1 day'))
             ->setValidUntil(new \DateTime('+1 day'))
-            ->setTransportation($type instanceof Transportation ? $type : null)
-            ->setPaymentType($type instanceof PaymentType ? $type : null);
+        ;
     }
 }

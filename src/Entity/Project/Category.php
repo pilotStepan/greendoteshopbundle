@@ -98,6 +98,7 @@ class Category implements Translatable
     #[Groups(['category_with_parents:read'])]
     private $categorySubCategories;
 
+    /** @var ArrayCollection these are the child categories, ei. this entity is the super_category */
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'boolean', name: 'is_active')]
     #[Groups('category_with_parents:read','category_default', 'category:read', 'product_item:read', 'comment:read')]

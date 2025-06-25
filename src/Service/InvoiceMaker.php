@@ -76,7 +76,7 @@ class InvoiceMaker
         return $this->twig->render($template, $data);
     }
 
-    private function generatePdf(string $html, int $purchaseNumber): string
+    private function generatePdf(string $html, int $purchaseNumber): ?string
     {
         $pdfOptions = new Options();
         $pdfOptions->set('isRemoteEnabled', true);

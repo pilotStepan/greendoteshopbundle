@@ -18,6 +18,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationEnabled: false
 )]
 // FIXME: doesn't fetch params from subcategories
+// TODO: set the filters correctly (should be filtered only when the parameter is sent)
 #[ApiFilter(ParameterCategoryFilter::class)]
 #[ApiFilter(ParameterSupplierFilter::class)]
 class Parameter

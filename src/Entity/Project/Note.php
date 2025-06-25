@@ -12,6 +12,7 @@ use ApiPlatform\Metadata\Post;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+/** @deprecated Use `PurchaseDiscussion` instead. */
 #[ApiResource(
     operations: [
         new GetCollection(normalizationContext: ['groups' => ['note:read']]),

@@ -23,7 +23,7 @@ class ManageVoucher
 
     public function generateHash(string $voucherCode): string
     {
-        return hash('sha256', $voucherCode);
+        return substr(hash('sha256', $voucherCode), 0, 6);
     }
 
     public function initiateVouchers(Purchase $purchase): Collection

@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use Doctrine\DBAL\Types\Types;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -108,6 +109,10 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: ClientAddress::class, mappedBy: 'client', cascade: ['persist'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     #[Groups(['client:read', 'client:write'])]
     private Collection $clientAddresses;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['client:read', 'client:write'])]
+    private ?string $description = null;
 
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'client')]
     #[Groups(['clientAddress:read', 'clientAddress:write'])]
@@ -422,6 +427,17 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
             }
         }
 
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
         return $this;
     }
 }
