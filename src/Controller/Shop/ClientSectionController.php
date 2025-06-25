@@ -205,6 +205,7 @@ class ClientSectionController extends AbstractController
 
         return $this->render('client-section/orders.html.twig', [
             'orders'     => $orders,
+            'drafts'     => $drafts,
             'pagination' => $pagination
         ]);
     }
