@@ -199,6 +199,7 @@ class ClientSectionController extends AbstractController
         if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
 
         $orders = $orderRepository->getClientPurchases($client);
+        $drafts = $orderRepository->getClientDrafts($client);
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
 
@@ -245,6 +246,7 @@ class ClientSectionController extends AbstractController
         ]);
     }
 
+/** @deprecated old route, merged with client_section_orders */
     #[Route('/zakaznik/nedokoncene-objednavky', name: 'client_section_draft_orders')]
     public function draftOrders(
         ClientRepository   $clientRepository,
