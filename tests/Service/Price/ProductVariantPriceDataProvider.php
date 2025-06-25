@@ -178,7 +178,6 @@ class ProductVariantPriceDataProvider
     public static function afterRegistration(): array
     {
         return [
-            // FIXME: FAILS (Actual: 168)
             'DR1' => [
                 'productType' => 'pv',
                 'prices' => [[
