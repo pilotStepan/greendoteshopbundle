@@ -301,7 +301,7 @@ class PriceCalculator
         else // object is transportation
         {
             // get handling price to current date
-            $handlingPrice = $this->handlingPriceRepository->GetByDate($purchaseOrTransportation->getTransportation());
+            $handlingPrice = $this->handlingPriceRepository->GetByDate($purchaseOrTransportation);
             // set vars from handling price
             $transportationPrice = $handlingPrice->getPrice();
             $vat = $handlingPrice->getVat();
@@ -359,7 +359,7 @@ class PriceCalculator
         else // object is paymentType
         {
             // get handling price to current date
-            $handlingPrice = $this->handlingPriceRepository->GetByDate($purchaseOrPayment->getTransportation());
+            $handlingPrice = $this->handlingPriceRepository->GetByDate($purchaseOrPayment);
             // set vars from handling price
             $paymentPrice = $handlingPrice->getPrice();
             $vat = $handlingPrice->getVat();

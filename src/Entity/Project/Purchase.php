@@ -164,9 +164,6 @@ class Purchase
     #[ORM\OneToMany(targetEntity: PurchaseEvent::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     private Collection $purchaseEvents;
 
-    #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
-    private Collection $notes;
-
     #[ORM\OneToMany(targetEntity: PurchaseTracking::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     private Collection $purchaseTrackings;
 
@@ -223,7 +220,6 @@ class Purchase
         $this->date_issue = new \DateTime();
         $this->ProductVariants = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
-        $this->notes = new ArrayCollection();
         $this->purchaseTrackings = new ArrayCollection();
         $this->VouchersIssued = new ArrayCollection();
         $this->vouchersUsed = new ArrayCollection();
@@ -491,36 +487,6 @@ class Purchase
             // set the owning side to null (unless already changed)
             if ($purchaseEvent->getPurchase() === $this) {
                 $purchaseEvent->setPurchase(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Note>
-     */
-    public function getNotes(): Collection
-    {
-        return $this->notes;
-    }
-
-    public function addNote(Note $note): self
-    {
-        if (!$this->notes->contains($note)) {
-            $this->notes->add($note);
-            $note->setPurchase($this);
-        }
-
-        return $this;
-    }
-
-    public function removeNote(Note $note): self
-    {
-        if ($this->notes->removeElement($note)) {
-            // set the owning side to null (unless already changed)
-            if ($note->getPurchase() === $this) {
-                $note->setPurchase(null);
             }
         }
 
