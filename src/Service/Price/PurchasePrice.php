@@ -194,6 +194,8 @@ class PurchasePrice
 
     private function setTransportationPrice(float $purchasePrice, Transportation $transportation): void
     {
+        // TODO: use ServiceCalculationUtils::calculateServicePrice() to retrieve transportation price
+
         $handlingPrice = $this->handlingPriceRepository->GetByDate($transportation);
 
         if (!$handlingPrice or $purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {

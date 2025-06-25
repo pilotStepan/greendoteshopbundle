@@ -111,10 +111,10 @@ class Transportation implements Translatable
     #[Groups(['transportation:read'])]
     private $free_from_price;
 
-    #[Groups(['transportation:read', 'payment:read'])]
+    #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
     private ?float $price = null;
 
-    #[Groups(['transportation:read', 'transportation_group:read', 'payment:read'])]
+    #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
     private ?float $priceForCart = null;
 
     /**
