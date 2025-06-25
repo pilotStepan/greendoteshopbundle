@@ -36,6 +36,7 @@ class Voucher
     private string $hash;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['voucher:read', 'voucher:write'])]
     private ?\DateTimeInterface $date_issued = null;
 
 
@@ -45,6 +46,7 @@ class Voucher
      */
     #[ORM\ManyToOne(inversedBy: 'VouchersIssued')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['voucher:read', 'voucher:write'])]
     private ?Purchase $Purchase_issued = null;
 
     /**
@@ -63,13 +65,16 @@ class Voucher
      * Type - druh certifikátu pro různá pozadí pdf
      */
     #[ORM\Column(length: 64, nullable: true)]
+    #[Groups(['voucher:read', 'voucher:write'])]
     private ?string $type = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['voucher:read', 'voucher:write'])]
     private ?\DateTimeInterface $date_until = null;
 
     /** @var ?string a note for the admin */
-    #[ORM\Column(type: 'string', length: 1027, nullable: true)]
+    #[ORM\Column(type: 'string', length: 1023, nullable: true)]
+    #[Groups(['voucher:read', 'voucher:write'])]
     private ?string $note = null;
 
     public function getId(): ?int
