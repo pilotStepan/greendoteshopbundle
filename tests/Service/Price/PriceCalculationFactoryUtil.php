@@ -7,6 +7,7 @@ use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Entity\Project\Voucher;
 
 class PriceCalculationFactoryUtil
 {
@@ -98,6 +99,13 @@ class PriceCalculationFactoryUtil
             ->setDiscount($discount)
             ->setValidFrom(new \DateTime('-1 day'))
             ->setValidUntil(new \DateTime('+1 day'))
+        ;
+    }
+
+    public static function makeVoucher(int $amount): Voucher
+    {
+        return (new Voucher())
+            ->setAmount($amount)
         ;
     }
 }

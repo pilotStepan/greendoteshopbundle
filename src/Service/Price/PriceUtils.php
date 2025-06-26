@@ -6,6 +6,21 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 
 class PriceUtils
 {
+
+    /**
+     * Calculates the percentage amount, percentage, or full amount based on the provided parameters.
+     *
+     * - If `$fullAmount` and `$percentage` are given, returns the percentage amount.
+     * - If `$fullAmount` and `$percentageAmount` are given, returns the percentage.
+     * - If `$percentage` and `$percentageAmount` are given, returns the full amount.
+     * - Returns `null` if insufficient parameters are provided.
+     *
+     * @param float|null $fullAmount         The base amount.
+     * @param float|null $percentage         The percentage value.
+     * @param float|null $percentageAmount   The amount representing the percentage of the full amount.
+     *
+     * @return float|null The calculated value or null if not enough parameters are provided.
+     */
     public function calculatePercentage(
         float $fullAmount = null,
         float $percentage = null,

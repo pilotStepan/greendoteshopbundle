@@ -2,20 +2,13 @@
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
 use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
-use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
-use PHPUnit\Framework\MockObject\MockObject;
 
 class PurchasePriceTest extends PriceCalculationTestCase
 {
@@ -29,7 +22,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
     ): void
     {
         // ARRANGE
-        $purchase = $this->createPurchase($ppv, clientDiscount: null);
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
 
         // ACT
         $pp = $this->createPurchasePrice($purchase, $vatCalc, $discCalc, $currency);
@@ -57,7 +50,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
     ): void
     {
         // ARRANGE
-        $purchase = $this->createPurchase($ppv, clientDiscount: null);
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getPaymentType')->willReturn($paymentType);
         $this->handlingPriceRepository->method('GetByDate')
@@ -101,7 +94,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
     ): void
     {
         // ARRANGE
-        $purchase = $this->createPurchase($ppv, $clientDiscount);
+        $purchase = $this->createPurchase($ppv, $clientDiscount, vouchers: null);
 
         // ACT
         $pp = $this->createPurchasePrice($purchase, $vatCalc, $discCalc, $currency);
@@ -136,7 +129,7 @@ class PurchasePriceTest extends PriceCalculationTestCase
     ): void
     {
         // ARRANGE
-        $purchase = $this->createPurchase($ppv, $clientDiscount);
+        $purchase = $this->createPurchase($ppv, $clientDiscount, vouchers: null);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getPaymentType')->willReturn($paymentType);
         $this->handlingPriceRepository->method('GetByDate')
@@ -221,65 +214,6 @@ class PurchasePriceTest extends PriceCalculationTestCase
             $pp->getPrice(true),
             0.001,
             "Total price with services mismatch after currency change"
-        );
-    }
-
-    // ---HELPERS---
-    private function createPurchase(array $ppv, float|null $clientDiscount): Purchase&MockObject
-    {
-        $purchase = $this->createMock(Purchase::class);
-        $purchaseProductVariants = [];
-        $variantPrices = [];
-
-        foreach ($ppv as $index => $variant) {
-            $purchaseProductVariant = $this->createMock(PurchaseProductVariant::class);
-            $productVariantMock = $this->createMock(ProductVariant::class);
-            $productVariantMock->_index = $index;
-
-            $purchaseProductVariant->method('getAmount')->willReturn($variant['amount']);
-            $purchaseProductVariant->method('getProductVariant')->willReturn($productVariantMock);
-            $purchaseProductVariant->method('getPurchase')->willReturn($purchase);
-
-            $purchaseProductVariants[] = $purchaseProductVariant;
-            $variantPrices[$index] = $variant['prices'];
-        }
-
-        $purchase->method('getProductVariants')
-            ->willReturn(new ArrayCollection($purchaseProductVariants));
-
-        $this->priceRepository->method('findPricesByDateAndProductVariantNew')
-            ->willReturnCallback(function ($productVariant) use ($variantPrices) {
-                if (isset($productVariant->_index)) {
-                    return $variantPrices[$productVariant->_index];
-                }
-                return null;
-            });
-
-        if ($clientDiscount) {
-            $clientDiscountMock = $this->createMock(ClientDiscount::class);
-            $clientDiscountMock->method('getDiscount')->willReturn($clientDiscount);
-            $purchase->method('getClientDiscount')->willReturn($clientDiscountMock);
-        }
-
-        return $purchase;
-    }
-
-    private function createPurchasePrice(
-        Purchase $purchase,
-        VatCalc  $vatCalc,
-        DiscCalc $discCalc,
-        Currency $currency,
-    )
-    {
-        return new PurchasePrice(
-            $purchase,
-            $vatCalc,
-            $discCalc,
-            $currency,
-            $this->productVariantPriceFactory,
-            $this->currencyRepository,
-            $this->handlingPriceRepository,
-            $this->priceUtils
         );
     }
 }

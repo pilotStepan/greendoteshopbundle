@@ -86,7 +86,7 @@ class PaymentType implements Translatable
     #[Groups(['payment:read', 'payment:write'])] // TODO: Remove from serialization
     private Collection $handlingPrices;
 
-    #[Groups(['payment:read', 'payment:read'])]
+    #[Groups(['payment:read', 'purchase:read'])]
     private ?float $price = null;
 
     #[Groups(['payment:read', 'purchase:read'])]
