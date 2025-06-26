@@ -87,6 +87,8 @@ class ParameterGroup
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: ProductParameterGroup::class)]
     private Collection $productParameterGroups;
 
+    #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
+    private ?ParameterGroupFormat $parameterGroupFormat = null;
     public function __construct()
     {
         $this->parameter = new ArrayCollection();
@@ -260,6 +262,18 @@ class ParameterGroup
                 $productParameterGroup->setParameterGroup(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getParameterGroupFormat(): ?ParameterGroupFormat
+    {
+        return $this->parameterGroupFormat;
+    }
+
+    public function setParameterGroupFormat(?ParameterGroupFormat $parameterGroupFormat): static
+    {
+        $this->parameterGroupFormat = $parameterGroupFormat;
 
         return $this;
     }
