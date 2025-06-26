@@ -41,8 +41,6 @@ class SimpleVoucherController extends AbstractController
         return $this->json($transitions, 200);
     }
 
-/* Not needed yet, not remade for voucher
-
     #[Route('/{voucher}/make-transition', name: 'make_transition', methods: ['POST'])]
     public function makeVoucherTransition(Voucher $voucher, Request $request, Registry $registry, EntityManagerInterface $em): JsonResponse
     {
@@ -54,9 +52,6 @@ class SimpleVoucherController extends AbstractController
         }
         if (!isset($data['transition'])) {
             throw new BadRequestHttpException('Missing transition');
-        }
-        if (!empty($data['package'])) {
-            $voucher->setTransportNumber($data['package']);
         }
 
         $pFlow = $registry->get($voucher);
@@ -72,6 +67,7 @@ class SimpleVoucherController extends AbstractController
         return $this->json(['state' => $voucher->getState()]);
     }
 
+/* Not needed yet, not remade for voucher
 
     #[Route('/{purchase}/invoice/pdf', name: 'invoice_download_pdf', methods: ['GET'])]
     public function downloadInvoicePdf(Purchase $purchase, InvoiceMaker $invoiceMaker): Response
