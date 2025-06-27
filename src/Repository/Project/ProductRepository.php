@@ -369,15 +369,21 @@ class ProductRepository extends ServiceEntityRepository
                 // Join prices for price filtering
                 $queryBuilder->leftJoin('pv.price', 'pv_price');
 
-                // Apply range filter using MIN(price.price)
+                // TODO: maybe based on something different?
+                // now it works as a property of price parameterGroup that is set in vue (productBase/category)
+                $minPriceCalculation = ($parameter->parameterGroup->withVat ?? false) ?
+                    'pv_price.price * (1 + pv_price.vat / 100) * (1 - pv_price.discount/100 )' :
+                    'pv_price.price';
+
+                // Apply range filter using MIN($minPriceCalculation)
                 $queryBuilder
                     ->andWhere('pv_price.validFrom <= :date')
                     ->andWhere('pv_price.validUntil >= :date OR pv_price.validUntil IS NULL')
-                    ->addSelect('MIN(pv_price.price) AS hidden pv_minPrice')
+                    ->addSelect("MIN({$minPriceCalculation}) AS hidden pv_minPrice")
                     ->groupBy('p')
-                    ->having('pv_minPrice BETWEEN :minPrice AND :maxPrice')
-                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]) // expected: [min, max]
-                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1])
+                    ->having("pv_minPrice BETWEEN :minPrice AND :maxPrice")
+                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
+                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
                     ->setParameter('date', new \DateTime());
 
             }else {
