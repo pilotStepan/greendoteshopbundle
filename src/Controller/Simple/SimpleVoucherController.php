@@ -54,12 +54,13 @@ class SimpleVoucherController extends AbstractController
             throw new BadRequestHttpException('Missing transition');
         }
 
-        $pFlow = $registry->get($voucher);
-        if (!$pFlow->can($voucher, $data['transition'])) {
+        $vFlow = $registry->get($voucher);
+        dd($vFlow);
+        if (!$vFlow->can($voucher, $data['transition'])) {
             throw new BadRequestHttpException('Invalid transition');
         }
 
-        $pFlow->apply($voucher, $data['transition']);
+        $vFlow->apply($voucher, $data['transition']);
 
         $em->persist($voucher);
         $em->flush();
