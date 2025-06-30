@@ -55,7 +55,6 @@ class SimpleVoucherController extends AbstractController
         }
 
         $vFlow = $registry->get($voucher);
-        return $this->json($vFlow);
         if (!$vFlow->can($voucher, $data['transition'])) {
             throw new BadRequestHttpException('Invalid transition');
         }
