@@ -35,8 +35,8 @@ class SimpleVoucherController extends AbstractController
     #[Route(path: '/workflow-transitions', name: 'workflow_transitions')]
     public function getVoucherWorkflowTransitions(Registry $registry, Request $request): JsonResponse
     {
-        $purchase = new Voucher();
-        $pFlow = $registry->get($purchase);
+        $voucher = new Voucher();
+        $pFlow = $registry->get($voucher);
         $transitions = $pFlow->getDefinition()->getTransitions();
         return $this->json($transitions, 200);
     }
@@ -55,7 +55,7 @@ class SimpleVoucherController extends AbstractController
         }
 
         $pFlow = $registry->get($voucher);
-        if (!$pFlow->getEnabledTransition($voucher, $data['transition'])) {
+        if (!$pFlow->can($voucher, $data['transition'])) {
             throw new BadRequestHttpException('Invalid transition');
         }
 
