@@ -4,18 +4,40 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\ProductReviews;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Greendot\EshopBundle\StateProvider\ReviewStatsStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ReviewRepository::class)]
 #[ORM\Table(name: 'review')]
 #[ApiResource(
+    operations: [
+        new Get(
+            uriTemplate: '/reviews-stats',
+            name: 'reviews_stats',
+            provider: ReviewStatsStateProvider::class,
+        ),
+
+        new Get(),
+        new GetCollection(),
+        new Post(),
+        new Patch(),
+        new Put(),
+        new Delete(),
+    ],
     normalizationContext: ['groups' => ['review:read']],
-    denormalizationContext: ['groups' => ['review:write']]
+    denormalizationContext: ['groups' => ['review:write']],
+    order: ['date' => 'DESC']
 )]
 #[ApiFilter(ProductReviews::class)]
 class Review
@@ -27,62 +49,59 @@ class Review
     private $id;
 
     #[ORM\Column(type: 'datetime')]
-    #[Groups(['review:read', 'review:write'])]
-    private $date;
+    #[Groups(['review:read'])]
+    private \DateTime $date;
 
     #[ORM\Column(type: 'text')]
     #[Groups(['review:read', 'review:write'])]
-    private $contents;
+    private ?string $contents;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['review:read', 'review:write'])]
-    private $reviewer_name;
+    private ?string $reviewer_name;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private $reviewer_email;
+    private ?string $reviewer_email;
 
     #[ORM\Column(type: 'integer')]
     #[Groups(['review:read', 'review:write'])]
-    private $stars;
+    private ?int $stars;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['review:read', 'review:write'])]
-    private $is_approved;
+    private bool $is_approved;
 
     #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'reviews')]
     #[Groups(['review:read', 'review:write'])]
     #[ORM\JoinColumn(nullable: false)]
-    private $Product;
+    private ?Product $Product;
 
     #[ORM\OneToMany(targetEntity: File::class, mappedBy: 'review')]
     private Collection $files;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     #[Groups(['review:read', 'review:write'])]
-    private $positive;
+    private ?bool $positive;
 
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    /**
+     * Holds any additional parameters for this review.
+     * We may want to implement validation rules for this field if necessary.
+     */
+    // #[ValidReviewParameters]
+    #[ORM\Column(type: 'json', length: 255, nullable: true)]
     #[Groups(['review:read', 'review:write'])]
-    private $review_parameters;
+    private ?array $review_parameters;
 
-    #[ORM\OneToMany(mappedBy: 'review', targetEntity: ReviewPoints::class, cascade: ['persist', 'remove'])]
-    #[Groups(['review:read'])]
+    #[ORM\OneToMany(targetEntity: ReviewPoints::class, mappedBy: 'review', cascade: ['persist', 'remove'])]
+    #[Groups(['review:read', 'review:write'])]
     private Collection $reviewPoints;
-
-    public function getReviewPoints(): Collection
-    {
-        return $this->reviewPoints;
-    }
-
-    public function setReviewPoints(Collection $reviewPoints): void
-    {
-        $this->reviewPoints = $reviewPoints;
-    }
 
     public function __construct()
     {
         $this->files = new ArrayCollection();
         $this->reviewPoints = new ArrayCollection();
+        $this->date = new \DateTime();
+        $this->is_approved = false;
     }
 
     public function getId(): ?int
@@ -90,15 +109,9 @@ class Review
         return $this->id;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): ?\DateTime
     {
         return $this->date;
-    }
-
-    public function setDate(\DateTimeInterface $date): self
-    {
-        $this->date = $date;
-        return $this;
     }
 
     public function getContents(): ?string
@@ -207,13 +220,43 @@ class Review
         return $this;
     }
 
-    public function getReviewParameters()
+    public function getReviewParameters(): ?array
     {
         return $this->review_parameters;
     }
 
-    public function setReviewParameters($review_parameters): void
+    public function setReviewParameters(?array $review_parameters): self
     {
         $this->review_parameters = $review_parameters;
+        return $this;
+    }
+
+    public function getReviewPoints(): Collection
+    {
+        return $this->reviewPoints;
+    }
+
+    public function setReviewPoints(Collection $reviewPoints): void
+    {
+        $this->reviewPoints = $reviewPoints;
+    }
+
+    public function addReviewPoint(ReviewPoints $point): self
+    {
+        if (!$this->reviewPoints->contains($point)) {
+            $this->reviewPoints[] = $point;
+            $point->setReview($this);
+        }
+        return $this;
+    }
+
+    public function removeReviewPoint(ReviewPoints $point): self
+    {
+        if ($this->reviewPoints->removeElement($point)) {
+            if ($point->getReview() === $this) {
+                $point->setReview(null);
+            }
+        }
+        return $this;
     }
 }
