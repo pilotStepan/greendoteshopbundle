@@ -58,4 +58,21 @@ readonly class ServiceCalculationUtils
     {
         return !$price || $price->getPrice() < 1 || $theoreticalAmount >= $price->getFreeFromPrice();
     }
+
+    /**
+     * @param Transportation|PaymentType $service
+     * @param Currency $currency
+     * @return float - the total purchase price threshold for the given service to be free
+     */
+    public function getFreeFromPrice(
+        Transportation|PaymentType  $service,
+        Currency                    $currency,
+    ): float
+    {
+        $handlingPrice = $this->handlingPriceRepository->getByDate($service);
+        $freeFromPrice = $handlingPrice->getFreeFromPrice();
+        return $this->priceUtils->convertCurrency($freeFromPrice, $currency);
+    }
+
+
 }
