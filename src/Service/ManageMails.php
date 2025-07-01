@@ -4,104 +4,55 @@ namespace Greendot\EshopBundle\Service;
 
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
-use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
-use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 
-class ManageMails
+readonly class ManageMails
 {
-    private readonly Address $fromAddress;
+    private Address $fromAddress;
 
     public function __construct(
-        private readonly MailerInterface          $mailer,
-        private readonly ManagePurchase           $manageOrder,
-        private readonly PriceCalculator          $priceCalculator,
-        private readonly CurrencyRepository       $currencyRepository,
-        private readonly LocaleAwareInterface     $localeAware,
-        private readonly RequestStack             $requestStack,
-        private readonly ManagerRegistry          $managerRegistry,
-        private readonly PaymentTypeRepository    $paymentTypeRepository,
-        private readonly PaymentRepository        $paymentRepository,
-        private readonly TransportationRepository $transportationRepository,
-        private readonly QRcodeGenerator          $qrCodeGenerator,
-        private readonly GPWebpay                 $webpay,
-        private readonly string                   $fromEmail,
-        private readonly string                   $fromName,
+        private MailerInterface      $mailer,
+        private LocaleAwareInterface $localeAware,
+        private TranslatorInterface  $translator,
+        private RequestStack         $requestStack,
+        private ManagerRegistry      $managerRegistry,
+        private PaymentRepository    $paymentRepository,
+        private QRcodeGenerator      $qrCodeGenerator,
+        private GPWebpay             $webpay,
+        private string               $fromEmail,
+        private string               $fromName,
     )
     {
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
     }
 
-
-    public function mailMessage(
-        string      $receivingEmail,
-        string      $content = "",
-        string      $headline = "",
-        string      $subject = '',
-        string|null $link = null,
-                    $buttonName = "Odkaz"
-    ): void
-    {
-        $email = new TemplatedEmail();
-        $email
-            ->subject($subject)
-            ->addFrom($this->fromAddress)
-            ->addTo($receivingEmail);
-        //->addCc('');
-        if ($link) {
-            $email->htmlTemplate('mailing/base.html.twig')
-                ->context([
-                    'headline'    => $headline,
-                    'content'     => $content,
-                    'href'        => $link,
-                    'button_name' => $buttonName
-                ]);
-        } else {
-            $email->htmlTemplate('mailing/base.html.twig')
-                ->context([
-                    'headline' => $headline,
-                    'content'  => $content,
-                ]);
-        }
-
-        try {
-            $this->mailer->send($email);
-        } catch (\Exception $exception) {
-            dd($exception);
-        }
-    }
-
     public function sendOrderReceiveEmail(Purchase $purchase, string $template): void
     {
-        $varSymbol  = $this->paymentRepository->findByPurchaseId($purchase->getId());
-        $dueDate    = new \DateTime('+14 days');
-        $qrCodeUri  = $this->qrCodeGenerator->getUri($purchase, $dueDate);
+        $varSymbol = $this->paymentRepository->findByPurchaseId($purchase->getId());
+        $dueDate = new \DateTime('+14 days');
+        $qrCodeUri = $this->qrCodeGenerator->getUri($purchase, $dueDate);
         $paymentUrl = $this->webpay->getPayLink($purchase, $varSymbol);
 
         $email = (new TemplatedEmail())
-            ->from('info@greendot.com') // TODO: change email
+            ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate($template)
             ->context([
-                'purchase_price'  => $purchase->getTotalPrice(),
-                'var_symbol'      => $varSymbol,
-                'bank_account'    => $purchase->getPaymentType()->getAccount(),
-                'payment_type'    => $purchase->getPaymentType(),
-                'qr_code_url'     => $qrCodeUri,
+                'purchase_price' => $purchase->getTotalPrice(),
+                'var_symbol' => $varSymbol,
+                'bank_account' => $purchase->getPaymentType()->getAccount(),
+                'payment_type' => $purchase->getPaymentType(),
+                'qr_code_url' => $qrCodeUri,
                 'pay_by_card_url' => $paymentUrl
             ]);
 
@@ -113,13 +64,11 @@ class ManageMails
         $transportationAction = $purchase->getTransportation()->getAction()->getId();
 
         $email = (new TemplatedEmail())
-            ->from('info@greendot.com')
+            ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate($template)
-            ->context([
-                'transportation_action' => $transportationAction
-            ])
+            ->context(['transportation_action' => $transportationAction])
             ->attachFromPath($invoicePath, 'faktura.pdf', 'application/pdf');
 
         $this->mailer->send($email);
@@ -128,7 +77,7 @@ class ManageMails
     public function sendEmail(Purchase $purchase, string $template): void
     {
         $email = (new TemplatedEmail())
-            ->from('info@greendot.com')
+            ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate($template)
@@ -137,18 +86,25 @@ class ManageMails
         $this->mailer->send($email);
     }
 
+    /**
+     * Localised subject line from `translations/emails.<locale>.yaml` defined on project side.
+     */
     private function getEmailSubject(Purchase $purchase): string
     {
-        return match ($purchase->getState()) {
-            'created'          => 'Objednávka ' . $purchase->getId() . ' byla přijata',
-            'paid'             => 'Platba za objednávku ' . $purchase->getId() . ' byla přijata',
-            'not_paid'         => 'Platba za objednávku ' . $purchase->getId() . ' nebyla přijata',
-            'sent'             => 'Objednávka ' . $purchase->getId() . ' byla odeslána',
-            'ready_for_pickup' => 'Objednávka ' . $purchase->getId() . ' je připravena k vyzvednutí',
-            'picked_up'        => 'Objednávka ' . $purchase->getId() . ' byla vyzvednuta',
-            'canceled'         => 'Objednávka ' . $purchase->getId() . ' byla zrušena',
-            default            => 'Informace o objednávce ' . $purchase->getId(),
+        $state = $purchase->getState();
+
+        // pick a translation key, fall back to default
+        $key = match ($state) {
+            'created', 'paid', 'not_paid',
+            'sent', 'ready_for_pickup', 'picked_up',
+            'canceled', 'received',
+            => 'email.subject.order.' . $state,
+            default => 'email.subject.order.default',
         };
+
+        return $this->translator->trans($key, [
+            '%id%' => $purchase->getId(),
+        ]);
     }
 
     private function setLocaleAndRefreshEntities(Purchase $purchase): void
@@ -159,7 +115,7 @@ class ManageMails
             $entityManager = $this->managerRegistry->getManager();
 
             $transportation = $this->refreshEntity($purchase->getTransportation(), 'cs');
-            $payment        = $this->refreshEntity($purchase->getPaymentType(), 'cs');
+            $payment = $this->refreshEntity($purchase->getPaymentType(), 'cs');
 
             $entityManager->refresh($purchase);
 
@@ -175,69 +131,11 @@ class ManageMails
         return $refreshedEntity;
     }
 
-    private function createEmail(Purchase $purchase, SessionInterface $session, PriceCalculator $priceCalculator): TemplatedEmail
-    {
-        $currency = $session->get('selectedCurrency');
-
-        $subject               = $this->getSubject($purchase);
-        $productVariantsInCart = $this->getProductVariantsCount($purchase);
-
-        $purchasePrice = $priceCalculator->calculatePurchasePrice(
-            $purchase,
-            $currency,
-            VatCalculationType::WithVAT,
-            1,
-            DiscountCalculationType::WithDiscount,
-            true,
-            VoucherCalculationType::WithoutVoucher,
-            true
-        );
-
-        return (new TemplatedEmail())
-            ->from($this->fromAddress)
-            ->subject($subject)
-            ->htmlTemplate('mailing/base.html.twig')
-            ->context([
-                'headline'                    => $subject,
-                'content'                     => "",
-                'product_variant_occurrences' => $productVariantsInCart,
-                'purchase_price'              => $purchasePrice,
-                'order'                       => $purchase,
-                'currency_repository_id'      => 1
-            ]);
-    }
-
-    private function getProductVariantsCount(Purchase $purchase): array
-    {
-        $productVariantsInCart = [];
-        foreach ($purchase->getProductVariants() as $orderProductVariant) {
-            $productVariantId                         = $orderProductVariant->getProductVariant()->getId();
-            $productVariantsInCart[$productVariantId] = ($productVariantsInCart[$productVariantId] ?? 0) + 1;
-        }
-        return $productVariantsInCart;
-    }
-
-    private function addRecipients(TemplatedEmail $email, Purchase $purchase, bool $ccSender): void
-    {
-        $email->to($purchase->getClient()->getMail());
-
-        $notifyMail = $this->manageOrder->getNotifyEmail($purchase);
-        if ($notifyMail) {
-            $email->addCc($notifyMail);
-        }
-
-        if ($ccSender) {
-            $email->addCc($this->fromAddress->getAddress());
-        }
-
-        $email->addCc("matyas@greendot.cz");
-    }
-
-    public function sendFreeSampleMailToInfo($formData, Product $product)
+    public function sendFreeSampleMailToInfo($formData, Product $product): void
     {
         $email = new TemplatedEmail();
         $email
-            ->subject("Žádost o vzorek zdarma")
+            ->subject($this->translator->trans('email.free_sample.subject'))
             ->addFrom($formData['mail'])
             ->addTo($this->fromAddress);
 
@@ -252,26 +150,30 @@ class ManageMails
 
         try {
             $this->mailer->send($email);
-        } catch (\Exception $exception) {
-            dd($exception);
+        } catch (TransportExceptionInterface $e) {
+//            $this->logger->error('…', ['exception' => $e]);
+            dd($e);
         }
     }
 
     /**
      * Sends a password reset email to the user.
-     * @throws TransportExceptionInterface
      */
-    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): void
+    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): bool
     {
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($recipientEmail)
-            ->subject('Žádost o obnovu hesla')
+            ->subject($this->translator->trans('email.password_reset.subject'))
             ->htmlTemplate('reset_password/email.html.twig')
-            ->context([
-                'resetToken' => $resetToken,
-            ]);
+            ->context(['resetToken' => $resetToken]);
 
-        $this->mailer->send($email);
+        try {
+            $this->mailer->send($email);
+            return true;
+        } catch (TransportExceptionInterface $e) {
+//            $this->logger->error('…', ['exception' => $e]);
+            return false;
+        }
     }
 }
