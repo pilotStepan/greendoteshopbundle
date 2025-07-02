@@ -13,15 +13,12 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Twig\Environment;
 
 class BeforeControllerListener implements EventSubscriberInterface
 {
-    private SessionInterface $session;
-
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly RequestStack           $requestStack,
@@ -32,7 +29,6 @@ class BeforeControllerListener implements EventSubscriberInterface
         private readonly CurrencyRepository     $currencyRepository,
     )
     {
-        $this->session = $this->requestStack->getSession();
     }
 
     /**
@@ -41,14 +37,19 @@ class BeforeControllerListener implements EventSubscriberInterface
      */
     public function onKernelController(ControllerEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;   // never touch the session in sub-requests
+        }
+
+        $session = $this->requestStack->getSession();
         $controller = $event->getController();
 
         if (is_array($controller)) {
             $controller = $controller[0];
         }
 
-        if (!$this->session->get('selectedCurrency')) {
-            $this->session->set('selectedCurrency', $this->currencyRepository->findOneBy(['isDefault' => 1]));
+        if (!$session->get('selectedCurrency')) {
+            $session->set('selectedCurrency', $this->currencyRepository->findOneBy(['isDefault' => 1]));
         }
 
         if ($controller instanceof WebController) {
@@ -66,7 +67,7 @@ class BeforeControllerListener implements EventSubscriberInterface
         }
 
        if ($controller instanceof OrderController or $controller instanceof ProductController) {
-           $order = $this->session->get('order');
+           $order = $session->get('order');
            $productVariantsInCart = [];
 
            if ($order) {
@@ -87,7 +88,7 @@ class BeforeControllerListener implements EventSubscriberInterface
        }
 
         if ($controller instanceof OrderController or $controller instanceof ProductController) {
-            $order = $this->session->get('inquiry');
+            $order = $session->get('inquiry');
             $productVariantsInCart = [];
 
             if ($order) {
