@@ -18,8 +18,8 @@ readonly class ManageSms
     public function sendOrderStateSms(Purchase $purchase): void
     {
         $phone = $this->processPhone(
-            $purchase->getClient()->getPhone(),
-            $purchase->getClient()->getPrimaryAddress()->getCountry()
+            $purchase->getClient()?->getPhone(),
+            $purchase->getClient()?->getPrimaryAddress()?->getCountry()
         );
         $text = $this->getSmsText($purchase);
 
