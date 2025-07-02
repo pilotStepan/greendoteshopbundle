@@ -43,9 +43,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedPayment(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -59,9 +57,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedReceive(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -73,9 +69,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedPaymentIssue(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -87,9 +81,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedCancellation(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -101,9 +93,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedPrepareForPickup(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -115,9 +105,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedSend(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -129,9 +117,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onCompletedPickUp(CompletedEvent $event): void
     {
-        $name = $this->workflowEventName($event);
-        $context = $event->getContext();
-        if (!$this->shouldNotify($name, $context, $this->notificationMap)) return;
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();

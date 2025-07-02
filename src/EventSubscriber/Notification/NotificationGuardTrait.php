@@ -3,34 +3,41 @@
 namespace Greendot\EshopBundle\EventSubscriber\Notification;
 
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Symfony\Contracts\EventDispatcher\Event;
 
 trait NotificationGuardTrait
 {
     /**
-     * Return the canonical event name used in the YAML map.
-     */
-    private function workflowEventName(CompletedEvent $e): string
-    {
-        return $e->getName(
-            $e->getWorkflowName(),
-            $e->getTransition()->getName()
-        );
-    }
-
-    /**
      * Decide whether to send a notification.
-     *
-     * @param array<string,bool> $map YAML “notificationMap” injected into the subscriber.
+     * @param array<string,bool> $map YAML "notificationMap" injected into the subscriber.
      */
-    private function shouldNotify(
-        string $eventName,
-        array  $context,
-        array  $map,
-    ): bool
+    private function shouldNotify(CompletedEvent $event, array $map): bool
     {
+        $name = $this->resolveEventName($event);
+        $context = $this->resolveEventContext($event);
+
         if (($context['silent'] ?? false) === true) {
             return false;
         }
-        return $map[$eventName] ?? false;
+        return $map[$name] ?? false;
+    }
+
+    private function resolveEventName(Event $event): string
+    {
+        return match (true) {
+            $event instanceof CompletedEvent => $event->getName(
+                $event->getWorkflowName(),
+                $event->getTransition()->getName()
+            ),
+            default => $event::class,
+        };
+    }
+
+    private function resolveEventContext(Event $event): array
+    {
+        return match (true) {
+            $event instanceof CompletedEvent => $event->getContext(),
+            default => [],
+        };
     }
 }
