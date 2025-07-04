@@ -48,7 +48,8 @@
     "lexik/jwt-authentication-bundle": "^3.1",
     "symfony/http-client": "^7.2",
     "endroid/qr-code": "^6.0",
-    "symfony/process": "^7.3"
+    "symfony/process": "^7.3",
+    "smsbrana/sms-connect": "^0.3.10"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
