@@ -95,7 +95,7 @@ class Category implements Translatable
 
     #[ORM\OneToMany(mappedBy: 'category_sub', targetEntity: CategoryCategory::class)]
     #[ORM\OrderBy(['sequence' => 'ASC'])]
-    #[Groups(['category_with_parents:read'])]
+    #[Groups(['category_with_parents:read', 'product_item:read'])]
     private $categorySubCategories;
 
     /** @var ArrayCollection these are the child categories, ei. this entity is the super_category */
