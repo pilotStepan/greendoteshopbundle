@@ -372,7 +372,7 @@ class ProductRepository extends ServiceEntityRepository
                 // TODO: maybe based on something different?
                 // now it works as a property of price parameterGroup that is set in vue (productBase/category)
                 $minPriceCalculation = ($parameter->parameterGroup->withVat ?? false) ?
-                    'price.price * (1 + COALESCE(price.va, 0)t / 100) * (1 - COALESCE(price.discount, 0) / 100 )' :
+                    'price.price * (1 + COALESCE(price.vat, 0) / 100) * (1 - COALESCE(price.discount, 0) / 100 )' :
                     'price.price';
 
                 // Apply range filter using MIN($minPriceCalculation)
