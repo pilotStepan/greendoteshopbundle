@@ -385,6 +385,10 @@ class ProductRepository extends ServiceEntityRepository
                     ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
                     ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
                     ->setParameter('date', new \DateTime());
+                
+                dump($queryBuilder->getQuery());
+                dump($queryBuilder->getQuery()->getResult());
+                dd($queryBuilder);
 
             }else {
                 $queryBuilder->innerJoin('pv.parameters', 'pa'.$i);
