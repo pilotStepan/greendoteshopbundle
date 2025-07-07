@@ -379,7 +379,7 @@ class ProductRepository extends ServiceEntityRepository
                 $queryBuilder
                     ->andWhere('price.validFrom <= :date')
                     ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
-                    ->addSelect("MIN({$minPriceCalculation}) AS priceFilter_minPrice")
+                    ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
                     ->having("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
                     ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
