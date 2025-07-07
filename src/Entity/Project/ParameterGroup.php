@@ -77,7 +77,7 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read'])]
+    #[Groups(['parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read'])]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
     /**

@@ -23,7 +23,6 @@ use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Greendot\EshopBundle\Validator\Constraints\VoucherUsedAvailability;
 
 #[ORM\Table(name: '`purchase`')]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
@@ -167,15 +166,20 @@ class Purchase
     #[ORM\OneToMany(targetEntity: PurchaseTracking::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     private Collection $purchaseTrackings;
 
-    // vouchers bought in the order
+    /* Vouchers bought in the order (assigned via PATCH on Purchase entity) */
     #[ORM\OneToMany(targetEntity: Voucher::class, mappedBy: 'Purchase_issued', cascade: ['persist', 'remove'])]
     private Collection $VouchersIssued;
 
-    // vouchers used to pay the order
+    /* Vouchers used to pay the order (assigned via PATCH on Voucher entity) */
     #[ORM\OneToMany(targetEntity: Voucher::class, mappedBy: 'purchaseUsed', cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write'])]
-    #[VoucherUsedAvailability]
     private Collection $vouchersUsed;
+
+    #[ORM\ManyToOne(targetEntity: ClientDiscount::class, inversedBy: 'purchases')]
+    #[ORM\JoinColumn(nullable: true)]
+    #[ClientDiscountAvailability]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?ClientDiscount $clientDiscount;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'purchases')]
     private Collection $Consents;
@@ -187,12 +191,6 @@ class Purchase
 
     #[ORM\OneToMany(targetEntity: Payment::class, mappedBy: 'purchase', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $payments;
-
-    #[ORM\ManyToOne(targetEntity: ClientDiscount::class, inversedBy: 'purchases')]
-    #[ORM\JoinColumn(nullable: true)]
-    #[ClientDiscountAvailability]
-    #[Groups(['purchase:read', 'purchase:write'])]
-    private ?ClientDiscount $clientDiscount;
 
     #[ORM\OneToMany(targetEntity: PurchaseDiscussion::class, mappedBy: 'purchase')]
     #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]

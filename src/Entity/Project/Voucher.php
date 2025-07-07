@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Validator\Constraints\VoucherAssignableToPurchase;
 use Symfony\Component\Serializer\Annotation\Groups;
 use ApiPlatform\Metadata\ApiProperty;
 
@@ -44,7 +45,7 @@ class Voucher
      * @var Purchase|null
      * Link to the purchase within which the certificate was bought and according to which state is linked its validity.
      */
-    #[ORM\ManyToOne(inversedBy: 'VouchersIssued')]
+    #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'VouchersIssued')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['voucher:read', 'voucher:write'])]
     private ?Purchase $Purchase_issued = null;
@@ -53,8 +54,9 @@ class Voucher
      * @var Purchase|null
      * Link to the purchase where the certificate was used for payment.
      */
-    #[ORM\ManyToOne(inversedBy: 'vouchersUsed')]
+    #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'vouchersUsed')]
     #[Groups(['voucher:read', 'voucher:write'])]
+    #[VoucherAssignableToPurchase]
     private ?Purchase $purchaseUsed = null;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -127,6 +129,10 @@ class Voucher
     {
         $this->Purchase_issued = $Purchase_issued;
 
+        if ($Purchase_issued && !$Purchase_issued->getVouchersIssued()->contains($this)) {
+            $Purchase_issued->addVoucherIssued($this);
+        }
+
         return $this;
     }
 
@@ -139,10 +145,12 @@ class Voucher
     {
         $this->purchaseUsed = $PurchaseUsed;
 
+        if ($PurchaseUsed && !$PurchaseUsed->getVouchersUsed()->contains($this)) {
+            $PurchaseUsed->addVoucherUsed($this);
+        }
+
         return $this;
     }
-
-
 
     public function getState(): ?string
     {

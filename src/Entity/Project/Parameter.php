@@ -52,7 +52,7 @@ class Parameter
     private ?int $sequence = null;
 
     #[ApiProperty]
-    #[Groups(['product_item:read', 'product_list:read', 'parameter:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'parameter:read', 'purchase:read'])]
     private ?string $colorName = null;
 
     public function getId(): ?int
