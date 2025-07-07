@@ -379,6 +379,7 @@ class ProductRepository extends ServiceEntityRepository
                 $queryBuilder
                     ->andWhere('price.validFrom <= :date')
                     ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
+                    ->andWhere("price.minimalAmount = 1")
                     ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
                     ->having("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
