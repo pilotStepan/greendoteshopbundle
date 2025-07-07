@@ -1,24 +1,21 @@
 <?php
+
 namespace Greendot\EshopBundle\Validator\Constraints;
 
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
 final class ClientDiscountAvailabilityValidator extends ConstraintValidator
 {
-    private $manageClientDiscount;
-    public function __construct(ManageClientDiscount $manageClientDiscount)
-    {
-        $this->manageClientDiscount = $manageClientDiscount;
-    }
+    public function __construct(
+        private readonly ManageClientDiscount $manageClientDiscount
+    ) {}
 
-    public function validate(mixed $clientDiscount, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
-        if($clientDiscount !== null && !$this->manageClientDiscount->isValid($clientDiscount)){
+        if ($value !== null && !$this->manageClientDiscount->isValid($value)) {
             $this->context->buildViolation($constraint->message)->addViolation();
         }
-
     }
 }
