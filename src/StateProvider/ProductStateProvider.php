@@ -51,8 +51,12 @@ class ProductStateProvider implements ProviderInterface
             case 'price':
                 $this->productRepository->sortProductsByPrice($qb, new \DateTime(), $filters->orderBy->direction);
                 break;
-            case 'default':
-                $this->productRepository->sortByReviewsQB($qb, $filters->orderBy->direction);
+            case 'rating':
+                $this->productRepository->sortProductsByReviews($qb, $filters->orderBy->direction);
+                break;
+            default:
+                $this->productRepository->sortProductsBySequence($qb, 'DESC');
+                break;
         }
 
 
