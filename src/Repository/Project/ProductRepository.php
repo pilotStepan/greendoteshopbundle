@@ -380,9 +380,9 @@ class ProductRepository extends ServiceEntityRepository
                     ->andWhere('price.validFrom <= :date')
                     ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
                     ->groupBy('p')
-                    // ->having("MIN({$minPriceCalculation}) BETWEEN :minPrice AND :maxPrice")
-                    // ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
-                    // ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
+                    ->having("MIN({$minPriceCalculation}) BETWEEN :minPrice AND :maxPrice")
+                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
+                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
                     ->setParameter('date', new \DateTime());
                 
                 dump($queryBuilder->getQuery());
