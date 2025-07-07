@@ -14,7 +14,5 @@ final class PasswordResetRequestedEvent extends Event
     public function __construct(
         public string             $recipient, // e-mail address
         public ResetPasswordToken $token,
-    )
-    {
-    }
+    ) {}
 }
