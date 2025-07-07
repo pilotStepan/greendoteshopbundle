@@ -104,7 +104,7 @@ readonly class ManageMails
 
         return $this->translator->trans($key, [
             '%id%' => $purchase->getId(),
-        ]);
+        ], 'emails');
     }
 
     private function setLocaleAndRefreshEntities(Purchase $purchase): void
@@ -135,7 +135,7 @@ readonly class ManageMails
     {
         $email = new TemplatedEmail();
         $email
-            ->subject($this->translator->trans('email.free_sample.subject'))
+            ->subject($this->translator->trans('email.free_sample.subject', [], 'emails'))
             ->addFrom($formData['mail'])
             ->addTo($this->fromAddress);
 
@@ -164,7 +164,7 @@ readonly class ManageMails
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($recipientEmail)
-            ->subject($this->translator->trans('email.password_reset.subject'))
+            ->subject($this->translator->trans('email.password_reset.subject', [], 'emails'))
             ->htmlTemplate('reset_password/email.html.twig')
             ->context(['resetToken' => $resetToken]);
 

@@ -11,9 +11,7 @@ readonly class ManageSms
     public function __construct(
         private TranslatorInterface $translator,
         private SmsConnect          $client
-    )
-    {
-    }
+    ) {}
 
     public function sendOrderStateSms(Purchase $purchase): void
     {
@@ -58,7 +56,7 @@ readonly class ManageSms
             '%amount%' => $amount,
         ], static fn($v) => $v !== null && $v !== '');
 
-        return $this->translator->trans($key, $params);
+        return $this->translator->trans($key, $params, 'sms');
     }
 
     /**

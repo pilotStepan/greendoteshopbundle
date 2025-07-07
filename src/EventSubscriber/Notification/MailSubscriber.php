@@ -21,9 +21,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
         private array          $notificationMap, // config/packages/notifications.yaml:email_notifications
         private ManageMails    $manageMails,
         private ManagePurchase $managePurchase,
-    )
-    {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
@@ -129,6 +127,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function onPasswordReset(PasswordResetRequestedEvent $event): void
     {
-        // $this->manageMails->sendPasswordResetEmail($event->recipient, $event->token);
+        $this->manageMails->sendPasswordResetEmail($event->recipient, $event->token);
     }
 }
