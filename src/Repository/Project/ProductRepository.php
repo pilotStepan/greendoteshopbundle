@@ -258,6 +258,15 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
+
+    public function sortProductsByAvailability(QueryBuilder $qb){
+        $this->safeJoin($qb, 'p', 'productVariants', 'pv'); 
+        $this->safeJoin($qb, 'pv', 'availability', 'a');
+        $qb->addSelect("MIN(a.sequence) AS HIDDEN min_sequence")
+            ->groupBy('p.id')
+            ->orderBy('min_sequence', 'ASC');
+    }
+
     public function findDiscountedProducts(): array
     {
         return $this->createQueryBuilder('p')
