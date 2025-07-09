@@ -217,7 +217,7 @@ class ProductRepository extends ServiceEntityRepository
             ->leftJoin($alias . '.reviews', 'r')
             ->addSelect('AVG(r.stars) AS HIDDEN avg_rating')
             ->groupBy($alias . '.id')
-            ->orderBy('avg_rating', $direction);
+            ->addOrderBy('avg_rating', $direction);
 
         return $qb;
     }
@@ -264,7 +264,7 @@ class ProductRepository extends ServiceEntityRepository
         $this->safeJoin($qb, 'pv', 'availability', 'a');
         $qb->addSelect("MIN(a.sequence) AS HIDDEN min_sequence")
             ->groupBy('p.id')
-            ->orderBy('min_sequence', 'ASC');
+            ->addOrderBy('min_sequence', 'ASC');
     }
 
     public function findDiscountedProducts(): array
@@ -496,7 +496,7 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('date', $date)
             ->groupBy('p')
             ->addSelect('MIN(price.price) AS hidden minPrice')
-            ->orderBy('minPrice', strtoupper($direction));
+            ->addOrderBy('minPrice', strtoupper($direction));
 
         return $qb;
     }
@@ -504,7 +504,7 @@ class ProductRepository extends ServiceEntityRepository
     public function sortProductsBySequence(QueryBuilder $qb, string $direction) : QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
-        $qb->orderBy($alias.'.sequence', strtoupper($direction));
+        $qb->addOrderBy($alias.'.sequence', strtoupper($direction));
         return $qb;
     }
 

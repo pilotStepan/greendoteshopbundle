@@ -35,6 +35,9 @@ class ProductStateProvider implements ProviderInterface
         //if($filters->selectedParameters) {
         $this->productRepository->productsByParameters($qb, $filters->selectedParameters);
         //}
+        if($filters->isStockOnly){
+           $this->productRepository->sortProductsByAvailability($qb);
+        }
         switch ($filters->orderBy->id){
             case 'name':
                 if($filters->orderBy->direction === 'DESC'){
@@ -54,9 +57,6 @@ class ProductStateProvider implements ProviderInterface
                 break;
         }
 
-         if($filters->isStockOnly){
-            $this->productRepository->sortProductsByAvailability($qb);
-        }
 
 
         //limit and offset
