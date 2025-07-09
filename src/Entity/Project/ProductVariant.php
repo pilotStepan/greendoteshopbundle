@@ -99,18 +99,32 @@ class ProductVariant implements Translatable
     private $locale;
 
     /**
-     * Precalculated price values for price with the lowest minimalAmount.
-     * @var array<string, float>
+     * Precalculated price values for each minimalAmount threshold.
      *
-     * Structure:
-     * - priceNoVat:            basePrice + discount
-     * - priceVat:              basePrice + discount + VAT
-     * - priceNoVatNoDiscount:  basePrice
-     * - priceVatNoDiscount:    basePrice + VAT
+     * Example structure:
+     * [
+     *     "1" => [
+     *         "priceNoVat" => 10.0,             // basePrice + discount
+     *         "priceVat" => 12.1,               // basePrice + discount + VAT
+     *         "priceNoVatNoDiscount" => 11.0,   // basePrice
+     *         "priceVatNoDiscount" => 13.31     // basePrice + VAT
+     *     ],
+     *     "10" => [
+     *         ...
+     *     ]
+     * ]
+     *
+     * @var array<string, array{
+     *     priceNoVat: float,
+     *     priceVat: float,
+     *     priceNoVatNoDiscount: float,
+     *     priceVatNoDiscount: float
+     * }>
      */
     #[ApiProperty]
     #[Groups(['product_item:read', 'product_variant:read'])]
     private array $calculatedPrices = [];
+
 
     public function __construct()
     {

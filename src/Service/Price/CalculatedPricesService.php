@@ -17,47 +17,54 @@ class CalculatedPricesService
     )
     {
     }
-    public function makeCalculatedPricesForProductVariant(ProductVariant $variant) : ProductVariant
+    public function makeCalculatedPricesForProductVariant(ProductVariant $variant, $date = new \DateTime()) : ProductVariant
     {
         if (!empty($variant->getCalculatedPrices())){
             return $variant;
         }
 
-
-        $currency = $this->sessionService->getCurrency();
-        $variantPrice = $this->productVariantPriceFactory->create($variant, $currency);
-        $now = new \DateTime();
-
-        $variantMinimalAmount = 0;
-        foreach ($variant->getPrice() as $price) {
-            if ($price->getValidFrom() > $now || ($price->getValidUntil() !== null && $now > $price->getValidUntil())) {
+        
+        // get unique minimalAmounts from productVariant.prices
+        $uniqueMinimalAmounts = [];
+        foreach($variant->getPrice() as $price){
+            // check valid
+            if ($price->getValidFrom() > $date || ($price->getValidUntil() !== null && $date > $price->getValidUntil())) {
                 continue;
             }
-
-            $priceMinimalAmount = $price->getMinimalAmount();
-            $variantPrice->setAmount($priceMinimalAmount);
-            $calculatedPrices = [];
+            
+            // if not in array add
+            if(!in_array($price->getMinimalAmount(), $uniqueMinimalAmounts)) {
+                $uniqueMinimalAmounts[] = $price->getMinimalAmount();
+            }
+        }
+        sort($uniqueMinimalAmounts);
+        
+        
+        // for each minimalAmount, make calculated prices object and add them to list
+        $variantPrice = $this->productVariantPriceFactory->create($variant, $this->sessionService->getCurrency()); // price calculator object
+        $calculatedPricesList = [];
+        foreach($uniqueMinimalAmounts as $minimalAmount){
+            $variantPrice->setAmount($minimalAmount);
+            $calculatedPricesObject = [];
 
             $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
             $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
-            $calculatedPrices['priceVat'] = $variantPrice->getPiecePrice();
+            $calculatedPricesObject['priceVat'] = $variantPrice->getPiecePrice();
 
             $variantPrice->setVatCalculationType(vatCalculationType::WithoutVAT);
-            $calculatedPrices['priceNoVat'] = $variantPrice->getPiecePrice();
+            $calculatedPricesObject['priceNoVat'] = $variantPrice->getPiecePrice();
 
             $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
-            $calculatedPrices['priceNoVatNoDiscount'] = $variantPrice->getPiecePrice();
+            $calculatedPricesObject['priceNoVatNoDiscount'] = $variantPrice->getPiecePrice();
 
             $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
-            $calculatedPrices['priceVatNoDiscount'] = $variantPrice->getPiecePrice();
+            $calculatedPricesObject['priceVatNoDiscount'] = $variantPrice->getPiecePrice();
 
-            $price->setCalculatedPrices($calculatedPrices);
-
-            if ( $variantMinimalAmount === 0 || $variantMinimalAmount > $priceMinimalAmount) {
-                $variantMinimalAmount = $priceMinimalAmount;
-                $variant->setCalculatedPrices($calculatedPrices);
-            }
+            $calculatedPricesList[$minimalAmount] = $calculatedPricesObject;
         }
+
+        // set variant calculated prices to be the list
+        $variant->setCalculatedPrices($calculatedPricesList);
         return $variant;
     }
 
@@ -68,6 +75,7 @@ class CalculatedPricesService
         }
 
 
+        // get the lowest price from among product.productVariants and set the calculatedPrices object to product
         $minimalPrice = 0;
         foreach ($product->getProductVariants() as $variant) {
             $this->makeCalculatedPricesForProductVariant($variant);
@@ -80,10 +88,13 @@ class CalculatedPricesService
                 dd($product);
             }
 
-            if ($minimalPrice === 0 || $minimalPrice > $variantCalculatedPrices['priceNoVat'])
+            // get the 1st (with the lowest minimalAmount) calculated prices object from variant
+            $variantCalculatedPricesMin = $variantCalculatedPrices[array_key_first($variantCalculatedPrices)];
+
+            if ($minimalPrice === 0 || $minimalPrice > $variantCalculatedPricesMin['priceNoVat'])
             {
-                $minimalPrice = $variantCalculatedPrices['priceNoVat'];
-                $product->setCalculatedPrices($variantCalculatedPrices);
+                $minimalPrice = $variantCalculatedPricesMin['priceNoVat'];
+                $product->setCalculatedPrices($variantCalculatedPricesMin);
             }
         }
         return $product;
