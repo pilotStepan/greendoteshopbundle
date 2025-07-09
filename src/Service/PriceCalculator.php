@@ -66,10 +66,10 @@ class PriceCalculator
      *
      * @param Purchase $purchase The purchase for which the price is to be calculated.
      * @param Currency $currency The currency in which the price is to be calculated.
-     * @param VatCalculationType $vatCalculationType The type of VAT calculation to be used.
      * @param int|null $vat_rate The VAT rate to be applied. If null, no VAT is applied.
-     * @param DiscountCalculationType $discountCalculationType The type of discount calculation to be used.
      * @param bool $services If true, the service fee is added to the final price.
+     * @param VatCalculationType $vatCalculationType The type of VAT calculation to be used.
+     * @param DiscountCalculationType $discountCalculationType The type of discount calculation to be used.
      * @param VoucherCalculationType $voucherCalculationType The type of voucher calculation to be used.
      * @param bool $do_rounding If true, all calculations are rounded to 2 decimals, final price is rounded to the nearest half.
      *
@@ -79,11 +79,11 @@ class PriceCalculator
     public function calculatePurchasePrice(
         Purchase                $purchase,
         Currency                $currency,
-        VatCalculationType      $vatCalculationType,
         int|null                $vat_rate,
-        DiscountCalculationType $discountCalculationType,
         bool                    $services,
-        VoucherCalculationType  $voucherCalculationType = null,
+        VatCalculationType      $vatCalculationType = VatCalculationType::WithoutVAT,
+        DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
+        VoucherCalculationType  $voucherCalculationType = VoucherCalculationType::WithVoucher,
         bool                    $do_rounding = false,
     ): float
     {
@@ -279,7 +279,7 @@ class PriceCalculator
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph
-            $purchasePrice = $this->calculatePurchasePrice($purchaseOrTransportation, $this->currencyRepository->findOneBy(["conversionRate" => 1]), $vatCalculationType, null, DiscountCalculationType::WithDiscount, false);
+            $purchasePrice = $this->calculatePurchasePrice($purchaseOrTransportation, $this->currencyRepository->findOneBy(["conversionRate" => 1]), null, false, $vatCalculationType, DiscountCalculationType::WithDiscount);
 
             // check for null transportation
             if ($purchaseOrTransportation->getTransportation() !== null)
@@ -340,7 +340,7 @@ class PriceCalculator
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph
-            $purchasePrice = $this->calculatePurchasePrice($purchaseOrPayment, $this->currencyRepository->findOneBy(["conversionRate" => 1]), VatCalculationType::WithoutVAT, null, DiscountCalculationType::WithDiscount, false);
+            $purchasePrice = $this->calculatePurchasePrice($purchaseOrPayment, $this->currencyRepository->findOneBy(["conversionRate" => 1]), null, false, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
 
 
             // check for null payment

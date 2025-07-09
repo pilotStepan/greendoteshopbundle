@@ -127,10 +127,10 @@ class ClientSectionController extends AbstractController
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
             $currency,
-            VatCalculationType::WithVAT,
             1,
-            DiscountCalculationType::WithDiscount,
             true,
+            VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
             true
         );
@@ -164,10 +164,10 @@ class ClientSectionController extends AbstractController
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
             $currency,
-            VatCalculationType::WithVAT,
             1,
-            DiscountCalculationType::WithDiscount,
             true,
+            VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
             true
         );
@@ -359,10 +359,10 @@ class ClientSectionController extends AbstractController
         $purchasePrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
             $currency,
-            VatCalculationType::WithVAT,
             1,
-            DiscountCalculationType::WithDiscount,
             true,
+            VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
             true
         );

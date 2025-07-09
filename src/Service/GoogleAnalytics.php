@@ -192,7 +192,7 @@ class GoogleAnalytics
                     'transaction_id' => $purchase->getId(),
                     'currency' =>$currencyName,
                     'shipping' => $this->priceCalculator->transportationPrice($purchase, VatCalculationType::WithoutVAT, $currency),
-                    'value' => $this->priceCalculator->calculatePurchasePrice($purchase, $currency, VatCalculationType::WithoutVAT, null, DiscountCalculationType::WithDiscount, 1 ),
+                    'value' => $this->priceCalculator->calculatePurchasePrice($purchase, $currency, null, 1, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount),
                     'items' => $items,
                     'email' => $email
             ];

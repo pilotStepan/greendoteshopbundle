@@ -124,10 +124,10 @@ class PurchaseController extends AbstractController
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $newPurchase,
             $currency,
-            VatCalculationType::WithVAT,
             1,
-            DiscountCalculationType::WithDiscount,
             true,
+            VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
             true
         );
