@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
-use FontLib\Table\Type\name;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -18,9 +17,8 @@ use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Greendot\EshopBundle\Service\CertificateMaker;
-use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\InvoiceMaker;
-use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
+use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
@@ -37,7 +35,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Workflow\Registry;
@@ -183,6 +181,7 @@ class ClientSectionController extends AbstractController
         $entityManager->persist($payment);
         $entityManager->flush();
 
+        // TODO: discuss usage
         $paymentUrl = $GPWebpay->getPayLink($purchase, $payment->getId(), $totalPrice);
 
         return new RedirectResponse($paymentUrl);

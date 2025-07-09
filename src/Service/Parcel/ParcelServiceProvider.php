@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
+use Greendot\EshopBundle\Entity\Project\Purchase;
+
 /**
  * Provides parcel services based on the transportation ID.
  * Iterates through available parcel services to find one that supports the given transportation ID.
@@ -31,5 +33,18 @@ readonly class ParcelServiceProvider
             }
         }
         return null;
+    }
+
+    /**
+     * Retrieves the parcel service for a given purchase.
+     * Uses the transportation ID from the purchase to find the appropriate service.
+     *
+     * @param Purchase $purchase The purchase to get the parcel service for.
+     * @return ?ParcelServiceInterface The parcel service for the purchase, or null if not found.
+     */
+    public function getByPurchase(Purchase $purchase): ?ParcelServiceInterface
+    {
+        $transportationId = $purchase->getTransportation()?->getId();
+        return $transportationId ? $this->get($transportationId) : null;
     }
 }

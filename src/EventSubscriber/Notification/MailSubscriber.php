@@ -39,6 +39,18 @@ final readonly class MailSubscriber implements EventSubscriberInterface
         ];
     }
 
+    public function onCompletedReceive(CompletedEvent $event): void
+    {
+        if (!$this->shouldNotify($event, $this->notificationMap)) return;
+
+        /* @var Purchase $purchase */
+        $purchase = $event->getSubject();
+//        $this->manageMails->sendOrderReceiveEmail(
+//            $purchase,
+//            'mail/specific/order-receive.html.twig'
+//        );
+    }
+
     public function onCompletedPayment(CompletedEvent $event): void
     {
         if (!$this->shouldNotify($event, $this->notificationMap)) return;
@@ -50,18 +62,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 //            $purchase,
 //            $invoicePath,
 //            'mail/specific/payment-received.html.twig'
-//        );
-    }
-
-    public function onCompletedReceive(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
-//        $this->manageMails->sendOrderReceiveEmail(
-//            $purchase,
-//            'mail/specific/order-receive.html.twig'
 //        );
     }
 

@@ -124,25 +124,12 @@ class ManagePurchase extends AbstractExtension
         ];
     }
 
+    /* TODO: process parcel creating via messenger, handle failed parcel creation */
     public function generateTransportData(Purchase $purchase): void
     {
-        $transportationId = $purchase->getTransportation()->getId();
-        $parcelService = $this->parcelServiceProvider->get($transportationId);
-        if (!$parcelService) return;
-
-        $parcelId = $parcelService->createParcel($purchase);
-        if ($parcelId) {
-            $purchase->setTransportNumber($parcelId);
-            return;
-        }
-
-        $workflow = $this->workflowRegistry->get($purchase);
-        if ($workflow->can($purchase, 'cancellation')) {
-            $workflow->apply($purchase, 'cancellation');
-            $this->logger->error('Failed to create parcel for purchase. Order cancelled.', ['purchaseId' => $purchase->getId()]);
-        } else {
-            $this->logger->error('Failed to create parcel for purchase and unable to cancel.', ['purchaseId' => $purchase->getId()]);
-        }
+        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
+        $parcelId = $parcelService?->createParcel($purchase);
+        $purchase->setTransportNumber($parcelId);
     }
 
     public function generateInvoice(Purchase $purchase): ?string
