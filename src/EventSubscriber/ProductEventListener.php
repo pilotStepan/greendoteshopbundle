@@ -31,6 +31,10 @@ class ProductEventListener
         $parameters = $this->productRepository->calculateParameters($product);
 
         $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
+
+        if (!isset($product->getCalculatedPrices()['priceNoVat'])) {
+            dd($product);
+        }
         $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
         $product->setCurrencySymbol($currencySymbol);
         $product->setAvailability($availability);

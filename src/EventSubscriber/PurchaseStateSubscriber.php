@@ -6,7 +6,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
-use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -18,7 +17,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
     public function __construct
     (
-        private ManageMails            $manageMails,
         private EntityManagerInterface $entityManager,
         private ManageVoucher          $manageVoucher,
         private ManagePurchase         $managePurchase,
@@ -98,72 +96,48 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-
-        $this->entityManager->wrapInTransaction(function() use ($purchase) {
-            $this->manageVoucher->handleUsedVouchers($purchase, 'use');
-            $this->manageClientDiscount->use($purchase, $purchase->getClientDiscount());
-            $this->managePurchase->generateTransportData($purchase);
-            $this->manageVoucher->initiateVouchers($purchase);
-        });
-
-        // $this->manageMails->sendOrderReceiveEmail($purchase, 'mail/specific/order-receive.html.twig'); TODO: not ready
+        $this->manageVoucher->handleUsedVouchers($purchase, 'use');
+        $this->manageClientDiscount->use($purchase, $purchase->getClientDiscount());
+        $this->manageVoucher->initiateVouchers($purchase);
+        $this->managePurchase->generateTransportData($purchase);
     }
 
     public function onPayment(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-
-        $this->entityManager->wrapInTransaction(function() use ($purchase, &$invoicePath) {
-            $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
-            $invoicePath = $this->managePurchase->generateInvoice($purchase); // TODO: handle $invoicePath=null case
-        });
-
-        // $this->manageMails->sendPaymentReceivedEmail($purchase, $invoicePath, 'mail/specific/payment-received.html.twig'); TODO: not ready
+        $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
     }
 
     public function onPaymentIssue(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-
-        $this->entityManager->wrapInTransaction(function() use ($purchase) {
-            $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
-        });
-
-        // $this->manageMails->sendEmail($purchase, 'mail/specific/payment-not-received.html.twig'); TODO: not ready
+        $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
     }
 
     public function onCancellation(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-
-        $this->entityManager->wrapInTransaction(function() use ($purchase) {
-            $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
-        });
-
-         // $this->manageMails->sendEmail($purchase, 'mail/specific/order-canceled.html.twig'); TODO: not ready
+        $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
     }
 
     public function onPrepareForPickup(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        // $this->manageMails->sendEmail($purchase, 'mail/specific/order-ready-for-pickup.html.twig'); TODO: not ready
     }
 
     public function onSend(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-//         $this->manageMails->sendEmail($purchase, 'mail/specific/order-shipped.html.twig'); TODO: not ready
     }
 
     public function onPickUp(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        // $this->manageMails->sendEmail($purchase, 'mail/specific/order-picked-up.html.twig'); TODO: not ready
     }
 }

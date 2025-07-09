@@ -29,7 +29,7 @@ class CategoryCategory
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'categoryCategories')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['category_with_parents:read'])]
+    #[Groups(['category_with_parents:read', 'product_item:read'])]
     private $category_super;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'categorySubCategories')]

@@ -23,11 +23,11 @@ class ReviewPoints
     private ?int $id = null;
 
     #[ORM\Column]
-    #[Groups(['review:read', 'review_points:read', 'review_points:write'])]
+    #[Groups(['review:read', 'review:write', 'review_points:read', 'review_points:write'])]
     private ?bool $type = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['review:read', 'review_points:read', 'review_points:write'])]
+    #[Groups(['review:read', 'review:write', 'review_points:read', 'review_points:write'])]
     private ?string $text = null;
 
     #[ORM\ManyToOne(inversedBy: 'reviewPoints')]

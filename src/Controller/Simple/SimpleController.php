@@ -28,7 +28,7 @@ class SimpleController extends AbstractController
         }
 
         try {
-            $passwordResetService->processSendingPasswordResetEmail($email);
+            $passwordResetService->requestPasswordReset($email);
             return $this->json(['success' => true, 'message' => 'E-mail pro reset hesla byl odeslán']);
         } catch (\RuntimeException $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);

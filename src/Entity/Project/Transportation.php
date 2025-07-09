@@ -108,8 +108,8 @@ class Transportation implements Translatable
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $secretKey = null;
 
-    #[Groups(['transportation:read'])]
-    private $free_from_price;
+    #[Groups(['transportation:read', 'transportation_group:read'])]
+    private $freeFromPrice;
 
     #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
     private ?float $price = null;
@@ -499,17 +499,17 @@ class Transportation implements Translatable
     /**
      * @return float
      */
-    public function getFreeFromPrice()
+    public function getFreeFromPrice(): float
     {
-        return $this->free_from_price;
+        return $this->freeFromPrice;
     }
 
     /**
      * @param float $free_from_price
      */
-    public function setFreeFromPrice($free_from_price): static
+    public function setFreeFromPrice(float $free_from_price): static
     {
-        $this->free_from_price = $free_from_price;
+        $this->freeFromPrice = $free_from_price;
 
         return $this;
     }

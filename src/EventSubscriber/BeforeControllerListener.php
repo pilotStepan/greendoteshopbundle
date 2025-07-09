@@ -9,30 +9,37 @@ use App\Controller\WebController;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Form\FormFactoryInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Twig\Environment;
 
 class BeforeControllerListener implements EventSubscriberInterface
 {
-    private SessionInterface $session;
-
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly RequestStack           $requestStack,
-        private readonly Security               $security,
         private readonly Environment            $twig,
-        private readonly FormFactoryInterface   $formFactory,
         private readonly CategoryRepository     $categoryRepository,
         private readonly CurrencyRepository     $currencyRepository,
     )
     {
-        $this->session = $this->requestStack->getSession();
+    }
+
+    public function onKernelRequest(RequestEvent $event): void
+    {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
+        $session = $event->getRequest()->getSession();
+
+        if (!$session->has('selectedCurrency')) {
+            $session->set(
+                'selectedCurrency',
+                $this->currencyRepository->findOneBy(['isDefault' => true])
+            );
+        }
     }
 
     /**
@@ -41,15 +48,15 @@ class BeforeControllerListener implements EventSubscriberInterface
      */
     public function onKernelController(ControllerEvent $event): void
     {
-        $controller = $event->getController();
-
-        if (is_array($controller)) {
-            $controller = $controller[0];
+        if (!$event->isMainRequest()) {
+            return;   // never touch the session in sub-requests
         }
 
-        if (!$this->session->get('selectedCurrency')) {
-            $this->session->set('selectedCurrency', $this->currencyRepository->findOneBy(['isDefault' => 1]));
-        }
+        $controller = is_array($event->getController())
+            ? $event->getController()[0]
+            : $event->getController();
+
+        $session = $event->getRequest()->getSession();
 
         if ($controller instanceof WebController) {
             $menu_categories = $this->categoryRepository->findMainMenuCategories();
@@ -66,7 +73,7 @@ class BeforeControllerListener implements EventSubscriberInterface
         }
 
        if ($controller instanceof OrderController or $controller instanceof ProductController) {
-           $order = $this->session->get('order');
+           $order = $session->get('order');
            $productVariantsInCart = [];
 
            if ($order) {
@@ -87,7 +94,7 @@ class BeforeControllerListener implements EventSubscriberInterface
        }
 
         if ($controller instanceof OrderController or $controller instanceof ProductController) {
-            $order = $this->session->get('inquiry');
+            $order = $session->get('inquiry');
             $productVariantsInCart = [];
 
             if ($order) {
@@ -119,6 +126,7 @@ class BeforeControllerListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
+            KernelEvents::REQUEST => ['onKernelRequest', 100],
             KernelEvents::CONTROLLER => 'onKernelController',
         ];
     }

@@ -48,24 +48,31 @@ class SimplePurchaseController extends AbstractController
         } catch (\JsonException) {
             throw new BadRequestHttpException('Invalid JSON format');
         }
+
         if (!isset($data['transition'])) {
             throw new BadRequestHttpException('Missing transition');
         }
-        if (!empty($data['package'])) {
-            $purchase->setTransportNumber($data['package']);
-        }
 
-        $pFlow = $registry->get($purchase);
-        if (!$pFlow->getEnabledTransition($purchase, $data['transition'])) {
+        $flow = $registry->get($purchase);
+        if (!$flow->getEnabledTransition($purchase, $data['transition'])) {
             throw new BadRequestHttpException('Invalid transition');
         }
 
-        $pFlow->apply($purchase, $data['transition']);
+        // We wrap it in transaction to ensure atomicity
+        $newState = $em->wrapInTransaction(function () use ($purchase, $data, $flow) {
+            // Mutate the aggregate
+            if (!empty($data['package'])) {
+                $purchase->setTransportNumber($data['package']);
+            }
 
-        $em->persist($purchase);
-        $em->flush();
+            // Add a runtime “silent” flag if Simple sets it
+            $flow->apply($purchase, $data['transition'], ['silent' => $data['silent'] ?? false]);
 
-        return $this->json(['state' => $purchase->getState()]);
+            // no need for persist(), purchase is already managed
+            return $purchase->getState();
+        });
+
+        return $this->json(['state' => $newState]);
     }
 
 

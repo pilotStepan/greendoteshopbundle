@@ -17,7 +17,7 @@ class SessionService
 
     public function getCurrency($symbolOnly = false): Currency|string
     {
-        $currency = $this->requestStack->getCurrentRequest()->getSession()?->get('selectedCurrency')
+        $currency = $this->requestStack->getCurrentRequest()?->getSession()?->get('selectedCurrency')
             ?? $this->currencyRepository->findOneBy(['isDefault' => true]);
         return $symbolOnly ? $currency->getSymbol() : $currency;
     }

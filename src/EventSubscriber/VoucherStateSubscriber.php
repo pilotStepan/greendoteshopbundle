@@ -40,7 +40,7 @@ readonly class VoucherStateSubscriber implements EventSubscriberInterface
         /** @var  Voucher $voucher */
         $voucher = $event->getSubject();
 
-        if (new \DateTime() <= $voucher->getDateUntil()) {
+        if (new \DateTime() > $voucher->getDateUntil()) {
             $event->setBlocked(true, "Platnost voucheru vypršela: " . $voucher->getHash());
         }
     }

@@ -40,10 +40,11 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
     {
         try {
             // 0. Validate input structure
-            $errors = $this->validator->validate($data);
-            if (count($errors) > 0) {
-                $this->logger->error('Validation errors', ['errors' => $errors]);
-                throw new \InvalidArgumentException($errors);
+            $violations = $this->validator->validate($data);
+            if (count($violations) > 0) {
+                $msg = (string) $violations;
+                $this->logger->error('Validation errors', ['errors' => $msg]);
+                return new JsonResponse(['errors' => [$msg]], 400);
             }
 
             // 1. Get existing purchase
@@ -63,33 +64,35 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
                 return $consent;
             }, $data->consents);
 
-            // 3. Handle client
-            $client = $this->handleClient($data->client);
-            $purchase->setClient($client);
+            // Wrap in transaction to ensure atomicity, don't wrap logic inside transaction listeners
+            $this->em->wrapInTransaction(function () use ($data, $purchase, $providedConsents) {
+                // 3. Handle client
+                $client = $this->handleClient($data->client);
+                $purchase->setClient($client);
 
-            // 4. Create purchase address
-            $address = $this->createPurchaseAddress($data->address);
-            $purchase->setPurchaseAddress($address);
+                // 4. Create purchase address
+                $address = $this->createPurchaseAddress($data->address);
+                $purchase->setPurchaseAddress($address);
 
-            // 5. Add consents
-            foreach ($providedConsents as $consent) {
-                $purchase->addConsent($consent);
-            }
+                // 5. Add consents
+                foreach ($providedConsents as $consent) {
+                    $purchase->addConsent($consent);
+                }
 
-            // 6. Add notes
-            foreach ($data->notes as $noteText) {
-                $note = $this->createDiscussion($noteText);
-                $purchase->addDiscussion($note);
-            }
+                // 6. Add notes
+                foreach ($data->notes as $noteText) {
+                    $note = $this->createDiscussion($noteText);
+                    $purchase->addDiscussion($note);
+                }
 
-            // 7. Validate and apply transition
-            $purchaseWorkflow = $this->workflowRegistry->get($purchase);
-            $this->applyTransition($purchaseWorkflow, $purchase, 'create');
-            $this->applyTransition($purchaseWorkflow, $purchase, 'receive');
-            $this->em->flush();
+                // 7. Validate and apply transition
+                $purchaseWorkflow = $this->workflowRegistry->get($purchase);
+                $this->applyTransition($purchaseWorkflow, $purchase, 'create');
+                $this->applyTransition($purchaseWorkflow, $purchase, 'receive');
+            });
 
             // 8. Process payment after transition
-            $redirectUrl = $this->generateRedirectUrl($purchase, $client);
+            $redirectUrl = $this->generateRedirectUrl($purchase, $purchase->getClient());
 
             // 9. Remove purchase from session
             $this->requestStack->getSession()->remove('purchase');
@@ -112,9 +115,6 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             $this->logger->error('Unexpected exception during purchase processing', ['exception' => $e]);
             dd($e); // FIXME: left for debugging purposes
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
-        } finally {
-            // Ensure the entity manager is closed in case of an ORM error
-            if (isset($this->em)) $this->em->close();
         }
     }
 

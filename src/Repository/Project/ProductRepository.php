@@ -209,7 +209,7 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
-    public function sortByReviewsQB(QueryBuilder $qb, $direction = 'DESC'): QueryBuilder
+    public function sortProductsByReviews(QueryBuilder $qb, $direction = 'DESC'): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
 
@@ -256,6 +256,15 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('availabilityId', 1);
 
         return $qb;
+    }
+
+
+    public function sortProductsByAvailability(QueryBuilder $qb){
+        $this->safeJoin($qb, 'p', 'productVariants', 'pv'); 
+        $this->safeJoin($qb, 'pv', 'availability', 'a');
+        $qb->addSelect("MIN(a.sequence) AS HIDDEN min_sequence")
+            ->groupBy('p.id')
+            ->orderBy('min_sequence', 'ASC');
     }
 
     public function findDiscountedProducts(): array
@@ -367,17 +376,24 @@ class ProductRepository extends ServiceEntityRepository
         foreach ($parameters as $parameter) {
             if($parameter->parameterGroup->id === 'price'){
                 // Join prices for price filtering
-                $queryBuilder->leftJoin('pv.price', 'pv_price');
+                $this->safeJoin($queryBuilder, 'pv', 'price', 'price');
 
-                // Apply range filter using MIN(price.price)
+                // TODO: maybe based on something different?
+                // now it works as a property of price parameterGroup that is set in vue (productBase/category)
+                $minPriceCalculation = ($parameter->parameterGroup->withVat ?? false) ?
+                    'price.price * (1 + COALESCE(price.vat, 0) / 100) * (1 - COALESCE(price.discount, 0) / 100 )' :
+                    'price.price';
+
+                // Apply range filter using MIN($minPriceCalculation)
                 $queryBuilder
-                    ->andWhere('pv_price.validFrom <= :date')
-                    ->andWhere('pv_price.validUntil >= :date OR pv_price.validUntil IS NULL')
-                    ->addSelect('MIN(pv_price.price) AS hidden pv_minPrice')
+                    ->andWhere('price.validFrom <= :date')
+                    ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
+                    ->andWhere("price.minimalAmount = 1")
+                    ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
-                    ->having('pv_minPrice BETWEEN :minPrice AND :maxPrice')
-                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]) // expected: [min, max]
-                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1])
+                    ->having("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
+                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
+                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
                     ->setParameter('date', new \DateTime());
 
             }else {
@@ -471,54 +487,25 @@ class ProductRepository extends ServiceEntityRepository
     }
 
 
-    public function sortProductsByPrice($queryBuilder, DateTime $date, string $sort, int $minimalAmount = 1, int|null $vat = null)
+    public function sortProductsByPrice(QueryBuilder $qb, DateTime $date, string $direction) : QueryBuilder
     {
-        $alias = $queryBuilder->getAllAliases()[0];
+        $this->safeJoin($qb, 'pv', 'price', 'price');
 
-        if (strtoupper($sort) == "DESC") {
-            $defaultPrice = 0;
-        } elseif (strtoupper($sort) == "ASC") {
-            $defaultPrice = 2147483640;
-        } else {
-            $defaultPrice = 0;
-        }
-
-        /*
-        $subquery = $this->entityManager->createQueryBuilder()
-            ->select('CASE WHEN MIN(pv_price.price) IS NULL THEN :defaultPrice ELSE MIN(pv_price.price) END')
-            //->select('MIN(pv_price.price)')
-            ->from('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pva')
-            ->leftJoin('pva.price', 'pv_price', Join::WITH,
-                $queryBuilder->expr()->andX(
-                    $queryBuilder->expr()->eq('pv_price.minimalAmount', $minimalAmount),
-                    $queryBuilder->expr()->lte('pv_price.validFrom', ':currentDateTime'),
-                    $queryBuilder->expr()->orX(
-                        $queryBuilder->expr()->isNull('pv_price.validUntil'),
-                        $queryBuilder->expr()->gte('pv_price.validUntil', ':currentDateTime')
-                    ),
-                )
-            )
-            ->andWhere('pv.product = ' . $alias)
-            ->andWhere('pv_price.price IS NOT NULL')
-            ->andWhere('pv.product IS NOT NULL')
-            ->getQuery();
-
-
-        $queryBuilder
-            ->addSelect('(' . $subquery->getDQL() . ') AS HIDDEN min_price')
-            ->setParameter('defaultPrice', $defaultPrice) // Set a suitable default value
-            ->setParameter('currentDateTime', $date)
-            ->orderBy('min_price', strtoupper($sort));
-           */
-        $queryBuilder->leftJoin('pv.price', 'price')
-            ->andWhere('price.validFrom <= :date')
+        $qb ->andWhere('price.validFrom <= :date')
             ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
             ->setParameter('date', $date)
             ->groupBy('p')
             ->addSelect('MIN(price.price) AS hidden minPrice')
-            ->orderBy('minPrice', strtoupper($sort));
+            ->orderBy('minPrice', strtoupper($direction));
 
-        return $queryBuilder;
+        return $qb;
+    }
+
+    public function sortProductsBySequence(QueryBuilder $qb, string $direction) : QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+        $qb->orderBy($alias.'.sequence', strtoupper($direction));
+        return $qb;
     }
 
     public function getSoldProductsCount(DateTime $startDate, DateTime $endDate): array
@@ -538,5 +525,46 @@ class ProductRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * Adds a join to the Doctrine QueryBuilder only if it hasn't already been added.
+     *
+     * This prevents duplicate alias errors in modular code where multiple functions
+     * may request the same join.
+     *
+     * @param QueryBuilder $qb        The Doctrine QueryBuilder instance to modify.
+     * @param string       $rootAlias The alias of the root entity (e.g., 'e' for 'FROM Entity e').
+     * @param string       $path      The relation path from the root entity (e.g., 'joinedEntity').
+     * @param string       $alias     The alias to assign to the joined entity (e.g., 'j').
+     * @param string       $joinType  The type of join to perform: 'left' (default) or 'inner'.
+     *
+     * @throws InvalidArgumentException If an unsupported join type is provided.
+     *
+     * @example
+     * safeJoin($qb, 'e', 'category', 'c');
+    */
+    function safeJoin(QueryBuilder $qb, string $rootAlias, string $path, string $alias, string $joinType = 'left')
+    {
+
+        $joinDqlParts = $qb->getDQLParts()['join'];
+        foreach ($joinDqlParts as $joins) {
+            foreach ($joins as $join) {
+                if ($join->getAlias() === $alias) {
+                    return;
+                }
+            }
+        }
+
+
+
+        if ($joinType === 'left') {
+            $qb->leftJoin("$rootAlias.$path", $alias);
+        } elseif ($joinType === 'inner') {
+            $qb->innerJoin("$rootAlias.$path", $alias);
+        } else {
+            throw new \InvalidArgumentException("Unsupported join type: $joinType");
+        }
+    }
+
 
 }

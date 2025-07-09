@@ -57,6 +57,7 @@ class Producer
     private ?Upload $upload = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['product_item:read'])]
     private ?string $slug = null;
 
     public function __construct()

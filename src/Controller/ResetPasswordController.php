@@ -41,7 +41,7 @@ class ResetPasswordController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $email = $form->get('mail')->getData();
-                $resetToken = $this->passwordResetService->processSendingPasswordResetEmail($email);
+                $resetToken = $this->passwordResetService->requestPasswordReset($email);
                 $this->setTokenObjectInSession($resetToken);
             } catch (\RuntimeException $e) {
                 $this->addFlash('reset_password_error', $e->getMessage());

@@ -53,9 +53,13 @@ readonly class TransportationEventListener
                 ->getTransportationPrice() ?? 0.0
             : $basePrice;
 
+        // Free from price
+        $freeFromPrice = $this->serviceCalculationUtils->getFreeFromPrice($transportation, $currency);
+
         $transportation
             ->setPrice($basePrice)
-            ->setPriceForCart($cartPrice);
+            ->setPriceForCart($cartPrice)
+            ->setFreeFromPrice($freeFromPrice);
     }
 
     /**
