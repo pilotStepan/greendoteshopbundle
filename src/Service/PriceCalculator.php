@@ -20,6 +20,8 @@ use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Exception;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -43,7 +45,9 @@ class PriceCalculator
         ClientDiscountRepository $clientDiscountRepository,
         Security                 $security,
         PriceRepository          $priceRepository,
-        HandlingPriceRepository  $handlingPriceRepository
+        HandlingPriceRepository  $handlingPriceRepository,
+        private readonly PurchasePriceFactory $purchasePriceFactory,
+        private readonly ProductVariantPriceFactory $productVariantPriceFactory
     )
     {
         $this->productRepository = $productRepository;
@@ -83,37 +87,40 @@ class PriceCalculator
         bool                    $do_rounding = false,
     ): float
     {
-        $finalPrice = 0;
-        foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
-            if ($vat_rate) {
-                $productVariantPrice = $purchaseProductVariant->getProductVariant();
-                $prices = $this->priceRepository->findPricesByDateAndProductVariant($productVariantPrice, $purchase->getDateIssue() ?? new \DateTime("now"), $purchaseProductVariant->getAmount());
-                if (!empty($prices)) {
-                    $finalPrice += $this->calculateProductVariantPrice($purchaseProductVariant, $currency, $vatCalculationType, $discountCalculationType, false, $do_rounding);
-                }
-            } else {
-                $finalPrice += $this->calculateProductVariantPrice($purchaseProductVariant, $currency, $vatCalculationType, $discountCalculationType, false, $do_rounding);
-            }
-        }
+        $newPurchasePrice = $this->purchasePriceFactory->create($purchase, $currency, $vatCalculationType, $discountCalculationType, $voucherCalculationType);
+        return $newPurchasePrice->getPrice($services, $vat_rate);
 
-        if ($services) {
-            $serviceFee = 0;
-            $serviceFee += $this->paymentPrice($purchase, $vatCalculationType, $do_rounding, $currency);
-            $serviceFee += $this->transportationPrice($purchase, $vatCalculationType, $currency);
-            $finalPrice += $serviceFee;
-        }
-
-
-
-        if($voucherCalculationType) {
-            $finalPrice = $this->applyVouchers($finalPrice, $purchase, $voucherCalculationType, $currency);
-        }
-
-        if ($do_rounding) {
-            $finalPrice = $this->roundToNearestHalf($finalPrice);
-        }
-
-        return $finalPrice;
+//        $finalPrice = 0;
+//        foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
+//            if ($vat_rate) {
+//                $productVariantPrice = $purchaseProductVariant->getProductVariant();
+//                $prices = $this->priceRepository->findPricesByDateAndProductVariant($productVariantPrice, $purchase->getDateIssue() ?? new \DateTime("now"), $purchaseProductVariant->getAmount());
+//                if (!empty($prices)) {
+//                    $finalPrice += $this->calculateProductVariantPrice($purchaseProductVariant, $currency, $vatCalculationType, $discountCalculationType, false, $do_rounding);
+//                }
+//            } else {
+//                $finalPrice += $this->calculateProductVariantPrice($purchaseProductVariant, $currency, $vatCalculationType, $discountCalculationType, false, $do_rounding);
+//            }
+//        }
+//
+//        if ($services) {
+//            $serviceFee = 0;
+//            $serviceFee += $this->paymentPrice($purchase, $vatCalculationType, $do_rounding, $currency);
+//            $serviceFee += $this->transportationPrice($purchase, $vatCalculationType, $currency);
+//            $finalPrice += $serviceFee;
+//        }
+//
+//
+//
+//        if($voucherCalculationType) {
+//            $finalPrice = $this->applyVouchers($finalPrice, $purchase, $voucherCalculationType, $currency);
+//        }
+//
+//        if ($do_rounding) {
+//            $finalPrice = $this->roundToNearestHalf($finalPrice);
+//        }
+//
+//        return $finalPrice;
     }
 
 
@@ -139,106 +146,115 @@ class PriceCalculator
         bool                                  $do_rounding,
     ): float
     {
-        $pricesArray = [];
-        $priceWithoutVat = 0;
-        $vatRate = 0;
-        $discountedAmount = 0;
-        if (!isset($client) and $this->security->getUser()) {
-            $client = $this->security->getUser();
-        } else {
-            $client = null;
+        $amount = null;
+        if ($productVariant instanceof ProductVariant){
+            $amount = 1;
         }
-
-        if ($productVariant instanceof PurchaseProductVariant) {
-            $purchaseProductVariant = $productVariant;
-            if (!$singleItemPrice) {
-                $amount = $purchaseProductVariant->getAmount();
-            }
-            $productVariant = $purchaseProductVariant->getProductVariant();
-//TODO: add discount on product-product
-            $purchase = $purchaseProductVariant->getPurchase();
-
-            $purchase_client = $purchase->getClient();
-            /*
-             * Proc kontrolujeme zda je objednavka v draftu
-             */
-            if ($purchase_client != null and $purchaseProductVariant->getPurchase()->getState() === "draft") {
-                $client = $purchase_client;
-            }
-
-        } else {
-            $amount = $this->priceRepository->findBy(['productVariant' => $productVariant], ['minimalAmount' => 'ASC']);
-            if (isset($amount[0])) {
-                $amount = $amount[0]->getMinimalAmount();
-            } else {
-                $amount = 0;
-            }
+        $productVariantPrice = $this->productVariantPriceFactory->create($productVariant, $currency,$amount, $vatCalculationType, $discountCalculationType);
+        if ($singleItemPrice){
+            return $productVariantPrice->getPiecePrice();
         }
-
-
-        if ($client and ($discountCalculationType == DiscountCalculationType::WithDiscount)) {
-            $discountedAmount = $this->getClientDiscountValue($client);
-        }
-        if (isset($purchaseProductVariant) and $purchaseProductVariant->getPurchase()->getDateIssue() != null) {
-            $prices = $this->priceRepository->findPricesByDateAndProductVariant($productVariant, $purchaseProductVariant->getPurchase()->getDateIssue(), $amount);
-        } else {
-            $prices = $this->priceRepository->findPricesByDateAndProductVariant($productVariant, new \DateTime("now"), $amount);
-        }
-
-        if (!empty($prices)) {
-            $remainingAmount = $amount;
-            foreach ($prices as $price) {
-                if ($vatRate != 0 and $vatRate != $price->getVat()) {
-                    throw new Exception("Vat is different for prices on same Project/ProductVariant");
-                } elseif ($vatRate == 0) {
-                    $vatRate = $price->getVat();
-                }
-
-                $amountNumber = $remainingAmount / $price->getMinimalAmount();
-
-                //only for the WithDiscountPlusAfterRegistrationDiscount, it either applies the client discount or the base registration discount 10%
-                if ($client) {
-                    $clientDiscount = $this->getClientDiscountValue($client);
-                } else {
-                    $clientDiscount = 10;
-                }
-
-                //if price is not for a package, the price is valid for everything below
-                if (!$price->isIsPackage()) {
-                    $finalPrice = $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount);
-                    $finalPrice = $this->convertCurrency($finalPrice, $currency);
-                    $finalPrice = $finalPrice * $remainingAmount;
-                    $priceWithoutVat += $finalPrice;
-                    break;
-                }
-                //if there is no reminder
-                if ($amount % $price->getMinimalAmount() != 0) {
-                    $amountTaken = (int)$amountNumber * $price->getMinimalAmount();
-                    $remainingAmount -= $amountTaken;
-
-                    $finalPrice = $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount);
-                    $finalPrice = $this->convertCurrency($finalPrice, $currency);
-                    $finalPrice = $finalPrice * $amountTaken;
-                    $priceWithoutVat += $finalPrice;
-
-                    //$priceWithoutVat += $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount) * $amountTaken;
-                } else {
-                    //$priceWithoutVat += $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount) * $remainingAmount;
-                    $finalPrice = $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount);
-                    $finalPrice = $this->convertCurrency($finalPrice, $currency);
-                    $finalPrice = $finalPrice * $remainingAmount;
-                    $priceWithoutVat += $finalPrice;
-                    break;
-                }
-            }
-
-        }
-        $returnAmount = $this->applyVat($priceWithoutVat, $vatRate, $vatCalculationType);
-
-        if ($do_rounding) {
-            $returnAmount = round($returnAmount, 2);
-        }
-        return $returnAmount;
+        return $productVariantPrice->getPrice();
+//        $pricesArray = [];
+//        $priceWithoutVat = 0;
+//        $vatRate = 0;
+//        $discountedAmount = 0;
+//        if (!isset($client) and $this->security->getUser()) {
+//            $client = $this->security->getUser();
+//        } else {
+//            $client = null;
+//        }
+//
+//        if ($productVariant instanceof PurchaseProductVariant) {
+//            $purchaseProductVariant = $productVariant;
+//            if (!$singleItemPrice) {
+//                $amount = $purchaseProductVariant->getAmount();
+//            }
+//            $productVariant = $purchaseProductVariant->getProductVariant();
+////TODO: add discount on product-product
+//            $purchase = $purchaseProductVariant->getPurchase();
+//
+//            $purchase_client = $purchase->getClient();
+//            /*
+//             * Proc kontrolujeme zda je objednavka v draftu
+//             */
+//            if ($purchase_client != null and $purchaseProductVariant->getPurchase()->getState() === "draft") {
+//                $client = $purchase_client;
+//            }
+//
+//        } else {
+//            $amount = $this->priceRepository->findBy(['productVariant' => $productVariant], ['minimalAmount' => 'ASC']);
+//            if (isset($amount[0])) {
+//                $amount = $amount[0]->getMinimalAmount();
+//            } else {
+//                $amount = 0;
+//            }
+//        }
+//
+//
+//        if ($client and ($discountCalculationType == DiscountCalculationType::WithDiscount)) {
+//            $discountedAmount = $this->getClientDiscountValue($client);
+//        }
+//        if (isset($purchaseProductVariant) and $purchaseProductVariant->getPurchase()->getDateIssue() != null) {
+//            $prices = $this->priceRepository->findPricesByDateAndProductVariant($productVariant, $purchaseProductVariant->getPurchase()->getDateIssue(), $amount);
+//        } else {
+//            $prices = $this->priceRepository->findPricesByDateAndProductVariant($productVariant, new \DateTime("now"), $amount);
+//        }
+//
+//        if (!empty($prices)) {
+//            $remainingAmount = $amount;
+//            foreach ($prices as $price) {
+//                if ($vatRate != 0 and $vatRate != $price->getVat()) {
+//                    throw new Exception("Vat is different for prices on same Project/ProductVariant");
+//                } elseif ($vatRate == 0) {
+//                    $vatRate = $price->getVat();
+//                }
+//
+//                $amountNumber = $remainingAmount / $price->getMinimalAmount();
+//
+//                //only for the WithDiscountPlusAfterRegistrationDiscount, it either applies the client discount or the base registration discount 10%
+//                if ($client) {
+//                    $clientDiscount = $this->getClientDiscountValue($client);
+//                } else {
+//                    $clientDiscount = 10;
+//                }
+//
+//                //if price is not for a package, the price is valid for everything below
+//                if (!$price->isIsPackage()) {
+//                    $finalPrice = $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount);
+//                    $finalPrice = $this->convertCurrency($finalPrice, $currency);
+//                    $finalPrice = $finalPrice * $remainingAmount;
+//                    $priceWithoutVat += $finalPrice;
+//                    break;
+//                }
+//                //if there is no reminder
+//                if ($amount % $price->getMinimalAmount() != 0) {
+//                    $amountTaken = (int)$amountNumber * $price->getMinimalAmount();
+//                    $remainingAmount -= $amountTaken;
+//
+//                    $finalPrice = $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount);
+//                    $finalPrice = $this->convertCurrency($finalPrice, $currency);
+//                    $finalPrice = $finalPrice * $amountTaken;
+//                    $priceWithoutVat += $finalPrice;
+//
+//                    //$priceWithoutVat += $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount) * $amountTaken;
+//                } else {
+//                    //$priceWithoutVat += $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount) * $remainingAmount;
+//                    $finalPrice = $this->getFinalPrice($discountCalculationType, $price, $discountedAmount, $clientDiscount);
+//                    $finalPrice = $this->convertCurrency($finalPrice, $currency);
+//                    $finalPrice = $finalPrice * $remainingAmount;
+//                    $priceWithoutVat += $finalPrice;
+//                    break;
+//                }
+//            }
+//
+//        }
+//        $returnAmount = $this->applyVat($priceWithoutVat, $vatRate, $vatCalculationType);
+//
+//        if ($do_rounding) {
+//            $returnAmount = round($returnAmount, 2);
+//        }
+//        return $returnAmount;
     }
 
     public function transportationFreeFrom(Transportation $transportation){
