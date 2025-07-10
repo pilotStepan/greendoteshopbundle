@@ -72,6 +72,7 @@ class Upload
     private ?UploadGroup $uploadGroup = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['upload:read'])]
     private ?int $sequence = null;
 
     #[ORM\OneToMany(mappedBy: 'upload', targetEntity: Product::class)]
