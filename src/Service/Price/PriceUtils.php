@@ -22,9 +22,9 @@ class PriceUtils
      * @return float|null The calculated value or null if not enough parameters are provided.
      */
     public function calculatePercentage(
-        float $fullAmount = null,
-        float $percentage = null,
-        float $percentageAmount = null
+        ?float $fullAmount = null,
+        ?float $percentage = null,
+        ?float $percentageAmount = null
     ): ?float
     {
         if (!is_null($fullAmount) && !is_null($percentage)) {
@@ -42,8 +42,9 @@ class PriceUtils
         return null;
     }
 
-    public function convertCurrency(float $price, Currency $currency): float
+    public function convertCurrency(?float $price, Currency $currency): float
     {
+        if (is_null($price)) return 0;
         $price = $price * $currency->getConversionRate();
         return round($price, $currency->getRounding());
     }

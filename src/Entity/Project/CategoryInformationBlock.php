@@ -10,8 +10,8 @@ class CategoryInformationBlock
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'integer')]
+    private int $id;
 
     #[ORM\ManyToOne(inversedBy: 'categoryInformationBlocks')]
     #[ORM\JoinColumn(nullable: false)]
@@ -24,7 +24,7 @@ class CategoryInformationBlock
     #[ORM\Column(nullable: true)]
     private ?int $sequence = null;
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }

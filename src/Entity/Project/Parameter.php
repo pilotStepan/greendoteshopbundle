@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
 use Greendot\EshopBundle\ApiResource\ParameterSupplierFilter;
+use Greendot\EshopBundle\ApiResource\ParameterDiscountFilter;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -21,6 +22,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 // TODO: set the filters correctly (should be filtered only when the parameter is sent)
 #[ApiFilter(ParameterCategoryFilter::class)]
 #[ApiFilter(ParameterSupplierFilter::class)]
+#[ApiFilter(ParameterDiscountFilter::class)]
 class Parameter
 {
     #[ORM\Id]

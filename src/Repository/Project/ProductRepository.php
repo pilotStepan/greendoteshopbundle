@@ -267,18 +267,16 @@ class ProductRepository extends ServiceEntityRepository
             ->addOrderBy('min_sequence', 'ASC');
     }
 
-    public function findDiscountedProducts(): array
+    public function findDiscountedProducts(QueryBuilder $qb, DateTime $date = new \DateTime)
     {
-        return $this->createQueryBuilder('p')
-            ->innerJoin('p.productVariants', 'pv')
-            ->innerJoin('pv.price', 'price')
-            ->leftJoin('p.upload', 'upload')
-            ->andWhere('price.discount IS NOT NULL')
-            ->andWhere('price.discount > 0')
-            ->addSelect('upload')
-            ->getQuery()
-            ->getResult();
-    }
+        $this->safeJoin($qb, 'p', 'productVariants', 'pv', 'inner'); 
+        $this->safeJoin($qb, 'pv', 'price', 'price');
+        
+        $qb ->andWhere('price.validFrom <= :date')
+            ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
+            ->andWhere('price.discount IS NOT NULL AND price.discount > 0')
+            ->setParameter('date', $date);
+    }           
 
     public function findByDiscountQB(QueryBuilder $qb): QueryBuilder
     {
@@ -370,8 +368,8 @@ class ProductRepository extends ServiceEntityRepository
     {
 
         $alias = $queryBuilder->getRootAliases()[0];
-        $queryBuilder
-            ->innerJoin($alias . '.productVariants', 'pv');
+        $this->safeJoin($queryBuilder, $alias, 'productVariants', 'pv'); 
+        
         $i = 1;
         foreach ($parameters as $parameter) {
             if($parameter->parameterGroup->id === 'price'){

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use DateTime;
 use Doctrine\ORM\NoResultException;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\CategoryParameterGroup;
@@ -197,6 +198,18 @@ class ParameterRepository extends ServiceEntityRepository
             ->setParameter('producerId', $producerId)
             ->groupBy($alias.'.data');
 
+    }
+
+     public function getProductParametersByDiscount(QueryBuilder $queryBuilder, DateTime $date = new \DateTime): QueryBuilder
+    {
+        $alias = $queryBuilder->getRootAliases()[0];
+        return $queryBuilder->join($alias.'.productVariant', 'pv')
+            ->leftJoin('pv.price', 'price')
+            ->andWhere('price.validFrom <= :date')
+            ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
+            ->andWhere('price.discount IS NOT NULL AND price.discount > 0')
+            ->setParameter('date', $date)
+            ->groupBy($alias.'.data');
     }
 
     public function getByManufacturerGroupAndMostSuperiorCategoryQB(QueryBuilder $queryBuilder, int $category){
