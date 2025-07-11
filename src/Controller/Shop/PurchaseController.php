@@ -14,7 +14,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Form\ClientFormType;
 use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Service\Parcel\CzechPostParcel;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
@@ -223,15 +223,15 @@ class PurchaseController extends AbstractController
     }
 
 
-
     #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
     public function createParcel(
         Purchase               $purchase,
-        CzechPostParcel        $czechPostParcel,
+        ParcelServiceProvider  $provider,
         EntityManagerInterface $entityManager
     ): JsonResponse
     {
-        $parcelId = $czechPostParcel->createParcel($purchase);
+        $parcelService = $provider->getByPurchase($purchase);
+        $parcelId = $parcelService?->createParcel($purchase);
 
         if (!$parcelId) {
             return new JsonResponse(['message' => 'Failed to create parcel'], 500);
@@ -241,18 +241,19 @@ class PurchaseController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse([
-            'message'  => 'Parcel created successfully',
+            'message' => 'Parcel created successfully',
             'parcelId' => $parcelId
         ]);
     }
 
     #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
     public function getParcelStatus(
-        Purchase        $purchase,
-        CzechPostParcel $czechPostParcel
+        Purchase              $purchase,
+        ParcelServiceProvider $provider
     ): JsonResponse
     {
-        $status = $czechPostParcel->getParcelStatus($purchase);
+        $parcelService = $provider->getByPurchase($purchase);
+        $status = $parcelService->getParcelStatus($purchase);
 
         if (!$status) {
             return new JsonResponse(['message' => 'Failed to get parcel status'], 500);
