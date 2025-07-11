@@ -349,7 +349,7 @@ class Purchase
         return $this->transport_number;
     }
 
-    public function setTransportNumber(string $transport_number): self
+    public function setTransportNumber(?string $transport_number): self
     {
         $this->transport_number = $transport_number;
 

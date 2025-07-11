@@ -365,10 +365,10 @@ class AppExtension extends AbstractExtension
         return $this->priceCalculator->calculatePurchasePrice(
             $purchase,
             $currency,
-            VatCalculationType::WithVAT,
             1,
-            DiscountCalculationType::WithDiscount,
             true,
+            VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
             true
         );

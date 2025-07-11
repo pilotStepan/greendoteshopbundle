@@ -23,8 +23,12 @@ readonly class ManageSms
 
         if (!$phone || !$text) return;
 
-        // TODO: create account in smsbrana.cz, add credentials to .env and test this
-        // $this->client->sendSms($phone, $text);
+        try {
+            // FIXME: Whitelist not configured. Error: Disallowed remote IP, see your SmsConnect setting
+            $this->client->sendSms($phone, $text);
+        } catch (\Exception $e) {
+            // TODO: log the error
+        }
     }
 
     /**
@@ -32,10 +36,6 @@ readonly class ManageSms
      */
     private function getSmsText(Purchase $purchase): string
     {
-        if (!$purchase->getId()) {
-            throw new \LogicException('Objednávka nemá ID – nelze sestavit SMS.');
-        }
-
         $state = $purchase->getState();
         $tracking = $purchase->getTransportNumber();
         $amount = null;
@@ -51,7 +51,7 @@ readonly class ManageSms
         }
 
         $params = array_filter([
-            '%id%' => $purchase->getId(),
+            '%id%' => $purchase->getId() ?? '',
             '%tracking%' => $tracking,
             '%amount%' => $amount,
         ], static fn($v) => $v !== null && $v !== '');

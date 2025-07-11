@@ -2,10 +2,11 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
@@ -20,16 +21,16 @@ readonly class ManageMails
     private Address $fromAddress;
 
     public function __construct(
-        private MailerInterface      $mailer,
-        private LocaleAwareInterface $localeAware,
-        private TranslatorInterface  $translator,
-        private RequestStack         $requestStack,
-        private ManagerRegistry      $managerRegistry,
-        private PaymentRepository    $paymentRepository,
-        private QRcodeGenerator      $qrCodeGenerator,
-        private GPWebpay             $webpay,
-        private string               $fromEmail,
-        private string               $fromName,
+        private MailerInterface        $mailer,
+        private LocaleAwareInterface   $localeAware,
+        private TranslatorInterface    $translator,
+        private RequestStack           $requestStack,
+        private ManagerRegistry        $managerRegistry,
+        private PaymentRepository      $paymentRepository,
+        private QRcodeGenerator        $qrCodeGenerator,
+        private PaymentGatewayProvider $gatewayProvider,
+        private string                 $fromEmail,
+        private string                 $fromName,
     )
     {
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
@@ -40,7 +41,9 @@ readonly class ManageMails
         $varSymbol = $this->paymentRepository->findByPurchaseId($purchase->getId());
         $dueDate = new \DateTime('+14 days');
         $qrCodeUri = $this->qrCodeGenerator->getUri($purchase, $dueDate);
-        $paymentUrl = $this->webpay->getPayLink($purchase, $varSymbol);
+
+        $gateway = $this->gatewayProvider->getByPurchase($purchase);
+        $paymentUrl = $gateway?->getPayLink($purchase) ?? '';
 
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
@@ -164,7 +167,7 @@ readonly class ManageMails
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($recipientEmail)
-            ->subject($this->translator->trans('email.password_reset.subject', [], 'emails'))
+            ->subject($this->translator->trans('email.subject.password_reset', [], 'emails'))
             ->htmlTemplate('reset_password/email.html.twig')
             ->context(['resetToken' => $resetToken]);
 

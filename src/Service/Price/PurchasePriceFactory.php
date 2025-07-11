@@ -17,16 +17,14 @@ readonly class PurchasePriceFactory
         private CurrencyRepository         $currencyRepository,
         private HandlingPriceRepository    $handlingPriceRepository,
         private PriceUtils                 $priceUtils,
-    )
-    {
-    }
+    ) {}
 
     public function create(
         Purchase                $purchase,
         Currency                $currency,
         VatCalculationType      $vatCalculationType = VatCalculationType::WithoutVAT,
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
-        VoucherCalculationType $voucherCalculationType = VoucherCalculationType::WithVoucher
+        VoucherCalculationType  $voucherCalculationType = VoucherCalculationType::WithVoucher
     ): PurchasePrice
     {
         return new PurchasePrice(

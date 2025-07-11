@@ -170,12 +170,12 @@ class ManageInquiry
 
         $row++;
         $sheetIntro->getCell("E" . $row)->setValue('Celková cena:');
-        $sheetIntro->getCell("F" . $row)->setValue($this->priceCalculator->calculatePurchasePrice($order, $request->getSession()->get("selectedCurrency"), VatCalculationType::WithoutVAT, null, DiscountCalculationType::WithDiscount, 1) . " " . $request->getSession()->get("selectedCurrency")->getSymbol());
+        $sheetIntro->getCell("F" . $row)->setValue($this->priceCalculator->calculatePurchasePrice($order, $request->getSession()->get("selectedCurrency"), null, 1, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount) . " " . $request->getSession()->get("selectedCurrency")->getSymbol());
         $sheetIntro->getCell("G" . $row)->setValue('Bez DPH');
         $row++;
 
         $sheetIntro->getCell("E" . $row)->setValue('Celková cena:');
-        $sheetIntro->getCell("F" . $row)->setValue($this->priceCalculator->calculatePurchasePrice($order, $request->getSession()->get("selectedCurrency"), VatCalculationType::WithVAT, null, DiscountCalculationType::WithDiscount, 1) . " " . $request->getSession()->get("selectedCurrency")->getSymbol());
+        $sheetIntro->getCell("F" . $row)->setValue($this->priceCalculator->calculatePurchasePrice($order, $request->getSession()->get("selectedCurrency"), null, 1, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount) . " " . $request->getSession()->get("selectedCurrency")->getSymbol());
         $sheetIntro->getCell("G" . $row)->setValue('S DPH');
         $row++;
         $sheetIntro->getColumnDimensionByColumn('2')->setAutoSize(true);

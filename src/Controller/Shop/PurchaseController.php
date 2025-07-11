@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
@@ -14,25 +13,23 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Form\ClientFormType;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Service\GPWebpay;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\Parcel\CzechPostParcel;
+use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Workflow\Registry;
-use Exception;
 
 class PurchaseController extends AbstractController
 {
@@ -127,10 +124,10 @@ class PurchaseController extends AbstractController
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $newPurchase,
             $currency,
-            VatCalculationType::WithVAT,
             1,
-            DiscountCalculationType::WithDiscount,
             true,
+            VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
             true
         );
@@ -163,42 +160,39 @@ class PurchaseController extends AbstractController
     public function verifyOrder(
         GPWebpay               $gpWebpay,
         EntityManagerInterface $entityManager,
-        Registry               $workFlow,
+        Registry               $workflow,
+        PurchaseUrlGenerator   $urlGenerator
     ): Response
     {
-        $response = $gpWebpay->verifyLink();
+        try {
+            $response = $gpWebpay->verifyLink();
+        } catch (\Exception $e) {
+            // FIXME: Handle exception properly
+            return $this->redirectToRoute('web_homepage');
+        }
 
         $paymentId = $response->getORDERNUMBER();
-
         $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
 
-        if (!$payment) {
-            throw $this->createNotFoundException('Payment not found');
+        $purchase = $payment?->getPurchase();
+
+        if (!$payment || !$purchase) {
+            return $this->redirectToRoute('web_homepage');
         }
 
-        $purchase = $payment->getPurchase();
+        $flow = $workflow->get($purchase);
+        $transition = $response->getPRCODE() === 0 && $response->getSRCODE() === 0
+            ? 'payment'
+            : 'payment_issue';
 
-        if (!$purchase) {
-            throw $this->createNotFoundException('Purchase not found');
+        if ($flow->can($purchase, $transition)) {
+            $flow->apply($purchase, $transition);
+            $entityManager->flush();
         }
 
-        $purchaseFlow = $workFlow->get($purchase);
-
-        if ($response->getPRCODE() == '0' && $response->getSRCODE() == '0') {
-            if ($purchaseFlow->can($purchase, 'payment')) {
-                $purchaseFlow->apply($purchase, 'payment');
-                $entityManager->flush();
-            }
-
-            return $this->redirectToRoute('thank_you', ['id' => $purchase->getId()]);
-        } else {
-            if ($purchaseFlow->can($purchase, 'payment_issue')) {
-                $purchaseFlow->apply($purchase, 'payment_issue');
-                $entityManager->flush();
-            }
-
-            return $this->redirectToRoute('thank_you', ['id' => $purchase->getId()]);
-        }
+        return $this->redirectToRoute(
+            $urlGenerator->buildOrderDetailUrl($purchase)
+        );
     }
 
 
