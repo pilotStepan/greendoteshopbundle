@@ -4,8 +4,6 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiProperty;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -76,6 +74,9 @@ class Price
     #[ApiProperty]
     #[Groups(['product_item:read', 'product_variant:read'])]
     private array $calculatedPrices = [];
+
+    #[ORM\OneToOne(targetEntity: PurchaseProductVariant::class, mappedBy: 'price', cascade: ['persist', 'remove'])]
+    private ?PurchaseProductVariant $purchaseProductVariant = null;
 
 
     public function __construct()
@@ -229,6 +230,18 @@ class Price
     public function setCalculatedPrices(array $calculatedPrices): self
     {
         $this->calculatedPrices = $calculatedPrices;
+        return $this;
+    }
+
+    public function getPurchaseProductVariant(): ?PurchaseProductVariant
+    {
+        return $this->purchaseProductVariant;
+    }
+
+    public function setPurchaseProductVariant(?PurchaseProductVariant $purchaseProductVariant): self
+    {
+        $this->purchaseProductVariant = $purchaseProductVariant;
+
         return $this;
     }
 }

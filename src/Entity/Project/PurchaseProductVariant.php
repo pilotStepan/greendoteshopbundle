@@ -3,10 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -46,6 +43,10 @@ class PurchaseProductVariant
     #[Groups(['purchase:read'])]
     private $total_price;
 
+    #[ORM\OneToOne(targetEntity: Price::class, inversedBy: 'purchaseProductVariant', cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?Price $price = null;
 
     public function __construct()
     {
@@ -148,5 +149,15 @@ class PurchaseProductVariant
         $this->total_price = $total_price;
     }
 
+    public function getPrice(): ?Price
+    {
+        return $this->price;
+    }
 
+    public function setPrice(?Price $price): self
+    {
+        $this->price = $price;
+
+        return $this;
+    }
 }
