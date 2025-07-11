@@ -51,7 +51,8 @@
     "symfony/process": "^7.3",
     "smsbrana/sms-connect": "^0.3.10",
     "alcohol/iso4217": "^4.2",
-    "granam/gpwebpay": "^5.1"
+    "granam/gpwebpay": "^5.1",
+    "ext-simplexml": "*"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

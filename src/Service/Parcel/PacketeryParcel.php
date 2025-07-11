@@ -2,9 +2,11 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
+use Exception;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Psr\Log\LoggerInterface;
+use SimpleXMLElement;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class PacketeryParcel implements ParcelServiceInterface
@@ -43,7 +45,7 @@ class PacketeryParcel implements ParcelServiceInterface
                 'response' => $data,
             ]);
             return null;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error('Exception when creating parcel', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
@@ -78,12 +80,12 @@ class PacketeryParcel implements ParcelServiceInterface
 
     private function createXmlRequest(string $method, array $data): string
     {
-        $xml = new \SimpleXMLElement("<?xml version=\"1.0\"?><$method></$method>");
+        $xml = new SimpleXMLElement("<?xml version=\"1.0\"?><$method></$method>");
         $this->arrayToXml($data, $xml);
         return $xml->asXML();
     }
 
-    private function arrayToXml(array $data, \SimpleXMLElement $xml): void
+    private function arrayToXml(array $data, SimpleXMLElement $xml): void
     {
         foreach ($data as $key => $value) {
             if (is_array($value)) {
