@@ -24,7 +24,7 @@ class ProductStateProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
     {
         $filters = json_decode($context['filters']['parameters']);
-
+        
         $qb = $this->productRepository->createQueryBuilder('p');
         if($filters->categoryId > 0) {
             $this->productRepository->findProductsInCategory($qb, $filters->categoryId);
@@ -32,7 +32,9 @@ class ProductStateProvider implements ProviderInterface
         if(count($filters->supplierIds) > 0) {
             $this->productRepository->findProductsForProducers($qb, $filters->supplierIds);
         }
-        //if($filters->selectedParameters) {
+        if(isset($filters->discounts) && $filters->discounts){
+            $this->productRepository->findDiscountedProducts($qb);
+        }
         $this->productRepository->productsByParameters($qb, $filters->selectedParameters);
         //}
         if($filters->isStockOnly){
