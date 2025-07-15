@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Service\SessionService;
 use Twig\TwigFunction;
@@ -136,13 +137,8 @@ class AppExtension extends AbstractExtension
 
     public function formatPrice(float $price, ?Currency $currency = null): string
     {
-        if ($price == 0) return 'Zdarma';
         $currency ??= $this->requestStack->getCurrentRequest()->getSession()->get('selectedCurrency');
-        $formattedPrice = number_format($price, $currency->getRounding());
-
-        return $currency->isSymbolLeft()
-            ? sprintf('%s %s', $currency->getSymbol(), $formattedPrice)
-            : sprintf('%s %s', $formattedPrice, $currency->getSymbol());
+        return PriceHelper::formatPrice($price, $currency);
     }
 
     public function getCurrencyFromSession($symbolOnly = false): Currency|string {

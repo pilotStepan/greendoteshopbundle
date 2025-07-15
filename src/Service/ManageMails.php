@@ -5,8 +5,7 @@ namespace Greendot\EshopBundle\Service;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Repository\Project\PaymentRepository;
-use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
+use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
@@ -21,43 +20,29 @@ readonly class ManageMails
     private Address $fromAddress;
 
     public function __construct(
-        private MailerInterface        $mailer,
-        private LocaleAwareInterface   $localeAware,
-        private TranslatorInterface    $translator,
-        private RequestStack           $requestStack,
-        private ManagerRegistry        $managerRegistry,
-        private PaymentRepository      $paymentRepository,
-        private QRcodeGenerator        $qrCodeGenerator,
-        private PaymentGatewayProvider $gatewayProvider,
-        private string                 $fromEmail,
-        private string                 $fromName,
+        private MailerInterface      $mailer,
+        private LocaleAwareInterface $localeAware,
+        private TranslatorInterface  $translator,
+        private RequestStack         $requestStack,
+        private ManagerRegistry      $managerRegistry,
+        private OrderDataFactory     $dataFactory,
+        private string               $fromEmail,
+        private string               $fromName,
     )
     {
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
     }
 
-    public function sendOrderReceiveEmail(Purchase $purchase, string $template): void
+    public function sendOrderReceiveEmail(Purchase $purchase): void
     {
-        $varSymbol = $this->paymentRepository->findByPurchaseId($purchase->getId());
-        $dueDate = new \DateTime('+14 days');
-        $qrCodeUri = $this->qrCodeGenerator->getUri($purchase, $dueDate);
-
-        $gateway = $this->gatewayProvider->getByPurchase($purchase);
-        $paymentUrl = $gateway?->getPayLink($purchase) ?? '';
+        $orderData = $this->dataFactory->create($purchase);
 
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
-            ->htmlTemplate($template)
-            ->context([
-                'purchase_price' => $purchase->getTotalPrice(),
-                'var_symbol' => $varSymbol,
-                'bank_account' => $purchase->getPaymentType()->getAccount(),
-                'payment_type' => $purchase->getPaymentType(),
-                'qr_code_url' => $qrCodeUri,
-                'pay_by_card_url' => $paymentUrl
-            ]);
+            ->htmlTemplate('email/order/receive.html.twig')
+            ->context(['data' => $orderData]);
 
         $this->mailer->send($email);
     }
@@ -143,13 +128,12 @@ readonly class ManageMails
             ->addTo($this->fromAddress);
 
 //        TODO: make this
-//        $email->htmlTemplate('mailing/free-sample.html.twig')
+//        $email->htmlTemplate('email/free-sample.html.twig')
 //            ->context([
 //                'content'     => $content,
 //                'href'        => $link,
 //                'button_name' => $buttonName
 //            ]);
-
 
         try {
             $this->mailer->send($email);
@@ -162,21 +146,20 @@ readonly class ManageMails
     /**
      * Sends a password reset email to the user.
      */
-    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): bool
+    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): void
     {
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($recipientEmail)
             ->subject($this->translator->trans('email.subject.password_reset', [], 'emails'))
-            ->htmlTemplate('reset_password/email.html.twig')
-            ->context(['resetToken' => $resetToken]);
+            ->htmlTemplate('email/auth/password_reset.html.twig')
+            ->context(['resetToken' => $resetToken])
+        ;
 
         try {
             $this->mailer->send($email);
-            return true;
         } catch (TransportExceptionInterface $e) {
 //            $this->logger->error('…', ['exception' => $e]);
-            return false;
         }
     }
 }

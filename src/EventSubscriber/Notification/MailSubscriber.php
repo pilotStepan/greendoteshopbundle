@@ -45,10 +45,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-//        $this->manageMails->sendOrderReceiveEmail(
-//            $purchase,
-//            'mail/specific/order-receive.html.twig'
-//        );
     }
 
     public function onCompletedPayment(CompletedEvent $event): void
@@ -61,7 +57,7 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 //        $this->manageMails->sendPaymentReceivedEmail(
 //            $purchase,
 //            $invoicePath,
-//            'mail/specific/payment-received.html.twig'
+//            'email/specific/payment-received.html.twig'
 //        );
     }
 
@@ -71,10 +67,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-//        $this->manageMails->sendEmail(
-//            $purchase,
-//            'mail/specific/payment-not-received.html.twig'
-//        );
     }
 
     public function onCompletedCancellation(CompletedEvent $event): void
@@ -83,10 +75,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-//        $this->manageMails->sendEmail(
-//            $purchase,
-//            'mail/specific/order-canceled.html.twig'
-//        );
     }
 
     public function onCompletedPrepareForPickup(CompletedEvent $event): void
@@ -95,10 +83,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-//        $this->manageMails->sendEmail(
-//            $purchase,
-//            'mail/specific/order-ready-for-pickup.html.twig'
-//        );
     }
 
     public function onCompletedSend(CompletedEvent $event): void
@@ -107,10 +91,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-//        $this->manageMails->sendEmail(
-//            $purchase,
-//            'mail/specific/order-shipped.html.twig'
-//        );
     }
 
     public function onCompletedPickUp(CompletedEvent $event): void
@@ -119,10 +99,6 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-//        $this->manageMails->sendEmail(
-//            $purchase,
-//            'mail/specific/order-picked-up.html.twig'
-//        );
     }
 
     public function onPasswordReset(PasswordResetRequestedEvent $event): void

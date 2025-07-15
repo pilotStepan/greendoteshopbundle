@@ -14,6 +14,9 @@ use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
  */
 class PaymentGatewayProvider
 {
+    /* Can be moved to .env or .yaml */
+    const DEFAULT_GATEWAY = 'gpw';
+
     /** @var array<string, PaymentGatewayInterface> */
     private array $map = [];
 
@@ -37,5 +40,10 @@ class PaymentGatewayProvider
     {
         $action = $purchase->getPaymentType()?->getPaymentTechnicalAction();
         return $action ? $this->get($action) : null;
+    }
+
+    public function getDefault(): PaymentGatewayInterface
+    {
+        return $this->get(PaymentTechnicalAction::from(self::DEFAULT_GATEWAY));
     }
 }
