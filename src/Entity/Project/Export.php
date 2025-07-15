@@ -23,6 +23,9 @@ class Export
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $type = null;
 
+    #[ORM\OneToOne(mappedBy: 'export', cascade: ['persist', 'remove'])]
+    private ?ExportStatus $exportStatus = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,23 @@ class Export
     public function setType(?string $type): static
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getExportStatus(): ?ExportStatus
+    {
+        return $this->exportStatus;
+    }
+
+    public function setExportStatus(ExportStatus $exportStatus): static
+    {
+        // set the owning side of the relation if necessary
+        if ($exportStatus->getExport() !== $this) {
+            $exportStatus->setExport($this);
+        }
+
+        $this->exportStatus = $exportStatus;
 
         return $this;
     }

@@ -15,9 +15,9 @@ class GreendotEshopBundle extends AbstractBundle
     {
         $definition->rootNode()
             ->children()
-                ->arrayNode('price_calculation')
+                ->arrayNode('global')
                     ->children()
-                        ->integerNode('after_registration_discount')->defaultValue(0)->end()
+                        ->stringNode('absolute_url')->defaultValue('https://www.example.com')->end()
                     ->end()
                 ->end()
             ->end();
@@ -70,10 +70,10 @@ class GreendotEshopBundle extends AbstractBundle
         $container->import('../config/services.yaml');
 
 
-        $afterRegistrationDiscount = $config['price_calculation']['after_registration_discount'] ?? 0;
+        $absoluteUrl = $config['global']['absolute_url'] ?? 'https://www.example.com';
         $builder->setParameter(
-            'greendot_eshop.price_calculation.after_registration_discount',
-            $afterRegistrationDiscount
+            'greendot_eshop.global.absolute_url',
+            $absoluteUrl
         );
     }
 }
