@@ -18,6 +18,9 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * @todo: Incomplete, some parts are missing
+ */
 class ExportGoogleProductFeed extends ExportBase
 {
     private readonly string $url;
@@ -136,15 +139,15 @@ class ExportGoogleProductFeed extends ExportBase
         if ($categoryBreadcrumbs) {
             $return = [];
             foreach ($categoryBreadcrumbs as $category) {
-                $category = $this->entityManager->getRepository(Category::class)->find($category->getId());
-                $category->setTranslatableLocale($this->locale);
-                $this->entityManager->refresh($category);
+//                $category = $this->entityManager->getRepository(Category::class)->find($category->getId());
+//                $category->setTranslatableLocale($this->locale);
+//                $this->entityManager->refresh($category);
 
                 $return [] = $category->getName();
-                try {
-                    $this->entityManager->detach($category);
-                } catch (\Exception $exception) {
-                }
+//                try {
+//                    $this->entityManager->detach($category);
+//                } catch (\Exception $exception) {
+//                }
             }
             if ($return) {
                 return implode(" > ", $return);
