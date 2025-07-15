@@ -52,11 +52,12 @@
     "smsbrana/sms-connect": "^0.3.10",
     "alcohol/iso4217": "^4.2",
     "granam/gpwebpay": "^5.1",
-    "ext-simplexml": "*"
+    "ext-simplexml": "*",
+    "symfony/lock": "^7.3"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
-    "phpunit/phpunit": "^11.5",
+    "phpunit/phpunit": "^10.5",
     "doctrine/doctrine-fixtures-bundle": "^3.6",
     "zenstruck/foundry": "^1.37"
   }
