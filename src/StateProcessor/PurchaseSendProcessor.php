@@ -50,7 +50,6 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
 
             // 1. Get existing purchase
             $purchase = $this->em->getRepository(Purchase::class)->findOneBySession();
-            // TODO: 1.1 Load prices for future use
             if (!$purchase) {
                 $this->logger->error('Purchase not found in session');
                 throw new \InvalidArgumentException('Košík nenalezen');

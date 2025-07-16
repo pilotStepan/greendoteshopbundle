@@ -2,12 +2,13 @@
 
 namespace Greendot\EshopBundle\EventSubscriber\Notification;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Event\PasswordResetRequestedEvent;
 use Greendot\EshopBundle\Service\ManageMails;
-use Greendot\EshopBundle\Service\ManagePurchase;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Greendot\EshopBundle\Event\PasswordResetRequestedEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Greendot\EshopBundle\Message\Notification\PurchaseTransitionEmail;
 
 /**
  * Listen to all notification-related events and sends mails
@@ -18,87 +19,31 @@ final readonly class MailSubscriber implements EventSubscriberInterface
 
     public function __construct(
         /** @var array<string,bool> */
-        private array          $notificationMap, // config/packages/notifications.yaml:email_notifications
-        private ManageMails    $manageMails,
-        private ManagePurchase $managePurchase,
+        private array               $notificationMap, // config/packages/notifications.yaml:email_notifications
+        private ManageMails         $manageMails,
+        private MessageBusInterface $bus,
     ) {}
 
     public static function getSubscribedEvents(): array
     {
         return [
-            // purchase workflow
-            // We use *completed.* so the state machine has already committed its change
-            'workflow.purchase_flow.completed.receive' => 'onCompletedReceive',
-            'workflow.purchase_flow.completed.payment' => 'onCompletedPayment',
-            'workflow.purchase_flow.completed.payment_issue' => 'onCompletedPaymentIssue',
-            'workflow.purchase_flow.completed.cancellation' => 'onCompletedCancellation',
-            'workflow.purchase_flow.completed.prepare_for_pickup' => 'onCompletedPrepareForPickup',
-            'workflow.purchase_flow.completed.send' => 'onCompletedSend',
-            'workflow.purchase_flow.completed.pick_up' => 'onCompletedPickUp',
+            // workflow events
+            'workflow.purchase_flow.completed' => 'onPurchaseTransition',
+
+            // custom events
             PasswordResetRequestedEvent::class => 'onPasswordReset',
         ];
     }
 
-    public function onCompletedReceive(CompletedEvent $event): void
+    public function onPurchaseTransition(CompletedEvent $event): void
     {
         if (!$this->shouldNotify($event, $this->notificationMap)) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
-    }
+        $transition = $event->getTransition()->getName();
 
-    public function onCompletedPayment(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
-//        $invoicePath = $this->managePurchase->generateInvoice($purchase);
-//        $this->manageMails->sendPaymentReceivedEmail(
-//            $purchase,
-//            $invoicePath,
-//            'email/specific/payment-received.html.twig'
-//        );
-    }
-
-    public function onCompletedPaymentIssue(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
-    }
-
-    public function onCompletedCancellation(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
-    }
-
-    public function onCompletedPrepareForPickup(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
-    }
-
-    public function onCompletedSend(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
-    }
-
-    public function onCompletedPickUp(CompletedEvent $event): void
-    {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
-
-        /* @var Purchase $purchase */
-        $purchase = $event->getSubject();
+        $this->bus->dispatch(new PurchaseTransitionEmail($purchase->getId(), $transition));
     }
 
     public function onPasswordReset(PasswordResetRequestedEvent $event): void

@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service\Price;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Price;
+use Symfony\Component\Security\Core\User\InMemoryUser;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -242,12 +243,13 @@ class ProductVariantPrice
     private function constructForProductVariant(): void
     {
         $this->minAmount = $this->priceRepository->getMinimalAmount($this->productVariant, new \DateTime("now"));
-        if (!$this->security->getUser()) {
+        $client = $this->security->getUser();
+        if (!$client || ($client instanceof InMemoryUser && $client->getRoles() === ['ROLE_API'])) {
+            // Skip clientDiscount calculation for Simple-ws requests (ROLE_API), as $client is not a Client instance in this case.
             $this->clientDiscount = null;
             return;
         }
 
-        $client = $this->security->getUser();
         assert($client instanceof Client);
         $clientDiscountObject = $this->discountService->getValidClientDiscount($client);
         $this->clientDiscount = $clientDiscountObject?->getDiscount() ?? null;
