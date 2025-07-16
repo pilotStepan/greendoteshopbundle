@@ -2,6 +2,9 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -13,7 +16,8 @@ class CalculatedPricesService
 
     public function __construct(
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
-        private readonly SessionService             $sessionService
+        private readonly SessionService             $sessionService,
+        private readonly EntityManagerInterface              $entityManager,
     )
     {
     }
@@ -25,8 +29,9 @@ class CalculatedPricesService
 
         
         // get unique minimalAmounts from productVariant.prices
-        $uniqueMinimalAmounts = [];
-        foreach($variant->getPrice() as $price){
+        $uniqueMinimalAmounts = []; 
+        $variantPrices = $this->entityManager->getRepository(Price::class)->findBy(['productVariant'=>$variant->getId()]);
+        foreach($variantPrices as $price){
             // check valid
             if ($price->getValidFrom() > $date || ($price->getValidUntil() !== null && $date > $price->getValidUntil())) {
                 continue;
@@ -85,6 +90,7 @@ class CalculatedPricesService
             // debug
             if (empty($variantCalculatedPrices))
             {
+                dump($variant);
                 dd($product);
             }
 
