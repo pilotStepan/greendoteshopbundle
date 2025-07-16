@@ -4,15 +4,6 @@ namespace Greendot\EshopBundle\Mail\Data;
 
 class OrderData
 {
-    /** @var array<int, string> */
-    public const TYPES = [
-        1 => 'bank_cz',
-        2 => 'card_payment',
-        3 => 'cod',
-        4 => 'cash',
-        5 => 'bank_sk',
-    ];
-
     public function __construct(
         public int                     $purchaseId,
         public ?string                 $qrCodeUri,

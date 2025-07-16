@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Mail\Data\OrderPaymentData;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Mail\Data\OrderTransportationData;
+use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -30,7 +31,7 @@ use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
  * This factory builds the data structure needed for order emails, including
  * items, transportation, payment details, and addresses.
  */
-final readonly class OrderDataFactory
+final class OrderDataFactory
 {
     private PurchasePrice $purchasePrice;
 
@@ -205,9 +206,10 @@ final readonly class OrderDataFactory
 
     private function extractNote(Purchase $purchase): ?string
     {
+        /* @var $discussion PurchaseDiscussion|null */
         $discussion = $purchase->getPurchaseDiscussions()->first();
         return ($discussion && !$discussion->getIsAdmin())
-            ? $discussion->getMessage()
+            ? $discussion->getContent()
             : null;
     }
 
@@ -225,7 +227,7 @@ final readonly class OrderDataFactory
 
     private function getTypeFromPaymentType(PaymentType $paymentType): string
     {
-        $types = OrderData::TYPES;
+        $types = OrderPaymentData::TYPES;
         $id = $paymentType->getId();
 
         if (!isset($types[$id])) {
