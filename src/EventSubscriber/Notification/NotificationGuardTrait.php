@@ -11,7 +11,7 @@ trait NotificationGuardTrait
      * Decide whether to send a notification.
      * @param array<string,bool> $map YAML "notificationMap" injected into the subscriber.
      */
-    private function shouldNotify(CompletedEvent $event, array $map): bool
+    private function shouldNotify(Event $event, array $map): bool
     {
         $name = $this->resolveEventName($event);
         $context = $this->resolveEventContext($event);

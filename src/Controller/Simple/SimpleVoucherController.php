@@ -44,7 +44,6 @@ class SimpleVoucherController extends AbstractController
     #[Route('/{voucher}/make-transition', name: 'make_transition', methods: ['POST'])]
     public function makeVoucherTransition(Voucher $voucher, Request $request, Registry $registry, EntityManagerInterface $em): JsonResponse
     {
-
         try {
             $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
@@ -55,8 +54,12 @@ class SimpleVoucherController extends AbstractController
         }
 
         $vFlow = $registry->get($voucher);
+
         if (!$vFlow->can($voucher, $data['transition'])) {
-            throw new BadRequestHttpException('Invalid transition');
+            $blockers = $vFlow->buildTransitionBlockerList($voucher, $data['transition']);
+            $messages = array_map(fn($b) => $b->getMessage(), iterator_to_array($blockers));
+
+            return new JsonResponse(['errors' => $messages], Response::HTTP_BAD_REQUEST);
         }
 
         $vFlow->apply($voucher, $data['transition']);
