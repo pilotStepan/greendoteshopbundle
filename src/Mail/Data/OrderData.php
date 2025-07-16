@@ -9,6 +9,7 @@ class OrderData
         public ?string                 $qrCodeUri,
         public ?string                 $payLink,
         public ?string                 $trackingUrl,
+        public ?string                 $trackingNumber,
         public ?string                 $purchaseNote,
         public OrderTransportationData $transportation,
         public OrderPaymentData        $payment,
@@ -21,5 +22,6 @@ class OrderData
         public bool                    $paid,
         public string                  $totalPriceVatCzk,
         public string                  $totalPriceVatEur,
+        public string                  $clientSectionUrl,
     ) {}
 }

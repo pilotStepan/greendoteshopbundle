@@ -2,16 +2,17 @@
 
 namespace Greendot\EshopBundle\Controller;
 
-use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\ManageSms;
-use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\Entity\Project\ClientAddress;
+use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
+use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/test', name: 'app_test_')]
 class TestController extends AbstractController
@@ -38,7 +39,7 @@ class TestController extends AbstractController
 
     #[Route('/sms', name: 'payment_gateway_verify')]
     public function sms(
-        ManageSms $manageSms
+        ManageSms $manageSms,
     ): Response
     {
         $purchase = (new Purchase())
@@ -52,7 +53,23 @@ class TestController extends AbstractController
             ->setState('sent')
             ->setTransportNumber('TEST123456')
         ;
-        $manageSms->sendOrderStateSms($purchase);
+        $manageSms->sendOrderTransitionSms($purchase);
         return new JsonResponse(['status' => 'SMS sent'], 200);
+    }
+
+    #[Route('/mails/purchases/{purchase}/transitions/{transition}/{raw}', name: 'mails_purchases_transitions')]
+    public function mailsReceive(
+        Purchase            $purchase,
+        string              $transition,
+        OrderDataFactory    $dataFactory,
+        string              $raw = null,
+    ): Response
+    {
+        $data = $dataFactory->create($purchase);
+        if ($raw === '1') dd($data);
+
+        $html = $this->renderView("email/order/$transition.html.twig", ['data' => $data]);
+
+        return new Response($html);
     }
 }

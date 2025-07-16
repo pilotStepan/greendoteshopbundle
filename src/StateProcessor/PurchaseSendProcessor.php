@@ -201,14 +201,14 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
     {
         // If payment should not be processed by a gateway, early return end screen url
         if (!$purchase->getPaymentType()->getPaymentTechnicalAction()) {
-            return $this->urlGenerator->buildOrderDetailUrl($purchase);
+            return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
         }
 
         try {
             return $this->gatewayProvider->getByPurchase($purchase)->getPayLink($purchase);
         } catch (\Exception $e) {
             $this->workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
-            return $this->urlGenerator->buildOrderDetailUrl($purchase);
+            return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
         }
     }
 }

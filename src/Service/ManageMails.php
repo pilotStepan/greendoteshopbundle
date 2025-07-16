@@ -2,18 +2,18 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Symfony\Component\Mime\Address;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\MailerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
-use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
+use Symfony\Contracts\Translation\LocaleAwareInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 readonly class ManageMails
 {
@@ -33,45 +33,151 @@ readonly class ManageMails
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
     }
 
-    public function sendOrderReceiveEmail(Purchase $purchase): void
+    public function sendPurchaseTransitionEmail(Purchase $purchase, string $transition): void
     {
         $orderData = $this->dataFactory->create($purchase);
 
+        $email = match ($transition) {
+            'receive'            => $this->buildReceiveEmail($purchase, $orderData),
+            'payment'            => $this->buildPaymentEmail($purchase, $orderData),
+            'payment_issue'      => $this->buildPaymentIssueEmail($purchase, $orderData),
+            'cancellation'       => $this->buildCancellationEmail($purchase, $orderData),
+            'prepare_for_pickup' => $this->buildPrepareForPickupEmail($purchase, $orderData),
+            'send'               => $this->buildSendEmail($purchase, $orderData),
+            'pick_up'            => $this->buildPickUpEmail($purchase, $orderData),
+            default              => throw new \InvalidArgumentException('Unknown transition: ' . $transition),
+        };
+
+        $this->mailer->send($email);
+    }
+
+    /**
+     * Sends a password reset email to the user.
+     */
+    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): void
+    {
         $email = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($recipientEmail)
+            ->subject($this->translator->trans('email.subject.password_reset', [], 'emails'))
+            ->htmlTemplate('email/auth/password_reset.html.twig')
+            ->context(['resetToken' => $resetToken])
+        ;
+
+        try {
+            $this->mailer->send($email);
+        } catch (TransportExceptionInterface $e) {
+//            $this->logger->error('…', ['exception' => $e]);
+        }
+    }
+
+    public function sendFreeSampleMailToInfo($formData, Product $product): void
+    {
+        $email = new TemplatedEmail();
+        $email
+            ->subject($this->translator->trans('email.free_sample.subject', [], 'emails'))
+            ->addFrom($formData['mail'])
+            ->addTo($this->fromAddress)
+        ;
+
+//        TODO: make this
+//        $email->htmlTemplate('email/free-sample.html.twig')
+//            ->context([
+//                'content'     => $content,
+//                'href'        => $link,
+//                'button_name' => $buttonName
+//            ]);
+
+        try {
+            $this->mailer->send($email);
+        } catch (TransportExceptionInterface $e) {
+//            $this->logger->error('…', ['exception' => $e]);
+            dd($e);
+        }
+    }
+
+    private function buildReceiveEmail(Purchase $purchase, $orderData): TemplatedEmail
+    {
+
+        return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate('email/order/receive.html.twig')
-            ->context(['data' => $orderData]);
-
-        $this->mailer->send($email);
+            ->context(['data' => $orderData])
+        ;
     }
 
-    public function sendPaymentReceivedEmail(Purchase $purchase, string $invoicePath, string $template): void
+    private function buildPaymentEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        $transportationAction = $purchase->getTransportation()->getAction()->getId();
-
-        $email = (new TemplatedEmail())
+        // TODO: implement template and context
+        return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
-            ->htmlTemplate($template)
-            ->context(['transportation_action' => $transportationAction])
-            ->attachFromPath($invoicePath, 'faktura.pdf', 'application/pdf');
-
-        $this->mailer->send($email);
+            ->htmlTemplate('email/order/payment.html.twig')
+            ->context(['data' => $orderData])//            ->attachFromPath($invoicePath, 'faktura.pdf', 'application/pdf')
+            ;
     }
 
-    public function sendEmail(Purchase $purchase, string $template): void
+    private function buildPaymentIssueEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        $email = (new TemplatedEmail())
+        // TODO: implement template and context
+        return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
-            ->htmlTemplate($template)
-            ->context([]);
+            ->htmlTemplate('email/order/payment_issue.html.twig')
+            ->context(['data' => $orderData])
+        ;
+    }
 
-        $this->mailer->send($email);
+    private function buildCancellationEmail(Purchase $purchase, $orderData): TemplatedEmail
+    {
+        // TODO: implement template and context
+        return (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($purchase->getClient()->getMail())
+            ->subject($this->getEmailSubject($purchase))
+            ->htmlTemplate('email/order/cancellation.html.twig')
+            ->context(['data' => $orderData])
+        ;
+    }
+
+    private function buildPrepareForPickupEmail(Purchase $purchase, $orderData): TemplatedEmail
+    {
+        // TODO: implement template and context
+        return (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($purchase->getClient()->getMail())
+            ->subject($this->getEmailSubject($purchase))
+            ->htmlTemplate('email/order/prepare_for_pickup.html.twig')
+            ->context(['data' => $orderData])
+        ;
+    }
+
+    private function buildSendEmail(Purchase $purchase, $orderData): TemplatedEmail
+    {
+        // TODO: implement template and context
+        return (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($purchase->getClient()->getMail())
+            ->subject($this->getEmailSubject($purchase))
+            ->htmlTemplate('email/order/send.html.twig')
+            ->context(['data' => $orderData])
+        ;
+    }
+
+    private function buildPickUpEmail(Purchase $purchase, $orderData): TemplatedEmail
+    {
+        // TODO: implement template and context
+        return (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($purchase->getClient()->getMail())
+            ->subject($this->getEmailSubject($purchase))
+            ->htmlTemplate('email/order/pick_up.html.twig')
+            ->context(['data' => $orderData])
+        ;
     }
 
     /**
@@ -86,7 +192,7 @@ readonly class ManageMails
             'created', 'paid', 'not_paid',
             'sent', 'ready_for_pickup', 'picked_up',
             'canceled', 'received',
-            => 'email.subject.order.' . $state,
+                    => 'email.subject.order.' . $state,
             default => 'email.subject.order.default',
         };
 
@@ -117,49 +223,5 @@ readonly class ManageMails
         $refreshedEntity = $this->managerRegistry->getRepository(get_class($entity))->find($entity->getId());
         $refreshedEntity->setTranslatableLocale($locale);
         return $refreshedEntity;
-    }
-
-    public function sendFreeSampleMailToInfo($formData, Product $product): void
-    {
-        $email = new TemplatedEmail();
-        $email
-            ->subject($this->translator->trans('email.free_sample.subject', [], 'emails'))
-            ->addFrom($formData['mail'])
-            ->addTo($this->fromAddress);
-
-//        TODO: make this
-//        $email->htmlTemplate('email/free-sample.html.twig')
-//            ->context([
-//                'content'     => $content,
-//                'href'        => $link,
-//                'button_name' => $buttonName
-//            ]);
-
-        try {
-            $this->mailer->send($email);
-        } catch (TransportExceptionInterface $e) {
-//            $this->logger->error('…', ['exception' => $e]);
-            dd($e);
-        }
-    }
-
-    /**
-     * Sends a password reset email to the user.
-     */
-    public function sendPasswordResetEmail(string $recipientEmail, ResetPasswordToken $resetToken): void
-    {
-        $email = (new TemplatedEmail())
-            ->from($this->fromAddress)
-            ->to($recipientEmail)
-            ->subject($this->translator->trans('email.subject.password_reset', [], 'emails'))
-            ->htmlTemplate('email/auth/password_reset.html.twig')
-            ->context(['resetToken' => $resetToken])
-        ;
-
-        try {
-            $this->mailer->send($email);
-        } catch (TransportExceptionInterface $e) {
-//            $this->logger->error('…', ['exception' => $e]);
-        }
     }
 }
