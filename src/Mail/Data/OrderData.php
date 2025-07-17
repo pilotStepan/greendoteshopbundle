@@ -4,20 +4,12 @@ namespace Greendot\EshopBundle\Mail\Data;
 
 class OrderData
 {
-    /** @var array<int, string> */
-    public const TYPES = [
-        1 => 'bank_cz',
-        2 => 'card_payment',
-        3 => 'cod',
-        4 => 'cash',
-        5 => 'bank_sk',
-    ];
-
     public function __construct(
         public int                     $purchaseId,
         public ?string                 $qrCodeUri,
         public ?string                 $payLink,
         public ?string                 $trackingUrl,
+        public ?string                 $trackingNumber,
         public ?string                 $purchaseNote,
         public OrderTransportationData $transportation,
         public OrderPaymentData        $payment,
@@ -30,5 +22,6 @@ class OrderData
         public bool                    $paid,
         public string                  $totalPriceVatCzk,
         public string                  $totalPriceVatEur,
+        public string                  $clientSectionUrl,
     ) {}
 }

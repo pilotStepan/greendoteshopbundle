@@ -3,14 +3,14 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Workflow\Event\Event;
+use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Entity\Project\Consent;
+use Greendot\EshopBundle\Service\ManagePurchase;
+use Symfony\Component\Workflow\Event\GuardEvent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
-use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Service\ManageVoucher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Workflow\Event\Event;
-use Symfony\Component\Workflow\Event\GuardEvent;
 
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
@@ -21,9 +21,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private ManageVoucher          $manageVoucher,
         private ManagePurchase         $managePurchase,
         private ManageClientDiscount   $manageClientDiscount,
-    )
-    {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
@@ -73,7 +71,8 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         $missingConsent = $this->entityManager
             ->getRepository(Consent::class)
-            ->findMissingRequiredConsent($purchase->getConsents());
+            ->findMissingRequiredConsent($purchase->getConsents())
+        ;
         if ($missingConsent) {
             $event->setBlocked(true, "Povinný souhlas nebyl zaškrtnut: " . $missingConsent->getDescription());
             return;
@@ -107,6 +106,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
         $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
+        $this->managePurchase->issueInvoice($purchase);
     }
 
     public function onPaymentIssue(Event $event): void

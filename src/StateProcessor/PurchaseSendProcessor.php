@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\StateProcessor;
 
+use Psr\Log\LoggerInterface;
 use ApiPlatform\Metadata\Operation;
-use ApiPlatform\State\ProcessorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use Symfony\Component\Workflow\Registry;
+use ApiPlatform\State\ProcessorInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
-use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
-use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
-use Psr\Log\LoggerInterface;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Component\Workflow\Registry;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
 final readonly class PurchaseSendProcessor implements ProcessorInterface
 {
@@ -132,7 +132,8 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             return $user
                 ->setName($clientData['name'])
                 ->setSurname($clientData['surname'])
-                ->setPhone($clientData['phone']);
+                ->setPhone($clientData['phone'])
+            ;
         }
 
         // If not, create anonymous client
@@ -141,7 +142,8 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             ->setSurname($clientData['surname'])
             ->setPhone($clientData['phone'])
             ->setMail($clientData['mail'])
-            ->setIsAnonymous(true);
+            ->setIsAnonymous(true)
+        ;
 
         $this->em->persist($client);
 
@@ -169,7 +171,8 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
     {
         $note = (new PurchaseDiscussion())
             ->setContent($text)
-            ->setIsAdmin(false);
+            ->setIsAdmin(false)
+        ;
 
         $this->em->persist($note);
 
@@ -186,21 +189,26 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             throw new \RuntimeException(json_encode($errors));
         }
 
-        $workflow->apply($purchase, $transition);
+        // If it should be paid via gateway, apply transition silently (without notifications)
+        if ($purchase->getPaymentType()->getPaymentTechnicalAction()) {
+            $workflow->apply($purchase, $transition, ['silent' => true]);
+        } else {
+            $workflow->apply($purchase, $transition);
+        }
     }
 
     private function buildRedirectUrl(Purchase $purchase): string
     {
         // If payment should not be processed by a gateway, early return end screen url
         if (!$purchase->getPaymentType()->getPaymentTechnicalAction()) {
-            return $this->urlGenerator->buildOrderDetailUrl($purchase);
+            return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
         }
 
         try {
             return $this->gatewayProvider->getByPurchase($purchase)->getPayLink($purchase);
         } catch (\Exception $e) {
-            // In case of any error (client or server) while generating the payment link, return to end screen url
-            return $this->urlGenerator->buildOrderDetailUrl($purchase);
+            $this->workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
+            return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
         }
     }
 }

@@ -24,17 +24,6 @@ readonly class PurchaseTransitionEmailHandler
             throw new \RuntimeException('Purchase not found for ID: ' . $purchaseId);
         }
 
-        $this->manageMails->sendOrderReceiveEmail($purchase);
-
-        switch ($msg->getTransition()) {
-            case 'receive':
-                $this->manageMails->sendOrderReceiveEmail($purchase);
-                break;
-            case 'payment':
-                // $this->manageMails->sendPaymentReceivedEmail($purchase, $message->getInvoicePath(), $message->getTemplate());
-                break;
-            default:
-                throw new \InvalidArgumentException('Unknown transition: ' . $msg->getTransition());
-        }
+        $this->manageMails->sendPurchaseTransitionEmail($purchase, $msg->getTransition());
     }
 }

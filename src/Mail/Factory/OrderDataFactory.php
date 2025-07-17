@@ -14,11 +14,14 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Mail\Data\OrderItemData;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Greendot\EshopBundle\Mail\Data\OrderAddressData;
 use Greendot\EshopBundle\Mail\Data\OrderPaymentData;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Mail\Data\OrderTransportationData;
+use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -30,7 +33,7 @@ use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
  * This factory builds the data structure needed for order emails, including
  * items, transportation, payment details, and addresses.
  */
-final readonly class OrderDataFactory
+final class OrderDataFactory
 {
     private PurchasePrice $purchasePrice;
 
@@ -40,6 +43,7 @@ final readonly class OrderDataFactory
         private CurrencyRepository         $currencyRepository,
         private QRcodeGenerator            $qrGenerator,
         private PaymentGatewayProvider     $gatewayProvider,
+        private PurchaseUrlGenerator       $purchaseUrlGenerator,
     ) {}
 
     public function create(Purchase $purchase): OrderData
@@ -55,12 +59,14 @@ final readonly class OrderDataFactory
         $addresses = $this->buildAddresses($purchase);
         $purchaseNote = $this->extractNote($purchase);
         [$totalPriceVatCzk, $totalPriceVatEur] = array_values($this->buildTotalPrices($czk, $eur));
+        $clientSectionUrl = $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase);
 
         return new OrderData(
             purchaseId: $purchase->getId(),
             qrCodeUri: $qr,
             payLink: $payLink,
-            trackingUrl: $purchase->getTransportNumber(),
+            trackingUrl: $purchase->getTransportNumber(), // FIXME: get tracking URL
+            trackingNumber: $purchase->getTransportNumber(),
             purchaseNote: $purchaseNote,
             transportation: $transportation,
             payment: $payment,
@@ -70,11 +76,12 @@ final readonly class OrderDataFactory
             paid: $this->isPaid($purchase),
             totalPriceVatCzk: $totalPriceVatCzk,
             totalPriceVatEur: $totalPriceVatEur,
+            clientSectionUrl: $clientSectionUrl,
         );
     }
 
 
-    /** @return array{Currency $czk, Currency $eur} */
+    /** @return array{Currency, Currency} */
     private function loadCurrencies(): array
     {
         $czk = $this->currencyRepository->findOneBy(['isDefault' => true]);
@@ -89,7 +96,8 @@ final readonly class OrderDataFactory
 
     private function buildQrCode(Purchase $purchase): ?string
     {
-        if ($this->isPaid($purchase)) return null;
+        // Don't build if cant be paid or already paid
+        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) return null;
         try {
             $dueDate = new DateTimeImmutable('+14 days');
             return $this->qrGenerator->getUri($purchase, $dueDate);
@@ -100,7 +108,8 @@ final readonly class OrderDataFactory
 
     private function buildPayLink(Purchase $purchase): ?string
     {
-        if ($this->isPaid($purchase)) return null;
+        // Don't build if cant be paid or already paid
+        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) return null;
         try {
             $paymentGateway = $this->gatewayProvider->getByPurchase($purchase)
                 ?? $this->gatewayProvider->getDefault();
@@ -144,6 +153,7 @@ final readonly class OrderDataFactory
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderTransportationData(
+            type: $this->getGroupFromTransportation($transportation),
             name: $transportation->getName(),
             description: $transportation->getDescription(),
             priceVatCzk: PriceHelper::formatPrice($priceVatCzk, $czk),
@@ -205,13 +215,14 @@ final readonly class OrderDataFactory
 
     private function extractNote(Purchase $purchase): ?string
     {
+        /* @var $discussion PurchaseDiscussion|null */
         $discussion = $purchase->getPurchaseDiscussions()->first();
         return ($discussion && !$discussion->getIsAdmin())
-            ? $discussion->getMessage()
+            ? $discussion->getContent()
             : null;
     }
 
-    /* return string[] */
+    /* @return string[] */
     private function buildTotalPrices(Currency ...$currencies): array
     {
         $totals = [];
@@ -225,19 +236,40 @@ final readonly class OrderDataFactory
 
     private function getTypeFromPaymentType(PaymentType $paymentType): string
     {
-        $types = OrderData::TYPES;
         $id = $paymentType->getId();
+        return match ($id) {
+            1       => OrderPaymentData::BANK_CZ_TYPE,
+            2       => OrderPaymentData::CARD_PAYMENT_TYPE,
+            3       => OrderPaymentData::COD_TYPE,
+            4       => OrderPaymentData::CASH_TYPE,
+            5       => OrderPaymentData::BANK_SK_TYPE,
+            default => throw new LogicException("Unknown payment type ID: $id"),
+        };
+    }
 
-        if (!isset($types[$id])) {
-            throw new LogicException('Unsupported payment type ID: ' . $id);
+    private function getGroupFromTransportation(Transportation $transportation): string
+    {
+        foreach ($transportation->getGroups() as $group) {
+            if ($group->getId() === 1) {
+                return OrderTransportationData::PICKUP_TYPE;
+            }
         }
-
-        return $types[$id];
+        return OrderTransportationData::DELIVERY_TYPE;
     }
 
     private function isPaid(Purchase $purchase): bool
     {
         // FIXME: not implemented yet. Should be evaluated outside of this factory
         return false;
+    }
+
+    private function canBePaid(Purchase $purchase): bool
+    {
+        // Don't allow to pay if already paid
+        if ($this->isPaid($purchase)) return false;
+
+        // Don't allow to pay if cash on delivery
+        $paymentType = $this->getTypeFromPaymentType($purchase->getPaymentType());
+        return $paymentType !== OrderPaymentData::COD_TYPE;
     }
 }

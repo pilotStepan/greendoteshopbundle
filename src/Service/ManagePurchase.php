@@ -132,11 +132,11 @@ class ManagePurchase extends AbstractExtension
         $purchase->setTransportNumber($parcelId);
     }
 
-    public function generateInvoice(Purchase $purchase): ?string
+    public function issueInvoice(Purchase $purchase): void
     {
         $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);
-        return $this->invoiceMaker->createInvoiceOrProforma($purchase);
+        $purchase->setDateInvoiced(new \DateTime());
     }
 
     // check if all products in purchase are available

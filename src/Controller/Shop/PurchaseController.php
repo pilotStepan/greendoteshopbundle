@@ -191,7 +191,7 @@ class PurchaseController extends AbstractController
         }
 
         return $this->redirectToRoute(
-            $urlGenerator->buildOrderDetailUrl($purchase)
+            $urlGenerator->buildOrderEndscreenUrl($purchase)
         );
     }
 
