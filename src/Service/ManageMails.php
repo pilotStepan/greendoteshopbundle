@@ -26,6 +26,8 @@ readonly class ManageMails
         private RequestStack         $requestStack,
         private ManagerRegistry      $managerRegistry,
         private OrderDataFactory     $dataFactory,
+        private CertificateMaker     $certificateMaker,
+        private InvoiceMaker         $invoiceMaker,
         private string               $fromEmail,
         private string               $fromName,
     )
@@ -99,30 +101,67 @@ readonly class ManageMails
     private function buildReceiveEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
 
-        return (new TemplatedEmail())
+        $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate('email/order/receive.html.twig')
             ->context(['data' => $orderData])
         ;
+
+        // TODO: Uncomment when ready
+        // Attach invoice
+        /*        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
+                if ($invoicePath) {
+                    $email->attachFromPath(
+                        $invoicePath,
+                        'proforma_' . $purchase->getId() . '.pdf',
+                        'application/pdf'
+                    );
+                }
+        */
+
+        return $email;
+
     }
 
     private function buildPaymentEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        // TODO: implement template and context
-        return (new TemplatedEmail())
+        $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
             ->subject($this->getEmailSubject($purchase))
             ->htmlTemplate('email/order/payment.html.twig')
-            ->context(['data' => $orderData])//            ->attachFromPath($invoicePath, 'faktura.pdf', 'application/pdf')
-            ;
+            ->context(['data' => $orderData])
+        ;
+
+        // TODO: Uncomment when ready
+        // Attach vouchers if any
+        /*        foreach ($purchase->getVouchersIssued() as $voucher) {
+                    $certificatePath = $this->certificateMaker->createCertificate($voucher);
+                    $email->attachFromPath(
+                        $certificatePath,
+                        'voucher_' . $voucher->getId() . '.pdf',
+                        'application/pdf'
+                    );
+                }*/
+
+        // TODO: Uncomment when ready
+        // Attach invoice
+        /*        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
+                if ($invoicePath) {
+                    $email->attachFromPath(
+                        $invoicePath,
+                        'faktura_' . $purchase->getId() . '.pdf',
+                        'application/pdf'
+                    );
+                }
+        */
+        return $email;
     }
 
     private function buildPaymentIssueEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        // TODO: implement template and context
         return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
@@ -134,7 +173,6 @@ readonly class ManageMails
 
     private function buildCancellationEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        // TODO: implement template and context
         return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
@@ -146,7 +184,6 @@ readonly class ManageMails
 
     private function buildPrepareForPickupEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        // TODO: implement template and context
         return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
@@ -158,7 +195,6 @@ readonly class ManageMails
 
     private function buildSendEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        // TODO: implement template and context
         return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
@@ -170,7 +206,6 @@ readonly class ManageMails
 
     private function buildPickUpEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
-        // TODO: implement template and context
         return (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
