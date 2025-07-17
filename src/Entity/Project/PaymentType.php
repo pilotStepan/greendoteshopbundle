@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\PaymentTypeByTransportationFilter;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -75,9 +76,9 @@ class PaymentType implements Translatable
     #[ORM\Column(nullable: true)]
     private ?bool $isEnabled = null;
 
-    #[ORM\Column(type: 'smallint')]
+    #[ORM\Column(type: 'smallint', enumType: PaymentTypeActionGroup::class)]
     #[Groups(['reservation_edit', 'order_edit', 'payment_type_edit'])]
-    private $action_group; // TODO: make enums
+    private ?PaymentTypeActionGroup $action_group; // TODO: define enum better?
 
     /**
      * @var Collection<int, HandlingPrice>
