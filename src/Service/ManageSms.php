@@ -2,24 +2,24 @@
 
 namespace Greendot\EshopBundle\Service;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
 use Neogate\SmsConnect\SmsConnect;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 readonly class ManageSms
 {
     public function __construct(
         private TranslatorInterface $translator,
-        private SmsConnect          $client
+        private SmsConnect          $client,
     ) {}
 
-    public function sendOrderStateSms(Purchase $purchase): void
+    public function sendOrderTransitionSms(Purchase $purchase, string $transition): void
     {
         $phone = $this->processPhone(
             $purchase->getClient()?->getPhone(),
             $purchase->getClient()?->getPrimaryAddress()?->getCountry()
         );
-        $text = $this->getSmsText($purchase);
+        $text = $this->getSmsText($purchase, $transition);
 
         if (!$phone || !$text) return;
 
@@ -66,8 +66,10 @@ readonly class ManageSms
      * • Produce 420777123456 / 421903123456 / ... (no "+", no separators)
      * • Return null when the result is not a 10- to 15-digit E.164 number.
      *
+     * TODO: Consider using odolbeau/phone-number-bundle or similar library
+     *
      * @param string|null $rawPhone The user-supplied value
-     * @param string|null $country ISO-2 for local fallback, defaults to 'cz'
+     * @param string|null $country  ISO-2 for local fallback, defaults to 'cz'
      */
     private function processPhone(?string $rawPhone, ?string $country = 'cz'): ?string
     {

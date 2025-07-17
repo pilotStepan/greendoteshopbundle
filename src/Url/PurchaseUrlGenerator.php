@@ -14,7 +14,7 @@ final readonly class PurchaseUrlGenerator
     /**
      * Absolute URL that shows the customer their order summary / thank-you page.
      */
-    public function buildOrderDetailUrl(Purchase $purchase): string
+    public function buildOrderEndscreenUrl(Purchase $purchase): string
     {
         $route = $purchase->getClient()->isIsAnonymous()
             ? 'thank_you'
@@ -25,6 +25,22 @@ final readonly class PurchaseUrlGenerator
             [
                 'id' => $purchase->getId(),
                 'created' => true,
+            ],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+    }
+
+    public function buildOrderDetailUrl(Purchase $purchase): string
+    {
+        // TODO: Připravit náhled stavu objednávky pro neregistrovaného uživatele
+//         if ($purchase->getClient()->isIsAnonymous()) {
+//             return 'TODO';
+//         }
+
+        return $this->router->generate(
+            'client_section_order_detail',
+            [
+                'id' => $purchase->getId(),
             ],
             UrlGeneratorInterface::ABSOLUTE_URL
         );

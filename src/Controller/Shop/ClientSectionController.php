@@ -39,6 +39,8 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Workflow\Registry;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
+
 
 
 class ClientSectionController extends AbstractController
@@ -211,15 +213,17 @@ class ClientSectionController extends AbstractController
 
     #[Route('/zakaznik/objednavka/{id}', name: 'client_section_order_detail')]
     public function order(
-        int                $id,
-        PurchaseRepository $purchaseRepository,
-        QRcodeGenerator    $qrCodeGenerator,
-        PurchasePriceFactory    $purchasePriceFactory,
+        int                         $id,
+        PurchaseRepository          $purchaseRepository,
+        QRcodeGenerator             $qrCodeGenerator,
+        PurchasePriceFactory        $purchasePriceFactory,
         ProductVariantPriceFactory  $productVariantPriceFactory,
-        ClientRepository    $clientRepository,
+        ClientRepository            $clientRepository,
+        SessionInterface            $session,
+        Request                     $request,
+        PaymentGatewayProvider      $gatewayProvider,
+    ): Response
 
-        SessionInterface   $session,
-        Request     $request): Response
     {
 
         $purchase = $purchaseRepository->find($id);
@@ -231,10 +235,13 @@ class ClientSectionController extends AbstractController
         $created = $request->query->get('created');
 
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
-
-
+        
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
+
+        $paymentGateway = $gatewayProvider->getByPurchase($purchase)
+                ?? $gatewayProvider->getDefault();
+        $paylink = $paymentGateway->getPayLink($purchase);
 
         return $this->render('client-section/order-detail.html.twig', [
             'purchase'       => $purchase,
@@ -243,6 +250,7 @@ class ClientSectionController extends AbstractController
             'productPriceCalculator' => $productVariantPriceFactory,
             'currency' => $currency,
             'created' => $created,
+            'payLink' =>  $paylink,
         ]);
     }
 

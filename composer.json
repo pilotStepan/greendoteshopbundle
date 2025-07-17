@@ -31,7 +31,7 @@
     "symfony/form": "^7.1",
     "symfony/mailer": "^7.1",
     "symfony/mime": "^7.1",
-    "symfony/messenger": "^7.1",
+    "symfony/messenger": "^7.3",
     "symfony/doctrine-messenger": "^7.1",
     "knplabs/knp-paginator-bundle": "^6.5",
     "symfony/security-bundle": "^7.1",

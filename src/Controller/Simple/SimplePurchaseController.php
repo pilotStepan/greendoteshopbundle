@@ -3,15 +3,15 @@
 namespace Greendot\EshopBundle\Controller\Simple;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Workflow\Registry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Greendot\EshopBundle\Service\InvoiceMaker;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Workflow\Registry;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 #[Route('/simple/api/purchases', name: 'simple_api_purchases_')]
 class SimplePurchaseController extends AbstractController
@@ -31,6 +31,7 @@ class SimplePurchaseController extends AbstractController
         }
         return $this->json($placesMetaData, 200);
     }
+
     #[Route(path: '/workflow-transitions', name: 'workflow_transitions')]
     public function getPurchaseWorkflowTransitions(Registry $registry, Request $request): JsonResponse
     {
@@ -53,20 +54,26 @@ class SimplePurchaseController extends AbstractController
             throw new BadRequestHttpException('Missing transition');
         }
 
-        $flow = $registry->get($purchase);
-        if (!$flow->getEnabledTransition($purchase, $data['transition'])) {
-            throw new BadRequestHttpException('Invalid transition');
+        $pFlow = $registry->get($purchase);
+
+        if (!$pFlow->can($purchase, $data['transition'])) {
+            $blockers = $pFlow->buildTransitionBlockerList($purchase, $data['transition']);
+            $messages = array_map(fn($b) => $b->getMessage(), iterator_to_array($blockers));
+
+            return new JsonResponse(['errors' => $messages], Response::HTTP_BAD_REQUEST);
         }
 
         // We wrap it in transaction to ensure atomicity
-        $newState = $em->wrapInTransaction(function () use ($purchase, $data, $flow) {
+        $newState = $em->wrapInTransaction(function () use ($purchase, $data, $pFlow) {
             // Mutate the aggregate
             if (!empty($data['package'])) {
                 $purchase->setTransportNumber($data['package']);
             }
 
             // Add a runtime “silent” flag if Simple sets it
-            $flow->apply($purchase, $data['transition'], ['silent' => $data['silent'] ?? false]);
+            $pFlow->apply($purchase, $data['transition'], [
+                'silent' => $data['silent'] ?? false,
+            ]);
 
             // no need for persist(), purchase is already managed
             return $purchase->getState();
