@@ -28,6 +28,9 @@ class PurchasePrice
     private float $vouchersValue = 0;
     private array $vouchersUsed = [];
 
+    private float $discountValue = 0;
+    private float $discountPercentage = 0;
+
     private ?float $minPrice = null;
 
 
@@ -103,6 +106,16 @@ class PurchasePrice
             return $this->priceUtils->convertCurrency($this->vouchersValue, $this->currency);
         }
         return 0;
+    }
+
+    public function getDiscountValue() : float
+    {
+        return $this->discountValue;
+    }
+
+    public function getDiscountPercentage() : float
+    {
+        return $this->discountPercentage;
     }
 
     public function addVoucher(Voucher $voucher): self
@@ -182,6 +195,8 @@ class PurchasePrice
         $this->purchasePrice = $price;
         $this->minPrice = $minPrice;
         $this->loadServicePrices();
+        $this->loadDiscountValue();
+        $this->loadDiscountPercetage();
     }
 
     private function loadServicePrices(): void
@@ -201,6 +216,7 @@ class PurchasePrice
         if ($this->purchase->getPaymentType()) {
             $this->setPaymentPrice($purchasePrice, $this->purchase->getPaymentType());
         }
+
     }
 
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
@@ -282,5 +298,25 @@ class PurchasePrice
         $this->vouchersValue = $finalVouchersValue;
     }
 
+    private function loadDiscountValue() : void
+    {
+        $variantDiscountSum = 0;
+        foreach ($this->productVariantPrices as $productVariantPrice) {
+            $variantDiscountSum += $productVariantPrice->getDiscountValue();
+        }
+        $this->discountValue = $variantDiscountSum;
+    }
+
+    private function loadDiscountPercetage() : void
+    {
+        $discountPercentageSum = 0;
+        $discountPercentageCount = 0;
+        foreach ($this->productVariantPrices as $productVariantPrice) {
+            $discountPercentageSum += $productVariantPrice->getDiscountPercentage();
+            $discountPercentageCount++;
+        }        
+        
+        $this->discountPercentage = $discountPercentageSum/$discountPercentageCount;
+    }
 
 }
