@@ -32,6 +32,14 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
+    public function findByArrayOfIdsQB(QueryBuilder $queryBuilder, array $ids): QueryBuilder
+    {
+        $alias = $queryBuilder->getAllAliases()[0];
+        $queryBuilder->andWhere($alias . '.id IN (:ids)');
+        $queryBuilder->setParameter('ids', $ids);
+        return $queryBuilder;
+    }
+
     public function calculateParameters(Product $product): array
     {
         $parameters = [];
