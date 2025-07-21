@@ -216,18 +216,21 @@ final class InvoiceDataFactory
     private function buildCustomer(Purchase $purchase) : InvoicePersonData 
     {
         $purchaseAddress = $purchase->getPurchaseAddress();
-        $client = null;
+        $client = $purchase->getClient();
+        $clientName = $client->getName();
+        $clientSurname = $client->getSurname();
+
         return new InvoicePersonData(     
             $purchaseAddress->getCompany(),    
-            'jmeno a prijmeni',  
+            "$clientName $clientSurname",  
             $purchaseAddress->getStreet(),
             $purchaseAddress->getZip(),  
             $purchaseAddress->getCity(),
             $purchaseAddress->getCountry(),
             $purchaseAddress->getIc(),    
             $purchaseAddress->getDic(),
-            '999 999 999',
-            'name@mail.com',
+            $client->getPhone(),
+            $client->getMail(),
         );
     }
     
