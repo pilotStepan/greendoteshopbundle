@@ -11,6 +11,7 @@ class InvoiceData
     public function __construct(
         public string                       $invoiceId,
         public int                          $purchaseId,
+        public bool                         $isInvoice,
         public DateTime                     $dateInvoiced,
         public DateTime                     $dateDue,
         // public InvoicePersonData            $contractor,

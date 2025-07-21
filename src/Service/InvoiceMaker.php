@@ -12,6 +12,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Twig\Environment;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Greendot\EshopBundle\Invoice\Data\InvoiceData;
+use Greendot\EshopBundle\Mail\Factory\InvoiceDataFactory;
 
 class InvoiceMaker
 {
@@ -24,25 +26,23 @@ class InvoiceMaker
         private readonly ContainerInterface      $container,
         private readonly SettingsRepository      $settingsRepository,
         private readonly ValueAddedTaxCalculator $valueAddedTaxCalculator,
+        private readonly InvoiceDataFactory      $invoiceDataFactory,
     ) {}
 
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
-        $invoiceData = $this->prepareInvoiceData($purchase);
-
-        if (!$invoiceData) {
-            return null;
-        }
-
+        $invoiceData = $this->invoiceDataFactory->create($purchase);
         $html = $this->renderHtml($invoiceData);
-        $pdfFilePath = $this->generatePdf($html, $invoiceData['order_number']);
+        $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
 //        $this->generateExcel($invoiceData); FIXME: not ready yet
 
         return $pdfFilePath;
     }
 
+    /*
     private function prepareInvoiceData(Purchase $purchase): ?array
     {
+        return 
         $isInvoice = $purchase->getState() === 'paid';
         $isProforma = $purchase->getState() === 'received';
 
@@ -68,12 +68,14 @@ class InvoiceMaker
             'sum'             => $totalAmount
         ];
     }
+    */
 
-    private function renderHtml(array $data): string
+    private function renderHtml(InvoiceData $data): string
     {
-        $template = $data['is_invoice'] ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig';
+        $template = $data->isInvoice ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig';
 //        $template = 'pdf/test.html.twig';
-        return $this->twig->render($template, $data);
+        
+        return $this->twig->render($template, (array) $data);
     }
 
     private function generatePdf(string $html, int $purchaseNumber): ?string

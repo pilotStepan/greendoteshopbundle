@@ -51,6 +51,8 @@ final class InvoiceDataFactory
     {
         [$czk, $eur] = $this->loadCurrencies();
         $this->purchasePrice = $this->purchasePriceFactory->create($purchase, $czk, VatCalculationType::WithVAT, DiscountCalculationType::WithoutDiscount, VoucherCalculationType::WithoutVoucher);
+        
+        $isInvoice = $purchase->getState() === 'paid';
 
         // $contractor =   $this->buildContractor();
         $customer = $this->buildCustomer($purchase);
