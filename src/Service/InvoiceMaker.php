@@ -13,7 +13,7 @@ use Twig\Environment;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Greendot\EshopBundle\Invoice\Data\InvoiceData;
-use Greendot\EshopBundle\Mail\Factory\InvoiceDataFactory;
+use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory;
 
 class InvoiceMaker
 {
@@ -75,7 +75,7 @@ class InvoiceMaker
         $template = $data->isInvoice ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig';
 //        $template = 'pdf/test.html.twig';
         $template = 'pd/invoice-new.html.twig';
-        
+
         return $this->twig->render($template, (array) $data);
     }
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Greendot\EshopBundle\Mail\Factory;
+namespace Greendot\EshopBundle\Invoice\Factory;
 
 use Throwable;
 use LogicException;
