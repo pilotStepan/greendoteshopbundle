@@ -13,7 +13,7 @@ class InvoiceData
         public int                          $purchaseId,
         public bool                         $isInvoice,
         public ?DateTime                    $dateInvoiced,
-        public DateTime                     $dateDue,
+        public ?DateTime                     $dateDue,
         // public InvoicePersonData            $contractor,
         public InvoicePersonData            $customer,
         public InvoicePaymentData           $payment,
