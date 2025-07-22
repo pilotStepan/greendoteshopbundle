@@ -9,7 +9,7 @@ use Greendot\EshopBundle\Tests\Service\Price\PurchasePriceDataProvider;
 class InvoiceData
 {
     public function __construct(
-        public string                       $invoiceId,
+        public ?string                       $invoiceId,
         public int                          $purchaseId,
         public bool                         $isInvoice,
         public DateTime                     $dateInvoiced,
