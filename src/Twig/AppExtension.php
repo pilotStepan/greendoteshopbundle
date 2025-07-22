@@ -135,10 +135,10 @@ class AppExtension extends AbstractExtension
         return $return;
     }
 
-    public function formatPrice(float $price, ?Currency $currency = null): string
+    public function formatPrice(float $price, ?Currency $currency = null, bool $showFree = true): string
     {
         $currency ??= $this->requestStack->getCurrentRequest()->getSession()->get('selectedCurrency');
-        return PriceHelper::formatPrice($price, $currency);
+        return PriceHelper::formatPrice($price, $currency, $showFree);
     }
 
     public function getCurrencyFromSession($symbolOnly = false): Currency|string {
