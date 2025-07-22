@@ -52,8 +52,9 @@ class QRcodeGenerator
         $result = $builder->build();
 
         $filePath = sprintf('QRcodes/qr_code_%s.png', $purchase->getId());
+        $fullPath = 'public/' . $filePath;
 
-        $this->filesystem->dumpFile($filePath, $result->getString());
+        $this->filesystem->dumpFile($fullPath, $result->getString());
 
         return '/' . $filePath;
     }
