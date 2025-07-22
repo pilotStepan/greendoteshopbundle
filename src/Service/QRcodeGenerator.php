@@ -56,6 +56,6 @@ class QRcodeGenerator
 
         $this->filesystem->dumpFile($fullPath, $result->getString());
 
-        return '/' . $filePath;
+        return '/' . $fullPath;
     }
 }

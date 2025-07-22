@@ -24,6 +24,7 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Mail\Factory\InvoiceDataFactory;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,16 +54,17 @@ class ClientSectionController extends AbstractController
         int                    $orderId,
         InvoiceMaker           $invoiceMaker,
         EntityManagerInterface $entityManager,
-        LoggerInterface        $logger
+        LoggerInterface        $logger,
     ): Response
     {
         $purchaseRepository = $entityManager->getRepository(Purchase::class);
         $purchase           = $purchaseRepository->find($orderId);
 
+        
         if (!$purchase || $purchase->getClient() !== $this->getUser()) {
             throw $this->createAccessDeniedException('You do not have permission to access this invoice.');
         }
-
+        
         try {
             $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
 

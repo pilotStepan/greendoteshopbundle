@@ -6,9 +6,9 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 
 class PriceHelper
 {
-    public static function formatPrice(float $price, Currency $currency): string
+    public static function formatPrice(float $price, Currency $currency, bool $showFree = true): string
     {
-        if ($price == 0) return 'Zdarma';
+        if ($showFree && $price == 0) return 'Zdarma';
         $formattedPrice = number_format($price, $currency->getRounding());
 
         return $currency->isSymbolLeft()
