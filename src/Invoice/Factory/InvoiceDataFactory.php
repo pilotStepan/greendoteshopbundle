@@ -54,6 +54,9 @@ final class InvoiceDataFactory
         
         $isInvoice = $purchase->getState() === 'paid';
 
+        $dateInvoiced = (new \DateTime($purchase->getDateIssue()->format('Y-m-d H:i:s')));
+        $dateDue = (new \DateTime($dateInvoiced->format('Y-m-d H:i:s')))->modify('+10 days');
+
         // $contractor =   $this->buildContractor();
         $customer = $this->buildCustomer($purchase);
         $payment = $this->buildPayment($purchase, $czk, $eur);
@@ -69,8 +72,8 @@ final class InvoiceDataFactory
             invoiceId:                              $purchase->getInvoiceNumber(),
             purchaseId:                             $purchase->getId(),
             isInvoice:                              $isInvoice,
-            dateInvoiced:                           $purchase->getDateInvoiced(),
-            dateDue:                                $purchase->getDateInvoiced(),   // TODO: get date due   
+            dateInvoiced:                           $dateInvoiced,
+            dateDue:                                $dateDue,  
             // contractor:                 $contractor,
             customer:                               $customer,    
             payment:                                $payment,
