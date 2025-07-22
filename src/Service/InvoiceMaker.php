@@ -74,6 +74,7 @@ class InvoiceMaker
     {
         $template = $data->isInvoice ? 'pdf/invoice.html.twig' : 'pdf/proforma.html.twig';
 //        $template = 'pdf/test.html.twig';
+        $template = 'pd/invoice-new.html.twig';
         
         return $this->twig->render($template, (array) $data);
     }

@@ -62,33 +62,36 @@ final class InvoiceDataFactory
         $items = $this->buildItems($purchase, $czk, $eur);
 
         [$discountPercentage, $discountValueCzk, $discountValueEur] = array_values($this->buildDiscount($czk, $eur));
-        [$totalPriceNoVatCzk, $totalPriceNoVatEur, $vatValueCzk, $vatValueEur, $totalPriceVatCzk, $totalPriceVatEur] = array_values($this->buildPrices($czk, $eur));
+        [$totalPriceNoVatNoDiscountCzk, $totalPriceNoVatNoDiscountEur, $vatValueCzk, $vatValueEur, $totalPriceNoDiscountCzk, $totalPriceNoDiscountEur, $totalPriceVatCzk, $totalPriceVatEur] = array_values($this->buildPrices($czk, $eur));
         [$voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
 
         return new InvoiceData(
-            invoiceId:                  $purchase->getInvoiceNumber(),
-            purchaseId:                 $purchase->getId(),
-            dateInvoiced:               $purchase->getDateInvoiced(),
-            dateDue:                    $purchase->getDateInvoiced(),   // TODO: get date due   
+            invoiceId:                              $purchase->getInvoiceNumber(),
+            purchaseId:                             $purchase->getId(),
+            isInvoice:                              $isInvoice,
+            dateInvoiced:                           $purchase->getDateInvoiced(),
+            dateDue:                                $purchase->getDateInvoiced(),   // TODO: get date due   
             // contractor:                 $contractor,
-            customer:                   $customer,    
-            payment:                    $payment,
-            qrPath:                     $qr,
-            transportation:             $transportation,
-            currencyPrimary:            $czk,
-            currencySecondary:          $eur,
-            items:                      $items,
-            discountPercentage:         $discountPercentage,
-            discountValue:              $discountValueCzk,
-            discountValueSecondary:     $discountValueEur,
-            totalPriceNoVat:            $totalPriceNoVatCzk,
-            totalPriceNoVatSecondary:   $totalPriceNoVatEur,
-            vat:                        $vatValueCzk,
-            vatSecondary:               $vatValueEur,
-            totalPrice:                 $totalPriceVatCzk,
-            totalPriceSecondary:        $totalPriceVatEur,
-            voucherValue:               $voucherValueCzk,
-            voucherValueSecondary:      $voucherValueEur,
+            customer:                               $customer,    
+            payment:                                $payment,
+            qrPath:                                 $qr,
+            transportation:                         $transportation,
+            currencyPrimary:                        $czk,
+            currencySecondary:                      $eur,
+            items:                                  $items,
+            totalPriceNoVatNoDiscount:              $totalPriceNoVatNoDiscountCzk,
+            totalPriceNoVatNoDiscountSecondary:     $totalPriceNoVatNoDiscountEur,
+            vat:                                    $vatValueCzk,
+            vatSecondary:                           $vatValueEur,
+            totalPriceNoDiscount:                   $totalPriceNoDiscountCzk,
+            totalPriceNoDiscountSecondary:          $totalPriceNoDiscountEur,
+            discountPercentage:                     $discountPercentage,
+            discountValue:                          $discountValueCzk,
+            discountValueSecondary:                 $discountValueEur,
+            voucherValue:                           $voucherValueCzk,
+            voucherValueSecondary:                  $voucherValueEur,
+            totalPrice:                             $totalPriceVatCzk,
+            totalPriceSecondary:                    $totalPriceVatEur,
         );
     }
 
@@ -186,7 +189,7 @@ final class InvoiceDataFactory
     private function buildPrices(Currency $currencyPrimary, Currency $currencySecondary): array
     {
         
-        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
                             ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
                             ->setVatCalculationType(VatCalculationType::WithoutVAT);
         $totalPriceNoVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
@@ -197,6 +200,11 @@ final class InvoiceDataFactory
         $vatValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
                
         $this->purchasePrice->setVatCalculationType(VatCalculationType::WithVAT);
+        $totalPriceNoDiscountPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
+        $totalPriceNoDiscountSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
+
+        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+                            ->setVoucherCalculationType(VoucherCalculationType::WithVoucher);
         $totalPriceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
         $totalPriceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
 
@@ -205,6 +213,8 @@ final class InvoiceDataFactory
             $totalPriceNoVatSecondary,
             $vatValuePrimary,
             $vatValueSecondary,
+            $totalPriceNoDiscountPrimary,
+            $totalPriceNoDiscountSecondary,
             $totalPriceVatPrimary,
             $totalPriceVatSecondary,
         ];
