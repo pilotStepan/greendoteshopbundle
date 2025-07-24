@@ -196,22 +196,14 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private Collection $purchaseDiscussions;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private bool $isDiscussionResolved = false;
+
     #[ORM\ManyToOne(targetEntity: Branch::class, inversedBy: 'Purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?Branch $branch = null;
-
-    public function getBranch(): ?Branch
-    {
-        return $this->branch;
-    }
-
-    public function setBranch(?Branch $branch): self
-    {
-        $this->branch = $branch;
-
-        return $this;
-    }
 
     public function __construct()
     {
@@ -754,6 +746,28 @@ class Purchase
                 $discussion->setPurchase(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isDiscussionResolved(): bool
+    {
+        return $this->isDiscussionResolved;
+    }
+
+    public function setIsDiscussionResolved(bool $isDiscussionResolved): void
+    {
+        $this->isDiscussionResolved = $isDiscussionResolved;
+    }
+
+    public function getBranch(): ?Branch
+    {
+        return $this->branch;
+    }
+
+    public function setBranch(?Branch $branch): self
+    {
+        $this->branch = $branch;
 
         return $this;
     }
