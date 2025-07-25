@@ -272,8 +272,12 @@ class ProductVariantPrice
             $productVariant = $this->productVariant->getProductVariant();
         }
 
+        if ($this->productVariant instanceof PurchaseProductVariant and $this->productVariant->getPrice()){
+            $prices = [$this->productVariant->getPrice()];
+        }else{
+            $prices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, $date, $this->amount);
+        }
 
-        $prices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, $date, $this->amount);
 
         if (empty($prices)) {
             $this->price = null;
