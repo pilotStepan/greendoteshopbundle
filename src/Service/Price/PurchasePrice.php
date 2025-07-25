@@ -276,7 +276,7 @@ class PurchasePrice
         $this->transportationPrice = $price;
     }
 
-    private function applyVoucher(float $price):float
+    private function applyVoucher(?float $price):?float
     {
         if ($this->vouchersValue === 0 or $this->voucherCalculationType === VoucherCalculationType::WithoutVoucher){
             return $price;
@@ -315,8 +315,8 @@ class PurchasePrice
             $discountPercentageSum += $productVariantPrice->getDiscountPercentage();
             $discountPercentageCount++;
         }        
-        
-        $this->discountPercentage = $discountPercentageSum/$discountPercentageCount;
+
+        $this->discountPercentage = $discountPercentageCount  > 0 ? $discountPercentageSum/$discountPercentageCount : 0;
     }
 
 }
