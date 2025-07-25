@@ -196,7 +196,7 @@ class PurchasePrice
         $this->minPrice = $minPrice;
         $this->loadServicePrices();
         $this->loadDiscountValue();
-        $this->loadDiscountPercetage();
+        $this->loadDiscountPercentage();
     }
 
     private function loadServicePrices(): void
@@ -307,7 +307,7 @@ class PurchasePrice
         $this->discountValue = $variantDiscountSum;
     }
 
-    private function loadDiscountPercetage() : void
+    private function loadDiscountPercentage() : void
     {
         $discountPercentageSum = 0;
         $discountPercentageCount = 0;
