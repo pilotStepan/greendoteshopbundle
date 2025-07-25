@@ -5,54 +5,64 @@ namespace Greendot\EshopBundle\StateProvider;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Service\CurrencyResolver;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Service\PriceCalculator;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 
 readonly class PurchaseStateProvider implements ProviderInterface
 {
     public function __construct(
-        private PurchaseRepository $purchaseRepository,
-        private RequestStack       $requestStack,
-        private PriceCalculator    $priceCalculator,
-        private CurrencyRepository $currencyRepository
+        private PurchaseRepository         $purchaseRepository,
+        private CurrencyResolver           $currencyResolver,
+        private PurchasePriceFactory       $purchasePriceFactory,
+        private ProductVariantPriceFactory $productVariantPriceFactory,
     ) {}
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): Purchase|null
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): ?Purchase
     {
         $purchase = $this->purchaseRepository->findOneBySession('purchase');
-        if ($purchase) {
-            /*
-             * TO-DO find currency in session
-             * TO-DO select default VAT calculation from env
-             */
-            //$currency = $this->requestStack->getCurrentRequest()->get('currency');
-            $currency = $this->currencyRepository->findOneBy([]);
-            $total_price = $this->priceCalculator->calculatePurchasePrice($purchase, $currency, null, true, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount, VoucherCalculationType::WithVoucher, true);
-            $purchase->setTotalPrice($total_price);
+        if (!$purchase) return null;
 
-            $total_price_no_services = $this->priceCalculator->calculatePurchasePrice($purchase, $currency, null, false, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount, VoucherCalculationType::WithoutVoucher, true);
-            $purchase->setTotalPriceNoServices($total_price_no_services);
 
-            foreach ($purchase->getProductVariants() as $productVariant) {
-                $productVariant->setTotalPrice($this->priceCalculator->calculateProductVariantPrice($productVariant, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount, false, true));
-            }
+        $currency = $this->currencyResolver->resolve();
 
-            if ($purchase->getTransportation()) {
-                $purchase->setTransportationPrice($this->priceCalculator->transportationPrice($purchase, VatCalculationType::WithVAT, $currency));
-            }
+        $purchasePriceCalc = $this->purchasePriceFactory->create(
+            $purchase,
+            $currency,
+            VatCalculationType::WithVAT
+        );
 
-            if ($purchase->getPaymentType()) {
-                $purchase->setPaymentPrice($this->priceCalculator->paymentPrice($purchase, VatCalculationType::WithVAT, $currency));
-            }
+        $purchase->setTotalPrice(
+            $purchasePriceCalc->getPrice(true)
+        );
+        $purchase->setTotalPriceNoServices(
+            $purchasePriceCalc->getPrice(false)
+        );
 
-            return $purchase;
-        } else {
-            return null;
+        if ($purchase->getTransportation()) {
+            $purchase->setTransportationPrice(
+                $purchasePriceCalc->getTransportationPrice()
+            );
         }
+        if ($purchase->getPaymentType()) {
+            $purchase->setPaymentPrice(
+                $purchasePriceCalc->getPaymentPrice()
+            );
+        }
+
+        foreach ($purchase->getProductVariants() as $productVariant) {
+            $productVariantPriceCalc = $this->productVariantPriceFactory->create(
+                $productVariant,
+                $currency,
+                vatCalculationType: VatCalculationType::WithVAT,
+            );
+            $productVariant->setTotalPrice(
+                $productVariantPriceCalc->getPrice()
+            );
+        }
+
+        return $purchase;
     }
 }
