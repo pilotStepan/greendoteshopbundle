@@ -18,7 +18,7 @@ class ProductVariantPriceDataProvider
                 'prices' => [
                     [
                         'price' => FactoryUtil::makePrice(100, 21),
-                    ]
+                    ],
                 ],
                 'amount' => 3,
                 'vatCalc' => VatCalc::WithVAT,
@@ -34,7 +34,7 @@ class ProductVariantPriceDataProvider
                 'prices' => [
                     [
                         'price' => FactoryUtil::makePrice(49.91, 15),
-                    ]
+                    ],
                 ],
                 'amount' => 2,
                 'vatCalc' => VatCalc::WithVAT,
@@ -163,7 +163,7 @@ class ProductVariantPriceDataProvider
                     1 => [
                         'price' => FactoryUtil::makePrice(100, 20, discount: 0),
                         'discounted' => FactoryUtil::makePrice(100, 20, discount: 10),
-                    ]
+                    ],
                 ],
                 'amount' => 2,
                 'vatCalc' => VatCalc::WithVAT,
@@ -246,6 +246,103 @@ class ProductVariantPriceDataProvider
                 'discCalc' => DiscCalc::WithoutDiscount,
                 'clientDiscount' => 0,
                 'expectedPrice' => 1600.0,
+            ],
+        ];
+    }
+
+    public static function ppvCustomPrice(): array
+    {
+        $czk = FactoryUtil::czk();
+        $eur = FactoryUtil::eur();
+
+        return [
+            'with_vat_10pct_discount' => [
+                'price' => FactoryUtil::makePrice(100.0, 21.0, 1, 10.0),
+                'amount' => 1,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithDiscount,
+                'expectedPrice' => 108.9,
+            ],
+            'with_vat_no_discount' => [
+                'price' => FactoryUtil::makePrice(100.0, 21.0, 1, 10.0),
+                'amount' => 1,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithoutDiscount,
+                'expectedPrice' => 121.0,
+            ],
+            'zero_vat' => [
+                'price' => FactoryUtil::makePrice(99.99, 0.0),
+                'amount' => 1,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithoutDiscount,
+                'expectedPrice' => 99.99,
+            ],
+            'foreign_currency' => [
+                'price' => FactoryUtil::makePrice(10.0, 21.0),
+                'amount' => 10,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $eur,
+                'discCalc' => DiscCalc::WithoutDiscount,
+                'expectedPrice' => 10 * 10 * 1.21 * $eur->getConversionRate(),
+            ],
+            'free_item' => [
+                'price' => FactoryUtil::makePrice(0.0, 0.0),
+                'amount' => 500,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithoutDiscount,
+                'expectedPrice' => 0.0,
+            ],
+            'vat_100_percent' => [
+                'price' => FactoryUtil::makePrice(50.0, 100.0),
+                'amount' => 2,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithoutDiscount,
+                'expectedPrice' => 200.0,
+            ],
+            'large_quantity' => [
+                'price' => FactoryUtil::makePrice(1.99, 0.0),
+                'amount' => 10_000,
+                'vatCalc' => VatCalc::WithoutVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithoutDiscount,
+                'expectedPrice' => 19_900.0,
+            ],
+            'discount_100_percent' => [
+                'price' => FactoryUtil::makePrice(80.0, 21.0, 1, 100.0),
+                'amount' => 1,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => $czk,
+                'discCalc' => DiscCalc::WithDiscount,
+                'expectedPrice' => 0.0,
+            ],
+        ];
+    }
+
+    public static function ppvCustomPriceInvalidCases(): array
+    {
+        return [
+            'negative_unit_price' => [
+                'price' => FactoryUtil::makePrice(-5.0, 21.0),
+                'amount' => 1,
+                'vatCalc' => VatCalc::WithVAT,
+                'discCalc' => DiscCalc::WithoutDiscount,
+            ],
+            'zero_amount' => [
+                'price' => FactoryUtil::makePrice(10.0, 21.0),
+                'amount' => 0,
+                'vatCalc' => VatCalc::WithVAT,
+                'discCalc' => DiscCalc::WithoutDiscount,
+            ],
+            'discount_over_100_percent' => [
+                'price' => FactoryUtil::makePrice(10.0, 21.0, 1, 150.0),
+                'amount' => 1,
+                'vatCalc' => VatCalc::WithVAT,
+                'discCalc' => DiscCalc::WithDiscount,
             ],
         ];
     }
