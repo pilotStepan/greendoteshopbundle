@@ -2,28 +2,28 @@
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
-use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
-use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
-use Greendot\EshopBundle\Enum\VoucherCalculationType as VouchCalc;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
-use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use Greendot\EshopBundle\Repository\Project\SettingsRepository;
-use Greendot\EshopBundle\Service\DiscountService;
-use Greendot\EshopBundle\Service\Price\PriceUtils;
-use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PurchasePrice;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
+use PHPUnit\Framework\MockObject\MockObject;
+use Greendot\EshopBundle\Entity\Project\Client;
+use Doctrine\Common\Collections\ArrayCollection;
+use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\DiscountService;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
+use Greendot\EshopBundle\Service\Price\PurchasePrice;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
+use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
+use Greendot\EshopBundle\Enum\VoucherCalculationType as VouchCalc;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
 
 abstract class PriceCalculationTestCase extends TestCase
@@ -37,6 +37,7 @@ abstract class PriceCalculationTestCase extends TestCase
     protected $productVariantPriceFactory;
 
     protected $settingsRepository;
+
     protected function setUp(): void
     {
         $this->priceUtils = new PriceUtils();
@@ -49,7 +50,8 @@ abstract class PriceCalculationTestCase extends TestCase
         $this->currencyRepository = $this->createMock(CurrencyRepository::class);
         $this->currencyRepository->method('findOneBy')
             ->with(['conversionRate' => 1])
-            ->willReturn(FactoryUtil::czk());
+            ->willReturn(FactoryUtil::czk())
+        ;
 
         $this->handlingPriceRepository = $this->createMock(HandlingPriceRepository::class);
         $this->productVariantPriceFactory = new ProductVariantPriceFactory(
@@ -57,7 +59,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
-            $this->settingsRepository
+            $this->settingsRepository,
         );
     }
 
@@ -79,10 +81,10 @@ abstract class PriceCalculationTestCase extends TestCase
      */
     protected function createProductVariantPrice(
         ProductVariant|PurchaseProductVariant $variant,
-        int                                   $amount,
         Currency                              $currency,
         VatCalc                               $vatType,
-        DiscCalc                              $discCalc
+        DiscCalc                              $discCalc,
+        ?int                                  $amount,
     ): ProductVariantPrice
     {
         return new ProductVariantPrice(
@@ -95,7 +97,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->security,
             $this->priceRepository,
             $this->discountService,
-            $this->priceUtils
+            $this->priceUtils,
         );
     }
 
@@ -115,7 +117,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->productVariantPriceFactory,
             $this->currencyRepository,
             $this->handlingPriceRepository,
-            $this->priceUtils
+            $this->priceUtils,
         );
     }
 
@@ -138,8 +140,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $variantPrices[$index] = $variant['prices'];
         }
 
-        $purchase->method('getProductVariants')
-            ->willReturn(new ArrayCollection($purchaseProductVariants));
+        $purchase->method('getProductVariants')->willReturn(new ArrayCollection($purchaseProductVariants));
 
         $this->priceRepository->method('findPricesByDateAndProductVariantNew')
             ->willReturnCallback(function ($productVariant) use ($variantPrices) {
@@ -147,7 +148,8 @@ abstract class PriceCalculationTestCase extends TestCase
                     return $variantPrices[$productVariant->_index];
                 }
                 return null;
-            });
+            })
+        ;
 
         if ($clientDiscount) {
             $clientDiscountMock = $this->createMock(ClientDiscount::class);

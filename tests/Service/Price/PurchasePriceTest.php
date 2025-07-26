@@ -216,4 +216,17 @@ class PurchasePriceTest extends PriceCalculationTestCase
             "Total price with services mismatch after currency change"
         );
     }
+
+    public function testEmptyPurchase(): void
+    {
+        // ARRANGE
+        $purchase = $this->createPurchase([], clientDiscount: null, vouchers: null);
+
+        // ACT
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithVAT, DiscCalc::OnlyProductDiscount, FactoryUtil::czk());
+
+        // ASSERT
+        $this->assertEquals(0.0, $pp->getPrice(), "Empty purchase price should be zero");
+        $this->assertEquals(0.0, $pp->getPrice(true), "Empty purchase price with services should be zero");
+    }
 }

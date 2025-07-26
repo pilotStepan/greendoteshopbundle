@@ -96,6 +96,10 @@ class Review
     #[Groups(['review:read', 'review:write'])]
     private Collection $reviewPoints;
 
+    #[ORM\Column(type: "boolean")]
+    #[Groups(['comment:read', 'comment:write'])]
+    private bool $isRead = false;
+
     public function __construct()
     {
         $this->files = new ArrayCollection();
@@ -257,6 +261,22 @@ class Review
                 $point->setReview(null);
             }
         }
+        return $this;
+    }
+
+    public function isRead(): bool
+    {
+        return $this->isRead;
+    }
+
+    public function getIsRead(): bool
+    {
+        return $this->isRead;
+    }
+
+    public function setIsRead(bool $isRead): self
+    {
+        $this->isRead = $isRead;
         return $this;
     }
 }

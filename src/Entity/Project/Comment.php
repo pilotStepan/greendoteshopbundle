@@ -14,7 +14,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use SebastianBergmann\CodeCoverage\Report\Xml\Project;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
@@ -45,9 +44,9 @@ class Comment
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Groups(['comment:read', 'comment:write'])]
-    private ?\DateTimeInterface $submitted = null;
+    private ?\DateTimeInterface $submitted;
 
-    #[ORM\ManyToOne(inversedBy: 'comments')]
+    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'comments')]
     #[Groups(['comment:read', 'comment:write'])]
     private ?Client $client = null;
 
@@ -63,7 +62,7 @@ class Comment
     #[Groups('comment:write')]
     private ?self $comment = null;
 
-    #[ORM\OneToMany(mappedBy: 'comment', targetEntity: self::class)]
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'comment', cascade: ['remove'])]
     #[Groups(['comment:read'])]
     private Collection $underComment;
 
@@ -86,6 +85,10 @@ class Comment
     #[Groups(['comment:read', 'comment:write'])]
     private bool $isActive = false;
 
+    #[ORM\Column(type: "boolean")]
+    #[Groups(['comment:read', 'comment:write'])]
+    private bool $isRead = false;
+
     #[ORM\Column(length: 255, unique: true )]
     #[Slug(fields: ['title'])]
     #[Groups(['comment:read'])]
@@ -97,6 +100,7 @@ class Comment
         $this->underComment = new ArrayCollection();
         $this->file = new ArrayCollection();
         $this->products = new ArrayCollection();
+        $this->submitted = new \DateTime();
     }
 
     public function getId(): ?int
@@ -313,6 +317,22 @@ class Comment
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+        return $this;
+    }
+
+    public function isRead(): bool
+    {
+        return $this->isRead;
+    }
+
+    public function getIsRead(): bool
+    {
+        return $this->isRead;
+    }
+
+    public function setIsRead(bool $isRead): self
+    {
+        $this->isRead = $isRead;
         return $this;
     }
 

@@ -196,7 +196,7 @@ class PurchasePrice
         $this->minPrice = $minPrice;
         $this->loadServicePrices();
         $this->loadDiscountValue();
-        $this->loadDiscountPercetage();
+        $this->loadDiscountPercentage();
     }
 
     private function loadServicePrices(): void
@@ -276,7 +276,7 @@ class PurchasePrice
         $this->transportationPrice = $price;
     }
 
-    private function applyVoucher(float $price):float
+    private function applyVoucher(?float $price):?float
     {
         if ($this->vouchersValue === 0 or $this->voucherCalculationType === VoucherCalculationType::WithoutVoucher){
             return $price;
@@ -307,7 +307,7 @@ class PurchasePrice
         $this->discountValue = $variantDiscountSum;
     }
 
-    private function loadDiscountPercetage() : void
+    private function loadDiscountPercentage() : void
     {
         $discountPercentageSum = 0;
         $discountPercentageCount = 0;
@@ -315,8 +315,8 @@ class PurchasePrice
             $discountPercentageSum += $productVariantPrice->getDiscountPercentage();
             $discountPercentageCount++;
         }        
-        
-        $this->discountPercentage = $discountPercentageSum/$discountPercentageCount;
+
+        $this->discountPercentage = $discountPercentageCount  > 0 ? $discountPercentageSum/$discountPercentageCount : 0;
     }
 
 }

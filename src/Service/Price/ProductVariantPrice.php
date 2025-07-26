@@ -272,8 +272,24 @@ class ProductVariantPrice
             $productVariant = $this->productVariant->getProductVariant();
         }
 
+        if ($this->productVariant instanceof PurchaseProductVariant and $this->productVariant->getPrice()){
+            $customPrice = $this->productVariant->getPrice();
+            $customPrices = [];
+            if (is_null($customPrice->getDiscount()) or $customPrice->getDiscount() === 0){
+                $customPrices['price'] = $customPrice;
+            }else{
+                $discountedCustomPrice = $customPrice;
+                $customPrice = clone $discountedCustomPrice;
+                $customPrice->setDiscount(null);
+                $customPrices['discounted'] = $discountedCustomPrice;
+                $customPrices['price'] = $customPrice;
+            }
+            $prices = [$customPrice->getMinimalAmount() => $customPrices];
 
-        $prices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, $date, $this->amount);
+        }else{
+            $prices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, $date, $this->amount);
+        }
+
 
         if (empty($prices)) {
             $this->price = null;
