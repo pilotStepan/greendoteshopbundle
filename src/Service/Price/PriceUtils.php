@@ -31,11 +31,11 @@ class PriceUtils
             return ($fullAmount * $percentage) / 100;
         }
 
-        if (!is_null($fullAmount) && !is_null($percentageAmount)) {
+        if (!is_null($fullAmount) && !is_null($percentageAmount) && $fullAmount > 0) {
             return ($percentageAmount / $fullAmount) * 100;
         }
 
-        if (!is_null($percentage) && !is_null($percentageAmount)) {
+        if (!is_null($percentage) && !is_null($percentageAmount) && $percentage > 0) {
             return ($percentageAmount * 100) / $percentage;
         }
 

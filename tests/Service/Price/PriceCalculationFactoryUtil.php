@@ -76,6 +76,15 @@ class PriceCalculationFactoryUtil
             ->setIsDefault(1);
     }
 
+    public static function czkThreeSpaceRounding(): Currency
+    {
+        // for testing purposes, rounding = 1
+        return (new Currency())
+            ->setConversionRate(1)
+            ->setRounding(3)
+            ->setIsDefault(1);
+    }
+
     public static function eur(): Currency
     {
         // for testing purposes, rounding = 2

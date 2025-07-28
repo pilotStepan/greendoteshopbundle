@@ -287,6 +287,7 @@ class ProductVariantPriceDataProvider
     public static function ppvCustomPrice(): array
     {
         $czk = FactoryUtil::czk();
+        $czk2 = FactoryUtil::czkThreeSpaceRounding();
         $eur = FactoryUtil::eur();
 
         return [
@@ -310,7 +311,7 @@ class ProductVariantPriceDataProvider
                 'price' => FactoryUtil::makePrice(99.99, 0.0),
                 'amount' => 1,
                 'vatCalc' => VatCalc::WithVAT,
-                'currency' => $czk,
+                'currency' => $czk2,
                 'discCalc' => DiscCalc::WithoutDiscount,
                 'expectedPrice' => 99.99,
             ],
