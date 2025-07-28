@@ -50,10 +50,10 @@ class TestController extends AbstractController
                     ->setCountry('cz')
                 )
             )
-            ->setState('sent')
+            ->setState('paid')
             ->setTransportNumber('TEST123456')
         ;
-        $manageSms->sendOrderTransitionSms($purchase, 'send');
+        $manageSms->sendOrderTransitionSms($purchase, 'payment');
         return new JsonResponse(['status' => 'SMS sent'], 200);
     }
 

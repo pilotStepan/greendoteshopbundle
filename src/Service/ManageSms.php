@@ -4,13 +4,17 @@ namespace Greendot\EshopBundle\Service;
 
 use Neogate\SmsConnect\SmsConnect;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 
 readonly class ManageSms
 {
     public function __construct(
-        private TranslatorInterface $translator,
-        private SmsConnect          $client,
+        private TranslatorInterface  $translator,
+        private SmsConnect           $client,
+        private PurchasePriceFactory $priceFactory,
+        private CurrencyResolver     $currencyResolver,
     ) {}
 
     public function sendOrderTransitionSms(Purchase $purchase, string $transition): void
@@ -23,7 +27,7 @@ readonly class ManageSms
         if (!$phone || !$text) return;
 
         try {
-            $this->client->sendSms($phone, $text, sender: 'Yogashop');
+             $this->client->sendSms($phone, $text, sender: 'Yogashop');
         } catch (\Exception $e) {
             dd($e);
         }
@@ -45,7 +49,11 @@ readonly class ManageSms
         };
 
         if ($state === 'paid') {
-            // TODO: calculate $amount
+            $currency = $this->currencyResolver->resolve();
+            $amount = $this->priceFactory
+                ->create($purchase, $currency, VatCalculationType::WithVAT)
+                ->getPrice(true)
+            ;
         }
 
         $params = array_filter([
