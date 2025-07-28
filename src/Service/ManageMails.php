@@ -109,17 +109,15 @@ readonly class ManageMails
             ->context(['data' => $orderData])
         ;
 
-        // TODO: Uncomment when ready
         // Attach invoice
-        /*        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
-                if ($invoicePath) {
-                    $email->attachFromPath(
-                        $invoicePath,
-                        'proforma_' . $purchase->getId() . '.pdf',
-                        'application/pdf'
-                    );
-                }
-        */
+        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
+        if ($invoicePath) {
+            $email->attachFromPath(
+                $invoicePath,
+                'proforma_' . $purchase->getId() . '.pdf',
+                'application/pdf',
+            );
+        }
 
         return $email;
 
@@ -152,10 +150,10 @@ readonly class ManageMails
             $email->attachFromPath(
                 $invoicePath,
                 'faktura_' . $purchase->getId() . '.pdf',
-                'application/pdf'
+                'application/pdf',
             );
         }
-        
+
         return $email;
     }
 
