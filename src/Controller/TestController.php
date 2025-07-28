@@ -53,7 +53,7 @@ class TestController extends AbstractController
             ->setState('sent')
             ->setTransportNumber('TEST123456')
         ;
-        $manageSms->sendOrderTransitionSms($purchase);
+        $manageSms->sendOrderTransitionSms($purchase, 'send');
         return new JsonResponse(['status' => 'SMS sent'], 200);
     }
 

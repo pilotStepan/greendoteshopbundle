@@ -20,14 +20,12 @@ readonly class ManageSms
             $purchase->getClient()?->getPrimaryAddress()?->getCountry()
         );
         $text = $this->getSmsText($purchase, $transition);
-
         if (!$phone || !$text) return;
 
         try {
-            // FIXME: Whitelist not configured. Error: Disallowed remote IP, see your SmsConnect setting
-            $this->client->sendSms($phone, $text);
+            $this->client->sendSms($phone, $text, sender: 'Yogashop');
         } catch (\Exception $e) {
-            // TODO: log the error
+            dd($e);
         }
     }
 
