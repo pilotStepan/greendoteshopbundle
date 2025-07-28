@@ -2,14 +2,17 @@
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
+use PHPUnit\Framework\MockObject\MockObject;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
+use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
 
 class ProductVariantPriceTest extends PriceCalculationTestCase
 {
@@ -32,7 +35,7 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         $variant = $this->createVariant($productType, $amount, $prices, $clientDiscount);
 
         $pvp = $this->createProductVariantPrice(
-            $variant, $amount, $currency, $vatCalc, $discCalc
+            $variant, $currency, $vatCalc, $discCalc, $amount,
         );
 
 
@@ -40,7 +43,7 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
             $expectedPrice,
             $pvp->getPrice(),
             0.01,
-            "Price calculation mismatch"
+            "Price calculation mismatch",
         );
     }
 
@@ -62,14 +65,14 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         $variant = $this->createVariant($productType, $amount, $prices, $clientDiscount);
 
         $pvp = $this->createProductVariantPrice(
-            $variant, $amount, $currency, $vatCalc, $discCalc
+            $variant, $currency, $vatCalc, $discCalc, $amount,
         );
 
         $this->assertEqualsWithDelta(
             $expectedPrice,
             $pvp->getPrice(),
             0.01,
-            "Price calculation mismatch"
+            "Price calculation mismatch",
         );
     }
 
@@ -90,14 +93,14 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         $variant = $this->createVariant($productType, $amount, $prices, $clientDiscount);
 
         $pvp = $this->createProductVariantPrice(
-            $variant, $amount, $currencyCZK, $vatCalc, $discCalc
+            $variant, $currencyCZK, $vatCalc, $discCalc, $amount,
         );
 
         $this->assertEqualsWithDelta(
             $expectedPriceCZK,
             $pvp->getPrice(),
             0.01,
-            "Price calculation mismatch for CZK"
+            "Price calculation mismatch for CZK",
         );
 
         $pvp->setCurrency($currencyEUR);
@@ -106,10 +109,48 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
             $expectedPriceEUR,
             $pvp->getPrice(),
             0.01,
-            "Price calculation mismatch for EUR"
+            "Price calculation mismatch for EUR",
         );
     }
 
+    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'ppvCustomPrice')]
+    public function testPpvCustomPriceIsCalculatedCorrectly(
+        Price    $price,
+        int      $amount,
+        VatCalc  $vatCalc,
+        Currency $currency,
+        DiscCalc $discCalc,
+        float    $expectedPrice,
+    ): void
+    {
+        // ARRANGE
+        $variant = $this->createMock(PurchaseProductVariant::class);
+        $variant->method('getAmount')->willReturn($amount);
+        $variant->method('getPrice')->willReturn($price);
+
+        // ACT
+        $pvp = $this->createProductVariantPrice($variant, $currency, $vatCalc, $discCalc, amount: null);
+
+        // ASSERT
+        $this->assertEqualsWithDelta($expectedPrice, $pvp->getPrice(), 0.01);
+    }
+
+    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'ppvCustomPriceInvalidCases')]
+    public function testInvalidPpvCustomPriceInputThrows(
+        Price    $price,
+        int      $amount,
+        VatCalc  $vatCalc,
+        DiscCalc $discCalc,
+    ): void
+    {
+        $this->expectException(\Throwable::class);
+
+        $variant = $this->createMock(PurchaseProductVariant::class);
+        $variant->method('getAmount')->willReturn($amount);
+        $variant->method('getPrice')->willReturn($price);
+
+        $this->createProductVariantPrice($variant, FactoryUtil::czk(), $vatCalc, $discCalc, null);
+    }
 // Commented out - missing provider
 //    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'mixedVatException')]
 //    public function testProductVariantPriceMixedVatException(
@@ -139,12 +180,13 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
     private function createVariant(string $productType, int $amount, array $prices, ?float $clientDiscount): ProductVariant|PurchaseProductVariant
     {
         $variant = match ($productType) {
-            'pv' => $this->createProductVariantMock($clientDiscount),
+            'pv'  => $this->createProductVariantMock($clientDiscount),
             'ppv' => $this->createPurchaseProductVariantMock($amount, $clientDiscount),
         };
         $this->priceRepository->method('findPricesByDateAndProductVariantNew')
             ->with($variant)
-            ->willReturn($prices);
+            ->willReturn($prices)
+        ;
 
         return $variant;
     }
@@ -168,7 +210,7 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
     /**
      * Create a PurchaseProductVariant mock with necessary dependencies
      */
-    private function createPurchaseProductVariantMock(int $amount, ?float $clientDiscount): PurchaseProductVariant
+    private function createPurchaseProductVariantMock(int $amount, ?float $clientDiscount): PurchaseProductVariant&MockObject
     {
         $variant = $this->createMock(PurchaseProductVariant::class);
         $productVariantMock = $this->createMock(ProductVariant::class);

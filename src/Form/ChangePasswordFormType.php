@@ -26,11 +26,11 @@ class ChangePasswordFormType extends AbstractType
                 'first_options' => [
                     'constraints' => [
                         new NotBlank([
-                            'message' => 'Please enter a password',
+                            'message' => 'Prosím zadejte heslo',
                         ]),
                         new Length([
                             'min' => 6,
-                            'minMessage' => 'Your password should be at least {{ limit }} characters',
+                            'minMessage' => 'Vaše heslo musi mít minimálně {{ limit }} znaků',
                             // max length allowed by Symfony for security reasons
                             'max' => 4096,
                         ]),
@@ -42,7 +42,7 @@ class ChangePasswordFormType extends AbstractType
                     'label' => 'Zopakovat nové heslo',
                     'label_attr' => ['class' => 'label'],
                 ],
-                'invalid_message' => 'The password fields must match.',
+                'invalid_message' => 'Pole pro heslo se musí shodovat',
                 // Instead of being set onto the object directly,
                 // this is read and encoded in the controller
                 'mapped' => false,
