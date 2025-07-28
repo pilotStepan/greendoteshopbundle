@@ -47,6 +47,7 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
     #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'clientAndProduct')]
     #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'onlyProductDiscount')]
     #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'afterRegistration')]
+    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'discountEdge')]
     public function testProductVariantPriceDiscounts(
         string   $productType,
         array    $prices,

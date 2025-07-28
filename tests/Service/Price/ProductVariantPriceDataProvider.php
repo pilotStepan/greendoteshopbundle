@@ -154,6 +154,40 @@ class ProductVariantPriceDataProvider
         ];
     }
 
+    public static function discountEdge(): array
+    {
+        return [
+            'DE1' => [
+                'productType' => 'pv',
+                'prices' => [
+                    1 => [
+                        'price' => FactoryUtil::makePrice(1000, 21, discount: 0),
+                        'discounted' => FactoryUtil::makePrice(1000, 21, discount: 100),
+                    ]],
+                'amount' => 3,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => FactoryUtil::czk(),
+                'discCalc' => DiscCalc::WithDiscount,
+                'clientDiscount' => 0,
+                'expectedPrice' => 0.0, //((100 * 3) + 20%) -10% = 324
+            ],
+            'DE2' => [
+                'productType' => 'pv',
+                'prices' => [
+                    1 => [
+                        'price' => FactoryUtil::makePrice(1000, 21, discount: 0),
+                        'discounted' => FactoryUtil::makePrice(1000, 21, discount: 90),
+                    ]],
+                'amount' => 3,
+                'vatCalc' => VatCalc::WithVAT,
+                'currency' => FactoryUtil::czk(),
+                'discCalc' => DiscCalc::WithDiscount,
+                'clientDiscount' => 10,
+                'expectedPrice' => 0.0, //((100 * 3) + 20%) -10% = 324
+            ],
+        ];
+    }
+
     public static function clientAndProduct(): array
     {
         return [
