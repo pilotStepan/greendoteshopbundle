@@ -10,6 +10,8 @@ use Greendot\EshopBundle\Service\InvoiceMaker;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
@@ -84,7 +86,7 @@ class SimplePurchaseController extends AbstractController
 
 
     #[Route('/{purchase}/invoice/pdf', name: 'invoice_download_pdf', methods: ['GET'])]
-    public function downloadInvoicePdf(Purchase $purchase, InvoiceMaker $invoiceMaker): Response
+    public function downloadInvoicePdf(Purchase $purchase, InvoiceMaker $invoiceMaker): BinaryFileResponse
     {
         $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
 
@@ -92,7 +94,14 @@ class SimplePurchaseController extends AbstractController
             throw $this->createNotFoundException('Invoice not found or unreadable');
         }
 
-        return new Response($pdfFilePath, 200, ['Content-Type' => 'text/plain']);
+        $response = new BinaryFileResponse($pdfFilePath);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            'invoice_' . $purchase->getId() . '.pdf'
+        );
+        $response->headers->set('Content-Type', 'application/pdf');
+
+        return $response;
     }
 
     #[Route('/{purchase}/invoice/xls', name: 'invoice_download_xls', methods: ['GET'])]

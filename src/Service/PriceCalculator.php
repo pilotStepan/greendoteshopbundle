@@ -73,7 +73,7 @@ class PriceCalculator
      * @param VoucherCalculationType $voucherCalculationType The type of voucher calculation to be used.
      * @param bool $do_rounding If true, all calculations are rounded to 2 decimals, final price is rounded to the nearest half.
      *
-     * @return float The final calculated price.
+     * @return ?float The final calculated price.
      * @throws Exception
      */
     public function calculatePurchasePrice(
@@ -85,7 +85,7 @@ class PriceCalculator
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
         VoucherCalculationType  $voucherCalculationType = VoucherCalculationType::WithVoucher,
         bool                    $do_rounding = false,
-    ): float
+    ): ?float
     {
         $newPurchasePrice = $this->purchasePriceFactory->create($purchase, $currency, $vatCalculationType, $discountCalculationType, $voucherCalculationType);
         return $newPurchasePrice->getPrice($services, $vat_rate);
@@ -134,7 +134,7 @@ class PriceCalculator
      * @param bool|null $singleItemPrice If true, the price is calculated for a single item. If false or null, the price is calculated for the entire amount of the product variant.
      * @param bool $do_rounding If true, the final price is rounded to 2 decimal places.
      *
-     * @return float The final calculated price.
+     * @return ?float The final calculated price.
      * @throws Exception If the VAT rate is different for prices on the same Project/ProductVariant.
      */
     public function calculateProductVariantPrice(
@@ -144,7 +144,7 @@ class PriceCalculator
         DiscountCalculationType               $discountCalculationType,
         bool|null                             $singleItemPrice = null,
         bool                                  $do_rounding,
-    ): float
+    ): ?float
     {
         $amount = null;
         if ($productVariant instanceof ProductVariant){

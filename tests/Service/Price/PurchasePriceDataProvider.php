@@ -324,7 +324,22 @@ class PurchasePriceDataProvider
                  * 1210 - 25% = 907.5
                  *
                  **/
-
+            ],
+            'D07: 100% discount' => [
+                'ppv' => [
+                    [
+                        'amount' => 10,
+                        'prices' => [
+                            1 => [
+                                'price' => FactoryUtil::makePrice(100, 21, 1, discount: 0),
+                                'discounted' => FactoryUtil::makePrice(100, 21, 1, discount: 100)
+                            ]
+                        ]
+                    ],
+                ],
+                ...$baseConfig,
+                'clientDiscount' => 0,
+                'expectedPurchasePrice' => 0.0,
             ],
         ];
     }
