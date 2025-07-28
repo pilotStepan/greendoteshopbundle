@@ -195,21 +195,21 @@ final class InvoiceDataFactory
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
                             ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
                             ->setVatCalculationType(VatCalculationType::WithoutVAT);
-        $totalPriceNoVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
-        $totalPriceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
+        $totalPriceNoVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
+        $totalPriceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
         $this->purchasePrice->setVatCalculationType(VatCalculationType::OnlyVAT);
-        $vatValuePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
-        $vatValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
+        $vatValuePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
+        $vatValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
                
         $this->purchasePrice->setVatCalculationType(VatCalculationType::WithVAT);
-        $totalPriceNoDiscountPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
-        $totalPriceNoDiscountSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
+        $totalPriceNoDiscountPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
+        $totalPriceNoDiscountSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                             ->setVoucherCalculationType(VoucherCalculationType::WithVoucher);
-        $totalPriceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice() ?? 0;
-        $totalPriceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice() ?? 0;
+        $totalPriceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
+        $totalPriceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
         return [
             $totalPriceNoVatPrimary,
