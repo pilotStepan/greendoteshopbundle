@@ -230,6 +230,9 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
+        if ($this->isIsAnonymous()) {
+            return ['ROLE_ANONYMOUS_USER'];
+        }
         return ['ROLE_USER'];
     }
 

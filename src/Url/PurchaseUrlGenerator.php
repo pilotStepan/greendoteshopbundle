@@ -3,12 +3,14 @@
 namespace Greendot\EshopBundle\Url;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final readonly class PurchaseUrlGenerator
 {
     public function __construct(
         private UrlGeneratorInterface $router,
+        private ManagePurchase        $managePurchase,
     ) {}
 
     /**
@@ -33,9 +35,9 @@ final readonly class PurchaseUrlGenerator
     public function buildOrderDetailUrl(Purchase $purchase): string
     {
         // TODO: Připravit náhled stavu objednávky pro neregistrovaného uživatele
-//         if ($purchase->getClient()->isIsAnonymous()) {
-//             return 'TODO';
-//         }
+        if ($purchase->getClient()->isIsAnonymous()) {
+            return $this->managePurchase->generateLoginLink($purchase);
+        }
 
         return $this->router->generate(
             'client_section_order_detail',

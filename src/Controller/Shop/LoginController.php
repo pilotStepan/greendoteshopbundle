@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,33 +45,34 @@ class LoginController extends AbstractController
     }
 
 
+    //! This is for testing. Is a security problem if uncommented.
+    /* 
     #[Route('/api/get_login_link/{id}', name: 'get_login_link')]
-    public function getLoginLink(int $id, PurchaseRepository $purchaseRepository, LoginLinkHandlerInterface $loginLinkHandler) : Response 
+    public function getLoginLink(int $id, PurchaseRepository $purchaseRepository, ManagePurchase $managePurchase) : Response 
     {
 
         $purchase = $purchaseRepository->find($id);
-        $client = $purchase->getClient();
+        $loginLink = $managePurchase->generateLoginLink($purchase);
+        // $client = $purchase->getClient();
 
-        if (!$client) {
-            return new JsonResponse(['error' => 'Client not found'], Response::HTTP_NOT_FOUND);
-        }
+        // if (!$client) {
+        //     return new JsonResponse(['error' => 'Client not found'], Response::HTTP_NOT_FOUND);
+        // }
 
-        // Assuming $client is a UserInterface (or similar)
-        $loginLinkDetails = $loginLinkHandler->createLoginLink($client);
-        $orderDetailUrl = 'http://yogashop-24/zakaznik/objednavka/'.$purchase->getId();
-        $loginUrl = $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
+        // // Assuming $client is a UserInterface (or similar)
+        // $loginLinkDetails = $loginLinkHandler->createLoginLink($client);
+        // $orderDetailUrl = 'http://yogashop-24/zakaznik/objednavka/'.$purchase->getId();
+        // $loginUrl = $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
 
-        return new JsonResponse(['url' => $loginUrl]);
+        return new JsonResponse(['url' => $loginLink]);
     }
+    */
 
+    // this reqisters the route. Symfony overrides it so it can be empty
     #[Route('/api/anonymous_login_check', name: 'anonymous_login_check')]
-    public function anonymousLoginCheck(Request $request): Response
-    {
-        $redirect = urldecode($request->query->get('redirect', '/'));
+    public function anonymousLoginCheck(): void
+    { }
 
-        dd($redirect);
-        return $this->redirect($redirect);
-    }
     /*
     #[Route('/custom_login', name: 'shop_custom_login', priority: 100)]
     public function index(

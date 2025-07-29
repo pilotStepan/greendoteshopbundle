@@ -17,20 +17,23 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
 use Twig\Extension\AbstractExtension;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Security\Http\LoginLink\LoginLinkHandler;
+use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
 
 class ManagePurchase extends AbstractExtension
 {
     private Currency $selectedCurrency;
 
     public function __construct(
-        private readonly Registry              $workflowRegistry,
-        private readonly PurchaseRepository    $purchaseRepository,
-        private readonly CurrencyRepository    $currencyRepository,
-        private readonly MessageRepository     $messageRepository,
-        private readonly LoggerInterface       $logger,
-        private readonly InvoiceMaker          $invoiceMaker,
-        private readonly ParcelServiceProvider $parcelServiceProvider,
-        RequestStack                           $requestStack,
+        private readonly Registry                   $workflowRegistry,
+        private readonly PurchaseRepository         $purchaseRepository,
+        private readonly CurrencyRepository         $currencyRepository,
+        private readonly MessageRepository          $messageRepository,
+        private readonly LoggerInterface            $logger,
+        private readonly InvoiceMaker               $invoiceMaker,
+        private readonly ParcelServiceProvider      $parcelServiceProvider,
+        private readonly RequestStack               $requestStack,
+        private readonly LoginLinkHandlerInterface  $loginLinkHandler,
     )
     {
         // this has to be here, for some reason this ManageOrderService is being called before session is even established
@@ -151,5 +154,19 @@ class ManagePurchase extends AbstractExtension
             }
         }
         return true;
+    }
+
+    // generate login link for an anonymous purchase
+    public function generateLoginLink(Purchase $purchase)
+    {
+        $client = $purchase->getClient();
+
+        $domain = $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost();
+
+        $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
+        $orderDetailUrl = $domain.'/zakaznik/objednavka/'.$purchase->getId();
+        $loginUrl = $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
+
+        return $loginUrl;
     }
 }
