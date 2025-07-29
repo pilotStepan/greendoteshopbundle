@@ -80,7 +80,7 @@ class ProductVariantPrice
 
     public function getPrice(bool $noConversion = false): ?float
     {
-        if ($noConversion){
+        if ($noConversion) {
             return $this->calculatedPrice;
         }
         return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->currency);
@@ -92,13 +92,13 @@ class ProductVariantPrice
         if (!$price) {
             return null;
         }
-        $piecePrice =  $price / $this->amount;
+        $piecePrice = $price / $this->amount;
         return $this->priceUtils->convertCurrency($piecePrice, $this->currency);
     }
 
     public function getMinPrice(bool $noConversion = false): ?float
     {
-        if ($noConversion){
+        if ($noConversion) {
             return $this->minPrice;
         }
         return $this->priceUtils->convertCurrency($this->minPrice, $this->currency);
@@ -208,9 +208,11 @@ class ProductVariantPrice
                 break;
             case VatCalculationType::WithVAT:
                 $price = $price + $this->priceUtils->calculatePercentage($price, $this->vatPercentage);
+                $fullDiscountValue = $fullDiscountValue + $this->priceUtils->calculatePercentage($fullDiscountValue, $this->vatPercentage);
                 break;
             case VatCalculationType::OnlyVAT:
                 $price = $this->priceUtils->calculatePercentage($price, $this->vatPercentage);
+                $fullDiscountValue = $this->priceUtils->calculatePercentage($fullDiscountValue, $this->vatPercentage);
                 break;
         }
 
@@ -266,18 +268,18 @@ class ProductVariantPrice
         $date = new \DateTime("now");
         $productVariant = $this->productVariant;
         if ($this->productVariant instanceof PurchaseProductVariant) {
-            if ($this->productVariant?->getPurchase()?->getDateIssue()){
+            if ($this->productVariant?->getPurchase()?->getDateIssue()) {
                 $date = $this->productVariant->getPurchase()?->getDateIssue();
             }
             $productVariant = $this->productVariant->getProductVariant();
         }
 
-        if ($this->productVariant instanceof PurchaseProductVariant and $this->productVariant->getPrice()){
+        if ($this->productVariant instanceof PurchaseProductVariant and $this->productVariant->getPrice()) {
             $customPrice = $this->productVariant->getPrice();
             $customPrices = [];
-            if (is_null($customPrice->getDiscount()) or $customPrice->getDiscount() === 0){
+            if (is_null($customPrice->getDiscount()) or $customPrice->getDiscount() === 0) {
                 $customPrices['price'] = $customPrice;
-            }else{
+            } else {
                 $discountedCustomPrice = $customPrice;
                 $customPrice = clone $discountedCustomPrice;
                 $customPrice->setDiscount(null);
@@ -286,7 +288,7 @@ class ProductVariantPrice
             }
             $prices = [$customPrice->getMinimalAmount() => $customPrices];
 
-        }else{
+        } else {
             $prices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, $date, $this->amount);
         }
 

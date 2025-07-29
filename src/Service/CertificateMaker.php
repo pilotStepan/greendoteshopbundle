@@ -45,7 +45,7 @@ class CertificateMaker
 
     private function renderHtml(array $data): string
     {
-        $template = 'pdf/voucher.html.twig';
+        $template = 'pdf/certificate.html.twig';
         return $this->twig->render($template, $data);
     }
 

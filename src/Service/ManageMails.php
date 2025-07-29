@@ -135,14 +135,14 @@ readonly class ManageMails
 
         // TODO: Uncomment when ready
         // Attach vouchers if any
-        /*        foreach ($purchase->getVouchersIssued() as $voucher) {
-                    $certificatePath = $this->certificateMaker->createCertificate($voucher);
-                    $email->attachFromPath(
-                        $certificatePath,
-                        'voucher_' . $voucher->getId() . '.pdf',
-                        'application/pdf'
-                    );
-                }*/
+//        foreach ($purchase->getVouchersIssued() as $voucher) {
+//            $certificatePath = $this->certificateMaker->createCertificate($voucher);
+//            $email->attachFromPath(
+//                $certificatePath,
+//                'voucher_' . $voucher->getId() . '.pdf',
+//                'application/pdf',
+//            );
+//        }
 
         // Attach invoice
         $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
