@@ -147,29 +147,33 @@ class ProductVariantPrice
     }
 
 
-    public function setAmount(int $amount): void
+    public function setAmount(int $amount): self
     {
         $this->amount = $amount;
         $this->recalculatePrice();
         $this->recalculateNoQuery();
+        return $this;
     }
 
-    public function setVatCalculationType(VatCalculationType $vatCalculationType): void
+    public function setVatCalculationType(VatCalculationType $vatCalculationType): self
     {
         $this->vatCalculationType = $vatCalculationType;
         $this->recalculateNoQuery();
+        return $this;
     }
 
-    public function setDiscountCalculationType(DiscountCalculationType $discountCalculationType): void
+    public function setDiscountCalculationType(DiscountCalculationType $discountCalculationType): self
     {
         $this->discountCalculationType = $discountCalculationType;
         $this->recalculateNoQuery();
+        return $this;
     }
 
-    public function setCurrency(Currency $currency): void
+    public function setCurrency(Currency $currency): self
     {
         $this->currency = $currency;
         $this->recalculateNoQuery();
+        return $this;
     }
 
     private function recalculateNoQuery(): void

@@ -7,7 +7,7 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Repository\Project\ClientDiscountRepository;
 
-readonly class DiscountService
+class DiscountService
 {
     public function __construct(private ClientDiscountRepository $clientDiscountRepository) {}
 
