@@ -225,7 +225,6 @@ class ClientSectionController extends AbstractController
         SessionInterface            $session,
         Request                     $request,
         PaymentGatewayProvider      $gatewayProvider,
-        FactoryInvoiceDataFactory   $invoiceDataFactory,
     ): Response
 
     {
@@ -247,14 +246,12 @@ class ClientSectionController extends AbstractController
                 ?? $gatewayProvider->getDefault();
         $paylink = $paymentGateway->getPayLink($purchase);
 
-        $invoiceData =  $invoiceDataFactory->create($purchase);
 
         return $this->render('client-section/order-detail.html.twig', [
             'purchase'                  => $purchase,
             'QRcode'                    => $qrCodePath,
             'priceCalculator'           => $priceCalculator,
             'productPriceCalculator'    => $productVariantPriceFactory,
-            'invoiceData'               => $invoiceData,
             'currency'                  => $currency,
             'created'                   => $created,
             'payLink'                   => $paylink,

@@ -219,8 +219,8 @@ final class InvoiceDataFactory
     {
         $paymentType = $purchase->getPaymentType();
 
-        $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getTransportationPrice() ?? 0;
-        $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getTransportationPrice() ?? 0;
+        $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPaymentPrice() ?? 0;
+        $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPaymentPrice() ?? 0;
         $this->purchasePrice->setCurrency($currencyPrimary);
 
         return new InvoicePaymentData(

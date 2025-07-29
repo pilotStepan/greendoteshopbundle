@@ -4,6 +4,8 @@ namespace Greendot\EshopBundle\Enum;
 
 enum PaymentTypeActionGroup: int
 {
-    case CASH_AND_DELIVERY = 0;
-    case ONLINE_PAYMENT = 1;
+    case CARD_PAYMENT = 1;  // kartou
+    case BANK_TRANSFER = 2; // bankovnim převodem
+    case CASH = 3;          // hotově
+    case ON_DELIVERY = 4;   // dobírkou
 }
