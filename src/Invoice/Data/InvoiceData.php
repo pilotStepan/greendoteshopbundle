@@ -12,8 +12,9 @@ class InvoiceData
         public ?string                      $invoiceId,
         public int                          $purchaseId,
         public bool                         $isInvoice,
+        public ?string                         $invoiceNumber,
         public ?DateTime                    $dateInvoiced,
-        public ?DateTime                     $dateDue,
+        public ?DateTime                    $dateDue,
         // public InvoicePersonData            $contractor,
         public InvoicePersonData            $customer,
         public InvoicePaymentData           $payment,
@@ -23,18 +24,27 @@ class InvoiceData
         public Currency                     $currencySecondary,
         /** @var InvoiceItemData[] */
         public array                        $items,
+        /** @var VatCategoryData */
+        public array                        $vatCategories,
+
+        // purchase prices
+        public float                        $totalPriceNoVat,
+        public float                        $totalPriceNoVatSecondary,
+
+        public float                        $totalPriceVat,
+        public float                        $totalPriceVatSecondary,
+
         public float                        $totalPriceNoVatNoDiscount,
         public float                        $totalPriceNoVatNoDiscountSecondary,
-        public float                        $vat,
-        public float                        $vatSecondary,
-        public float                        $totalPriceNoDiscount,
-        public float                        $totalPriceNoDiscountSecondary,
+
+        public float                        $totalPriceVatNoDiscount,
+        public float                        $totalPriceVatNoDiscountSecondary,
+
         public float                        $discountPercentage,
         public float                        $discountValue,
         public float                        $discountValueSecondary,
+
         public float                        $voucherValue,
         public float                        $voucherValueSecondary,
-        public float                        $totalPrice,
-        public float                        $totalPriceSecondary,
     ) {}
 }

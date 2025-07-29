@@ -24,6 +24,7 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory as FactoryInvoiceDataFactory;
 use Greendot\EshopBundle\Mail\Factory\InvoiceDataFactory;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
@@ -224,6 +225,7 @@ class ClientSectionController extends AbstractController
         SessionInterface            $session,
         Request                     $request,
         PaymentGatewayProvider      $gatewayProvider,
+        FactoryInvoiceDataFactory   $invoiceDataFactory,
     ): Response
 
     {
@@ -245,14 +247,17 @@ class ClientSectionController extends AbstractController
                 ?? $gatewayProvider->getDefault();
         $paylink = $paymentGateway->getPayLink($purchase);
 
+        $invoiceData =  $invoiceDataFactory->create($purchase);
+
         return $this->render('client-section/order-detail.html.twig', [
-            'purchase'       => $purchase,
-            'QRcode'         => $qrCodePath,
-            'priceCalculator'     => $priceCalculator,
-            'productPriceCalculator' => $productVariantPriceFactory,
-            'currency' => $currency,
-            'created' => $created,
-            'payLink' =>  $paylink,
+            'purchase'                  => $purchase,
+            'QRcode'                    => $qrCodePath,
+            'priceCalculator'           => $priceCalculator,
+            'productPriceCalculator'    => $productVariantPriceFactory,
+            'invoiceData'               => $invoiceData,
+            'currency'                  => $currency,
+            'created'                   => $created,
+            'payLink'                   => $paylink,
         ]);
     }
 
