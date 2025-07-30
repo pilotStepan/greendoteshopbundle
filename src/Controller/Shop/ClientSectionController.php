@@ -26,6 +26,7 @@ use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory as FactoryInvoiceDataFactory;
 use Greendot\EshopBundle\Mail\Factory\InvoiceDataFactory;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -194,10 +195,12 @@ class ClientSectionController extends AbstractController
 
     #[Route('/zakaznik/objednavky', name: 'client_section_orders')]
     public function orders(
-        ClientRepository   $clientRepository,
-        PurchaseRepository $orderRepository,
-        PaginatorInterface $paginator,
-        Request            $request): Response
+        ClientRepository        $clientRepository,
+        PurchaseRepository      $orderRepository,
+        PaginatorInterface      $paginator,
+        Request                 $request,
+        ManagePurchase          $managePurchase,
+        ): Response
     {
         if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
         if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
@@ -207,6 +210,11 @@ class ClientSectionController extends AbstractController
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
 
+        foreach($drafts as $draft)
+        {
+            $managePurchase->PreparePrices($draft);
+        }
+        
         return $this->render('client-section/orders.html.twig', [
             'orders'     => $orders,
             'drafts'     => $drafts,

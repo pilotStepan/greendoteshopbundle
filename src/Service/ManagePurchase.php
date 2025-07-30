@@ -8,10 +8,13 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Workflow\Registry;
@@ -34,6 +37,9 @@ class ManagePurchase extends AbstractExtension
         private readonly ParcelServiceProvider      $parcelServiceProvider,
         private readonly RequestStack               $requestStack,
         private readonly LoginLinkHandlerInterface  $loginLinkHandler,
+        private readonly CurrencyResolver           $currencyResolver,
+        private readonly PurchasePriceFactory       $purchasePriceFactory,
+        private readonly ProductVariantPriceFactory $productVariantPriceFactory,
     )
     {
         // this has to be here, for some reason this ManageOrderService is being called before session is even established
@@ -157,7 +163,7 @@ class ManagePurchase extends AbstractExtension
     }
 
     // generate login link for an anonymous purchase
-    public function generateLoginLink(Purchase $purchase)
+    public function generateLoginLink(Purchase $purchase) : string
     {
         $client = $purchase->getClient();
 
@@ -168,5 +174,48 @@ class ManagePurchase extends AbstractExtension
         $loginUrl = $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
 
         return $loginUrl;
+    }
+
+    // sets required price data for pased Purchase entity
+    public function PreparePrices(Purchase $purchase) : Purchase
+    {
+        $currency = $this->currencyResolver->resolve();
+
+        $purchasePriceCalc = $this->purchasePriceFactory->create(
+            $purchase,
+            $currency,
+            VatCalculationType::WithVAT
+        );
+
+        $purchase->setTotalPrice(
+            $purchasePriceCalc->getPrice(true)
+        );
+        $purchase->setTotalPriceNoServices(
+            $purchasePriceCalc->getPrice(false)
+        );
+
+        if ($purchase->getTransportation()) {
+            $purchase->setTransportationPrice(
+                $purchasePriceCalc->getTransportationPrice()
+            );
+        }
+        if ($purchase->getPaymentType()) {
+            $purchase->setPaymentPrice(
+                $purchasePriceCalc->getPaymentPrice()
+            );
+        }
+
+        foreach ($purchase->getProductVariants() as $productVariant) {
+            $productVariantPriceCalc = $this->productVariantPriceFactory->create(
+                $productVariant,
+                $currency,
+                vatCalculationType: VatCalculationType::WithVAT,
+            );
+            $productVariant->setTotalPrice(
+                $productVariantPriceCalc->getPrice()
+            );
+        }
+
+        return $purchase;
     }
 }
