@@ -20,6 +20,16 @@ class GreendotEshopBundle extends AbstractBundle
                         ->stringNode('absolute_url')->defaultValue('https://www.example.com')->end()
                     ->end()
                 ->end()
+                ->arrayNode('price')
+                    ->children()
+                        ->arrayNode('free_from_price')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->booleanNode('includes_vat')->defaultValue(false)->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
     }
 
@@ -74,6 +84,10 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.global.absolute_url',
             $absoluteUrl
+        );
+        $builder->setParameter(
+            'greendot_eshop.price.free_from_price.includes_vat',
+            $config['price']['free_from_price']['includes_vat'] ?? false
         );
     }
 }

@@ -10,7 +10,7 @@ use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 
-readonly class ServiceCalculationUtils
+class ServiceCalculationUtils
 {
     public function __construct(
         private HandlingPriceRepository $handlingPriceRepository,
@@ -27,6 +27,7 @@ readonly class ServiceCalculationUtils
         Currency                   $currency,
         VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
         float                      $theoreticalAmount = 0.0,
+        bool                       $returnRaw = false
     ): float
     {
         $handlingPrice = $this->handlingPriceRepository->getByDate($service);
@@ -44,8 +45,10 @@ readonly class ServiceCalculationUtils
                 sprintf('Unsupported VAT calculation type "%s"', $vatCalculationType->name)
             ),
         };
-
-        return $this->priceUtils->convertCurrency($price, $currency);
+        if (!$returnRaw){
+            return $this->priceUtils->convertCurrency($price, $currency);
+        }
+        return $price;
     }
 
     /**

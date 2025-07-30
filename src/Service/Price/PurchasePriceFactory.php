@@ -9,14 +9,16 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 readonly class PurchasePriceFactory
 {
     public function __construct(
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private CurrencyRepository         $currencyRepository,
-        private HandlingPriceRepository    $handlingPriceRepository,
         private PriceUtils                 $priceUtils,
+        private ServiceCalculationUtils    $serviceCalculationUtils,
+        private ParameterBagInterface      $parameterBag
     ) {}
 
     public function create(
@@ -35,8 +37,9 @@ readonly class PurchasePriceFactory
             $voucherCalculationType,
             $this->productVariantPriceFactory,
             $this->currencyRepository,
-            $this->handlingPriceRepository,
             $this->priceUtils,
+            $this->serviceCalculationUtils,
+            $this->parameterBag
         );
     }
 }

@@ -11,7 +11,7 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class PurchasePrice
 {
@@ -33,6 +33,8 @@ class PurchasePrice
 
     private ?float $minPrice = null;
 
+    private bool $freeFromPriceIncludesVat = false;
+
 
     public function __construct(
         private Purchase                            $purchase,
@@ -42,14 +44,16 @@ class PurchasePrice
         private VoucherCalculationType              $voucherCalculationType,
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
         private readonly CurrencyRepository         $currencyRepository,
-        private readonly HandlingPriceRepository    $handlingPriceRepository,
-        private readonly PriceUtils                 $priceUtils
+        private readonly PriceUtils                 $priceUtils,
+        private readonly ServiceCalculationUtils    $serviceCalculationUtils,
+        private readonly ParameterBagInterface      $parameterBag
     )
     {
-        foreach ($this->purchase->getVouchersUsed() as $voucher){
+        foreach ($this->purchase->getVouchersUsed() as $voucher) {
             $this->vouchersUsed[] = $voucher;
         }
         $this->defaultCurrency = $this->currencyRepository->findOneBy(['conversionRate' => 1]);
+        $this->freeFromPriceIncludesVat = $parameterBag->get('greendot_eshop.price.free_from_price.includes_vat') ?? false;
         $this->loadVariants();
         $this->calculateVouchersValue();
     }
@@ -102,18 +106,18 @@ class PurchasePrice
 
     public function getVouchersUsedValue(): float
     {
-        if ($this->vouchersValue > 0){
+        if ($this->vouchersValue > 0) {
             return $this->priceUtils->convertCurrency($this->vouchersValue, $this->currency);
         }
         return 0;
     }
 
-    public function getDiscountValue() : float
+    public function getDiscountValue(): float
     {
         return $this->discountValue;
     }
 
-    public function getDiscountPercentage() : float
+    public function getDiscountPercentage(): float
     {
         return $this->discountPercentage;
     }
@@ -205,7 +209,11 @@ class PurchasePrice
         foreach ($this->productVariantPrices as $productVariantPrice) {
             $clonedProductVariantPrice = clone $productVariantPrice;
             $clonedProductVariantPrice->setCurrency($this->defaultCurrency);
-            $clonedProductVariantPrice->setVatCalculationType(VatCalculationType::WithoutVAT);
+            if ($this->freeFromPriceIncludesVat){
+                $clonedProductVariantPrice->setVatCalculationType(VatCalculationType::WithVAT);
+            }else{
+                $clonedProductVariantPrice->setVatCalculationType(VatCalculationType::WithoutVAT);
+            }
             $purchasePrice += $clonedProductVariantPrice->getPrice(true);
         }
 
@@ -221,84 +229,37 @@ class PurchasePrice
 
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
     {
-        $handlingPrice = $this->handlingPriceRepository->GetByDate($paymentType);
-
-        if (!$handlingPrice or $purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
-            $this->paymentPrice = 0;
-            return;
-        }
-
-        switch ($this->vatCalculationType) {
-            case VatCalculationType::WithoutVAT:
-                $price = $handlingPrice->getPrice();
-                break;
-            case VatCalculationType::WithVAT:
-                $vatValue = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
-                $price = $handlingPrice->getPrice() + $vatValue;
-                break;
-            case VatCalculationType::OnlyVAT:
-                $price = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
-                break;
-            default:
-                throw new \Exception('Unknown Enum:VatCalculationType case');
-        }
-
-        $this->paymentPrice = $price;
-
+        $this->paymentPrice = $this->serviceCalculationUtils->calculateServicePrice($paymentType, $this->defaultCurrency, $this->vatCalculationType, $purchasePrice, true);
     }
 
     private function setTransportationPrice(float $purchasePrice, Transportation $transportation): void
     {
-        // TODO: use ServiceCalculationUtils::calculateServicePrice() to retrieve transportation price
-
-        $handlingPrice = $this->handlingPriceRepository->GetByDate($transportation);
-
-        if (!$handlingPrice or $purchasePrice >= $handlingPrice->getFreeFromPrice() or $handlingPrice->getPrice() < 1) {
-            $this->transportationPrice = 0;
-            return;
-        }
-
-        switch ($this->vatCalculationType) {
-            case VatCalculationType::WithoutVAT:
-                $price = $handlingPrice->getPrice();
-                break;
-            case VatCalculationType::WithVAT:
-                $vatValue = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
-                $price = $handlingPrice->getPrice() + $vatValue;
-                break;
-            case VatCalculationType::OnlyVAT:
-                $price = $this->priceUtils->calculatePercentage($handlingPrice->getPrice(), $handlingPrice->getVat());
-                break;
-            default:
-                throw new \Exception('Unknown Enum:VatCalculationType case');
-        }
-
-        $this->transportationPrice = $price;
+        $this->transportationPrice = $this->serviceCalculationUtils->calculateServicePrice($transportation,$this->defaultCurrency, $this->vatCalculationType, $purchasePrice, true);
     }
 
-    private function applyVoucher(?float $price):?float
+    private function applyVoucher(?float $price): ?float
     {
-        if ($this->vouchersValue === 0 or $this->voucherCalculationType === VoucherCalculationType::WithoutVoucher){
+        if ($this->vouchersValue === 0 or $this->voucherCalculationType === VoucherCalculationType::WithoutVoucher) {
             return $price;
         }
         $priceAppliedVoucher = $price - $this->vouchersValue;
-        if ($this->voucherCalculationType === VoucherCalculationType::WithVoucherToMinus){
+        if ($this->voucherCalculationType === VoucherCalculationType::WithVoucherToMinus) {
             return $priceAppliedVoucher;
         }
         return max($priceAppliedVoucher, 0);
     }
 
-    private function calculateVouchersValue() : void
+    private function calculateVouchersValue(): void
     {
         $finalVouchersValue = 0;
-        foreach ($this->vouchersUsed as $voucher){
+        foreach ($this->vouchersUsed as $voucher) {
             assert($voucher instanceof Voucher);
             $finalVouchersValue += $voucher->getAmount();
         }
         $this->vouchersValue = $finalVouchersValue;
     }
 
-    private function loadDiscountValue() : void
+    private function loadDiscountValue(): void
     {
         $variantDiscountSum = 0;
         foreach ($this->productVariantPrices as $productVariantPrice) {
@@ -307,16 +268,16 @@ class PurchasePrice
         $this->discountValue = $variantDiscountSum;
     }
 
-    private function loadDiscountPercentage() : void
+    private function loadDiscountPercentage(): void
     {
         $discountPercentageSum = 0;
         $discountPercentageCount = 0;
         foreach ($this->productVariantPrices as $productVariantPrice) {
             $discountPercentageSum += $productVariantPrice->getDiscountPercentage();
             $discountPercentageCount++;
-        }        
+        }
 
-        $this->discountPercentage = $discountPercentageCount  > 0 ? $discountPercentageSum/$discountPercentageCount : 0;
+        $this->discountPercentage = $discountPercentageCount > 0 ? $discountPercentageSum / $discountPercentageCount : 0;
     }
 
 }
