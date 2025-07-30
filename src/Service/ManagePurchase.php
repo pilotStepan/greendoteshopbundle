@@ -7,54 +7,22 @@ namespace Greendot\EshopBundle\Service;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Workflow\Registry;
-use Twig\Extension\AbstractExtension;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Security\Http\LoginLink\LoginLinkHandler;
-use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 
 readonly class ManagePurchase
 {
     public function __construct(
-        private readonly Registry                   $workflowRegistry,
-        private readonly PurchaseRepository         $purchaseRepository,
-        private readonly CurrencyRepository         $currencyRepository,
-        private readonly MessageRepository          $messageRepository,
-        private readonly LoggerInterface            $logger,
-        private readonly InvoiceMaker               $invoiceMaker,
-        private readonly ParcelServiceProvider      $parcelServiceProvider,
-        private readonly RequestStack               $requestStack,
-        private readonly LoginLinkHandlerInterface  $loginLinkHandler,
-        private readonly CurrencyResolver           $currencyResolver,
-        private readonly PurchasePriceFactory       $purchasePriceFactory,
-        private readonly ProductVariantPriceFactory $productVariantPriceFactory,
-        private readonly PurchaseRepository         $purchaseRepository,
-        private readonly ParcelServiceProvider      $parcelServiceProvider,
+        private CurrencyResolver            $currencyResolver,
+        private PurchasePriceFactory        $purchasePriceFactory,
+        private ProductVariantPriceFactory  $productVariantPriceFactory,
+        private PurchaseRepository          $purchaseRepository,
+        private ParcelServiceProvider       $parcelServiceProvider,
     )
-    {
-        // this has to be here, for some reason this ManageOrderService is being called before session is even established
-        try {
-            if ($requestStack->getSession()->isStarted() and $requestStack->getSession()->get('selectedCurrency')) {
-                $this->selectedCurrency = $requestStack->getSession()->get('selectedCurrency');
-            } else {
-                $this->selectedCurrency = $this->currencyRepository->findOneBy(['isDefault' => true]);
-            }
-        } catch (SessionNotFoundException $exception) {
-            $this->selectedCurrency = $this->currencyRepository->findOneBy(['isDefault' => true]);
-        }
-    }
+    { }
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase
     {
@@ -125,20 +93,6 @@ readonly class ManagePurchase
             }
         }
         return true;
-    }
-
-    // generate login link for an anonymous purchase
-    public function generateLoginLink(Purchase $purchase) : string
-    {
-        $client = $purchase->getClient();
-
-        $domain = $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost();
-
-        $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
-        $orderDetailUrl = $domain.'/zakaznik/objednavka/'.$purchase->getId();
-        $loginUrl = $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
-
-        return $loginUrl;
     }
 
     // sets required price data for pased Purchase entity
