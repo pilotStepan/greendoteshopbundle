@@ -308,4 +308,41 @@ abstract class Address
         $this->date_created = $date_created;
         return $this;
     }
+
+    /* true, if all fields match or if all ship_ fields are empty */
+    #[Groups(['purchase:read', 'client:read'])]
+    public function getIsBillingSameAsShipping(): bool
+    {
+        $fields = ['street', 'city', 'zip', 'country'];
+
+        $allShipEmpty = true;
+        foreach ($fields as $field) {
+            $shipping = $this->{'ship_' . $field};
+            if (!empty($shipping)) {
+                $allShipEmpty = false;
+                break;
+            }
+        }
+        if ($allShipEmpty) {
+            return true;
+        }
+
+        foreach ($fields as $field) {
+            $billing  = $this->$field;
+            $shipping = $this->{'ship_' . $field};
+
+            if ($billing !== $shipping) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /* if at least one of the company fields is set, it's considered a company address */
+    #[Groups(['purchase:read', 'client:read'])]
+    public function getIsCompanyAddress(): bool
+    {
+        return $this->company || $this->ic || $this->dic;
+    }
 }

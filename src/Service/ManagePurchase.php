@@ -4,8 +4,6 @@
 namespace Greendot\EshopBundle\Service;
 
 
-use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -22,11 +20,13 @@ use Twig\Extension\AbstractExtension;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Http\LoginLink\LoginLinkHandler;
 use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 
-class ManagePurchase extends AbstractExtension
+readonly class ManagePurchase
 {
-    private Currency $selectedCurrency;
-
     public function __construct(
         private readonly Registry                   $workflowRegistry,
         private readonly PurchaseRepository         $purchaseRepository,
@@ -40,6 +40,8 @@ class ManagePurchase extends AbstractExtension
         private readonly CurrencyResolver           $currencyResolver,
         private readonly PurchasePriceFactory       $purchasePriceFactory,
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
+        private readonly PurchaseRepository         $purchaseRepository,
+        private readonly ParcelServiceProvider      $parcelServiceProvider,
     )
     {
         // this has to be here, for some reason this ManageOrderService is being called before session is even established
@@ -97,42 +99,6 @@ class ManagePurchase extends AbstractExtension
         return $purchase;
     }
 
-    public function getNotifyEmail(Purchase $purchase): ?string
-    {
-        $note = $this->messageRepository->findOneBy(["type" => "E-mail pro notifikace", 'purchase' => $purchase]);
-        //returns null or text of note in this case email
-        return $note?->getText();
-    }
-
-    public function getRangeOfCalendarWeek(int $calendarWeek): array
-    {
-        $currentYear = date('Y');
-        $currentMonth = date('n');
-
-        $dto = new \DateTime();
-        $dto->setISODate($currentYear, $calendarWeek);
-        if ($dto->format('n') <= $currentMonth - 2) {
-            // If the week is in the past 2 months, use the current year plus 1.
-            $year = $currentYear + 1;
-        } else {
-            // Otherwise, use the current year.
-            $year = $currentYear;
-        }
-
-        $dto->setISODate($year, $calendarWeek);
-
-        $from = clone $dto;
-        $to = clone $dto;
-
-        $from->modify('this Monday');
-        $to->modify('this Sunday');
-
-        return [
-            'from' => $from,
-            'until' => $to
-        ];
-    }
-
     /* TODO: process parcel creating via messenger, handle failed parcel creation */
     public function generateTransportData(Purchase $purchase): void
     {
@@ -148,14 +114,13 @@ class ManagePurchase extends AbstractExtension
         $purchase->setDateInvoiced(new \DateTime());
     }
 
-    // check if all products in purchase are available
     public function isPurchaseValid(Purchase $purchase): bool
     {
         $purchaseProductVariants = $purchase->getProductVariants();
 
-        foreach ($purchaseProductVariants as $purchaseProductVariant){
+        foreach ($purchaseProductVariants as $purchaseProductVariant) {
             $productVariant = $purchaseProductVariant->getProductVariant();
-            if ($productVariant->getAvailability()->getId() !== 1){
+            if ($productVariant->getAvailability()->getId() !== 1) {
                 return false;
             }
         }

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
+use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -25,6 +26,7 @@ use Greendot\EshopBundle\Enum\VoucherCalculationType as VouchCalc;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class PriceCalculationTestCase extends TestCase
 {
@@ -37,7 +39,9 @@ abstract class PriceCalculationTestCase extends TestCase
     protected $productVariantPriceFactory;
 
     protected $settingsRepository;
+    protected $serviceCalculationUtils;
 
+    protected $parameterBag;
     protected function setUp(): void
     {
         $this->priceUtils = new PriceUtils();
@@ -46,14 +50,18 @@ abstract class PriceCalculationTestCase extends TestCase
         $this->discountService = $this->createMock(DiscountService::class);
         $this->settingsRepository = $this->createMock(SettingsRepository::class);
         $this->settingsRepository->method('findParameterValueWithName')->willReturn(20);
-
+        $this->handlingPriceRepository = $this->createMock(HandlingPriceRepository::class);
+        $this->serviceCalculationUtils = new ServiceCalculationUtils(
+            $this->handlingPriceRepository,
+            $this->priceUtils,
+        );
+        // $this->createMock(ServiceCalculationUtils::class);
         $this->currencyRepository = $this->createMock(CurrencyRepository::class);
         $this->currencyRepository->method('findOneBy')
             ->with(['conversionRate' => 1])
             ->willReturn(FactoryUtil::czk())
         ;
 
-        $this->handlingPriceRepository = $this->createMock(HandlingPriceRepository::class);
         $this->productVariantPriceFactory = new ProductVariantPriceFactory(
             $this->security,
             $this->priceRepository,
@@ -61,6 +69,8 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->priceUtils,
             $this->settingsRepository,
         );
+        $this->parameterBag = $this->createMock(ParameterBagInterface::class);
+        $this->parameterBag->method('get')->willReturn(false);
     }
 
     /**
@@ -116,8 +126,9 @@ abstract class PriceCalculationTestCase extends TestCase
             VouchCalc::WithoutVoucher,
             $this->productVariantPriceFactory,
             $this->currencyRepository,
-            $this->handlingPriceRepository,
             $this->priceUtils,
+            $this->serviceCalculationUtils,
+            $this->parameterBag
         );
     }
 
