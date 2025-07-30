@@ -4,11 +4,13 @@ namespace Greendot\EshopBundle\Url;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
 
 final readonly class PurchaseUrlGenerator
 {
     public function __construct(
-        private UrlGeneratorInterface $router,
+        private UrlGeneratorInterface     $router,
+        private LoginLinkHandlerInterface $loginLinkHandler,
     ) {}
 
     /**
@@ -26,23 +28,25 @@ final readonly class PurchaseUrlGenerator
                 'id' => $purchase->getId(),
                 'created' => true,
             ],
-            UrlGeneratorInterface::ABSOLUTE_URL
+            UrlGeneratorInterface::ABSOLUTE_URL,
         );
     }
 
     public function buildOrderDetailUrl(Purchase $purchase): string
     {
-        // TODO: Připravit náhled stavu objednávky pro neregistrovaného uživatele
-//         if ($purchase->getClient()->isIsAnonymous()) {
-//             return 'TODO';
-//         }
-
-        return $this->router->generate(
+        $orderDetailUrl = $this->router->generate(
             'client_section_order_detail',
-            [
-                'id' => $purchase->getId(),
-            ],
-            UrlGeneratorInterface::ABSOLUTE_URL
+            ['id' => $purchase->getId()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
         );
+
+        // If the client is registered, return the URL directly
+        if (!$purchase->getClient()->isIsAnonymous()) return $orderDetailUrl;
+
+        // If the client is anonymous, generate a login link
+        $client = $purchase->getClient();
+        $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
+
+        return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
     }
 }

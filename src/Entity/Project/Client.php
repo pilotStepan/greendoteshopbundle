@@ -33,10 +33,14 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(validationContext: ['groups' => ['Default', 'client:create']], processor: ClientRegistrationStateProcessor::class),
         new Get(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
         new Put(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
-        new Patch(denormalizationContext: [
-            'groups' => ['client:write'],
-            'api_allow_update' => true,
-        ], security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
+        new Patch(
+            denormalizationContext: [
+                'groups' => ['client:write'],
+                'api_allow_update' => true,
+            ],
+            security: 'is_granted("ROLE_USER") and object.getId() == user.getId()',
+            processor: ClientRegistrationStateProcessor::class
+        ),
         new Delete(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
     ],
     normalizationContext: ['groups' => ['client:read']],
@@ -230,6 +234,9 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
+        if ($this->isIsAnonymous()) {
+            return ['ROLE_ANONYMOUS_USER'];
+        }
         return ['ROLE_USER'];
     }
 
