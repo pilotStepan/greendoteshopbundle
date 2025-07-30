@@ -49,7 +49,7 @@ class ClientDiscount
     private ?Client $client = null;
 
     /**
-     * @var Collection|ArrayCollection
+     * @var Collection
      * Purchases during which the coupon was used.
      */
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'clientDiscount')]
@@ -62,7 +62,7 @@ class ClientDiscount
     #[ORM\Column(type: "string", enumType: DiscountType::class)]
     private DiscountType $type;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 6, unique: true)]
     #[Groups(['purchase:read'])]
     #[ApiProperty(identifier: true)]
     private ?string $hash = null;

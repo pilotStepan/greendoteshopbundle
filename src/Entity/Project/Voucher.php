@@ -31,7 +31,7 @@ class Voucher
     #[Groups(['purchase:read', 'voucher:read', 'voucher:write'])]
     private ?int $amount = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 6, unique: true)]
     #[Groups(['purchase:read', 'voucher:read'])]
     #[ApiProperty(identifier: true)]
     private string $hash;

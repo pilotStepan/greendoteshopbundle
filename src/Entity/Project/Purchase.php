@@ -193,6 +193,7 @@ class Purchase
     private Collection $payments;
 
     #[ORM\OneToMany(targetEntity: PurchaseDiscussion::class, mappedBy: 'purchase')]
+    #[ORM\OrderBy(['createdAt' => 'DESC'])]
     #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
     private Collection $purchaseDiscussions;
 
