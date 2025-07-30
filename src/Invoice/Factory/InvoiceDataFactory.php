@@ -4,10 +4,8 @@ declare(strict_types=1);
 namespace Greendot\EshopBundle\Invoice\Factory;
 
 use Throwable;
-use LogicException;
 use RuntimeException;
 use DateTimeImmutable;
-use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Invoice\Data\InvoiceData;
 use Greendot\EshopBundle\Invoice\Data\InvoiceItemData;
 use Greendot\EshopBundle\Invoice\Data\InvoicePaymentData;
@@ -17,17 +15,13 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
-use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Invoice\Data\VatCategoryData;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
 /**
  * Factory to create OrderData for email notifications.
@@ -44,15 +38,13 @@ final class InvoiceDataFactory
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private CurrencyRepository         $currencyRepository,
         private QRcodeGenerator            $qrGenerator,
-        private PaymentGatewayProvider     $gatewayProvider,
-        private PurchaseUrlGenerator       $purchaseUrlGenerator,
     ) {}
 
     public function create(Purchase $purchase): InvoiceData
     {
         [$czk, $eur] = $this->loadCurrencies();
         $this->purchasePrice = $this->purchasePriceFactory->create($purchase, $czk, VatCalculationType::WithVAT, DiscountCalculationType::WithoutDiscount, VoucherCalculationType::WithoutVoucher);
-        
+
         $invoiceNumber = $purchase->getInvoiceNumber();
         $isInvoice = $invoiceNumber !== null;
 
@@ -60,7 +52,7 @@ final class InvoiceDataFactory
             ($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue())->format('Y-m-d H:i:s')
         );
         $dateDue = (new \DateTime($dateInvoiced->format('Y-m-d H:i:s')))->modify('+10 days');
-        
+
         // $contractor =   $this->buildContractor();
         $customer = $this->buildCustomer($purchase);
         $payment = $this->buildPayment($purchase, $czk, $eur);
@@ -78,9 +70,9 @@ final class InvoiceDataFactory
             isInvoice:                              $isInvoice,
             invoiceNumber:                          $invoiceNumber,
             dateInvoiced:                           $dateInvoiced,
-            dateDue:                                $dateDue,  
+            dateDue:                                $dateDue,
             // contractor:                 $contractor,
-            customer:                               $customer,    
+            customer:                               $customer,
             payment:                                $payment,
             qrPath:                                 $qr,
             transportation:                         $transportation,
@@ -138,9 +130,9 @@ final class InvoiceDataFactory
             $product = $variant->getProduct();
 
             // calculate prices
-            $priceCalc = $this->productVariantPriceFactory->create($ppv, $currencyPrimary); 
+            $priceCalc = $this->productVariantPriceFactory->create($ppv, $currencyPrimary);
             $priceCalc->setCurrency($currencyPrimary);
-            
+
             // no vat yes discount
             $priceCalc->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
             $priceCalc->setVatCalculationType(VatCalculationType::WithoutVAT);
@@ -148,13 +140,13 @@ final class InvoiceDataFactory
             // yes vat yes discount
             $priceCalc->setVatCalculationType(VatCalculationType::WithVAT);
             $priceVat = $priceCalc->getPrice() ?? 0;
-            
-            
+
+
             // no vat no discount
             $priceCalc->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
             $priceCalc->setVatCalculationType(VatCalculationType::WithoutVAT);
             $priceNoVatNoDiscount = $priceCalc->getPrice() ?? 0;
-            
+
             // yes vat no discount
             $priceCalc->setVatCalculationType(VatCalculationType::WithVAT);
             $priceVatNoDiscount = $priceCalc->getPrice() ?? 0;
@@ -166,21 +158,21 @@ final class InvoiceDataFactory
             $priceCalc->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
             $priceCalc->setVatCalculationType(VatCalculationType::WithoutVAT);
             $priceNoVatSecondary = $priceCalc->getPrice() ?? 0;
-            
+
             // yes vat yes discount
             $priceCalc->setVatCalculationType(VatCalculationType::WithVAT);
             $priceVatSecondary = $priceCalc->getPrice() ?? 0;
-            
-            
+
+
             // no vat no discount
             $priceCalc->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
             $priceCalc->setVatCalculationType(VatCalculationType::WithoutVAT);
             $priceNoVatNoDiscountSecondary = $priceCalc->getPrice() ?? 0;
-            
+
             // yes vat no discount
             $priceCalc->setVatCalculationType(VatCalculationType::WithVAT);
             $priceVatNoDiscountSecondary = $priceCalc->getPrice() ?? 0;
-            
+
 
             $items[] = new InvoiceItemData(
                 name:                           $variant->getName() ?? $product->getName(),
@@ -194,7 +186,7 @@ final class InvoiceDataFactory
                 priceNoVatNoDiscount:           $priceNoVatNoDiscount,
                 priceNoVatNoDiscountSecondary:  $priceNoVatNoDiscountSecondary,
                 priceVatNoDiscount:             $priceVatNoDiscount,
-                priceVatNoDiscountSecondary:    $priceVatNoDiscountSecondary 
+                priceVatNoDiscountSecondary:    $priceVatNoDiscountSecondary
             );
         }
         return $items;
@@ -235,7 +227,7 @@ final class InvoiceDataFactory
     /** @return float[] */
     private function buildPrices(Currency $currencyPrimary, Currency $currencySecondary): array
     {
-        
+
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
                             ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
                             ->setVatCalculationType(VatCalculationType::WithoutVAT);
@@ -255,7 +247,7 @@ final class InvoiceDataFactory
         $totalPriceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
 
-        return [           
+        return [
             $totalPriceNoVatPrimary,
             $totalPriceNoVatSecondary,
             $totalPriceVatPrimary,
@@ -272,27 +264,27 @@ final class InvoiceDataFactory
     //     // TODO   
     // }
 
-    private function buildCustomer(Purchase $purchase) : InvoicePersonData 
+    private function buildCustomer(Purchase $purchase) : InvoicePersonData
     {
         $purchaseAddress = $purchase->getPurchaseAddress();
         $client = $purchase->getClient();
         $clientName = $client->getName();
         $clientSurname = $client->getSurname();
 
-        return new InvoicePersonData(     
-            $purchaseAddress->getCompany(),    
-            "$clientName $clientSurname",  
+        return new InvoicePersonData(
+            $purchaseAddress->getCompany(),
+            "$clientName $clientSurname",
             $purchaseAddress->getStreet(),
-            $purchaseAddress->getZip(),  
+            $purchaseAddress->getZip(),
             $purchaseAddress->getCity(),
             $purchaseAddress->getCountry(),
-            $purchaseAddress->getIc(),    
+            $purchaseAddress->getIc(),
             $purchaseAddress->getDic(),
             $client->getPhone(),
             $client->getMail(),
         );
     }
-    
+
     private function buildDiscount(Currency $currencyPrimary, Currency $currencySecondary) : array
     {
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
@@ -306,12 +298,12 @@ final class InvoiceDataFactory
             $discountValueSecondary,
         ];
     }
-    
+
     private function buildVoucher(Currency $currencyPrimary, Currency $currencySecondary) : array
     {
-        $voucherValuePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getVouchersUsedValue();      
-        $voucherValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getVouchersUsedValue(); 
-        
+        $voucherValuePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getVouchersUsedValue();
+        $voucherValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getVouchersUsedValue();
+
         return [
             $voucherValuePrimary,
             $voucherValueSecondary,
@@ -325,12 +317,12 @@ final class InvoiceDataFactory
         // get unique vat percentages product variants, payment and transportation
         $vatPercentages = [];
         foreach ($purchase->getProductVariants() as $ppv) {
-            $variantPriceCalc = $this->productVariantPriceFactory->create($ppv, $currencyPrimary); 
+            $variantPriceCalc = $this->productVariantPriceFactory->create($ppv, $currencyPrimary);
             $vatPercentages[] = $variantPriceCalc->getVatPercentage();
         }
         $vatPercentages[] = 21; // makeshift for payment and transportation
         $vatPercentages = array_unique($vatPercentages);
-        
+
         // create vat categories from vat percentages
         $vatCategories = [];
         foreach($vatPercentages as $vatPercentage)
@@ -350,7 +342,7 @@ final class InvoiceDataFactory
                 base:               $basePrimary,
                 baseSecondary:      $baseSecondary,
                 value:              $valuePrimary,
-                valueSecondary:     $valueSecondary,   
+                valueSecondary:     $valueSecondary,
             );
         }
 
