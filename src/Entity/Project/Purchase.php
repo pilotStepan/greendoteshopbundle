@@ -206,6 +206,10 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?Branch $branch = null;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['purchase:read'])]
+    private bool $isVatExempted = false;
+
     public function __construct()
     {
         $this->date_issue = new \DateTime();
@@ -770,6 +774,23 @@ class Purchase
     {
         $this->branch = $branch;
 
+        return $this;
+    }
+
+    public function isVatExempted(): bool
+    {
+        return $this->isVatExempted;
+    }
+
+    public function getIsVatExempted(): bool
+    {
+        return $this->isVatExempted;
+    }
+
+
+    public function setIsVatExempted(bool $isVatExempted): static
+    {
+        $this->isVatExempted = $isVatExempted;
         return $this;
     }
 }
