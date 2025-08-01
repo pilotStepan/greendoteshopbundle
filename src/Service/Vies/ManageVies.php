@@ -67,7 +67,7 @@ readonly class ManageVies
     private function fakeGetVatInfo(string $rawVat): VatInfo
     {
         $vatInfo = new VatInfo();
-        $vatInfo->countryCode = 'cz';
+        $vatInfo->countryCode = 'sk';
         $vatInfo->vatNumber = $rawVat;
         $vatInfo->requestDate = '25-05-2003 03:54:23';
         $vatInfo->isValid = true;
