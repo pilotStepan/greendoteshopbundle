@@ -13,6 +13,7 @@ use ApiPlatform\State\ProcessorInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Consent;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -34,6 +35,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         private RequestStack           $requestStack,
         private PaymentGatewayProvider $gatewayProvider,
         private PurchaseUrlGenerator   $urlGenerator,
+        private ManagePurchase         $managePurchase,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
@@ -58,7 +60,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
             // 2. Validate provided consents exist and store them
             $providedConsents = array_map(
                 fn(int $id) => $this->findConsentOrFail($id),
-                $data->consents
+                $data->consents,
             );
 
             // Wrap in transaction to ensure atomicity, don't wrap logic inside transaction listeners
@@ -184,7 +186,7 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         if (!$workflow->can($purchase, $transition)) {
             $errors = array_map(
                 static fn($b) => $b->getMessage(),
-                iterator_to_array($workflow->buildTransitionBlockerList($purchase, $transition))
+                iterator_to_array($workflow->buildTransitionBlockerList($purchase, $transition)),
             );
             throw new \RuntimeException(json_encode($errors));
         }
@@ -205,6 +207,10 @@ final readonly class PurchaseSendProcessor implements ProcessorInterface
         }
 
         try {
+            // prepare prices if not set
+            if (!$purchase->getTotalPrice()) {
+                $this->managePurchase->preparePrices($purchase);
+            }
             return $this->gatewayProvider->getByPurchase($purchase)->getPayLink($purchase);
         } catch (\Exception $e) {
             $this->workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');

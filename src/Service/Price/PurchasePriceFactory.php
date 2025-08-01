@@ -4,11 +4,10 @@ namespace Greendot\EshopBundle\Service\Price;
 
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 readonly class PurchasePriceFactory
@@ -18,7 +17,7 @@ readonly class PurchasePriceFactory
         private CurrencyRepository         $currencyRepository,
         private PriceUtils                 $priceUtils,
         private ServiceCalculationUtils    $serviceCalculationUtils,
-        private ParameterBagInterface      $parameterBag
+        private ParameterBagInterface      $parameterBag,
     ) {}
 
     public function create(
@@ -26,9 +25,15 @@ readonly class PurchasePriceFactory
         Currency                $currency,
         VatCalculationType      $vatCalculationType = VatCalculationType::WithoutVAT,
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
-        VoucherCalculationType  $voucherCalculationType = VoucherCalculationType::WithVoucher
+        VoucherCalculationType  $voucherCalculationType = VoucherCalculationType::WithVoucher,
     ): PurchasePrice
     {
+        // FIXME: Rework vat-exempted logic
+        if ($vatCalculationType === VatCalculationType::WithVAT && $purchase->isVatExempted()) {
+            $vatCalculationType = VatCalculationType::WithoutVAT;
+        }
+        //
+
         return new PurchasePrice(
             $purchase,
             $vatCalculationType,
@@ -39,7 +44,7 @@ readonly class PurchasePriceFactory
             $this->currencyRepository,
             $this->priceUtils,
             $this->serviceCalculationUtils,
-            $this->parameterBag
+            $this->parameterBag,
         );
     }
 }

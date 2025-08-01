@@ -4,25 +4,31 @@
 namespace Greendot\EshopBundle\Service;
 
 
+use DateTime;
+use RuntimeException;
+use InvalidArgumentException;
+use DragonBe\Vies\ViesException;
+use DragonBe\Vies\ViesServiceException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 
 readonly class ManagePurchase
 {
     public function __construct(
-        private CurrencyResolver            $currencyResolver,
-        private PurchasePriceFactory        $purchasePriceFactory,
-        private ProductVariantPriceFactory  $productVariantPriceFactory,
-        private PurchaseRepository          $purchaseRepository,
-        private ParcelServiceProvider       $parcelServiceProvider,
-    )
-    { }
+        private CurrencyResolver           $currencyResolver,
+        private PurchasePriceFactory       $purchasePriceFactory,
+        private ProductVariantPriceFactory $productVariantPriceFactory,
+        private PurchaseRepository         $purchaseRepository,
+        private ParcelServiceProvider      $parcelServiceProvider,
+        private ManageVies                 $manageVies,
+    ) {}
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase
     {
@@ -55,14 +61,14 @@ readonly class ManagePurchase
     {
         // The inquiry number is expected to be at least 11 characters (10 for timestamp, then the purchase ID)
         if (strlen($inquiryNumber) <= 10) {
-            throw new \InvalidArgumentException("Inquiry ID has a wrong format.");
+            throw new InvalidArgumentException("Inquiry ID has a wrong format.");
         }
 
         // Extract the purchase ID (after the first 10 characters)
         $purchaseId = substr($inquiryNumber, 10);
         $purchase = $this->purchaseRepository->find($purchaseId);
         if (!$purchase) {
-            throw new \RuntimeException("Purchase not found for inquiry number: $inquiryNumber.");
+            throw new RuntimeException("Purchase not found for inquiry number: $inquiryNumber.");
         }
         return $purchase;
     }
@@ -71,7 +77,14 @@ readonly class ManagePurchase
     public function generateTransportData(Purchase $purchase): void
     {
         $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
-        $parcelId = $parcelService?->createParcel($purchase);
+        if (!$parcelService) return;
+
+        // prepare prices if not set
+        if (!$purchase->getTotalPrice()) {
+            $this->preparePrices($purchase);
+        }
+
+        $parcelId = $parcelService->createParcel($purchase);
         $purchase->setTransportNumber($parcelId);
     }
 
@@ -79,7 +92,7 @@ readonly class ManagePurchase
     {
         $invoiceNumber = $this->purchaseRepository->getNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);
-        $purchase->setDateInvoiced(new \DateTime());
+        $purchase->setDateInvoiced(new DateTime());
     }
 
     public function isPurchaseValid(Purchase $purchase): bool
@@ -95,32 +108,53 @@ readonly class ManagePurchase
         return true;
     }
 
+    /**
+     * @param Purchase $purchase
+     * @return void
+     * @throws ViesServiceException|ViesException|InvalidArgumentException
+     */
+    public function processVatNumber(Purchase $purchase): void
+    {
+        $vatNumber = $purchase->getPurchaseAddress()->getDic();
+        if (!$vatNumber) return;
+
+        $vatInfo = $this->manageVies->getVatInfo($vatNumber);
+
+        if (!$vatInfo->isValid) throw new InvalidArgumentException("Dané DIČ není platné.");
+
+        if ($vatInfo->isVatExempted) {
+            $purchase->setIsVatExempted(true);
+            // Recalculate prices if VAT exemption has changed
+            $this->preparePrices($purchase);
+        }
+    }
+
     // sets required price data for pased Purchase entity
-    public function PreparePrices(Purchase $purchase) : Purchase
+    public function preparePrices(Purchase $purchase): Purchase
     {
         $currency = $this->currencyResolver->resolve();
 
         $purchasePriceCalc = $this->purchasePriceFactory->create(
             $purchase,
             $currency,
-            VatCalculationType::WithVAT
+            VatCalculationType::WithVAT,
         );
 
         $purchase->setTotalPrice(
-            $purchasePriceCalc->getPrice(true)
+            $purchasePriceCalc->getPrice(true),
         );
         $purchase->setTotalPriceNoServices(
-            $purchasePriceCalc->getPrice(false)
+            $purchasePriceCalc->getPrice(false),
         );
 
         if ($purchase->getTransportation()) {
             $purchase->setTransportationPrice(
-                $purchasePriceCalc->getTransportationPrice()
+                $purchasePriceCalc->getTransportationPrice(),
             );
         }
         if ($purchase->getPaymentType()) {
             $purchase->setPaymentPrice(
-                $purchasePriceCalc->getPaymentPrice()
+                $purchasePriceCalc->getPaymentPrice(),
             );
         }
 
@@ -131,7 +165,7 @@ readonly class ManagePurchase
                 vatCalculationType: VatCalculationType::WithVAT,
             );
             $productVariant->setTotalPrice(
-                $productVariantPriceCalc->getPrice()
+                $productVariantPriceCalc->getPrice(),
             );
         }
 

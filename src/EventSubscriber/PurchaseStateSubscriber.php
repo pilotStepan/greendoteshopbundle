@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\EventSubscriber;
 
+use Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\Event\Event;
 use Greendot\EshopBundle\Service\ManageVoucher;
@@ -87,6 +88,13 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $discount = $purchase->getClientDiscount();
         if ($discount && !$this->manageClientDiscount->isAvailable($purchase, $discount)) {
             $event->setBlocked(true, "Objednávka má neplatnou klientskou slevu");
+            return;
+        }
+
+        try {
+            $this->managePurchase->processVatNumber($purchase);
+        } catch (Exception $e) {
+            $event->setBlocked(true, "Chyba při ověřování DIČ: " . $e->getMessage());
             return;
         }
     }

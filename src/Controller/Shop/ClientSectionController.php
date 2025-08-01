@@ -24,8 +24,6 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory as FactoryInvoiceDataFactory;
-use Greendot\EshopBundle\Mail\Factory\InvoiceDataFactory;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
@@ -208,7 +206,7 @@ class ClientSectionController extends AbstractController
 
         foreach($drafts as $draft)
         {
-            $managePurchase->PreparePrices($draft);
+            $managePurchase->preparePrices($draft);
         }
 
         return $this->render('client-section/orders.html.twig', [
