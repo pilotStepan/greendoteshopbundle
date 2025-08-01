@@ -50,7 +50,6 @@ class ClientSectionController extends AbstractController
 {
     private const ARES_ENDPOINT = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/";
 
-    #[IsGranted('ROLE_USER')]
     #[Route('/client/download-invoice/{orderId}', name: 'client_download_invoice')]
     public function downloadInvoice(
         int                    $orderId,
@@ -62,10 +61,7 @@ class ClientSectionController extends AbstractController
         $purchaseRepository = $entityManager->getRepository(Purchase::class);
         $purchase           = $purchaseRepository->find($orderId);
 
-        
-        if (!$purchase || $purchase->getClient() !== $this->getUser()) {
-            throw $this->createAccessDeniedException('You do not have permission to access this invoice.');
-        }
+        $this->denyAccessUnlessGranted('view', $purchase);
         
         try {
             $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
@@ -99,15 +95,14 @@ class ClientSectionController extends AbstractController
         }
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik', name: 'client_section_index', priority: 2)]
     public function index(
         ClientRepository   $clientRepository,
         PurchaseRepository $purchaseRepository
     ): Response
     {
-        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
-        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
-
+        $client = $clientRepository->find($this->getUser());
         $lastOrder = $purchaseRepository->lastPurchaseOfUser($client);
 
         return $this->render('client-section/index.html.twig', [
@@ -128,7 +123,8 @@ class ClientSectionController extends AbstractController
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
 
-        if (!($user = $this->getUser()) || $user === $purchase->getClient()) return $this->redirectToRoute('web_homepage');
+        $this->denyAccessUnlessGranted('view', $purchase);
+
 
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
@@ -165,7 +161,8 @@ class ClientSectionController extends AbstractController
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
 
-        if (!($user = $this->getUser()) || $user === $purchase->getClient()) return $this->redirectToRoute('web_homepage');
+        $this->denyAccessUnlessGranted('view', $purchase);
+
 
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
@@ -193,6 +190,7 @@ class ClientSectionController extends AbstractController
         return new RedirectResponse($paymentUrl);
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/objednavky', name: 'client_section_orders')]
     public function orders(
         ClientRepository        $clientRepository,
@@ -202,9 +200,7 @@ class ClientSectionController extends AbstractController
         ManagePurchase          $managePurchase,
         ): Response
     {
-        if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
-        if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
-
+        $client = $clientRepository->find($this->getUser());
         $orders = $orderRepository->getClientPurchases($client);
         $drafts = $orderRepository->getClientDrafts($client);
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
@@ -214,7 +210,7 @@ class ClientSectionController extends AbstractController
         {
             $managePurchase->PreparePrices($draft);
         }
-        
+
         return $this->render('client-section/orders.html.twig', [
             'orders'     => $orders,
             'drafts'     => $drafts,
@@ -238,11 +234,10 @@ class ClientSectionController extends AbstractController
     {
 
         $purchase = $purchaseRepository->find($id);
-        // check user and purchase match
-        if (!($user = $this->getUser()) || $user !== $purchase->getClient()) return $this->redirectToRoute('web_homepage');
+
+        $this->denyAccessUnlessGranted('view', $purchase);
 
         $currency = $session->get('selectedCurrency');
-
         $created = $request->query->get('created');
 
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
@@ -267,6 +262,7 @@ class ClientSectionController extends AbstractController
     }
 
 /** @deprecated old route, merged with client_section_orders */
+    #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/nedokoncene-objednavky', name: 'client_section_draft_orders')]
     public function draftOrders(
         ClientRepository   $clientRepository,
@@ -288,6 +284,7 @@ class ClientSectionController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/zmena-udaju', name: 'client_section_personal')]
     public function profileDataChange(
         Request                $request,
@@ -330,6 +327,7 @@ class ClientSectionController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/nastaveni', name: 'client_section_settings')]
     public function settings(
         Request                     $request,
@@ -469,6 +467,7 @@ class ClientSectionController extends AbstractController
         return new JsonResponse($return);
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/certifikaty', name: 'client_section_certificates')]
     public function certificates(
         ClientRepository $clientRepository,
@@ -504,6 +503,7 @@ class ClientSectionController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/voucher/download/{id}', name: 'voucher_download')]
     public function downloadVoucher(
         int $id,
