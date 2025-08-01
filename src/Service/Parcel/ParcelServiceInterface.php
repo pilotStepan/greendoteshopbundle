@@ -3,12 +3,14 @@
 namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 /**
  * Interface for parcel services.
  * Defines methods for creating parcels, retrieving parcel statuses,
  * and checking if the service supports a specific transportation ID.
  */
+#[AutoconfigureTag('app.parcel_service')]
 interface ParcelServiceInterface
 {
     /**

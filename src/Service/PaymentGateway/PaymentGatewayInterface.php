@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service\PaymentGateway;
 use Exception;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 /**
  * Interface for payment gateway implementations.
@@ -13,6 +14,7 @@ use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
  * Each gateway defines its supported technical action, generates payment links,
  * and verifies payment results.
  */
+#[AutoconfigureTag('app.payment_gateway')]
 interface PaymentGatewayInterface
 {
     /**
