@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Service\PaymentGateway;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
  * Provides access to payment gateway implementations based on payment actions.
@@ -23,7 +24,10 @@ class PaymentGatewayProvider
     /**
      * @param iterable<PaymentGatewayInterface> $gateways
      */
-    public function __construct(iterable $gateways)
+    public function __construct(
+        #[AutowireIterator('app.payment_gateway')]
+        iterable $gateways
+    )
     {
         /* @var PaymentGatewayInterface[] $gateways */
         foreach ($gateways as $gateway) {

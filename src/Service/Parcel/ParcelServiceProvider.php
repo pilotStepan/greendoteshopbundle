@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
  * Provides parcel services based on the transportation ID.
@@ -10,12 +11,16 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
  */
 readonly class ParcelServiceProvider
 {
+    /* @var ParcelServiceInterface[] $parcelServices */
+    private iterable $parcelServices;
+
     /* Symfony DI will inject all services that implement ParcelServiceInterface (defined in services.yaml) */
     public function __construct(
-        /* @var ParcelServiceInterface[] $parcelServices */
-        private iterable $parcelServices
+        #[AutowireIterator('app.parcel_service')]
+        iterable $parcelServices,
     )
     {
+        $this->parcelServices = $parcelServices;
     }
 
     /**
