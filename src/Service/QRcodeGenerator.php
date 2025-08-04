@@ -10,14 +10,17 @@ use Endroid\QrCode\Writer\PngWriter;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Exception;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class QRcodeGenerator
 {
-    private Filesystem $filesystem;
+    private Filesystem   $filesystem;
+    private RequestStack $requestStack;
 
-    public function __construct(Filesystem $filesystem)
+    public function __construct(Filesystem $filesystem, RequestStack $requestStack)
     {
-        $this->filesystem = $filesystem;
+        $this->filesystem =     $filesystem;
+        $this->requestStack =   $requestStack;
     }
 
     public function getUri(Purchase $purchase, \DateTimeInterface $dueDate): string
@@ -57,5 +60,20 @@ class QRcodeGenerator
         $this->filesystem->dumpFile($fullPath, $result->getString());
 
         return '/' . $fullPath;
+    }
+    
+
+    public function getFullUrl(Purchase $purchase, \DateTimeInterface $dueDate) : string
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        if (!$request) {
+            throw new \RuntimeException('No current request available');
+        }
+
+        $domain = $request->getSchemeAndHttpHost();
+
+
+        return $domain.$this->getUri($purchase, $dueDate);
+        
     }
 }
