@@ -116,7 +116,7 @@ class ManagePurchaseTest extends TestCase
         $transportation = $this->createMock(Transportation::class);
         $action = $this->createMock(TransportationAction::class);
         $action->method('getId')->willReturn(3); // Non-pickup action.
-        $transportation->method('getAction')->willReturn($action);
+        $transportation->method('getTransportationAction')->willReturn($action);
         $transportation->method('getId')->willReturn(1);
 
         // Set up purchase to return the transportation.

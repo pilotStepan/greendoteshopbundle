@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use Greendot\EshopBundle\Enum\TransportationAction;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,7 +19,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\StateProvider\CheapTransportationStateProvider;
-use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
+
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TransportationRepository::class)]
@@ -121,13 +122,12 @@ class Transportation implements Translatable
      * @var Collection<int, HandlingPrice>
      */
     #[ORM\OneToMany(targetEntity: HandlingPrice::class, mappedBy: 'transportation')]
-    #[Groups(['transportation:read', 'transportation_group:read'])] // TODO: Remove from serialization
+    #[Groups(['transportation:read', 'transportation_group:read'])]
     private Collection $handlingPrices;
 
-    #[ORM\ManyToOne(targetEntity: TransportationAction::class, cascade: ['persist'], inversedBy: 'transportations')]
-    #[ORM\JoinColumn(nullable: false)]
-//    #[Groups(['transportation:read', 'purchase:read'])]
-    private ?TransportationAction $action;
+    #[ORM\Column(type: 'string', length: 255, enumType: TransportationAction::class)]
+    #[Groups(['transportation:read', 'purchase:read'])]
+    private ?TransportationAction $transportationAction = null;
 
     /**
      * @var Collection<int, TransportationGroup>
@@ -353,16 +353,14 @@ class Transportation implements Translatable
         $this->locale = $locale;
     }
 
-
-
-    public function getAction(): ?TransportationAction
+    public function getTransportationAction(): ?TransportationAction
     {
-        return $this->action;
+        return $this->transportationAction;
     }
 
-    public function setAction(?TransportationAction $action): self
+    public function setTransportationAction(?TransportationAction $transportationAction): self
     {
-        $this->action = $action;
+        $this->transportationAction = $transportationAction;
         return $this;
     }
 
@@ -504,9 +502,6 @@ class Transportation implements Translatable
         return $this->freeFromPrice;
     }
 
-    /**
-     * @param float $free_from_price
-     */
     public function setFreeFromPrice(float $free_from_price): static
     {
         $this->freeFromPrice = $free_from_price;

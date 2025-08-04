@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Greendot\EshopBundle\Mail\Factory;
 
 use Throwable;
-use LogicException;
 use RuntimeException;
 use DateTimeImmutable;
 use Greendot\EshopBundle\Utils\PriceHelper;
@@ -17,9 +16,8 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Greendot\EshopBundle\Mail\Data\OrderAddressData;
 use Greendot\EshopBundle\Mail\Data\OrderPaymentData;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
-use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Mail\Data\OrderTransportationData;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
@@ -153,7 +151,8 @@ final class OrderDataFactory
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderTransportationData(
-            type: $this->getGroupFromTransportation($transportation),
+            action: $transportation->getTransportationAction()->value,
+            country: $transportation->getCountry(),
             name: $transportation->getName(),
             description: $transportation->getDescription(),
             priceVatCzk: PriceHelper::formatPrice($priceVatCzk, $czk),
@@ -170,7 +169,8 @@ final class OrderDataFactory
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderPaymentData(
-            type: $this->getTypeFromPaymentType($paymentType),
+            action: $paymentType->getActionGroup()->value,
+            country: $paymentType->getCountry(),
             name: $paymentType->getName(),
             description: $paymentType->getDescription(),
             priceVatCzk: PriceHelper::formatPrice($priceVatCzk, $czk),
@@ -234,29 +234,6 @@ final class OrderDataFactory
         return $totals;
     }
 
-    private function getTypeFromPaymentType(PaymentType $paymentType): string
-    {
-        $id = $paymentType->getId();
-        return match ($id) {
-            1       => OrderPaymentData::BANK_CZ_TYPE,
-            2       => OrderPaymentData::CARD_PAYMENT_TYPE,
-            3       => OrderPaymentData::COD_TYPE,
-            4       => OrderPaymentData::CASH_TYPE,
-            5       => OrderPaymentData::BANK_SK_TYPE,
-            default => throw new LogicException("Unknown payment type ID: $id"),
-        };
-    }
-
-    private function getGroupFromTransportation(Transportation $transportation): string
-    {
-        foreach ($transportation->getGroups() as $group) {
-            if ($group->getId() === 1) {
-                return OrderTransportationData::PICKUP_TYPE;
-            }
-        }
-        return OrderTransportationData::DELIVERY_TYPE;
-    }
-
     private function isPaid(Purchase $purchase): bool
     {
         // FIXME: not implemented yet. Should be evaluated outside of this factory
@@ -269,7 +246,7 @@ final class OrderDataFactory
         if ($this->isPaid($purchase)) return false;
 
         // Don't allow to pay if cash on delivery
-        $paymentType = $this->getTypeFromPaymentType($purchase->getPaymentType());
-        return $paymentType !== OrderPaymentData::COD_TYPE;
+        $actionGroup = $purchase->getPaymentType()->getActionGroup();
+        return $actionGroup !== PaymentTypeActionGroup::ON_DELIVERY;
     }
 }
