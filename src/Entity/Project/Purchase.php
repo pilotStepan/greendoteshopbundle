@@ -11,13 +11,13 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
-use Greendot\EshopBundle\Dto\PurchaseSendInput;
+use Greendot\EshopBundle\Dto\PurchaseCheckoutInput;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Greendot\EshopBundle\StateProcessor\PurchaseSendProcessor;
+use Greendot\EshopBundle\StateProcessor\PurchaseCheckoutProcessor;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
@@ -48,13 +48,13 @@ use Symfony\Component\Serializer\Annotation\Groups;
         ),
         new Post(),
         new Post(
-            uriTemplate: '/purchases/session/send',
+            uriTemplate: '/purchases/session/checkout',
             status: 200,
             denormalizationContext: [
-                'groups' => ['purchase:send']
+                'groups' => ['purchase:checkout']
             ],
-            input: PurchaseSendInput::class,
-            processor: PurchaseSendProcessor::class
+            input: PurchaseCheckoutInput::class,
+            processor: PurchaseCheckoutProcessor::class
         ),
         new Patch(
             uriTemplate: '/purchases/session',

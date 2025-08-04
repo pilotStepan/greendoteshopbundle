@@ -25,7 +25,7 @@ class Branch
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['branch:read', 'branch:write'])]
+    #[Groups(['branch:read', 'branch:write', 'purchase:read', 'transportation_group:read', 'transportation:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -95,7 +95,6 @@ class Branch
     {
         $this->BranchOpeningHours = new ArrayCollection();
         $this->Purchases = new ArrayCollection();
-
     }
 
     public function getId(): ?int
@@ -301,5 +300,16 @@ class Branch
         return $this;
     }
 
-
+    #[Groups(['branch:read', 'transportation:read', 'purchase:read', 'transportation_group:read'])]
+    public function getTextAddress(): string
+    {
+        $address = array_filter([
+            $this->name,
+            $this->street,
+            $this->city,
+            $this->zip,
+            $this->country
+        ]);
+        return implode(", ", $address);
+    }
 }

@@ -24,7 +24,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
-final readonly class PurchaseSendProcessor implements ProcessorInterface
+final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
