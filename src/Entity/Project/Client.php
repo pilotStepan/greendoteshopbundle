@@ -247,7 +247,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
-        return $this->getMail();
+        return $this->getId();
     }
 
     public function getPassword(): ?string

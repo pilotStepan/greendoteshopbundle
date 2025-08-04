@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Controller\Shop;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -48,22 +49,22 @@ class LoginController extends AbstractController
     //! This is for testing. Is a security problem if uncommented.
     /* 
     #[Route('/api/get_login_link/{id}', name: 'get_login_link')]
-    public function getLoginLink(int $id, PurchaseRepository $purchaseRepository, ManagePurchase $managePurchase) : Response 
+    public function getLoginLink(int $id, PurchaseRepository $purchaseRepository, PurchaseUrlGenerator $managePurchase) : Response 
     {
-
-        $purchase = $purchaseRepository->find($id);
-        $loginLink = $managePurchase->generateLoginLink($purchase);
-        // $client = $purchase->getClient();
-
-        // if (!$client) {
+        
+    $purchase = $purchaseRepository->find($id);
+    $loginLink = $managePurchase->buildOrderDetailUrl($purchase);
+    // $client = $purchase->getClient();
+    
+    // if (!$client) {
         //     return new JsonResponse(['error' => 'Client not found'], Response::HTTP_NOT_FOUND);
         // }
-
+        
         // // Assuming $client is a UserInterface (or similar)
         // $loginLinkDetails = $loginLinkHandler->createLoginLink($client);
         // $orderDetailUrl = 'http://yogashop-24/zakaznik/objednavka/'.$purchase->getId();
         // $loginUrl = $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
-
+        
         return new JsonResponse(['url' => $loginLink]);
     }
     */
