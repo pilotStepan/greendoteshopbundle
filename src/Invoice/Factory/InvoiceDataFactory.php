@@ -47,6 +47,7 @@ final class InvoiceDataFactory
 
         $invoiceNumber = $purchase->getInvoiceNumber();
         $isInvoice = $invoiceNumber !== null;
+    
 
        $dateInvoiced = new \DateTime(
             ($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue())->format('Y-m-d H:i:s')
@@ -68,6 +69,7 @@ final class InvoiceDataFactory
             invoiceId:                              $purchase->getInvoiceNumber(),
             purchaseId:                             $purchase->getId(),
             isInvoice:                              $isInvoice,
+            isVatExempted:                          $purchase->isVatExempted(),
             invoiceNumber:                          $invoiceNumber,
             dateInvoiced:                           $dateInvoiced,
             dateDue:                                $dateDue,
