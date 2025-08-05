@@ -180,7 +180,7 @@ final class InvoiceDataFactory
                 name:                           $variant->getName() ?? $product->getName(),
                 amount:                         $ppv->getAmount(),
                 externalId:                     $variant->getExternalId() ?? $product->getExternalId(),
-                vatPercentage:                  $priceCalc->getVatPercentage(),
+                vatPercentage:                  $priceCalc->getVatPercentage() ?? 0,
                 priceNoVat:                     $priceNoVat,
                 priceNoVatSecondary:            $priceNoVatSecondary,
                 priceVat:                       $priceVat,
