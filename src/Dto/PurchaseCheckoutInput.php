@@ -6,9 +6,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-class PurchaseSendInput
+class PurchaseCheckoutInput
 {
-    #[Groups(['purchase:send'])]
+    #[Groups(['purchase:checkout'])]
     #[Assert\NotNull]
     #[Assert\Type('array')]
     #[Assert\Collection(
@@ -30,7 +30,7 @@ class PurchaseSendInput
     )]
     public array $client;
 
-    #[Groups(['purchase:send'])]
+    #[Groups(['purchase:checkout'])]
     #[Assert\NotNull]
     #[Assert\Type('array')]
     #[Assert\Collection(
@@ -45,7 +45,7 @@ class PurchaseSendInput
     #[Assert\Callback([self::class, 'validateAddress'])]
     public array $address;
 
-    #[Groups(['purchase:send'])]
+    #[Groups(['purchase:checkout'])]
     #[Assert\NotNull]
     #[Assert\Type('array')]
     #[Assert\All([
@@ -53,7 +53,7 @@ class PurchaseSendInput
     ])]
     public array $consents = [];
 
-    #[Groups(['purchase:send'])]
+    #[Groups(['purchase:checkout'])]
     #[Assert\Type('array')]
     #[Assert\All([
         new Assert\Type('string'),

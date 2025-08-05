@@ -126,7 +126,7 @@ class Transportation implements Translatable
     private Collection $handlingPrices;
 
     #[ORM\Column(type: 'string', length: 255, enumType: TransportationAction::class)]
-    #[Groups(['transportation:read', 'purchase:read'])]
+    #[Groups(['transportation:read', 'purchase:read', 'transportation_group:read'])]
     private ?TransportationAction $transportationAction = null;
 
     /**
@@ -141,6 +141,7 @@ class Transportation implements Translatable
      * @var Collection<int, Branch>
      */
     #[ORM\OneToMany(targetEntity: Branch::class, mappedBy: 'transportation', orphanRemoval: true)]
+    #[Groups(['transportation:read', 'purchase:read', 'transportation_group:read'])]
     private Collection $branches;
 
     public function __construct()
