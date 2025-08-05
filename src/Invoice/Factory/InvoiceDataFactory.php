@@ -196,6 +196,7 @@ final class InvoiceDataFactory
     {
         $transportation = $purchase->getTransportation();
 
+        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
         $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getTransportationPrice() ?? 0.0;
         $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getTransportationPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($currencyPrimary);
