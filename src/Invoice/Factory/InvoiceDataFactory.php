@@ -330,6 +330,12 @@ final class InvoiceDataFactory
         $vatCategories = [];
         foreach($vatPercentages as $vatPercentage)
         {
+            // check for null values
+            if(!is_float($vatPercentage)) 
+            {
+                continue;
+            }
+            
             $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                                 ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
                                 ->setVatCalculationType(VatCalculationType::WithoutVAT);
