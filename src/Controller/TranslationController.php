@@ -4,19 +4,15 @@ namespace Greendot\EshopBundle\Controller;
 
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Product;
-use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Greendot\EshopBundle\Service\GenerateTranslation;
 use DeepL\DeepLException;
-use DeepL\Translator;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\BrowserKit\Request;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TranslationController extends AbstractController
