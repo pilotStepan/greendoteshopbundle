@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -44,7 +45,7 @@ use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
 
 
-class ClientSectionController extends AbstractController
+class ClientSectionController extends AbstractController implements TurnOffIsActiveFilterController
 {
     private const ARES_ENDPOINT = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/";
 

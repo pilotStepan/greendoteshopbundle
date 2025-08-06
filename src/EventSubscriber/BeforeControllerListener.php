@@ -9,6 +9,7 @@ use App\Controller\WebController;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController as ControllerTurnOffIsActiveFilterController;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -114,9 +115,9 @@ class BeforeControllerListener implements EventSubscriberInterface
             $this->twig->addGlobal('product_variant_occurrences_inquiry', $productVariantsInCart);
         }
 
-        if ($controller instanceof TurnOffIsActiveFilterController){
-            $this->entityManager->getFilters()->disable('isActiveVariantFilter');
-            $this->entityManager->getFilters()->disable('isActiveProductFilter');
+        if ($controller instanceof ControllerTurnOffIsActiveFilterController){
+            $this->entityManager->getFilters()->disable('products_active');
+            $this->entityManager->getFilters()->disable('variants_active');
         }
     }
 
