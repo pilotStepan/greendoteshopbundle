@@ -31,7 +31,6 @@ readonly class ManageVies
             '',
             strtoupper($rawVat),
         );
-        return $this->fakeGetVatInfo($vat);
 
         ['country' => $country, 'id' => $vatId] = $this->client->splitVatId($vat);
 
@@ -54,29 +53,12 @@ readonly class ManageVies
 
         $address = $vatResponse->getAddress();
         $parsed = ViesAddressParser::parse(
-            $address === '---' ? null : $address,
             $vatResponse->getCountryCode(),
+            $address === '---' ? null : $address,
         );
         $vatInfo->street = $parsed['street'];
         $vatInfo->city = $parsed['city'];
         $vatInfo->zip = $parsed['zip'];
-
-        return $vatInfo;
-    }
-
-    private function fakeGetVatInfo(string $rawVat): VatInfo
-    {
-        $vatInfo = new VatInfo();
-        $vatInfo->countryCode = 'sk';
-        $vatInfo->vatNumber = $rawVat;
-        $vatInfo->requestDate = '25-05-2003 03:54:23';
-        $vatInfo->isValid = true;
-        $vatInfo->isForeign = true;
-        $vatInfo->isVatExempted = true;
-        $vatInfo->name = 'Fake Company s.r.o.';
-        $vatInfo->street = 'Fake Street 123';
-        $vatInfo->city = 'Fake City';
-        $vatInfo->zip = '12345';
 
         return $vatInfo;
     }

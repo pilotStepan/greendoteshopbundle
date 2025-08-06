@@ -70,10 +70,8 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $missingConsent = $this->entityManager
-            ->getRepository(Consent::class)
-            ->findMissingRequiredConsent($purchase->getConsents())
-        ;
+        $missingConsent = $this->entityManager->getRepository(Consent::class)->findMissingRequiredConsent($purchase->getConsents());
+
         if ($missingConsent) {
             $event->setBlocked(true, "Povinný souhlas nebyl zaškrtnut: " . $missingConsent->getDescription());
             return;
