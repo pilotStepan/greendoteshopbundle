@@ -29,7 +29,7 @@ readonly class ManageSms
         try {
              $this->client->sendSms($phone, $text, sender: 'Yogashop');
         } catch (\Exception $e) {
-            dd($e);
+            // dd($e);
         }
     }
 

@@ -120,7 +120,9 @@ readonly class ManagePurchase
 
         $vatInfo = $this->manageVies->getVatInfo($vatNumber);
 
-        if (!$vatInfo->isValid) throw new InvalidArgumentException("Dané DIČ není platné.");
+        if (!$vatInfo->isValid) {
+            throw new InvalidArgumentException("Dané DIČ není platné.");
+        }
 
         if ($vatInfo->isVatExempted) {
             $purchase->setIsVatExempted(true);
