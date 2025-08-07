@@ -18,6 +18,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
+use Greendot\EshopBundle\Enum\TransportationAPI;
 use Greendot\EshopBundle\StateProvider\CheapTransportationStateProvider;
 
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -143,6 +144,10 @@ class Transportation implements Translatable
     #[ORM\OneToMany(targetEntity: Branch::class, mappedBy: 'transportation', orphanRemoval: true)]
     #[Groups(['transportation:read', 'purchase:read', 'transportation_group:read'])]
     private Collection $branches;
+
+    #[ORM\Column(type: 'string', length: 255, enumType: TransportationAPI::class)]
+    #[Groups(['transportation:read', 'purchase:read'])]
+    private TransportationAPI $transportationAPI;
 
     public function __construct()
     {
@@ -362,6 +367,17 @@ class Transportation implements Translatable
     public function setTransportationAction(?TransportationAction $transportationAction): self
     {
         $this->transportationAction = $transportationAction;
+        return $this;
+    }
+
+    public function getTransportationAPI(): ?TransportationAPI
+    {
+        return $this->transportationAPI;
+    }
+
+    public function setTransportationAPI(?TransportationAPI $transportationAPI): self
+    {
+        $this->transportationAPI = $transportationAPI;
         return $this;
     }
 
