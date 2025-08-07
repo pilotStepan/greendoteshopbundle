@@ -110,6 +110,8 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_categories_from_related_products', [$this, 'getCategoriesFromRelatedProducts']),
 
             new TwigFunction('get_information_blocks', [$this, 'getInformationBlocksForEntity']),
+
+            new TwigFunction('format_color_hex', [$this, 'formatColorHex']),
         ];
     }
 
@@ -514,5 +516,17 @@ class AppExtension extends AbstractExtension
     public function getInformationBlocksForEntity($entity, $onlyActive = true, $informationBlockTypeID = null): array
     {
         return $this->informationBlockService->getInformationBlocksForEntity($entity, $onlyActive, $informationBlockTypeID);
+    }
+
+
+    public function formatColorHex(string $color) : string
+    {
+         $color = trim($color);
+    
+        if (str_starts_with($color, '#')) {
+            return $color;
+        }
+
+        return '#' . $color;
     }
 }
