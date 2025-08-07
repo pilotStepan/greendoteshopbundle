@@ -209,6 +209,9 @@ class Purchase
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['purchase:read'])]
     private bool $isVatExempted = false;
+    
+    #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: TransportationEvent::class, cascade: ['persist', 'remove'])]
+    private Collection $transportationEvents;
 
     public function __construct()
     {
@@ -221,6 +224,7 @@ class Purchase
         $this->Consents = new ArrayCollection();
         $this->payments = new ArrayCollection();
         $this->purchaseDiscussions = new ArrayCollection();
+        $this->transportationEvents = new ArrayCollection();
     }
 
     public function getProducts(): Collection
@@ -791,6 +795,33 @@ class Purchase
     public function setIsVatExempted(bool $isVatExempted): static
     {
         $this->isVatExempted = $isVatExempted;
+        return $this;
+    }
+
+     
+    public function getTransportationEvents(): Collection
+    {
+        return $this->transportationEvents;
+    }
+
+    public function addTransportationEvent(TransportationEvent $event): static
+    {
+        if (!$this->transportationEvents->contains($event)) {
+            $this->transportationEvents->add($event);
+            $event->setPurchase($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTransportationEvent(TransportationEvent $event): static
+    {
+        if ($this->transportationEvents->removeElement($event)) {
+            if ($event->getPurchase() === $this) {
+                $event->setPurchase(null);
+            }
+        }
+
         return $this;
     }
 }
