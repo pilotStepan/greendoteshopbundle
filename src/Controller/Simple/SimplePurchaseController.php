@@ -10,14 +10,20 @@ use Greendot\EshopBundle\Service\InvoiceMaker;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Greendot\EshopBundle\Message\Notification\PurchaseDiscussionEmail;
 
 #[Route('/simple/api/purchases', name: 'simple_api_purchases_')]
 class SimplePurchaseController extends AbstractController
 {
+    public function __construct(
+        private readonly MessageBusInterface $messageBus,
+    ) {}
+
     #[Route(path: '/workflow-places', name: 'workflow_places')]
     public function getPurchaseWorkflowPlaces(Registry $registry, Request $request): JsonResponse
     {
@@ -84,6 +90,30 @@ class SimplePurchaseController extends AbstractController
         return $this->json(['state' => $newState]);
     }
 
+    #[Route('/{purchase}/send-message', name: 'send_message', methods: ['POST'])]
+    public function sendMessage(Purchase $purchase, Request $request): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new BadRequestHttpException('Invalid JSON format');
+        }
+
+        if (!isset($data['content'])) {
+            throw new BadRequestHttpException('Missing content');
+        }
+
+        $this->messageBus->dispatch(
+            new PurchaseDiscussionEmail(
+                $purchase->getId(),
+                $data['content'],
+                new \DateTimeImmutable(),
+            ),
+        );
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
 
     #[Route('/{purchase}/invoice/pdf', name: 'invoice_download_pdf', methods: ['GET'])]
     public function downloadInvoicePdf(Purchase $purchase, InvoiceMaker $invoiceMaker): BinaryFileResponse
@@ -97,7 +127,7 @@ class SimplePurchaseController extends AbstractController
         $response = new BinaryFileResponse($pdfFilePath);
         $response->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-            'invoice_' . $purchase->getId() . '.pdf'
+            'invoice_' . $purchase->getId() . '.pdf',
         );
         $response->headers->set('Content-Type', 'application/pdf');
 

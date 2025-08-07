@@ -106,12 +106,12 @@ class CzechPostParcel implements ParcelServiceInterface
             'parcelServiceData' => [
                 'parcelParams' => [
                     'recordID' => (string)$purchase->getId(),
-                    'prefixParcelCode' => 'DR',
+                    'prefixParcelCode' => 'DR',//TODO upravit podle služby - Balíkovna = NB, do ruky = DR
                     'weight' => number_format($totalWeight, 2),
-                    'insuredValue' => 0,
-                    'amount' => $purchase->getTotalPrice(),
+                    'insuredValue' => 0,//TODO vypsat cenu s DPH bez dopravy a platby, bez odečtení dárkového certifikatu
+                    'amount' => $purchase->getTotalPrice(),//TODO pokud je dobírka (paymen_type_action_group ON_DELIVERY), vypsat, jinak 0
                     'currency' => 'CZK',
-                    'vsVoucher' => '',
+                    'vsVoucher' => '',//TODO pokud je dobírka (paymen_type_action_group ON_DELIVERY), vypsat sem číslo objednávky
                     'vsParcel' => '',
                     'length' => 0,
                     'width' => 0,
@@ -124,7 +124,7 @@ class CzechPostParcel implements ParcelServiceInterface
                     'company' => $purchase->getPurchaseAddress()->getCompany() ?? '',
                     'aditionAddress' => '',
                     'subject' => 'F',
-                    'address' => [
+                    'address' => [//TODO pokud je balíkovna, vypsat adresu vybrané balíkovny
                         'street' => $purchase->getPurchaseAddress()->getStreet(),
                         'houseNumber' => 1,
                         'sequenceNumber' => '',
@@ -137,7 +137,7 @@ class CzechPostParcel implements ParcelServiceInterface
                     'phoneNumber' => $client->getPhone() ?? '',
                     'emailAddress' => $client->getMail(),
                 ],
-                'parcelServices' => '',
+                'parcelServices' => '',//TODO upravit podle toho zda chceme i dobírku  (paymen_type_action_group ON_DELIVERY), pak přidat služby 41+7, jinak 3+7
             ],
         ];
     }

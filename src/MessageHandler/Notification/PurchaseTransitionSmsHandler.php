@@ -17,13 +17,13 @@ readonly class PurchaseTransitionSmsHandler
 
     public function __invoke(PurchaseTransitionSms $msg): void
     {
-        $purchaseId = $msg->getPurchaseId();
+        $purchaseId = $msg->purchaseId;
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
             throw new \RuntimeException('Purchase not found for ID: ' . $purchaseId);
         }
 
-        $this->manageSms->sendOrderTransitionSms($purchase, $msg->getTransition());
+        $this->manageSms->sendOrderTransitionSms($purchase, $msg->transition);
     }
 }

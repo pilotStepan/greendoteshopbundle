@@ -9,6 +9,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
@@ -30,6 +31,7 @@ readonly class ManageMails
         private InvoiceMaker         $invoiceMaker,
         private string               $fromEmail,
         private string               $fromName,
+        private PurchaseUrlGenerator $purchaseUrlGenerator,
     )
     {
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
@@ -71,6 +73,22 @@ readonly class ManageMails
         } catch (TransportExceptionInterface $e) {
 //            $this->logger->error('…', ['exception' => $e]);
         }
+    }
+
+    public function sendPurchaseDiscussionEmail(Purchase $purchase): void
+    {
+        $email = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($purchase->getClient()->getMail())
+            ->subject($this->translator->trans('email.subject.purchase_discussion', ['%id%' => $purchase->getId()], 'emails'))
+            ->htmlTemplate('email/purchase-discussion/new_discussion.html.twig')
+            ->context([
+                'purchase_id' => $purchase->getId(),
+                'client_section_link' => $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase),
+            ])
+        ;
+
+        $this->mailer->send($email);
     }
 
     public function sendFreeSampleMailToInfo($formData, Product $product): void
@@ -232,6 +250,7 @@ readonly class ManageMails
             '%id%' => $purchase->getId(),
         ], 'emails');
     }
+
 
     private function setLocaleAndRefreshEntities(Purchase $purchase): void
     {
