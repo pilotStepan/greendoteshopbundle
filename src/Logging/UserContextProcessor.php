@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Logging;
 
+use Monolog\LogRecord;
 use Monolog\Attribute\AsMonologProcessor;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -17,7 +18,7 @@ final readonly class UserContextProcessor
         private RequestStack          $requestStack,
     ) {}
 
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
         $token = $this->tokenStorage->getToken();
         $userId = $token?->getUser()?->getId();
@@ -26,7 +27,7 @@ final readonly class UserContextProcessor
         $requestMethod = $current?->getMethod();
         $requestUri = $current?->getUri();
 
-        $record['extra'] += [
+        $record->extra += [
             'user_id' => $userId,
             'client_ip' => $clientIp,
             'request_uri' => $requestUri,
