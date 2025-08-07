@@ -1,0 +1,19 @@
+monolog:
+    channels:
+        - notification.email
+        - notification.sms
+        - api.parcel.czech_post
+        - api.parcel.packetery
+        - api.parcel.dpd
+        - api.vies
+
+    processors:
+        - monolog.processor.request
+        - Greendot\EshopBundle\Logging\UserContextProcessor
+
+    handlers:
+        db:
+            type: service
+            id: Greendot\EshopBundle\Logging\DoctrineDbalHandler
+            level: info
+            channels: [ ]

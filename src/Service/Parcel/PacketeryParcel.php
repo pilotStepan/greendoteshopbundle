@@ -3,19 +3,21 @@
 namespace Greendot\EshopBundle\Service\Parcel;
 
 use Exception;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\Transportation;
-use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
+use Psr\Log\LoggerInterface;
+use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 
+#[WithMonologChannel('api.parcel.packetery')]
 class PacketeryParcel implements ParcelServiceInterface
 {
     private const API_URL = 'https://www.zasilkovna.cz/api/rest';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface     $logger,
     ) {}
 
     public function createParcel(Purchase $purchase): ?string
@@ -46,7 +48,7 @@ class PacketeryParcel implements ParcelServiceInterface
             ]);
             return null;
         } catch (Exception $e) {
-            $this->logger->error('Exception when creating parcel', [
+            $this->logger->error('API exception', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);
@@ -66,7 +68,7 @@ class PacketeryParcel implements ParcelServiceInterface
         return [
             'apiPassword' => $purchase->getTransportation()->getSecretKey(),
             'packetAttributes' => [
-                'number' => (string) $purchase->getId(),
+                'number' => (string)$purchase->getId(),
                 'name' => $client->getName(),
                 'surname' => $client->getSurname(),
                 'email' => $client->getMail(),
