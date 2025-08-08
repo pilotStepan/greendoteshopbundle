@@ -28,7 +28,7 @@ final readonly class UserContextProcessor
 
         $record->extra += [
             'is_admin' => $isAdmin,
-            'user_id' => $userId,
+            'client_id' => $userId,
             'client_ip' => $current?->getClientIp(),
             'request_uri' => $current?->getUri(),
             'request_method' => $current?->getMethod(),
