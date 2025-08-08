@@ -2,13 +2,13 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
-use Exception;
 use SimpleXMLElement;
 use Psr\Log\LoggerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 #[WithMonologChannel('api.parcel.packetery')]
 class PacketeryParcel implements ParcelServiceInterface
@@ -47,8 +47,8 @@ class PacketeryParcel implements ParcelServiceInterface
                 'response' => $data,
             ]);
             return null;
-        } catch (Exception $e) {
-            $this->logger->error('API exception', [
+        } catch (ExceptionInterface $e) {
+            $this->logger->error('Parcel API exception', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);

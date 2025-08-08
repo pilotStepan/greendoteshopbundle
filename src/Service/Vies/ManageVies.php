@@ -2,27 +2,28 @@
 
 namespace Greendot\EshopBundle\Service\Vies;
 
+use Exception;
 use DragonBe\Vies\Vies;
-use DragonBe\Vies\ViesException;
+use Psr\Log\LoggerInterface;
 use DragonBe\Vies\CheckVatResponse;
 use Greendot\EshopBundle\Dto\VatInfo;
-use DragonBe\Vies\ViesServiceException;
+use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Utils\ViesAddressParser;
 
+#[WithMonologChannel('api.vies')]
 readonly class ManageVies
 {
     public const DOMESTIC_COUNTRY_CODE = 'CZ';
 
     private Vies $client;
 
-    public function __construct()
+    public function __construct(private LoggerInterface $logger)
     {
         $this->client = new Vies();
     }
 
     /**
-     * @throws ViesServiceException
-     * @throws ViesException
+     * @throws Exception
      */
     public function getVatInfo(string $rawVat): VatInfo
     {
@@ -34,7 +35,16 @@ readonly class ManageVies
 
         ['country' => $country, 'id' => $vatId] = $this->client->splitVatId($vat);
 
-        $vatResponse = $this->client->validateVat($country, $vatId);
+        try {
+            $vatResponse = $this->client->validateVat($country, $vatId);
+        } catch (Exception $e) {
+            $this->logger->error('VIES API error', [
+                'vat' => $vat,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+
         return $this->buildVatInfo($vatResponse);
     }
 

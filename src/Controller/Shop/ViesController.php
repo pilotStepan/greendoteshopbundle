@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
@@ -25,8 +26,7 @@ class ViesController extends AbstractController
         try {
             $result = $this->manageVies->getVatInfo($rawVat);
             return new JsonResponse($result);
-        } catch (\Exception $e) {
-            dd($e);
+        } catch (Exception $e) {
             return new JsonResponse(['statusText' => 'Chyba při ověřování DIČ'], 500);
         }
     }
