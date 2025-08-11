@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
+use Throwable;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
@@ -9,7 +10,6 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 #[WithMonologChannel('api.parcel.czech_post')]
 class CzechPostParcel implements ParcelServiceInterface
@@ -22,7 +22,7 @@ class CzechPostParcel implements ParcelServiceInterface
     ) {}
 
     /**
-     * @throws ExceptionInterface
+     * @throws Throwable
      */
     public function createParcel(Purchase $purchase): string
     {
@@ -51,7 +51,7 @@ class CzechPostParcel implements ParcelServiceInterface
                 'response' => $data,
             ]);
             throw new RuntimeException('Failed to create parcel: packetId not returned from API');
-        } catch (ExceptionInterface $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Parcel API exception', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
@@ -61,7 +61,7 @@ class CzechPostParcel implements ParcelServiceInterface
     }
 
     /**
-     * @throws ExceptionInterface
+     * @throws Throwable
      */
     public function getParcelStatus(Purchase $purchase): array
     {
@@ -84,7 +84,7 @@ class CzechPostParcel implements ParcelServiceInterface
             ]);
 
             return $response->toArray();
-        } catch (ExceptionInterface $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Exception when fetching parcel status', [
                 'purchaseId' => $purchase->getId(),
                 'transportNumber' => $transportNumber,

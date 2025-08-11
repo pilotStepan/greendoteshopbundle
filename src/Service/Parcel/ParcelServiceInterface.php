@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
-use BaconQrCode\Exception\ExceptionInterface;
+use Throwable;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
@@ -17,14 +17,14 @@ interface ParcelServiceInterface
     /**
      * Creates a parcel for the given purchase.
      * @return string The parcel id
-     * @throws ExceptionInterface Throw it when service is unavailable or invalid data passed
+     * @throws Throwable Throw it when service is unavailable or invalid data passed
      */
     public function createParcel(Purchase $purchase): string;
 
     /**
      * Retrieves the status of a parcel for the given purchase.
      * @return array The parcel status as an array
-     * @throws ExceptionInterface Throw it when service is unavailable or invalid data passed
+     * @throws Throwable Throw it when service is unavailable or invalid data passed
      */
     public function getParcelStatus(Purchase $purchase): array;
 

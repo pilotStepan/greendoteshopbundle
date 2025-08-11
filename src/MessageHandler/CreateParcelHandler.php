@@ -36,7 +36,6 @@ readonly class CreateParcelHandler
         $this->managePurchase->preparePrices($purchase);
 
         // Let it explode, so the message can be retried
-
         $parcelId = $parcelService->createParcel($purchase);
         $purchase->setTransportNumber($parcelId);
 
