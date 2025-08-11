@@ -2,27 +2,35 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\TransportationAPI;
+use Throwable;
+use RuntimeException;
 use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
+use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 
+#[WithMonologChannel('api.parcel.czech_post')]
 class CzechPostParcel implements ParcelServiceInterface
 {
     private const API_BASE_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1/*';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        private readonly LoggerInterface     $logger
+        private readonly LoggerInterface     $logger,
     ) {}
 
-    public function createParcel(Purchase $purchase): ?string
+    /**
+     * @throws Throwable
+     */
+    public function createParcel(Purchase $purchase): string
     {
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            return null;
+            throw new InvalidArgumentException('No transportation set for purchase');
         }
 
         $requestData = $this->prepareParcelData($purchase);
@@ -43,28 +51,31 @@ class CzechPostParcel implements ParcelServiceInterface
                 'purchaseId' => $purchase->getId(),
                 'response' => $data,
             ]);
-            return null;
-        } catch (\Exception $e) {
-            $this->logger->error('Exception when creating parcel', [
+            throw new RuntimeException('Failed to create parcel: packetId not returned from API');
+        } catch (Throwable $e) {
+            $this->logger->error('Parcel API exception', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);
-            return null;
+            throw $e;
         }
     }
 
-    public function getParcelStatus(Purchase $purchase): ?array
+    /**
+     * @throws Throwable
+     */
+    public function getParcelStatus(Purchase $purchase): array
     {
         $transportNumber = $purchase->getTransportNumber();
         if (!$transportNumber) {
             $this->logger->error('No transport number for purchase', ['purchaseId' => $purchase->getId()]);
-            return null;
+            throw new InvalidArgumentException('No transport number for purchase');
         }
 
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            return null;
+            throw new InvalidArgumentException('No transportation set for purchase');
         }
 
         try {
@@ -74,13 +85,13 @@ class CzechPostParcel implements ParcelServiceInterface
             ]);
 
             return $response->toArray();
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Exception when fetching parcel status', [
                 'purchaseId' => $purchase->getId(),
                 'transportNumber' => $transportNumber,
                 'error' => $e->getMessage(),
             ]);
-            return null;
+            throw $e;
         }
     }
 
@@ -148,14 +159,14 @@ class CzechPostParcel implements ParcelServiceInterface
     private function getHeaders(Transportation $transportation): array
     {
         $timestamp = time();
-        $nonce     = $this->generateNonce();
+        $nonce = $this->generateNonce();
 
         return [
-            'Api-Token'                    => $transportation->getToken(),
-            'Authorization-Timestamp'      => $timestamp,
+            'Api-Token' => $transportation->getToken(),
+            'Authorization-Timestamp' => $timestamp,
             'Authorization-Content-SHA256' => hash('sha256', ''),
-            'Authorization'                => $this->generateHmacAuth($transportation, $timestamp, $nonce),
-            'Content-Type'                 => 'application/json;charset=UTF-8',
+            'Authorization' => $this->generateHmacAuth($transportation, $timestamp, $nonce),
+            'Content-Type' => 'application/json;charset=UTF-8',
         ];
     }
 
@@ -166,13 +177,13 @@ class CzechPostParcel implements ParcelServiceInterface
             mt_rand(0, 0xffff),
             mt_rand(0, 0x0fff) | 0x4000,
             mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
         );
     }
 
     private function generateHmacAuth(Transportation $transportation, int $timestamp, string $nonce): string
     {
-        $signature       = hash_hmac('sha256', "Authorization-Timestamp;$nonce", $transportation->getSecretKey(), true);
+        $signature = hash_hmac('sha256', "Authorization-Timestamp;$nonce", $transportation->getSecretKey(), true);
         $signatureBase64 = base64_encode($signature);
 
         return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";

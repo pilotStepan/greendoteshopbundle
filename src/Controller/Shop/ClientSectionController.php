@@ -224,14 +224,12 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         QRcodeGenerator             $qrCodeGenerator,
         PurchasePriceFactory        $purchasePriceFactory,
         ProductVariantPriceFactory  $productVariantPriceFactory,
-        ClientRepository            $clientRepository,
+        ManagePurchase              $managePurchase,
         SessionInterface            $session,
         Request                     $request,
         PaymentGatewayProvider      $gatewayProvider,
     ): Response
-
     {
-
         $purchase = $purchaseRepository->find($id);
 
         $this->denyAccessUnlessGranted('view', $purchase);
@@ -240,12 +238,12 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $created = $request->query->get('created');
 
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
+        $managePurchase->preparePrices($purchase);
         
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
-        $paymentGateway = $gatewayProvider->getByPurchase($purchase)
-                ?? $gatewayProvider->getDefault();
+        $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
         $paylink = $paymentGateway->getPayLink($purchase);
 
 

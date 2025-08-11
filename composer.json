@@ -54,7 +54,8 @@
     "granam/gpwebpay": "^5.1",
     "ext-simplexml": "*",
     "symfony/lock": "^7.3",
-    "dragonbe/vies": "^2.3"
+    "dragonbe/vies": "^2.3",
+    "monolog/monolog": "^3.9"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

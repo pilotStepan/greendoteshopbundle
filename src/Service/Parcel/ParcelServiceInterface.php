@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
+use Throwable;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\TransportationAPI;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -16,15 +17,17 @@ interface ParcelServiceInterface
 {
     /**
      * Creates a parcel for the given purchase.
-     * @return string|null The parcel id, or null if creation fails.
+     * @return string The parcel id
+     * @throws Throwable Throw it when service is unavailable or invalid data passed
      */
-    public function createParcel(Purchase $purchase): ?string;
+    public function createParcel(Purchase $purchase): string;
 
     /**
      * Retrieves the status of a parcel for the given purchase.
-     * @return array|null The parcel status as an array, or null if unavailable.
+     * @return array The parcel status as an array
+     * @throws Throwable Throw it when service is unavailable or invalid data passed
      */
-    public function getParcelStatus(Purchase $purchase): ?array;
+    public function getParcelStatus(Purchase $purchase): array;
 
     /**
      * Checks if the service supports the given transportationAPI enum.

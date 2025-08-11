@@ -2,12 +2,16 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Exception;
+use Psr\Log\LoggerInterface;
 use Neogate\SmsConnect\SmsConnect;
+use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 
+#[WithMonologChannel('notification.sms')]
 readonly class ManageSms
 {
     public function __construct(
@@ -15,21 +19,36 @@ readonly class ManageSms
         private SmsConnect           $client,
         private PurchasePriceFactory $priceFactory,
         private CurrencyResolver     $currencyResolver,
+        private LoggerInterface      $logger,
     ) {}
 
     public function sendOrderTransitionSms(Purchase $purchase, string $transition): void
     {
         $phone = $this->processPhone(
             $purchase->getClient()?->getPhone(),
-            $purchase->getClient()?->getPrimaryAddress()?->getCountry()
+            $purchase->getClient()?->getPrimaryAddress()?->getCountry(),
         );
+        if (!$phone) {
+            $this->logger->error('Phone number is invalid or missing', [
+                'purchase_id' => $purchase->getId(),
+                'phone' => $purchase->getClient()?->getPhone(),
+                'transition' => $transition,
+            ]);
+            return;
+        };
+
         $text = $this->getSmsText($purchase, $transition);
-        if (!$phone || !$text) return;
 
         try {
-             $this->client->sendSms($phone, $text, sender: 'Yogashop');
-        } catch (\Exception $e) {
-            // dd($e);
+            $this->client->sendSms($phone, $text, sender: 'Yogashop');
+        } catch (Exception $e) {
+            $this->logger->critical('SMS sending failed', [
+                'phone' => $phone,
+                'text' => $text,
+                'transition' => $transition,
+                'exception' => $e,
+            ]);
+            // throw $e;
         }
     }
 
@@ -43,9 +62,9 @@ readonly class ManageSms
         $amount = null;
 
         $key = match ($state) {
-            'sent' => $tracking ? 'sms.order.sent_with_tracking' : 'sms.order.sent',
+            'sent'                     => $tracking ? 'sms.order.sent_with_tracking' : 'sms.order.sent',
             'paid', 'ready_for_pickup' => 'sms.order.' . $state,
-            default => 'sms.order.default',
+            default                    => 'sms.order.default',
         };
 
         if ($state === 'paid') {
@@ -89,7 +108,7 @@ readonly class ManageSms
         /** Remove leading "+" OR "00" international prefix */
         if ($phone[0] === '+') {
             $phone = substr($phone, 1);
-        } elseif (str_starts_with($phone, '00')) {
+        } else if (str_starts_with($phone, '00')) {
             $phone = substr($phone, 2);
         }
 
@@ -100,14 +119,14 @@ readonly class ManageSms
 
         /** Auto-prepend CZ / SK country code if it is still a local number */
         $needsPrefix = match ($country) {
-            'sk' => (bool)preg_match('/^[1-9]\d{7,8}$/', $phone), // 8–9 digits
+            'sk'               => (bool)preg_match('/^[1-9]\d{7,8}$/', $phone), // 8–9 digits
             default /* 'cz' */ => (bool)preg_match('/^[1-9]\d{8}$/', $phone), // 9 digits
         };
 
         if ($needsPrefix) {
             $phone = match ($country) {
-                'sk' => '421' . $phone,
-                'cz' => '420' . $phone,
+                'sk'    => '421' . $phone,
+                'cz'    => '420' . $phone,
                 default => $phone, // no assumption for other locales
             };
         }

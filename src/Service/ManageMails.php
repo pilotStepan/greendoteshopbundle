@@ -14,7 +14,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 readonly class ManageMails
 {
@@ -68,11 +67,7 @@ readonly class ManageMails
             ->context(['resetToken' => $resetToken])
         ;
 
-        try {
-            $this->mailer->send($email);
-        } catch (TransportExceptionInterface $e) {
-//            $this->logger->error('…', ['exception' => $e]);
-        }
+        $this->mailer->send($email);
     }
 
     public function sendPurchaseDiscussionEmail(Purchase $purchase): void
@@ -108,12 +103,7 @@ readonly class ManageMails
 //                'button_name' => $buttonName
 //            ]);
 
-        try {
-            $this->mailer->send($email);
-        } catch (TransportExceptionInterface $e) {
-//            $this->logger->error('…', ['exception' => $e]);
-            dd($e);
-        }
+        $this->mailer->send($email);
     }
 
     private function buildReceiveEmail(Purchase $purchase, $orderData): TemplatedEmail

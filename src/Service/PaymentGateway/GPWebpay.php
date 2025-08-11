@@ -62,7 +62,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
         $digestSigner = new DigestSigner($settings);
         $requestValues = CardPayRequestValues::createFromArray([
             'ORDERNUMBER' => $payment->getId(),
-            'AMOUNT'      => 1, // FIXME: $purchase->getTotalPrice(),
+            'AMOUNT'      => $purchase->getTotalPrice(),
             'CURRENCY'    => '203',
             'DEPOSITFLAG' => true,
             'MERORDERNUM' => $purchase->getId(),

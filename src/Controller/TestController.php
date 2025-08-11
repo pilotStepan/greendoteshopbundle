@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller;
 
 use Greendot\EshopBundle\Service\ManageSms;
+use Greendot\EshopBundle\Service\ManageMails;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Client;
@@ -71,5 +72,12 @@ class TestController extends AbstractController
         $html = $this->renderView("email/order/$transition.html.twig", ['data' => $data]);
 
         return new Response($html);
+    }
+
+    #[Route('/mails/send/{purchase}', name: 'mails_send')]
+    public function mailsSend(Purchase $purchase, ManageMails $manageMails): Response
+    {
+        $manageMails->sendPurchaseDiscussionEmail($purchase);
+        return new JsonResponse(['status' => 'Email sent'], 200);
     }
 }

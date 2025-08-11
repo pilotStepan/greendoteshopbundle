@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use Symfony\Component\Workflow\Registry;
 use ApiPlatform\State\ProcessorInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Symfony\Bundle\SecurityBundle\Security;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Consent;
@@ -24,6 +25,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
+#[WithMonologChannel('purchase.checkout')]
 final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 {
     public function __construct(
@@ -45,15 +47,12 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             $violations = $this->validator->validate($data);
             if ($violations->count()) {
                 $msg = (string)$violations;
-                $this->logger->error('Validation errors', ['errors' => $msg]);
-
-                return new JsonResponse(['errors' => [$msg]], 400);
+                throw new \InvalidArgumentException($msg);
             }
 
             // 1. Get existing purchase
             $purchase = $this->em->getRepository(Purchase::class)->findOneBySession();
             if (!$purchase) {
-                $this->logger->error('Purchase not found in session');
                 throw new \InvalidArgumentException('Košík nenalezen');
             }
 
@@ -96,20 +95,12 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             $redirectUrl = $this->buildRedirectUrl($purchase);
             return new JsonResponse(['redirect' => $redirectUrl], 200);
 
-        } catch (\RuntimeException $e) {
-            // Decode JSON error messages if available. If not, wrap the raw message in an array
-            $messages = json_decode($e->getMessage(), true) ?: [$e->getMessage()];
-            $this->logger->error('RuntimeException during purchase processing', ['errors' => $messages]);
-            return new JsonResponse(['errors' => $messages], 409);
-
-        } catch (\InvalidArgumentException $e) {
+        } catch (\LogicException $e) {
             // Validation errors or other invalid arguments
-            $this->logger->error('InvalidArgumentException during purchase processing', ['error' => $e->getMessage()]);
             return new JsonResponse(['errors' => [$e->getMessage()]], 400);
-
         } catch (\Exception|ORMException $e) {
             // General exceptions or ORM errors
-            $this->logger->error('Unexpected exception during purchase processing', ['exception' => $e]);
+            $this->logger->error('Unexpected exception', ['exception' => $e]);
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
         }
     }
@@ -188,7 +179,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 static fn($b) => $b->getMessage(),
                 iterator_to_array($workflow->buildTransitionBlockerList($purchase, $transition)),
             );
-            throw new \RuntimeException(json_encode($errors));
+            throw new \LogicException(json_encode($errors));
         }
 
         // If it should be paid via gateway, apply transition silently (without notifications)

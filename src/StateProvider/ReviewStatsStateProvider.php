@@ -6,7 +6,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use ApiPlatform\Doctrine\Orm\Util\QueryNameGenerator;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
 use ApiPlatform\Doctrine\Orm\Extension\QueryCollectionExtensionInterface;
 
@@ -15,7 +15,7 @@ class ReviewStatsStateProvider implements ProviderInterface
     public function __construct(
         private ReviewRepository $reviewRepository,
         private ManagerRegistry  $managerRegistry,
-        #[Autowire('api_platform.doctrine.orm.query_extension.collection')]
+        #[AutowireIterator('api_platform.doctrine.orm.query_extension.collection')]
         private iterable         $collectionExtensions,
     ) {}
 

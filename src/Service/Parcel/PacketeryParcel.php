@@ -2,8 +2,14 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
-use Exception;
+use Throwable;
+use SimpleXMLElement;
+use RuntimeException;
+use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
+use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
@@ -12,10 +18,9 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Psr\Log\LoggerInterface;
-use SimpleXMLElement;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+
+#[WithMonologChannel('api.parcel.packetery')]
 class PacketeryParcel implements ParcelServiceInterface
 {
     private const API_URL = 'https://www.zasilkovna.cz/api/rest';
@@ -27,12 +32,15 @@ class PacketeryParcel implements ParcelServiceInterface
         private readonly CurrencyRepository     $currencyRepository,
     ) {}
 
-    public function createParcel(Purchase $purchase): ?string
+    /**
+     * @throws Throwable
+     */
+    public function createParcel(Purchase $purchase): string
     {
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            return null;
+            throw new InvalidArgumentException('No transportation set for purchase');
         }
 
         $requestData = $this->prepareParcelData($purchase);
@@ -53,17 +61,20 @@ class PacketeryParcel implements ParcelServiceInterface
                 'purchaseId' => $purchase->getId(),
                 'response' => $data,
             ]);
-            return null;
-        } catch (Exception $e) {
-            $this->logger->error('Exception when creating parcel', [
+            throw new RuntimeException('Failed to create parcel: packetId not returned from API');
+        } catch (Throwable $e) {
+            $this->logger->error('Parcel API exception', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);
-            return null;
+            throw $e;
         }
     }
 
-    public function getParcelStatus(Purchase $purchase): ?array
+    /**
+     * @throws Throwable
+     */
+    public function getParcelStatus(Purchase $purchase): array
     {
         return [];
     }
@@ -99,7 +110,7 @@ class PacketeryParcel implements ParcelServiceInterface
         return  [
             'apiPassword' => $purchase->getTransportation()->getSecretKey(),
             'packetAttributes' => [
-                'number' => (string) $purchase->getId(),
+                'number' => (string)$purchase->getId(),
                 'name' => $client->getName(),
                 'surname' => $client->getSurname(),
                 'email' => $client->getMail(),

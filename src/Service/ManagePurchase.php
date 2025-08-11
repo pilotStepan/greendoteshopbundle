@@ -5,13 +5,14 @@ namespace Greendot\EshopBundle\Service;
 
 
 use DateTime;
+use Exception;
 use RuntimeException;
 use InvalidArgumentException;
-use DragonBe\Vies\ViesException;
-use DragonBe\Vies\ViesServiceException;
+use Greendot\EshopBundle\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
@@ -28,6 +29,7 @@ readonly class ManagePurchase
         private PurchaseRepository         $purchaseRepository,
         private ParcelServiceProvider      $parcelServiceProvider,
         private ManageVies                 $manageVies,
+        private MessageBusInterface        $bus,
     ) {}
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase
@@ -73,19 +75,11 @@ readonly class ManagePurchase
         return $purchase;
     }
 
-    /* TODO: process parcel creating via messenger, handle failed parcel creation */
     public function generateTransportData(Purchase $purchase): void
     {
-        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
-        if (!$parcelService) return;
-
-        // prepare prices if not set
-        if (!$purchase->getTotalPrice()) {
-            $this->preparePrices($purchase);
-        }
-
-        $parcelId = $parcelService->createParcel($purchase);
-        $purchase->setTransportNumber($parcelId);
+        $this->bus->dispatch(
+            new CreateParcelMessage($purchase->getId()),
+        );
     }
 
     public function issueInvoice(Purchase $purchase): void
@@ -111,7 +105,7 @@ readonly class ManagePurchase
     /**
      * @param Purchase $purchase
      * @return void
-     * @throws ViesServiceException|ViesException|InvalidArgumentException
+     * @throws Exception
      */
     public function processVatNumber(Purchase $purchase): void
     {
