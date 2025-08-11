@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Service\ManageMails;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Message\Notification\PurchaseTransitionEmail;
+use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 #[AsMessageHandler]
 readonly class PurchaseTransitionEmailHandler
@@ -21,7 +22,7 @@ readonly class PurchaseTransitionEmailHandler
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
-            throw new \RuntimeException('Purchase not found for ID: ' . $purchaseId);
+            throw new UnrecoverableMessageHandlingException('Purchase not found for ID: ' . $purchaseId);
         }
 
         $this->manageMails->sendPurchaseTransitionEmail($purchase, $msg->transition);

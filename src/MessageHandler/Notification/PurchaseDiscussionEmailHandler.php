@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\MessageHandler\Notification;
 
-use RuntimeException;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -10,6 +9,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Message\Notification\PurchaseDiscussionEmail;
+use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 #[AsMessageHandler]
 readonly class PurchaseDiscussionEmailHandler
@@ -26,7 +26,8 @@ readonly class PurchaseDiscussionEmailHandler
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
-            throw new RuntimeException('Purchase not found for ID: ' . $purchaseId);
+            // Permanent: do not retry
+            throw new UnrecoverableMessageHandlingException('Purchase not found for ID: ' . $purchaseId);
         }
 
         $discussion = $this->createPurchaseDiscussion($purchase, $msg);
