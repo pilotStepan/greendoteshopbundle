@@ -8,7 +8,9 @@ use RuntimeException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Dto\ParcelStatusInfo;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\ParcelDeliveryState;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -74,9 +76,12 @@ class PacketeryParcel implements ParcelServiceInterface
     /**
      * @throws Throwable
      */
-    public function getParcelStatus(Purchase $purchase): array
+    public function getParcelStatus(Purchase $purchase): ParcelStatusInfo
     {
-        return [];
+        // FIXME: Implement the actual logic to retrieve the parcel status
+        return new ParcelStatusInfo(
+            ParcelDeliveryState::DELIVERED,
+        );
     }
 
     private function prepareParcelData(Purchase $purchase): array
