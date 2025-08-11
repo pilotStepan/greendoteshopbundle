@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Enum\TransportationAPI;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -88,6 +89,7 @@ class CzechPostParcel implements ParcelServiceInterface
         $client = $purchase->getClient();
         $totalWeight = 20;
 
+        // TODO: přidání požadovaných služeb - dobírka, pojištění a podobně
         return [
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
@@ -176,8 +178,10 @@ class CzechPostParcel implements ParcelServiceInterface
         return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";
     }
 
-    public function supports(int $transportationId): bool
+    public function supports(TransportationAPI $transportationAPI): bool
     {
-        return $transportationId === 4;
+        // TODO: make two services
+        return $transportationAPI === TransportationAPI::CP_DO_RUKY || 
+               $transportationAPI === TransportationAPI::CP_BALIKOVNA;
     }
 }

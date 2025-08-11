@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\TransportationAPI;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 /**
@@ -26,8 +27,8 @@ interface ParcelServiceInterface
     public function getParcelStatus(Purchase $purchase): ?array;
 
     /**
-     * Checks if the service supports the given transportation ID.
+     * Checks if the service supports the given transportationAPI enum.
      * Used in ParcelServiceProvider.
      */
-    public function supports(int $transportationId): bool;
+    public function supports(TransportationAPI $transportationAPI): bool;
 }

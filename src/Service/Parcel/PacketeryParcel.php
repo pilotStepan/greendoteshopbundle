@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service\Parcel;
 use Exception;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Enum\TransportationAPI;
 use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -97,8 +98,8 @@ class PacketeryParcel implements ParcelServiceInterface
         }
     }
 
-    public function supports(int $transportationId): bool
+    public function supports(TransportationAPI $transportationAPI): bool
     {
-        return $transportationId === 3;
+        return $transportationAPI === TransportationAPI::PACKETA;
     }
 }

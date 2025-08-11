@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\Parcel;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\TransportationAPI;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
@@ -26,14 +27,14 @@ readonly class ParcelServiceProvider
     /**
      * Retrieves the parcel service that supports the given transportation ID.
      *
-     * @param int $transportationId The transportation ID to find a service for.
+     * @param int $transportationAPI The transportationAPI to find a service for.
      * @return ?ParcelServiceInterface The parcel service that supports the transportation ID.
      */
-    public function get(int $transportationId): ?ParcelServiceInterface
+    public function get(TransportationAPI $transportationAPI): ?ParcelServiceInterface
     {
         /* @var ParcelServiceInterface[] $service */
         foreach ($this->parcelServices as $service) {
-            if ($service->supports($transportationId)) {
+            if ($service->supports($transportationAPI)) {
                 return $service;
             }
         }
@@ -42,14 +43,14 @@ readonly class ParcelServiceProvider
 
     /**
      * Retrieves the parcel service for a given purchase.
-     * Uses the transportation ID from the purchase to find the appropriate service.
+     * Uses the transportationAPI enum from the purchase.transportation to find the appropriate service.
      *
      * @param Purchase $purchase The purchase to get the parcel service for.
      * @return ?ParcelServiceInterface The parcel service for the purchase, or null if not found.
      */
     public function getByPurchase(Purchase $purchase): ?ParcelServiceInterface
     {
-        $transportationId = $purchase->getTransportation()?->getId();
-        return $transportationId ? $this->get($transportationId) : null;
+        $transportationAPI = $purchase->getTransportation()?->getTransportationAPI();
+        return $transportationAPI ? $this->get($transportationAPI) : null;
     }
 }
