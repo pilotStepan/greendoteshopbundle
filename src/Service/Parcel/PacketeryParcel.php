@@ -3,7 +3,9 @@
 namespace Greendot\EshopBundle\Service\Parcel;
 
 use SimpleXMLElement;
+use RuntimeException;
 use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -20,12 +22,15 @@ class PacketeryParcel implements ParcelServiceInterface
         private readonly LoggerInterface     $logger,
     ) {}
 
-    public function createParcel(Purchase $purchase): ?string
+    /**
+     * @throws ExceptionInterface
+     */
+    public function createParcel(Purchase $purchase): string
     {
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            return null;
+            throw new InvalidArgumentException('No transportation set for purchase');
         }
 
         $requestData = $this->prepareParcelData($purchase);
@@ -46,17 +51,17 @@ class PacketeryParcel implements ParcelServiceInterface
                 'purchaseId' => $purchase->getId(),
                 'response' => $data,
             ]);
-            return null;
+            throw new RuntimeException('Failed to create parcel: packetId not returned from API');
         } catch (ExceptionInterface $e) {
             $this->logger->error('Parcel API exception', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);
-            return null;
+            throw $e;
         }
     }
 
-    public function getParcelStatus(Purchase $purchase): ?array
+    public function getParcelStatus(Purchase $purchase): array
     {
         return [];
     }
