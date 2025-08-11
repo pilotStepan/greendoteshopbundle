@@ -8,12 +8,12 @@ use DateTime;
 use Exception;
 use RuntimeException;
 use InvalidArgumentException;
-use Greendot\EshopBundle\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
@@ -27,9 +27,9 @@ readonly class ManagePurchase
         private PurchasePriceFactory       $purchasePriceFactory,
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private PurchaseRepository         $purchaseRepository,
-        private ParcelServiceProvider      $parcelServiceProvider,
         private ManageVies                 $manageVies,
         private MessageBusInterface        $bus,
+        private ParcelServiceProvider      $parcelServiceProvider,
     ) {}
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase
@@ -77,6 +77,10 @@ readonly class ManagePurchase
 
     public function generateTransportData(Purchase $purchase): void
     {
+        // If purchase does not have a parcel service, we do not create a parcel
+        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
+        if (!$parcelService) return;
+
         $this->bus->dispatch(
             new CreateParcelMessage($purchase->getId()),
         );
