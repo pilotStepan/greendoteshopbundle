@@ -5,7 +5,13 @@ namespace Greendot\EshopBundle\Service\Parcel;
 use Exception;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\TransportationAPI;
+use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -15,8 +21,10 @@ class PacketeryParcel implements ParcelServiceInterface
     private const API_URL = 'https://www.zasilkovna.cz/api/rest';
 
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
-        private readonly LoggerInterface $logger
+        private readonly HttpClientInterface    $httpClient,
+        private readonly LoggerInterface        $logger,
+        private readonly PurchasePriceFactory   $purchasePriceFactory,
+        private readonly CurrencyRepository     $currencyRepository,
     ) {}
 
     public function createParcel(Purchase $purchase): ?string
@@ -64,7 +72,31 @@ class PacketeryParcel implements ParcelServiceInterface
     {
         $client = $purchase->getClient();
 
-        return [
+        $czk = $this->currencyRepository->findOneBy(['isDefault' => true]);
+
+        $purchasePriceCalculator = $this->purchasePriceFactory->create($purchase, $czk);
+
+        // TODO: check that calculation types for value and cod correct
+
+        // calculate parcel value
+        $value = (clone $purchasePriceCalculator)
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
+            ->getPrice();
+
+
+        // calculate cash on delivery (null if cash on delivery payment not wanted)
+        $cod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY
+            ? $purchasePriceCalculator
+                ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+                ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
+                ->getPrice()
+            : null;
+
+        // TODO: make weight, is required
+        
+        return  [
             'apiPassword' => $purchase->getTransportation()->getSecretKey(),
             'packetAttributes' => [
                 'number' => (string) $purchase->getId(),
@@ -73,8 +105,10 @@ class PacketeryParcel implements ParcelServiceInterface
                 'email' => $client->getMail(),
                 'phone' => $client->getPhone(),
                 'addressId' => $purchase->getTransportation()->getToken(),
-                'value' => $purchase->getTotalPrice(),
+                'value' => $value, 
                 'eshop' => 'yogashop',
+                ...($cod !== null ? ['cod' => $cod] : [])
+                
             ],
         ];
     }
