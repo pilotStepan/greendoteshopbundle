@@ -13,7 +13,6 @@ use Greendot\EshopBundle\Entity\Project\BranchType;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
 use Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware;
 use Greendot\EshopBundle\Service\BranchImport\Importer\PostaImporter;
-use Greendot\EshopBundle\Service\BranchImport\Importer\BranchImportTrait;
 use Greendot\EshopBundle\Service\BranchImport\Importer\BalikovnaImporter;
 use Greendot\EshopBundle\Service\BranchImport\Importer\ZasilkovnaImporter;
 use Greendot\EshopBundle\Service\BranchImport\Importer\ProviderImporterInterface;

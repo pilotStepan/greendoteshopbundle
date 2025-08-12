@@ -7,6 +7,7 @@ use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
+use Greendot\EshopBundle\Service\BranchImport\BranchImportTrait;
 
 #[WithMonologChannel('branch_import')]
 final class ZasilkovnaImporter implements ProviderImporterInterface

@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport\Importer;
+namespace Greendot\EshopBundle\Service\BranchImport;
 
 use Generator;
 use XMLReader;
