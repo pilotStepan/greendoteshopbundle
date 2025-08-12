@@ -11,6 +11,7 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Message\Parcel\UpdateDeliveryStatusMessage;
@@ -32,6 +33,9 @@ readonly class CreateParcelHandler
         private LoggerInterface        $logger,
     ) {}
 
+    /**
+     * @throws ExceptionInterface
+     */
     public function __invoke(CreateParcelMessage $msg): void
     {
         $purchaseId = $msg->purchaseId;
@@ -39,7 +43,7 @@ readonly class CreateParcelHandler
 
         if (!$purchase) {
             // Permanent: do not retry
-            throw new UnrecoverableMessageHandlingException("Purchase not found (ID: {$purchaseId})");
+            throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
         // If a parcel already exists, skip creation but schedule status tracking
@@ -81,6 +85,9 @@ readonly class CreateParcelHandler
         $this->scheduleFirstStatusCheck($purchaseId);
     }
 
+    /**
+     * @throws ExceptionInterface
+     */
     private function scheduleFirstStatusCheck(int $purchaseId): void
     {
         $this->bus->dispatch(new UpdateDeliveryStatusMessage($purchaseId), [

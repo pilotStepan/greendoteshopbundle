@@ -5,20 +5,14 @@ namespace Greendot\EshopBundle\Enum;
 enum ParcelDeliveryState: string
 {
     // these are just examples, change them...
-    case IN_TRANSIT = 'in_transit';
-    case DELIVERED = 'delivered';
-    case FAILED = 'failed';
-    case CANCELLED = 'cancelled';
-    case RETURNED = 'returned';
+    case TRANSMITTED_DATA = 'transmitted_data';
+    case SUBMITTED = 'submitted';
 
     public function isFinal(): bool
     {
         return match ($this) {
-            self::DELIVERED,
-            self::FAILED,
-            self::CANCELLED,
-            self::RETURNED => true,
-            default        => false,
+            self::SUBMITTED => true,
+            default         => false,
         };
     }
 }

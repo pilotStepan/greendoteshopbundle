@@ -3,13 +3,18 @@
 namespace Greendot\EshopBundle\MessageHandler\Parcel;
 
 use Throwable;
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Workflow\Registry;
 use Monolog\Attribute\WithMonologChannel;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\ParcelDeliveryState;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Entity\Project\TransportationEvent;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Message\Parcel\UpdateDeliveryStatusMessage;
@@ -29,8 +34,12 @@ readonly class UpdateDeliveryStatusHandler
         private EntityManagerInterface $em,
         private MessageBusInterface    $bus,
         private LoggerInterface        $logger,
+        private Registry               $registry,
     ) {}
 
+    /**
+     * @throws ExceptionInterface
+     */
     public function __invoke(UpdateDeliveryStatusMessage $msg): void
     {
         $purchaseId = $msg->purchaseId;
@@ -38,7 +47,7 @@ readonly class UpdateDeliveryStatusHandler
 
         if (!$purchase) {
             // Permanent: don’t retry forever
-            throw new UnrecoverableMessageHandlingException("Purchase not found (ID: {$purchaseId})");
+            throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
         $lastEvent = $purchase->getLatestTransportationEvent();
@@ -48,7 +57,7 @@ readonly class UpdateDeliveryStatusHandler
         }
 
         $createdAt = $purchase->getDateIssue();
-        $ageDays = $createdAt->diff(new \DateTimeImmutable())->days;
+        $ageDays = $createdAt->diff(new DateTimeImmutable())->days;
         if ($ageDays >= self::MAX_POLL_DAYS) {
             $this->logger->warning('Polling window expired; giving up', [
                 'purchaseId' => $purchaseId,
@@ -69,7 +78,10 @@ readonly class UpdateDeliveryStatusHandler
         }
 
         // Skip writing if nothing changed
-        if ($lastEvent && $lastEvent->getState() === $statusInfo->state && $lastEvent->getOccurredAt() === $statusInfo->occurredAt) {
+        if ($lastEvent &&
+            $lastEvent->getState() === $statusInfo->state &&
+            $lastEvent->getOccurredAt() === $statusInfo->occurredAt
+        ) {
             $this->logger->info('No change in status; not persisting', ['purchaseId' => $purchaseId]);
         } else {
             $event = (new TransportationEvent())
@@ -84,6 +96,11 @@ readonly class UpdateDeliveryStatusHandler
         }
 
         $latest = $purchase->getLatestTransportationEvent(); // refresh latest event
+
+        if ($latest?->getState() === ParcelDeliveryState::SUBMITTED) {
+            $this->prepareForSending($purchase);
+        }
+
         if ($latest?->getState()->isFinal()) {
             $this->logger->info('Status reached final; not rescheduling', ['purchaseId' => $purchaseId]);
             return;
@@ -97,5 +114,23 @@ readonly class UpdateDeliveryStatusHandler
             'purchaseId' => $purchaseId,
             'delayMs' => self::REFRESH_INTERVAL,
         ]);
+    }
+
+    private function prepareForSending(Purchase $purchase): void
+    {
+        $workflow = $this->registry->get($purchase);
+        if ($workflow->can($purchase, 'prepare_for_sending')) {
+            $workflow->apply($purchase, 'prepare_for_sending');
+        } else {
+            // Log errors but don't stop polling status
+            $errors = array_map(
+                static fn($b) => $b->getMessage(),
+                iterator_to_array($workflow->buildTransitionBlockerList($purchase, 'prepare_for_sending')),
+            );
+            $this->logger->error('Cannot apply transition to prepare for sending', [
+                'purchaseId' => $purchase->getId(),
+                'errors' => $errors,
+            ]);
+        }
     }
 }
