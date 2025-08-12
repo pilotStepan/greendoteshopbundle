@@ -2,13 +2,16 @@
 
 namespace Greendot\EshopBundle\Service\BranchImport;
 
+use Throwable;
 use Psr\Log\LoggerInterface;
+use Doctrine\DBAL\Logging\Middleware;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
 use Greendot\EshopBundle\Entity\Project\BranchType;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
+use Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware;
 use Greendot\EshopBundle\Service\BranchImport\Importer\PostaImporter;
 use Greendot\EshopBundle\Service\BranchImport\Importer\BranchImportTrait;
 use Greendot\EshopBundle\Service\BranchImport\Importer\BalikovnaImporter;
@@ -16,9 +19,11 @@ use Greendot\EshopBundle\Service\BranchImport\Importer\ZasilkovnaImporter;
 use Greendot\EshopBundle\Service\BranchImport\Importer\ProviderImporterInterface;
 
 #[WithMonologChannel('branch_import')]
-final readonly class ManageBranch
+final class ManageBranch
 {
     use BranchImportTrait;
+
+    private const BATCH_SIZE = 500;
 
     public function __construct(
         private EntityManagerInterface $em,
@@ -29,124 +34,132 @@ final readonly class ManageBranch
         private LoggerInterface        $logger,
     ) {}
 
-    public function importNapostu(): void
-    {
-        $this->importFrom($this->postaImporter);
-    }
+    public function importNapostu(): array { return $this->importFrom($this->postaImporter); }
 
-    public function importBalikovna(): void
-    {
-        $this->importFrom($this->balikovnaImporter);
-    }
+    public function importBalikovna(): array { return $this->importFrom($this->balikovnaImporter); }
 
-    public function importZasilkovna(): void
-    {
-        $this->importFrom($this->zasilkovnaImporter);
-    }
+    public function importZasilkovna(): array { return $this->importFrom($this->zasilkovnaImporter); }
 
-    private function importFrom(ProviderImporterInterface $importer): void
+    /**
+     * @return array{provider: string, processed: int, created: int, updated: int}
+     * @throws Throwable
+     */
+    private function importFrom(ProviderImporterInterface $importer): array
     {
         $provider = $importer->key();
         $this->logger->info('Branch import started', ['provider' => $provider]);
 
-        $byType = [];
-        $totalFetched = 0;
+        // temporarily remove DBAL debug middleware
+        $prevMiddlewares = $this->disableDbalDebugMiddleware();
+
+        // cache typeName => typeId; keep only scalars in memory
+        $typeIdCache = [];
+        $seenByType = [];
+        $stats = [
+            'provider' => $provider,
+            'processed' => 0,
+            'created' => 0,
+            'updated' => 0,
+        ];
+
+        $conn = $this->em->getConnection();
+        $conn->beginTransaction();
 
         try {
-            foreach ($importer->fetch() as $row) {
-                $byType[$row->branchTypeName][] = $row;
-                $totalFetched++;
-            }
-        } catch (\Throwable $e) {
-            $this->logger->error('Branch import failed while fetching', [
-                'provider' => $provider,
-                'exception' => $e::class,
-                'message' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
-
-        $this->logger->info('Fetched provider data', [
-            'provider' => $provider,
-            'types' => array_keys($byType),
-            'count' => $totalFetched,
-        ]);
-
-        $grandCreated = 0;
-        $grandReactivated = 0;
-        $grandDeactivated = 0;
-
-        foreach ($byType as $typeName => $rows) {
-            $type = $this->getOrCreateBranchType($typeName);
-            $seen = [];
-            $created = 0;
-            $reactivated = 0;
-
-            $this->logger->info('Processing branch type', [
-                'provider' => $provider,
-                'type' => $typeName,
-                'rows' => \count($rows),
-            ]);
-
             /** @var ProviderBranchData $row */
-            foreach ($rows as $row) {
-                $seen[] = $row->providerId;
+            foreach ($importer->fetch() as $row) {
+                ++$stats['processed'];
 
-                $branch = $this->branchRepository->findOneBy([
-                    'provider_id' => $row->providerId,
-                    'BranchType' => $type,
-                ]);
+                if (!isset($typeIdCache[$row->branchTypeName])) {
+                    $type = $this->getOrCreateBranchType($row->branchTypeName);
+                    if (null === $type->getId()) {
+                        $this->em->flush();
+                    }
+                    $typeIdCache[$row->branchTypeName] = (int)$type->getId();
+                }
+                $typeId = $typeIdCache[$row->branchTypeName];
+                $typeRef = $this->em->getReference(BranchType::class, $typeId);
+
+                $seenByType[$row->branchTypeName][] = $row->providerId;
+
+                $branch = $this->branchRepository->findOneByProviderIdAndTypeId($row->providerId, $typeId);
 
                 if ($branch) {
-                    $this->touchExisting($branch);
-                    $reactivated++;
-                    continue;
+                    $this->updateBranch($branch, $row);
+                    ++$stats['updated']; // Even if nothing changed, we count it as updated
+                } else {
+                    $branch = $this->createBranch($row, $typeRef);
+                    $this->em->persist($branch);
+                    ++$stats['created'];
                 }
 
-                $branch = $this->createBranch($row, $type);
-                $this->em->persist($branch);
-                $created++;
+                if (($stats['processed'] % self::BATCH_SIZE) === 0) {
+                    $this->em->flush();
+                    $this->em->clear();
+                    $this->logger->debug('Batch flushed', $stats);
+                }
             }
 
             $this->em->flush();
+            $this->em->clear();
 
-            $deactivated = $this->branchRepository->deactivateMissingByType($type, array_values(array_unique($seen)));
+            foreach ($seenByType as $typeName => $ids) {
+                $typeId = $typeIdCache[$typeName];
+                $typeRef = $this->em->getReference(BranchType::class, $typeId);
+                $count = $this->branchRepository
+                    ->deactivateMissingByType($typeRef, array_values(array_unique($ids)))
+                ;
 
-            $grandCreated += $created;
-            $grandReactivated += $reactivated;
-            $grandDeactivated += $deactivated;
+                $this->logger->info('Deactivated missing branches', [
+                    'provider' => $provider, 'type' => $typeName, 'count' => $count,
+                ]);
+            }
 
-            $this->logger->info('Branch type synchronized', [
+            $conn->commit();
+
+            $this->logger->info('Branch import finished', $stats);
+
+            return $stats;
+        } catch (Throwable $e) {
+            $conn->rollBack();
+            $this->logger->error('Branch import failed', [
                 'provider' => $provider,
-                'type' => $typeName,
-                'created' => $created,
-                'reactivated' => $reactivated,
-                'deactivated' => $deactivated,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+            throw $e;
+        } finally {
+            $this->restoreDbalMiddlewares($prevMiddlewares);
         }
-
-        $this->em->flush();
-
-        $this->logger->info('Branch import finished', [
-            'provider' => $provider,
-            'created' => $grandCreated,
-            'reactivated' => $grandReactivated,
-            'deactivated' => $grandDeactivated,
-            'fetched' => $totalFetched,
-        ]);
     }
 
-    private function touchExisting(Branch $branch): void
+    private function disableDbalDebugMiddleware(): ?array
     {
-        $branch->setActive(1);
-        $this->em->persist($branch);
+        $config = $this->em->getConnection()->getConfiguration();
+        $prev = $config->getMiddlewares();
+        $filtered = array_filter($prev, function ($mw) {
+            return !(
+                (is_object($mw) && is_a($mw, Middleware::class, true)) ||
+                (is_object($mw) && class_exists(DebugMiddleware::class)
+                    && is_a($mw, DebugMiddleware::class, true))
+            );
+        });
+        $config->setMiddlewares($filtered);
+        return $prev;
+    }
+
+    private function restoreDbalMiddlewares(?array $prev): void
+    {
+        if ($prev === null) return;
+        $config = $this->em->getConnection()->getConfiguration();
+        $config->setMiddlewares($prev);
     }
 
     private function createBranch(ProviderBranchData $d, BranchType $type): Branch
     {
         $b = (new Branch())
             ->setCountry($d->country)
-            ->setActive(1)
+            ->setActive($d->active)
             ->setBranchType($type)
             ->setProviderId($d->providerId)
             ->setZip($d->zip)
@@ -156,12 +169,29 @@ final readonly class ManageBranch
             ->setLat($d->lat)
             ->setLng($d->lng)
             ->setDescription($d->description)
-            ->setTransportation(
-                $this->transportationByName($d->transportationName),
-            )
+            ->setTransportation($this->transportationByName($d->transportationName))
         ;
+
         $this->attachOpeningHours($b, $d->openingHours);
 
         return $b;
+    }
+
+    private function updateBranch(Branch $branch, ProviderBranchData $d): Branch
+    {
+        $branch
+            ->setActive($d->active)
+            ->setZip($d->zip)
+            ->setName($d->name)
+            ->setStreet($d->street)
+            ->setCity($d->city)
+            ->setLat($d->lat)
+            ->setLng($d->lng)
+            ->setDescription($d->description)
+        ;
+
+        $this->syncOpeningHours($branch, $d->openingHours);
+
+        return $branch;
     }
 }

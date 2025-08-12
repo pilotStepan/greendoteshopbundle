@@ -60,11 +60,11 @@ class Branch
     #[Groups(['branch:read', 'branch:write'])]
     private ?string $lng = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name: 'provider_id', type: 'string', length: 64)]
     #[Groups(['branch:read', 'branch:write'])]
-    private ?int $provider_id = null;
+    private ?string $provider_id = null;
 
-    #[ORM\ManyToOne(targetEntity: BranchType::class, inversedBy: 'Branch')]
+    #[ORM\ManyToOne(targetEntity: BranchType::class, cascade: ['persist'], inversedBy: 'Branch')]
     #[Groups(['branch:read', 'branch:write'])]
     private ?BranchType $BranchType = null;
 
@@ -75,7 +75,7 @@ class Branch
     /**
      * @var Collection<int, BranchOpeningHours>
      */
-    #[ORM\OneToMany(targetEntity: BranchOpeningHours::class, mappedBy: 'branch')]
+    #[ORM\OneToMany(targetEntity: BranchOpeningHours::class, mappedBy: 'branch', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[Groups(['branch:read', 'branch:write'])]
     private Collection $BranchOpeningHours;
 
@@ -198,12 +198,12 @@ class Branch
         return $this;
     }
 
-    public function getProviderId(): ?int
+    public function getProviderId(): ?string
     {
         return $this->provider_id;
     }
 
-    public function setProviderId(int $provider_id): static
+    public function setProviderId(string $provider_id): static
     {
         $this->provider_id = $provider_id;
 

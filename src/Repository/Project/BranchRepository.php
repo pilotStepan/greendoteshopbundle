@@ -19,13 +19,14 @@ class BranchRepository extends ServiceEntityRepository
 
     public function deactivateMissingByType(BranchType $type, array $activeProviderIds): int
     {
-        $qb = $this->createQueryBuilder('b');
+        $typeId = (int)$type->getId();
 
+        $qb = $this->createQueryBuilder('b');
         $qb->update(Branch::class, 'b')
             ->set('b.is_active', ':inactive')
-            ->where('b.BranchType = :type')
+            ->where('IDENTITY(b.BranchType) = :typeId')
             ->setParameter('inactive', 0)
-            ->setParameter('type', $type)
+            ->setParameter('typeId', $typeId)
         ;
 
         if (!empty($activeProviderIds)) {
@@ -35,5 +36,17 @@ class BranchRepository extends ServiceEntityRepository
         }
 
         return $qb->getQuery()->execute();
+    }
+
+    public function findOneByProviderIdAndTypeId(string $providerId, int $typeId): ?Branch
+    {
+        return $this->createQueryBuilder('b')
+            ->where('b.provider_id = :pid')
+            ->andWhere('IDENTITY(b.BranchType) = :tid')
+            ->setParameter('pid', $providerId)
+            ->setParameter('tid', $typeId)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
     }
 }

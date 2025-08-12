@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\BranchImport\Importer;
 
+use Throwable;
 use SimpleXMLElement;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,54 +23,62 @@ final class BalikovnaImporter implements ProviderImporterInterface
 
     public function key(): string { return 'balikovna'; }
 
+    public function downloadTo(string $filePath): bool
+    {
+        return $this->downloadStreamToFile(self::API_URL, $filePath);
+    }
+
     public function fetch(): iterable
     {
-        $this->logger->info('Fetching provider feed', ['provider' => $this->key(), 'url' => self::API_URL]);
+        $this->logger->info('Streaming provider feed', ['provider' => $this->key(), 'url' => self::API_URL]);
 
         try {
-            $xml = $this->loadXml(self::API_URL);
-        } catch (\Throwable $e) {
-            $this->logger->error('Failed to fetch provider feed', [
-                'provider' => $this->key(),
-                'url' => self::API_URL,
-                'exception' => $e::class,
-                'message' => $e->getMessage(),
-            ]);
+            foreach ($this->streamXmlElements(self::API_URL, 'row') as $row) {
+                $d = new ProviderBranchData();
+                $d->provider = 'balikovna';
+                $d->providerId = $this->providerIdFromCoords((string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84);
+                $d->branchTypeName = str_contains((string)$row->NAZEV, 'AlzaBox') ? 'AlzaBox' : ucfirst((string)$row->TYP);
+                $d->country = 'cz';
+                $d->zip = (string)$row->PSC;
+                $d->name = (string)$row->NAZEV;
+                $d->street = (string)$row->ADRESA;
+                $d->city = (string)$row->OKRES;
+                $d->lat = (float)$row->SOUR_X_WGS84;
+                $d->lng = (float)$row->SOUR_Y_WGS84;
+                $d->description = '';
+                $d->transportationName = 'Balíkovna';
+                $d->active = true; // feed only contains active branches
+                $d->openingHours = $this->extractOpeningHours($row->OTEV_DOBY ?? null);
+
+                yield $d;
+            }
+        } catch (Throwable $e) {
+            $this->logger->error('Stream read failed', ['provider' => 'balikovna', 'message' => $e->getMessage()]);
             return;
-        }
-
-        foreach ($xml->row as $row) {
-            $d = new ProviderBranchData();
-            $d->provider = 'balikovna';
-            $d->providerId = $this->providerIdFromCoords((string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84);
-            $d->branchTypeName = str_contains((string)$row->NAZEV, 'AlzaBox')
-                ? 'AlzaBox'
-                : ucfirst((string)$row->TYP);
-            $d->country = 'cz';
-            $d->zip = (string)$row->PSC;
-            $d->name = (string)$row->NAZEV;
-            $d->street = (string)$row->ADRESA;
-            $d->city = (string)$row->OKRES;
-            $d->lat = (float)$row->SOUR_X_WGS84;
-            $d->lng = (float)$row->SOUR_Y_WGS84;
-            $d->description = '';
-            $d->transportationName = 'Balíkovna';
-            $d->openingHours = $this->hours($row->OTEV_DOBY->den ?? []);
-
-            yield $d;
         }
     }
 
-    /** @return array<string,string> */
-    private function hours(SimpleXMLElement $days): array
+    /** @return array<string,string> day => "08:00–12:00, 13:00–17:00" */
+    private function extractOpeningHours(?SimpleXMLElement $otevDoby): array
     {
         $out = [];
-        foreach ($days as $den) {
-            $name = (string)$den['name'];
-            $from = (string)($den->od_do?->od ?? '');
-            $to = (string)($den->od_do?->do ?? '');
-            $out[$name] = ($from && $to) ? "{$from}–$to" : '';
+        if (!$otevDoby) return $out;
+
+        foreach ($otevDoby->den as $den) {
+            $dayName = (string)$den['name'];
+            $segments = [];
+
+            foreach ($den->od_do as $interval) {
+                $from = trim((string)$interval->od);
+                $to = trim((string)$interval->do);
+                if ($from !== '' && $to !== '') {
+                    $segments[] = $from . '–' . $to;
+                }
+            }
+
+            $out[$dayName] = $segments ? implode(', ', $segments) : '';
         }
+
         return $out;
     }
 }

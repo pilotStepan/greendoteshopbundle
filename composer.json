@@ -55,7 +55,9 @@
     "ext-simplexml": "*",
     "symfony/lock": "^7.3",
     "dragonbe/vies": "^2.3",
-    "monolog/monolog": "^3.9"
+    "monolog/monolog": "^3.9",
+    "ext-xmlreader": "*",
+    "ext-libxml": "*"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

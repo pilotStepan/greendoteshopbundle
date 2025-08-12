@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Service\PaymentService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Greendot\EshopBundle\Service\BranchImport\ManageBranch;

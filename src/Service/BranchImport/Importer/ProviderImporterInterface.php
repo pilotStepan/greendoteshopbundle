@@ -9,6 +9,8 @@ interface ProviderImporterInterface
     /** @return  'posta'|'balikovna'|'zasilkovna' */
     public function key(): string;
 
+    public function downloadTo(string $filePath): bool;
+
     /**
      * @return iterable<ProviderBranchData>
      */

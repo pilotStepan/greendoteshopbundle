@@ -22,4 +22,5 @@ final class ProviderBranchData
     /** @var array<string, string> day => "08:00–12:00, 13:00–17:00" */
     public array $openingHours = [];
     public string $transportationName;
+    public bool $active;
 }

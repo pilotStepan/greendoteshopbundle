@@ -25,7 +25,7 @@ class BranchType
     /**
      * @var Collection<int, Branch>
      */
-    #[ORM\OneToMany(mappedBy: 'BranchType', targetEntity: Branch::class)]
+    #[ORM\OneToMany(targetEntity: Branch::class, mappedBy: 'BranchType')]
     private Collection $Branch;
 
     #[ORM\Column(length: 255, nullable: true)]
