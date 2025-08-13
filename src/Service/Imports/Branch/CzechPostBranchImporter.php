@@ -46,8 +46,8 @@ final class CzechPostBranchImporter implements ProviderImporterInterface
                 $d->name = (string)$row->NAZEV;
                 $d->street = (string)$row->ADRESA;
                 $d->city = (string)$row->OBEC;
-                $d->lat = (float)$row->SOUR_X_WGS84;
-                $d->lng = (float)$row->SOUR_Y_WGS84;
+                $d->lat = (float)$row->SOUR_Y_WGS84;
+                $d->lng = (float)$row->SOUR_X_WGS84;
                 $d->description = (string)$row->POPIS;
                 $d->transportationName = $this->resolveTransportationName($row);
                 $d->active = true; // feed only contains active branches

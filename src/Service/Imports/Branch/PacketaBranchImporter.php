@@ -52,7 +52,7 @@ final class PacketaBranchImporter implements ProviderImporterInterface
                 $d->city = (string)$b->city;
                 $d->lat = (float)$b->latitude;
                 $d->lng = (float)$b->longitude;
-                $d->description = (string)$b->special;
+                $d->description = $this->buildDescription($b);
                 $d->transportationName = 'Zásilkovna';
                 $d->active = ((int)$b->status->statusId) === 1;
                 $d->openingHours = $this->extractOpeningHours($b);
@@ -75,5 +75,14 @@ final class PacketaBranchImporter implements ProviderImporterInterface
         }
 
         return $openingHours;
+    }
+
+    private function buildDescription(SimpleXMLElement $b): string
+    {
+        $description = (string)$b->directions;
+        if (!empty($b->special)) {
+            $description .= ($description !== '' ? ' ' : '') . $b->special;
+        }
+        return $description;
     }
 }
