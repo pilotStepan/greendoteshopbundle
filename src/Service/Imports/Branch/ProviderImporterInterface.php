@@ -1,12 +1,12 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport\Importer;
+namespace Greendot\EshopBundle\Service\Imports\Branch;
 
 use Greendot\EshopBundle\Dto\ProviderBranchData;
 
 interface ProviderImporterInterface
 {
-    /** @return  'posta'|'balikovna'|'zasilkovna' */
+    /** @return  'czechpost'|'packeta' */
     public function key(): string;
 
     public function downloadTo(string $filePath): bool;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport;
+namespace Greendot\EshopBundle\Service\Imports\Branch;
 
 use Throwable;
 use Psr\Log\LoggerInterface;
@@ -13,10 +13,6 @@ use Greendot\EshopBundle\Entity\Project\BranchType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
 use Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware;
-use Greendot\EshopBundle\Service\BranchImport\Importer\PostaImporter;
-use Greendot\EshopBundle\Service\BranchImport\Importer\BalikovnaImporter;
-use Greendot\EshopBundle\Service\BranchImport\Importer\ZasilkovnaImporter;
-use Greendot\EshopBundle\Service\BranchImport\Importer\ProviderImporterInterface;
 
 #[WithMonologChannel('branch_import')]
 final class ManageBranch
@@ -24,19 +20,16 @@ final class ManageBranch
     private const BATCH_SIZE = 500;
 
     public function __construct(
-        private EntityManagerInterface $em,
-        private BranchRepository       $branchRepository,
-        private PostaImporter          $postaImporter,
-        private BalikovnaImporter      $balikovnaImporter,
-        private ZasilkovnaImporter     $zasilkovnaImporter,
-        private LoggerInterface        $logger,
+        private EntityManagerInterface  $em,
+        private BranchRepository        $branchRepository,
+        private CzechPostBranchImporter $czechPostBranchImporter,
+        private PacketaBranchImporter   $packetaBranchImporter,
+        private LoggerInterface         $logger,
     ) {}
 
-    public function importNapostu(): array { return $this->importFrom($this->postaImporter); }
+    public function importCzechPost(): array { return $this->importFrom($this->czechPostBranchImporter); }
 
-    public function importBalikovna(): array { return $this->importFrom($this->balikovnaImporter); }
-
-    public function importZasilkovna(): array { return $this->importFrom($this->zasilkovnaImporter); }
+    public function importPacketa(): array { return $this->importFrom($this->packetaBranchImporter); }
 
     /**
      * @return array{provider: string, processed: int, created: int, updated: int}

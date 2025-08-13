@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport;
+namespace Greendot\EshopBundle\Service\Imports\Branch;
 
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\BranchOpeningHours;

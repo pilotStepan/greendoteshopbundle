@@ -8,11 +8,11 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Greendot\EshopBundle\Service\BranchImport\ManageBranch;
+use Greendot\EshopBundle\Service\Imports\Branch\ManageBranch;
 
 #[AsCommand(
     name: 'import:branches',
-    description: 'Import branches from providers (posta|balikovna|zasilkovna|all)',
+    description: 'Import branches from providers (czechpost|packeta|all)',
 )]
 class ImportBranchesCommand extends Command
 {
@@ -26,7 +26,7 @@ class ImportBranchesCommand extends Command
         $this->addArgument(
             'provider',
             InputArgument::REQUIRED,
-            'Provider key: posta | balikovna | zasilkovna | all',
+            'Provider key: czechpost | packeta | all',
         );
     }
 
@@ -34,13 +34,13 @@ class ImportBranchesCommand extends Command
     {
         $arg = strtolower((string)$input->getArgument('provider'));
         $targets = match ($arg) {
-            'posta', 'balikovna', 'zasilkovna' => [$arg],
-            'all'                              => ['posta', 'balikovna', 'zasilkovna'],
-            default                            => null,
+            'czechpost', 'packeta' => [$arg],
+            'all'                  => ['czechpost', 'packeta'],
+            default                => null,
         };
 
         if ($targets === null) {
-            $output->writeln("<error>Unknown provider '{$arg}'. Use: posta | balikovna | zasilkovna | all</error>");
+            $output->writeln("<error>Unknown provider '{$arg}'. Use: czechpost | packeta | all</error>");
             return Command::FAILURE;
         }
 
@@ -49,9 +49,8 @@ class ImportBranchesCommand extends Command
         foreach ($targets as $p) {
             try {
                 $stats = match ($p) {
-                    'posta'      => $this->manageBranch->importNapostu(),
-                    'balikovna'  => $this->manageBranch->importBalikovna(),
-                    'zasilkovna' => $this->manageBranch->importZasilkovna(),
+                    'czechpost' => $this->manageBranch->importCzechPost(),
+                    'packeta'   => $this->manageBranch->importPacketa(),
                 };
 
                 $output->writeln(sprintf(

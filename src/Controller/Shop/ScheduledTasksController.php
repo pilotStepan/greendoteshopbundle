@@ -7,7 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Service\PaymentService;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Greendot\EshopBundle\Service\BranchImport\ManageBranch;
+use Greendot\EshopBundle\Service\Imports\Branch\ManageBranch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -60,24 +60,17 @@ class ScheduledTasksController extends AbstractController
         return $this->json(['message' => 'Payments processed successfully']);
     }
 
-    #[Route('/scheduled/napostu', name: 'scheduled_napostu', methods: ['GET'])]
-    public function importNapostu(): JsonResponse
+    #[Route('/scheduled/czechpost', name: 'scheduled_czechpost', methods: ['GET'])]
+    public function importCzechPost(): JsonResponse
     {
-        $this->manageBranch->importNapostu();
-        return $this->json(['message' => 'Pobočky pošty byly úspěšně importovány']);
+        $this->manageBranch->importCzechPost();
+        return $this->json(['message' => 'Pobočky České pošty byly úspěšně importovány']);
     }
 
-    #[Route('/scheduled/balikovna', name: 'scheduled_balikovna', methods: ['GET'])]
-    public function importBalikovna(): JsonResponse
+    #[Route('/scheduled/packeta', name: 'scheduled_packeta', methods: ['GET'])]
+    public function importPacketa(): JsonResponse
     {
-        $this->manageBranch->importBalikovna();
-        return $this->json(['message' => 'Pobočky balikovny byly úspěšně importovány']);
-    }
-
-    #[Route('/scheduled/zasilkovna', name: 'scheduled_zasilkovna', methods: ['GET'])]
-    public function importZasilkovna(): JsonResponse
-    {
-        $this->manageBranch->importZasilkovna();
-        return $this->json(['message' => 'Pobočky zasilkovny byly úspěšně importovány']);
+        $this->manageBranch->importPacketa();
+        return $this->json(['message' => 'Pobočky Zásilkovny byly úspěšně importovány']);
     }
 }

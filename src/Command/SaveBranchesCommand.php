@@ -2,16 +2,15 @@
 
 namespace Greendot\EshopBundle\Command;
 
-use Composer\Autoload\ClassLoader;
-use Greendot\EshopBundle\Service\BranchImport\Importer\BalikovnaImporter;
-use Greendot\EshopBundle\Service\BranchImport\Importer\PostaImporter;
-use Greendot\EshopBundle\Service\BranchImport\Importer\ZasilkovnaImporter;
 use ReflectionClass;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Composer\Autoload\ClassLoader;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Greendot\EshopBundle\Service\Imports\Branch\PacketaBranchImporter;
+use Greendot\EshopBundle\Service\Imports\Branch\CzechPostBranchImporter;
 
 #[AsCommand(
     name: 'save:branches',
@@ -20,9 +19,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 class SaveBranchesCommand extends Command
 {
     public function __construct(
-        private PostaImporter      $postaImporter,
-        private BalikovnaImporter  $balikovnaImporter,
-        private ZasilkovnaImporter $zasilkovnaImporter,
+        private CzechPostBranchImporter $czechPostBranchImporter,
+        private PacketaBranchImporter   $packetaBranchImporter,
     )
     {
         parent::__construct();
@@ -34,7 +32,7 @@ class SaveBranchesCommand extends Command
             ->addArgument(
                 'provider',
                 InputArgument::REQUIRED,
-                'Provider key: posta | balikovna | zasilkovna',
+                'Provider key: czechpost | packeta',
             )
         ;
     }
@@ -43,13 +41,12 @@ class SaveBranchesCommand extends Command
     {
         $provider = strtolower((string)$input->getArgument('provider'));
         $importers = [
-            'posta' => $this->postaImporter,
-            'balikovna' => $this->balikovnaImporter,
-            'zasilkovna' => $this->zasilkovnaImporter,
+            'czechpost' => $this->czechPostBranchImporter,
+            'packeta' => $this->packetaBranchImporter,
         ];
 
         if (!isset($importers[$provider])) {
-            $output->writeln("<error>Unknown provider '{$provider}'. Use: posta | balikovna | zasilkovna</error>");
+            $output->writeln("<error>Unknown provider '{$provider}'. Use: czechpost | packeta</error>");
             return Command::FAILURE;
         }
 
