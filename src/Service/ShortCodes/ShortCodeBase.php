@@ -24,7 +24,7 @@ abstract class ShortCodeBase
     /**
      * replaces regex with something and can work with shortcode data
      */
-    abstract function replaceableContent(string $className, ?array $data = null): string;
+    abstract function replaceableContent(object $object, ?array $data = null): string;
 
     final public function getFields(string $objectName): array
     {
@@ -71,7 +71,7 @@ abstract class ShortCodeBase
                     $data = json_decode($data);
                     if (!is_null($data)) $data = (array) $data;
                 }
-                $replacedContent = $this->replaceableContent(get_class($object), $data);
+                $replacedContent = $this->replaceableContent($object, $data);
                 $content = str_replace($shortCode, $replacedContent, $content);
             }
             $object->$setter($content);

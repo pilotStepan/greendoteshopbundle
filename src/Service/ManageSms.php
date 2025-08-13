@@ -22,6 +22,9 @@ readonly class ManageSms
         private LoggerInterface      $logger,
     ) {}
 
+    /**
+     * @throws Exception
+     */
     public function sendOrderTransitionSms(Purchase $purchase, string $transition): void
     {
         $phone = $this->processPhone(
@@ -48,7 +51,7 @@ readonly class ManageSms
                 'transition' => $transition,
                 'exception' => $e,
             ]);
-            // throw $e;
+             // throw $e; // Sms doesn't work on local, so ignore for now
         }
     }
 

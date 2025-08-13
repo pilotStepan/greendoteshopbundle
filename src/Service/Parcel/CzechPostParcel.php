@@ -8,7 +8,9 @@ use RuntimeException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Dto\ParcelStatusInfo;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\ParcelDeliveryState;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 
@@ -64,7 +66,7 @@ class CzechPostParcel implements ParcelServiceInterface
     /**
      * @throws Throwable
      */
-    public function getParcelStatus(Purchase $purchase): array
+    public function getParcelStatus(Purchase $purchase): ParcelStatusInfo
     {
         $transportNumber = $purchase->getTransportNumber();
         if (!$transportNumber) {
@@ -84,7 +86,11 @@ class CzechPostParcel implements ParcelServiceInterface
                 'query' => ['parcelIds' => $transportNumber],
             ]);
 
-            return $response->toArray();
+            // TODO: Implement proper status mapping
+            return new ParcelStatusInfo(
+                ParcelDeliveryState::DELIVERED,
+                $response->toArray(),
+            );
         } catch (Throwable $e) {
             $this->logger->error('Exception when fetching parcel status', [
                 'purchaseId' => $purchase->getId(),

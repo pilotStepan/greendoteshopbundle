@@ -2,30 +2,23 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
-use Greendot\EshopBundle\Service\PaymentService;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Service\PaymentService;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\Service\BranchImport\ManageBranch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class ScheduledTasksController extends AbstractController
 {
-    private EntityManagerInterface $entityManager;
-    private ProductRepository $productRepository;
-    private PaymentService $paymentService;
-
     public function __construct(
-        EntityManagerInterface $entityManager,
-        ProductRepository      $productRepository,
-        PaymentService         $paymentService
-    )
-    {
-        $this->entityManager = $entityManager;
-        $this->productRepository = $productRepository;
-        $this->paymentService = $paymentService;
-    }
+        private readonly EntityManagerInterface $entityManager,
+        private readonly ProductRepository      $productRepository,
+        private readonly PaymentService         $paymentService,
+        private readonly ManageBranch           $manageBranch,
+    ) {}
 
     #[Route('/scheduled/sales', name: 'scheduled_sales', methods: ['GET'])]
     public function scheduleSales(): JsonResponse
@@ -44,7 +37,7 @@ class ScheduledTasksController extends AbstractController
 
                 $result[] = [
                     'product_id' => (int)$soldProduct['id'],
-                    'sold_amount' => (int)$soldProduct['sold_amount']
+                    'sold_amount' => (int)$soldProduct['sold_amount'],
                 ];
             }
         }
@@ -65,5 +58,26 @@ class ScheduledTasksController extends AbstractController
         $this->paymentService->downloadAndProcessPayments($date);
 
         return $this->json(['message' => 'Payments processed successfully']);
+    }
+
+    #[Route('/scheduled/napostu', name: 'scheduled_napostu', methods: ['GET'])]
+    public function importNapostu(): JsonResponse
+    {
+        $this->manageBranch->importNapostu();
+        return $this->json(['message' => 'Pobočky pošty byly úspěšně importovány']);
+    }
+
+    #[Route('/scheduled/balikovna', name: 'scheduled_balikovna', methods: ['GET'])]
+    public function importBalikovna(): JsonResponse
+    {
+        $this->manageBranch->importBalikovna();
+        return $this->json(['message' => 'Pobočky balikovny byly úspěšně importovány']);
+    }
+
+    #[Route('/scheduled/zasilkovna', name: 'scheduled_zasilkovna', methods: ['GET'])]
+    public function importZasilkovna(): JsonResponse
+    {
+        $this->manageBranch->importZasilkovna();
+        return $this->json(['message' => 'Pobočky zasilkovny byly úspěšně importovány']);
     }
 }

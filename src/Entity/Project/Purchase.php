@@ -824,4 +824,18 @@ class Purchase
 
         return $this;
     }
+
+    public function getLatestTransportationEvent(): ?TransportationEvent
+    {
+        if ($this->transportationEvents->isEmpty()) {
+            return null;
+        }
+
+        $events = $this->transportationEvents->toArray();
+        usort($events, function ($a, $b) {
+            return $b->getOccurredAt() <=> $a->getOccurredAt();
+        });
+
+        return $events[0] ?? null;
+    }
 }

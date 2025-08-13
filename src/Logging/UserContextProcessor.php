@@ -23,15 +23,16 @@ final readonly class UserContextProcessor
     public function __invoke(LogRecord $record): LogRecord
     {
         $current = $this->requestStack->getCurrentRequest();
+        if (!$current) return $record;
 
         [$userId, $isAdmin] = $this->extractUserContext();
 
         $record->extra += [
             'is_admin' => $isAdmin,
             'client_id' => $userId,
-            'client_ip' => $current?->getClientIp(),
-            'request_uri' => $current?->getUri(),
-            'request_method' => $current?->getMethod(),
+            'client_ip' => $current->getClientIp(),
+            'request_uri' => $current->getUri(),
+            'request_method' => $current->getMethod(),
         ];
 
         return $record;
