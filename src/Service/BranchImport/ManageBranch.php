@@ -187,7 +187,7 @@ final class ManageBranch
         return $b;
     }
 
-    private static function updateBranch(Branch $branch, ProviderBranchData $d): Branch
+    private function updateBranch(Branch $branch, ProviderBranchData $d): void
     {
         $branch
             ->setActive($d->active)
@@ -201,8 +201,6 @@ final class ManageBranch
         ;
 
         BranchOpeningHoursHelpers::syncOpeningHours($branch, $d->openingHours);
-
-        return $branch;
     }
 
     private function transportationByName(string $name): ?Transportation
