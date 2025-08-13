@@ -7,7 +7,6 @@ use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
-use Greendot\EshopBundle\Service\BranchImport\BranchImportTrait;
 
 #[WithMonologChannel('branch_import')]
 final class PostaImporter implements ProviderImporterInterface
@@ -36,7 +35,7 @@ final class PostaImporter implements ProviderImporterInterface
             foreach ($this->streamXmlElements(self::API_URL, 'row') as $row) {
                 $d = new ProviderBranchData();
                 $d->provider = 'posta';
-                $d->providerId = $this->providerIdFromCoords((string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84);
+                $d->providerId = $this->providerIdFromCoords('p', (string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84);
                 $d->branchTypeName = 'Pošta';
                 $d->country = 'cz';
                 $d->zip = str_pad(preg_replace('/\D/', '', (string)$row->PSC), 5, '0', STR_PAD_LEFT);

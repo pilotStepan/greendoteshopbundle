@@ -1,15 +1,11 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport;
+namespace Greendot\EshopBundle\Service\BranchImport\Importer;
 
 use Generator;
 use XMLReader;
 use SimpleXMLElement;
 use RuntimeException;
-use Greendot\EshopBundle\Entity\Project\Branch;
-use Greendot\EshopBundle\Entity\Project\BranchType;
-use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Entity\Project\BranchOpeningHours;
 use function dirname;
 use function basename;
 
@@ -54,126 +50,11 @@ trait BranchImportTrait
         }
     }
 
-    public function providerIdFromCoords(string $x, string $y): string
+    public function providerIdFromCoords(string $prefix, string $x, string $y, string $suffix = ''): string
     {
-        // FIXME: coordinates in balikovna are not unique, can't import
         $lat = number_format((float)$x, 6, '.', '');
         $lng = number_format((float)$y, 6, '.', '');
-        return substr(hash('sha1', "$lat|$lng"), 0, 16);
-    }
-
-    public function getOrCreateBranchType(string $name): BranchType
-    {
-        $repo = $this->em->getRepository(BranchType::class);
-        $type = $repo->findOneBy(['name' => $name]);
-        if ($type) {
-            return $type;
-        }
-        $type = (new BranchType())->setName($name);
-        $this->em->persist($type);
-        $this->em->flush();
-        return $type;
-    }
-
-    public function transportationByName(string $name): ?Transportation
-    {
-        $name = trim($name);
-        if ($name === '') return null;
-
-        if (isset($this->transportationIdCache[$name])) {
-            return $this->em->getReference(Transportation::class, $this->transportationIdCache[$name]);
-        }
-
-        // Fetch only the scalar ID — no entity hydration, no listeners
-        $id = $this->em->getConnection()->fetchOne(
-            'SELECT id FROM transportation WHERE name = :name LIMIT 1',
-            ['name' => $name],
-        );
-
-        if ($id === false) return null;
-
-        $id = (int)$id;
-        $this->transportationIdCache[$name] = $id;
-
-        return $this->em->getReference(Transportation::class, $id);
-    }
-
-    /** @param array<string,string> $openingHours e.g. ['Pondělí' => '08:00–12:00, 13:00–17:00'] */
-    public function attachOpeningHours(Branch $branch, array $openingHours): void
-    {
-        foreach ($openingHours as $day => $full) {
-            $from = $to = '';
-            if ($full !== '') {
-                if (str_contains($full, ',')) {
-                    [$from, $to] = $this->mergeIntervals($full);
-                } else {
-                    [$from, $to] = $this->splitInterval($full);
-                }
-            }
-            $h = (new BranchOpeningHours())
-                ->setDay($day)
-                ->setOpenedFrom($from)
-                ->setOpenedUntil($to)
-                ->setFullTime($full)
-            ;
-            $branch->addBranchOpeningHour($h);
-        }
-    }
-
-    /** @param array<string,string> $openingHours e.g. ['Pondělí' => '08:00–12:00, 13:00–17:00'] */
-    public function syncOpeningHours(Branch $branch, array $openingHours): void
-    {
-        $existingByDay = [];
-        foreach ($branch->getBranchOpeningHours() as $h) {
-            $existingByDay[(string)$h->getDay()] = $h;
-        }
-
-        foreach ($openingHours as $day => $full) {
-            $from = $to = '';
-            if ($full !== '') {
-                if (str_contains($full, ',')) {
-                    [$from, $to] = $this->mergeIntervals($full);
-                } else {
-                    [$from, $to] = $this->splitInterval($full);
-                }
-            }
-
-            if (isset($existingByDay[$day])) {
-                $h = $existingByDay[$day];
-                unset($existingByDay[$day]);
-            } else {
-                $h = new BranchOpeningHours();
-                $branch->addBranchOpeningHour($h);
-            }
-
-            $h->setDay($day);
-            $h->setOpenedFrom($from);
-            $h->setOpenedUntil($to);
-            $h->setFullTime($full);
-        }
-
-        // Remove days no longer present
-        if (!empty($existingByDay)) {
-            foreach ($existingByDay as $obsolete) {
-                $branch->removeBranchOpeningHour($obsolete);
-            }
-        }
-    }
-
-    /** @return array{0:string,1:string} */
-    private function splitInterval(string $range): array
-    {
-        [$a, $b] = array_map('trim', explode('–', $range));
-        return [$a, $b];
-    }
-
-    /** @return array{0:string,1:string} */
-    private function mergeIntervals(string $csv): array
-    {
-        $parts = array_map('trim', explode(',', $csv));
-        [$from] = $this->splitInterval($parts[0]);
-        [, $to] = $this->splitInterval($parts[count($parts) - 1]);
-        return [$from, $to];
+        return "{$prefix}_{$lat}_{$lng}_{$suffix}";
     }
 
     protected function downloadStreamToFile(

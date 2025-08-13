@@ -10,6 +10,7 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
 use Greendot\EshopBundle\Entity\Project\BranchType;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
 use Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware;
 use Greendot\EshopBundle\Service\BranchImport\Importer\PostaImporter;
@@ -20,8 +21,6 @@ use Greendot\EshopBundle\Service\BranchImport\Importer\ProviderImporterInterface
 #[WithMonologChannel('branch_import')]
 final class ManageBranch
 {
-    use BranchImportTrait;
-
     private const BATCH_SIZE = 500;
 
     public function __construct(
@@ -48,79 +47,81 @@ final class ManageBranch
         $provider = $importer->key();
         $this->logger->info('Branch import started', ['provider' => $provider]);
 
-        // temporarily remove DBAL debug middleware
+        // temporarily remove DBAL debug middleware (for performance)
         $prevMiddlewares = $this->disableDbalDebugMiddleware();
 
-        // cache typeName => typeId; keep only scalars in memory
-        $typeIdCache = [];
-        $seenByType = [];
-        $stats = [
-            'provider' => $provider,
-            'processed' => 0,
-            'created' => 0,
-            'updated' => 0,
-        ];
-
-        $conn = $this->em->getConnection();
-        $conn->beginTransaction();
-
         try {
-            /** @var ProviderBranchData $row */
-            foreach ($importer->fetch() as $row) {
-                ++$stats['processed'];
+            $stats = $this->em->getConnection()->transactional(function () use ($importer, $provider) {
+                // cache typeName => typeId
+                $typeIdCache = [];
+                $seenByType = [];
+                $stats = [
+                    'provider' => $provider,
+                    'processed' => 0,
+                    'created' => 0,
+                    'updated' => 0,
+                ];
 
-                if (!isset($typeIdCache[$row->branchTypeName])) {
-                    $type = $this->getOrCreateBranchType($row->branchTypeName);
-                    if (null === $type->getId()) {
-                        $this->em->flush();
+                /** @var ProviderBranchData $row */
+                foreach ($importer->fetch() as $row) {
+                    ++$stats['processed'];
+
+                    if (!isset($typeIdCache[$row->branchTypeName])) {
+                        $type = $this->getOrCreateBranchType($row->branchTypeName);
+                        if ($type->getId() === null) {
+                            $this->em->persist($type);
+                            $this->em->flush();
+                        }
+                        $typeIdCache[$row->branchTypeName] = (int)$type->getId();
                     }
-                    $typeIdCache[$row->branchTypeName] = (int)$type->getId();
+
+                    $typeId = $typeIdCache[$row->branchTypeName];
+                    $typeRef = $this->em->getReference(BranchType::class, $typeId);
+
+                    $seenByType[$row->branchTypeName][] = $row->providerId;
+
+                    $branch = $this->branchRepository->findOneByProviderIdAndTypeId($row->providerId, $typeId);
+
+                    if ($branch) {
+                        $this->updateBranch($branch, $row);
+                        ++$stats['updated']; // count as updated even if unchanged
+                    } else {
+                        $branch = $this->createBranch($row, $typeRef);
+                        $this->em->persist($branch);
+                        ++$stats['created'];
+                    }
+
+                    if (($stats['processed'] % self::BATCH_SIZE) === 0) {
+                        $this->em->flush();
+                        $this->em->clear();
+                        $this->logger->debug('Batch flushed', $stats);
+                    }
                 }
-                $typeId = $typeIdCache[$row->branchTypeName];
-                $typeRef = $this->em->getReference(BranchType::class, $typeId);
 
-                $seenByType[$row->branchTypeName][] = $row->providerId;
+                $this->em->flush();
+                $this->em->clear();
 
-                $branch = $this->branchRepository->findOneByProviderIdAndTypeId($row->providerId, $typeId);
+                foreach ($seenByType as $typeName => $ids) {
+                    $typeId = $typeIdCache[$typeName];
+                    $typeRef = $this->em->getReference(BranchType::class, $typeId);
 
-                if ($branch) {
-                    $this->updateBranch($branch, $row);
-                    ++$stats['updated']; // Even if nothing changed, we count it as updated
-                } else {
-                    $branch = $this->createBranch($row, $typeRef);
-                    $this->em->persist($branch);
-                    ++$stats['created'];
+                    $count = $this->branchRepository->deactivateMissingByType(
+                        $typeRef,
+                        array_values(array_unique($ids)),
+                    );
+
+                    $this->logger->info('Deactivated missing branches', [
+                        'provider' => $provider, 'type' => $typeName, 'count' => $count,
+                    ]);
                 }
 
-                if (($stats['processed'] % self::BATCH_SIZE) === 0) {
-                    $this->em->flush();
-                    $this->em->clear();
-                    $this->logger->debug('Batch flushed', $stats);
-                }
-            }
-
-            $this->em->flush();
-            $this->em->clear();
-
-            foreach ($seenByType as $typeName => $ids) {
-                $typeId = $typeIdCache[$typeName];
-                $typeRef = $this->em->getReference(BranchType::class, $typeId);
-                $count = $this->branchRepository
-                    ->deactivateMissingByType($typeRef, array_values(array_unique($ids)))
-                ;
-
-                $this->logger->info('Deactivated missing branches', [
-                    'provider' => $provider, 'type' => $typeName, 'count' => $count,
-                ]);
-            }
-
-            $conn->commit();
+                return $stats;
+            });
 
             $this->logger->info('Branch import finished', $stats);
 
             return $stats;
         } catch (Throwable $e) {
-            $conn->rollBack();
             $this->logger->error('Branch import failed', [
                 'provider' => $provider,
                 'message' => $e->getMessage(),
@@ -154,6 +155,16 @@ final class ManageBranch
         $config->setMiddlewares($prev);
     }
 
+    private function getOrCreateBranchType(string $name): BranchType
+    {
+        $repo = $this->em->getRepository(BranchType::class);
+        $type = $repo->findOneBy(['name' => $name]);
+
+        if ($type) return $type;
+
+        return (new BranchType())->setName($name);
+    }
+
     private function createBranch(ProviderBranchData $d, BranchType $type): Branch
     {
         $b = (new Branch())
@@ -171,12 +182,12 @@ final class ManageBranch
             ->setTransportation($this->transportationByName($d->transportationName))
         ;
 
-        $this->attachOpeningHours($b, $d->openingHours);
+        BranchOpeningHoursHelpers::attachOpeningHours($b, $d->openingHours);
 
         return $b;
     }
 
-    private function updateBranch(Branch $branch, ProviderBranchData $d): Branch
+    private static function updateBranch(Branch $branch, ProviderBranchData $d): Branch
     {
         $branch
             ->setActive($d->active)
@@ -189,8 +200,31 @@ final class ManageBranch
             ->setDescription($d->description)
         ;
 
-        $this->syncOpeningHours($branch, $d->openingHours);
+        BranchOpeningHoursHelpers::syncOpeningHours($branch, $d->openingHours);
 
         return $branch;
+    }
+
+    private function transportationByName(string $name): ?Transportation
+    {
+        $name = trim($name);
+        if ($name === '') return null;
+
+        if (isset($this->transportationIdCache[$name])) {
+            return $this->em->getReference(Transportation::class, $this->transportationIdCache[$name]);
+        }
+
+        // Fetch only the scalar ID — no entity hydration, no listeners
+        $id = $this->em->getConnection()->fetchOne(
+            'SELECT id FROM transportation WHERE name = :name LIMIT 1',
+            ['name' => $name],
+        );
+
+        if ($id === false) return null;
+
+        $id = (int)$id;
+        $this->transportationIdCache[$name] = $id;
+
+        return $this->em->getReference(Transportation::class, $id);
     }
 }

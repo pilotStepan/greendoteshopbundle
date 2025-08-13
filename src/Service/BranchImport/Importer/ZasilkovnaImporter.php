@@ -7,14 +7,13 @@ use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
-use Greendot\EshopBundle\Service\BranchImport\BranchImportTrait;
 
 #[WithMonologChannel('branch_import')]
 final class ZasilkovnaImporter implements ProviderImporterInterface
 {
     use BranchImportTrait;
 
-    public const SUPPORTED_COUNTRIES = ['cz', 'sk'];
+    public const SUPPORTED_COUNTRIES = ['cz', /*'sk'*/];
     public const API_URL = 'http://www.zasilkovna.cz/api/v4/41494564a70d6de6/branch.xml';
 
     public function __construct(

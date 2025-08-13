@@ -8,7 +8,6 @@ use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
-use Greendot\EshopBundle\Service\BranchImport\BranchImportTrait;
 
 #[WithMonologChannel('branch_import')]
 final class BalikovnaImporter implements ProviderImporterInterface
@@ -37,7 +36,7 @@ final class BalikovnaImporter implements ProviderImporterInterface
             foreach ($this->streamXmlElements(self::API_URL, 'row') as $row) {
                 $d = new ProviderBranchData();
                 $d->provider = 'balikovna';
-                $d->providerId = $this->providerIdFromCoords((string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84);
+                $d->providerId = $this->providerIdFromCoords('b', (string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84, (string)$row->TYP);
                 $d->branchTypeName = str_contains((string)$row->NAZEV, 'AlzaBox') ? 'AlzaBox' : ucfirst((string)$row->TYP);
                 $d->country = 'cz';
                 $d->zip = (string)$row->PSC;
