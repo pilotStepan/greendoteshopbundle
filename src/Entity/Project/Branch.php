@@ -19,8 +19,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['branch:write']],
     paginationEnabled: true
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','isActive'  => 'exact'])]
-#[ApiFilter(SearchFilter::class, properties: ['transportation' => "exact"])]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','isActive' => 'exact', 'transportation' => 'exact', 'BranchType.id' => 'exact', 'transportation.groups.id' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: [])]
 #[ApiFilter(BoundingBoxFilter::class)]
 class Branch
 {
