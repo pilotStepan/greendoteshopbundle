@@ -1,19 +1,17 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport\Importer;
+namespace Greendot\EshopBundle\Service\Imports\Branch;
 
 use Generator;
 use XMLReader;
 use SimpleXMLElement;
 use RuntimeException;
-use function dirname;
-use function basename;
 
 trait BranchImportTrait
 {
     private array $transportationIdCache = [];
 
-    public const DAYS_CZ = [
+    protected const DAYS_CZ = [
         'monday' => 'Pondělí', 'tuesday' => 'Úterý', 'wednesday' => 'Středa',
         'thursday' => 'Čtvrtek', 'friday' => 'Pátek', 'saturday' => 'Sobota', 'sunday' => 'Neděle',
     ];
@@ -50,7 +48,7 @@ trait BranchImportTrait
         }
     }
 
-    public function providerIdFromCoords(string $prefix, string $x, string $y, string $suffix = ''): string
+    protected function providerIdFromCoords(string $prefix, string $x, string $y, string $suffix = ''): string
     {
         $lat = number_format((float)$x, 6, '.', '');
         $lng = number_format((float)$y, 6, '.', '');

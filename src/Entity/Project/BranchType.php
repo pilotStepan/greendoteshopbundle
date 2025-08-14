@@ -2,25 +2,30 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use Greendot\EshopBundle\Repository\Project\BranchTypeRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiResource;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\Repository\Project\BranchTypeRepository;
 
 #[ORM\Entity(repositoryClass: BranchTypeRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['branch_type:read']],
+    denormalizationContext: ['groups' => ['branch_type:write']],
+    paginationEnabled: false
+)]
 class BranchType
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['branch:read', 'branch:write'])]
+    #[Groups(['branch_type:read', 'branch_type:write', 'branch:read', 'branch:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['branch_type:read', 'branch_type:write'])]
     private ?string $name = null;
-
-
 
     /**
      * @var Collection<int, Branch>
@@ -29,7 +34,7 @@ class BranchType
     private Collection $Branch;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['branch:read', 'branch:write'])]
+    #[Groups(['branch_type:read', 'branch_type:write', 'branch:read', 'branch:write'])]
     private ?string $icon = null;
 
     public function __construct()
@@ -53,7 +58,6 @@ class BranchType
 
         return $this;
     }
-
 
 
     /**

@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use Greendot\EshopBundle\ApiResource\BoundingBoxFilter;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -20,6 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 )]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','isActive'  => 'exact'])]
 #[ApiFilter(SearchFilter::class, properties: ['transportation' => "exact"])]
+#[ApiFilter(BoundingBoxFilter::class)]
 class Branch
 {
     #[ORM\Id]

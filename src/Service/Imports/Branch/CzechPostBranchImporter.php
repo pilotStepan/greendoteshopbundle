@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\BranchImport\Importer;
+namespace Greendot\EshopBundle\Service\Imports\Branch;
 
 use Throwable;
 use SimpleXMLElement;
@@ -10,18 +10,19 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
 
 #[WithMonologChannel('branch_import')]
-final class BalikovnaImporter implements ProviderImporterInterface
+final class CzechPostBranchImporter implements ProviderImporterInterface
 {
     use BranchImportTrait;
 
-    public const API_URL = 'http://napostu.ceskaposta.cz/vystupy/balikovny.xml';
+    private const PROVIDER_KEY = 'czechpost';
+    private const API_URL = 'http://napostu.ceskaposta.cz/vystupy/balikovny.xml';
 
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
     ) {}
 
-    public function key(): string { return 'balikovna'; }
+    public function key(): string { return self::PROVIDER_KEY; }
 
     public function downloadTo(string $filePath): bool
     {
@@ -34,26 +35,28 @@ final class BalikovnaImporter implements ProviderImporterInterface
 
         try {
             foreach ($this->streamXmlElements(self::API_URL, 'row') as $row) {
+                if ((string)$row->TYP === 'depo') continue;
+
                 $d = new ProviderBranchData();
-                $d->provider = 'balikovna';
-                $d->providerId = $this->providerIdFromCoords('b', (string)$row->SOUR_X_WGS84, (string)$row->SOUR_Y_WGS84, (string)$row->TYP);
-                $d->branchTypeName = str_contains((string)$row->NAZEV, 'AlzaBox') ? 'AlzaBox' : ucfirst((string)$row->TYP);
+                $d->provider = self::PROVIDER_KEY;
+                $d->providerId = self::PROVIDER_KEY . '_' . $row->PSC; // PSC is a unique identifier
+                $d->branchTypeName = $this->resolveBranchTypeName($row);
                 $d->country = 'cz';
-                $d->zip = (string)$row->PSC;
+                $d->zip = $this->extractZip((string)$row->ADRESA);
                 $d->name = (string)$row->NAZEV;
                 $d->street = (string)$row->ADRESA;
-                $d->city = (string)$row->OKRES;
-                $d->lat = (float)$row->SOUR_X_WGS84;
-                $d->lng = (float)$row->SOUR_Y_WGS84;
-                $d->description = '';
-                $d->transportationName = 'Balíkovna';
+                $d->city = (string)$row->OBEC;
+                $d->lat = (float)$row->SOUR_Y_WGS84;
+                $d->lng = (float)$row->SOUR_X_WGS84;
+                $d->description = (string)$row->POPIS;
+                $d->transportationName = $this->resolveTransportationName($row);
                 $d->active = true; // feed only contains active branches
                 $d->openingHours = $this->extractOpeningHours($row->OTEV_DOBY ?? null);
 
                 yield $d;
             }
         } catch (Throwable $e) {
-            $this->logger->error('Stream read failed', ['provider' => 'balikovna', 'message' => $e->getMessage()]);
+            $this->logger->error('Stream read failed', ['provider' => self::PROVIDER_KEY, 'message' => $e->getMessage()]);
             return;
         }
     }
@@ -80,5 +83,32 @@ final class BalikovnaImporter implements ProviderImporterInterface
         }
 
         return $out;
+    }
+
+    private function resolveBranchTypeName(SimpleXMLElement $row): string
+    {
+        if (str_contains((string)$row->NAZEV, 'AlzaBox')) {
+            return 'AlzaBox';
+        } else {
+            return ucfirst((string)$row->TYP);
+        }
+    }
+
+    private function extractZip(string $address): string
+    {
+        if (preg_match('/\b(?:PSČ[:\s]*)?(\d{3})\s?(\d{2})\b/u', $address, $m)) {
+            return "{$m[1]}{$m[2]}";
+        } else {
+            return '';
+        }
+    }
+
+    private function resolveTransportationName(SimpleXMLElement $row): string
+    {
+        if ((string)$row->TYP === 'pošta') {
+            return 'Balík na poštu';
+        } else {
+            return 'Balíkovna';
+        }
     }
 }
