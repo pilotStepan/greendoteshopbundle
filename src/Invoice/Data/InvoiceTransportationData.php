@@ -8,5 +8,7 @@ class InvoiceTransportationData
         public string   $name,
         public float    $price,
         public float    $priceSecondary,  
+        public float    $priceNoVat,
+        public float    $priceNoVatSecondary,
     ) { }
 }

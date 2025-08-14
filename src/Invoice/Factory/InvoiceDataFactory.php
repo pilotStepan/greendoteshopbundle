@@ -197,16 +197,26 @@ final class InvoiceDataFactory
     private function buildTransportation(Purchase $purchase, Currency $currencyPrimary, Currency $currencySecondary) : InvoiceTransportationData
     {
         $transportation = $purchase->getTransportation();
-
-        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        
+        
+        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+                            ->setVatCalculationType(VatCalculationType::WithVAT);
         $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getTransportationPrice() ?? 0.0;
         $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getTransportationPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($currencyPrimary);
 
+        $this->purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT);
+        $priceNoVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getTransportationPrice() ?? 0.0;
+        $priceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getTransportationPrice() ?? 0.0;
+        $this->purchasePrice->setCurrency($currencyPrimary);
+
+
         return new InvoiceTransportationData(
-            name:               $transportation->getName(),
-            price:              $priceVatPrimary,
-            priceSecondary:     $priceVatSecondary,
+            name:                   $transportation->getName(),
+            price:                  $priceVatPrimary,
+            priceSecondary:         $priceVatSecondary,
+            priceNoVat:             $priceNoVatPrimary,
+            priceNoVatSecondary:    $priceNoVatSecondary,
         );
     }
 
@@ -214,16 +224,25 @@ final class InvoiceDataFactory
     {
         $paymentType = $purchase->getPaymentType();
 
+        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+                            ->setVatCalculationType(VatCalculationType::WithVAT);
         $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPaymentPrice() ?? 0;
         $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPaymentPrice() ?? 0;
         $this->purchasePrice->setCurrency($currencyPrimary);
 
+        $this->purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT);
+        $priceNoVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPaymentPrice() ?? 0;
+        $priceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPaymentPrice() ?? 0;
+        $this->purchasePrice->setCurrency($currencyPrimary);
+
         return new InvoicePaymentData(
-            name:               $paymentType->getName(),
-            price:              $priceVatPrimary,
-            priceSecondary:     $priceVatSecondary,
-            bankAccount:        $paymentType->getAccount(),
-            iban:               $paymentType->getIban(),
+            name:                   $paymentType->getName(),
+            price:                  $priceVatPrimary,
+            priceSecondary:         $priceVatSecondary,
+            priceNoVat:             $priceNoVatPrimary,
+            priceNoVatSecondary:    $priceNoVatSecondary,
+            bankAccount:            $paymentType->getAccount(),
+            iban:                   $paymentType->getIban(),
         );
     }
 
