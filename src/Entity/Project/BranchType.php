@@ -3,11 +3,13 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Greendot\EshopBundle\Repository\Project\BranchTypeRepository;
+use Greendot\EshopBundle\ApiResource\BranchTypeByTransportationGroupFilter;
 
 #[ORM\Entity(repositoryClass: BranchTypeRepository::class)]
 #[ApiResource(
@@ -15,6 +17,7 @@ use Greendot\EshopBundle\Repository\Project\BranchTypeRepository;
     denormalizationContext: ['groups' => ['branch_type:write']],
     paginationEnabled: false
 )]
+#[ApiFilter(BranchTypeByTransportationGroupFilter::class)]
 class BranchType
 {
     #[ORM\Id]
