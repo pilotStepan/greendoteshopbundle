@@ -142,7 +142,7 @@ class Transportation implements Translatable
      * @var Collection<int, Branch>
      */
     #[ORM\OneToMany(targetEntity: Branch::class, mappedBy: 'transportation', orphanRemoval: true)]
-    #[Groups(['transportation:read', 'purchase:read', 'transportation_group:read'])]
+//    #[Groups(['transportation:read', 'purchase:read', 'transportation_group:read'])]
     private Collection $branches;
 
     #[ORM\Column(type: 'string', length: 255, enumType: TransportationAPI::class)]

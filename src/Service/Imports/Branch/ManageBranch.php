@@ -191,6 +191,7 @@ final class ManageBranch
             ->setLat($d->lat)
             ->setLng($d->lng)
             ->setDescription($d->description)
+            ->setTransportation($this->transportationByName($d->transportationName))
         ;
 
         BranchOpeningHoursHelpers::syncOpeningHours($branch, $d->openingHours);

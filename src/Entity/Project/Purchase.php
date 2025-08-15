@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
 use Greendot\EshopBundle\Dto\PurchaseCheckoutInput;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
+use Greendot\EshopBundle\StateProcessor\CartStateProcessor;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -61,6 +62,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             denormalizationContext: ['groups' => ['purchase:write']],
             read: true,
             provider: PurchaseStateProvider::class,
+            processor: CartStateProcessor::class,
         ),
         new Patch(),
         new Put(),

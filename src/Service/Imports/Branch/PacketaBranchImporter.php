@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\Imports\Branch;
 
 use Throwable;
+use Exception;
 use SimpleXMLElement;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,7 +16,7 @@ final class PacketaBranchImporter implements ProviderImporterInterface
     use BranchImportTrait;
 
     private const PROVIDER_KEY = 'packeta';
-    private const SUPPORTED_COUNTRIES = ['cz', /*'sk'*/];
+    private const SUPPORTED_COUNTRIES = ['cz', 'sk'];
     private const API_URL = 'http://www.zasilkovna.cz/api/v4/41494564a70d6de6/branch.xml';
 
     public function __construct(
@@ -53,7 +54,7 @@ final class PacketaBranchImporter implements ProviderImporterInterface
                 $d->lat = (float)$b->latitude;
                 $d->lng = (float)$b->longitude;
                 $d->description = $this->buildDescription($b);
-                $d->transportationName = 'Zásilkovna';
+                $d->transportationName = $this->resolveTransportationName($b);
                 $d->active = ((int)$b->status->statusId) === 1;
                 $d->openingHours = $this->extractOpeningHours($b);
 
@@ -84,5 +85,19 @@ final class PacketaBranchImporter implements ProviderImporterInterface
             $description .= ($description !== '' ? ' ' : '') . $b->special;
         }
         return $description;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function resolveTransportationName(SimpleXMLElement $b): string
+    {
+        if ((string)$b->country === 'cz') {
+            return 'Zásilkovna';
+        } else if ((string)$b->country === 'sk') {
+            return 'Packeta na adresu - Slovensko';
+        } else {
+            throw new Exception('Unsupported country: ' . $b->country);
+        }
     }
 }

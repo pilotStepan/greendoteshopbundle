@@ -2,16 +2,17 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\ApiResource\BoundingBoxFilter;
-use Greendot\EshopBundle\Repository\Project\BranchRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\ApiResource\BoundingBoxFilter;
+use Greendot\EshopBundle\Repository\Project\BranchRepository;
 
 #[ORM\Entity(repositoryClass: BranchRepository::class)]
 #[ApiResource(
@@ -19,15 +20,15 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['branch:write']],
     paginationEnabled: true
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','isActive' => 'exact', 'transportation' => 'exact', 'BranchType.id' => 'exact', 'transportation.groups.id' => 'exact'])]
-#[ApiFilter(SearchFilter::class, properties: [])]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'country' => 'exact', 'transportation' => 'exact', 'BranchType.id' => 'exact', 'transportation.groups.id' => 'exact'])]
+#[ApiFilter(BooleanFilter::class, properties: ['isActive'])]
 #[ApiFilter(BoundingBoxFilter::class)]
 class Branch
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['branch:read', 'branch:write', 'purchase:read', 'transportation_group:read', 'transportation:read'])]
+    #[Groups(['branch:read', 'branch:write', 'purchase:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -78,7 +79,6 @@ class Branch
      * @var Collection<int, BranchOpeningHours>
      */
     #[ORM\OneToMany(targetEntity: BranchOpeningHours::class, mappedBy: 'branch', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['branch:read', 'branch:write'])]
     private Collection $BranchOpeningHours;
 
     #[ORM\ManyToOne(targetEntity: Transportation::class, inversedBy: 'branches')]
@@ -302,7 +302,7 @@ class Branch
         return $this;
     }
 
-    #[Groups(['branch:read', 'transportation:read', 'purchase:read', 'transportation_group:read'])]
+    #[Groups(['branch:read', 'purchase:read'])]
     public function getTextAddress(): string
     {
         $address = array_filter([
@@ -310,7 +310,7 @@ class Branch
             $this->street,
             $this->city,
             $this->zip,
-            $this->country
+            $this->country,
         ]);
         return implode(", ", $address);
     }
