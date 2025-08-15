@@ -94,6 +94,7 @@ class PacketeryParcel implements ParcelServiceInterface
 
         // TODO: check that calculation types for value and cod correct
 
+        //! max 10,000 czk/400 eur
         // calculate parcel value
         $value = (clone $purchasePriceCalculator)
             ->setVatCalculationType(VatCalculationType::WithVAT)
@@ -103,6 +104,8 @@ class PacketeryParcel implements ParcelServiceInterface
 
 
         // calculate cash on delivery (null if cash on delivery payment not wanted)
+        // TODO: is vat-exempted
+        //* this is automatically converted to the countrys currency by Packeta, and will be payed to sender in CZK
         $cod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY
             ? $purchasePriceCalculator
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
@@ -110,8 +113,20 @@ class PacketeryParcel implements ParcelServiceInterface
                 ->getPrice()
             : null;
 
+
+        // TODO: figure out how to determine currency
+        //* brobably best to always use CZ, but idk
+        $currency = 'CZK'   ;
+
         // TODO: make weight, is required
-        
+        // see "2 Parameters of the Shipment" on https://www.packeta.com/general-terms-conditions        
+
+
+        //TODO: is adult content a concern?
+
+        //TODO: security https://docs.packeta.com/docs/api-reference/data-structures#security
+
+        // docs: https://docs.packeta.com/docs/api-reference/data-structures#packetattributes
         return  [
             'apiPassword' => $purchase->getTransportation()->getSecretKey(),
             'packetAttributes' => [
@@ -123,7 +138,8 @@ class PacketeryParcel implements ParcelServiceInterface
                 'addressId' => $purchase->getTransportation()->getToken(),
                 'value' => $value, 
                 'eshop' => 'yogashop',
-                ...($cod !== null ? ['cod' => $cod] : [])
+                ...($cod !== null ? ['cod' => $cod] : []),
+                'currency' => $currency,
                 
             ],
         ];
