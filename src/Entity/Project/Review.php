@@ -68,7 +68,6 @@ class Review
     private ?int $stars;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    #[Groups(['review:read', 'review:write'])]
     private bool $is_approved;
 
     #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'reviews')]

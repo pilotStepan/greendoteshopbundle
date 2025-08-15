@@ -2,10 +2,10 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Greendot\EshopBundle\Entity\Project\Review;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\Review;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 class ReviewRepository extends ServiceEntityRepository
 {
@@ -20,7 +20,8 @@ class ReviewRepository extends ServiceEntityRepository
 
         return $queryBuilder
             ->andWhere(sprintf('%s.Product = :productId', $alias))
-            ->setParameter('productId', $productId);
+            ->setParameter('productId', $productId)
+        ;
     }
 
     /**
@@ -38,7 +39,9 @@ class ReviewRepository extends ServiceEntityRepository
             ->resetDQLPart('orderBy')
             ->resetDQLPart('join')
             ->select('r.stars AS stars', 'COUNT(DISTINCT r.id) AS total')
-            ->groupBy('r.stars');
+            ->andWhere('r.is_approved = true')
+            ->groupBy('r.stars')
+        ;
 
         $rows = $distQB->getQuery()->getScalarResult();
 
@@ -61,8 +64,10 @@ class ReviewRepository extends ServiceEntityRepository
             ->resetDQLPart('join')
             ->select(
                 'COUNT(DISTINCT r.id) AS cnt',
-                'SUM(r.stars) AS sumStars'
-            );
+                'SUM(r.stars) AS sumStars',
+            )
+            ->andWhere('r.is_approved = true')
+        ;
 
         $result = $avgQB->getQuery()->getScalarResult()[0];
         $count = (int)$result['cnt'];
