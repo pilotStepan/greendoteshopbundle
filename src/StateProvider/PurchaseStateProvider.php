@@ -20,7 +20,8 @@ readonly class PurchaseStateProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): ?Purchase
     {
         $purchase = $this->purchaseRepository->findOneBySession('purchase');
-        if (!$purchase) throw new HttpException(Response::HTTP_NO_CONTENT, 'No purchase in session');;
+        if (!$purchase) return null;
+        // if (!$purchase) throw new HttpException(Response::HTTP_NO_CONTENT, 'No purchase in session');;
 
         $this->managePurchase->preparePrices($purchase);
 
