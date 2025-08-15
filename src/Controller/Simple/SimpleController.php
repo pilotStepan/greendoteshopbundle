@@ -2,11 +2,11 @@
 
 namespace Greendot\EshopBundle\Controller\Simple;
 
-use Greendot\EshopBundle\Service\PasswordResetService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\Service\PasswordResetService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/simple/api', name: 'simple_api_')]
 class SimpleController extends AbstractController

@@ -2,19 +2,19 @@
 
 namespace Greendot\EshopBundle\Controller;
 
-use Greendot\EshopBundle\Form\ChangePasswordFormType;
-use Greendot\EshopBundle\Form\ResetPasswordRequestFormType;
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Service\PasswordResetService;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Form\ChangePasswordFormType;
+use Greendot\EshopBundle\Service\PasswordResetService;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Greendot\EshopBundle\Form\ResetPasswordRequestFormType;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
-use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
 #[Route('/reset-password', name: '', priority: 99)]
 class ResetPasswordController extends AbstractController
@@ -24,10 +24,8 @@ class ResetPasswordController extends AbstractController
     public function __construct(
         private readonly ResetPasswordHelperInterface $resetPasswordHelper,
         private readonly EntityManagerInterface       $entityManager,
-        private readonly PasswordResetService         $passwordResetService
-    )
-    {
-    }
+        private readonly PasswordResetService         $passwordResetService,
+    ) {}
 
     /**
      * Display & process form to request a password reset.
@@ -97,7 +95,7 @@ class ResetPasswordController extends AbstractController
             $this->addFlash('reset_password_error', sprintf(
                 '%s - %s',
                 $translator->trans(ResetPasswordExceptionInterface::MESSAGE_PROBLEM_VALIDATE, [], 'ResetPasswordBundle'),
-                $translator->trans($e->getReason(), [], 'ResetPasswordBundle')
+                $translator->trans($e->getReason(), [], 'ResetPasswordBundle'),
             ));
 
             return $this->redirectToRoute('app_forgot_password_request');
@@ -114,7 +112,7 @@ class ResetPasswordController extends AbstractController
             // Encode(hash) the plain password, and set it.
             $encodedPassword = $passwordHasher->hashPassword(
                 $user,
-                $form->get('plainPassword')->getData()
+                $form->get('plainPassword')->getData(),
             );
 
             $user->setPassword($encodedPassword);
@@ -124,7 +122,7 @@ class ResetPasswordController extends AbstractController
             $this->cleanSessionAfterReset();
             $this->addFlash(
                 'success',
-                'Vaše heslo bylo úspěšně změněno'
+                'Vaše heslo bylo úspěšně změněno',
             );
             return $this->redirectToRoute('web_homepage');
         }

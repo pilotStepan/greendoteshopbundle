@@ -2,14 +2,14 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use RuntimeException;
 use Greendot\EshopBundle\Event\PasswordResetRequestedEvent;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
-use RuntimeException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
-use SymfonyCasts\Bundle\ResetPassword\Exception\TooManyPasswordRequestsException;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
+use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
+use SymfonyCasts\Bundle\ResetPassword\Exception\TooManyPasswordRequestsException;
 
 /**
  * Service for handling password reset functionality.
@@ -20,9 +20,7 @@ readonly class PasswordResetService
         private ClientRepository             $clientRepository,
         private ResetPasswordHelperInterface $resetPasswordHelper,
         private EventDispatcherInterface     $dispatcher,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Handles a password-reset request for the given e-mail address.

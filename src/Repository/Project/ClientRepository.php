@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @method Client|null find($id, $lockMode = null, $lockVersion = null)
@@ -26,6 +26,7 @@ class ClientRepository extends ServiceEntityRepository
             ->andWhere('c.is_anonymous = false')
             ->setParameter('email', $email)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getOneOrNullResult()
+        ;
     }
 }

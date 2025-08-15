@@ -41,13 +41,9 @@ class FacebookAuthenticator extends OAuth2Authenticator
             new UserBadge($accessToken->getToken(), function () use ($accessToken, $client) {
                 /** @var FacebookUser $facebookUser */
                 $facebookUser = $client->fetchUserFromToken($accessToken);
-
                 $email = $facebookUser->getEmail();
 
-                $existingUser = $this->entityManager->getRepository(Client::class)
-                    ->findOneBy(['mail' => $email])
-                ;
-
+                $existingUser = $this->entityManager->getRepository(Client::class)->findNonAnonymousByEmail($email);
                 if ($existingUser) return $existingUser;
 
                 $user = new Client();

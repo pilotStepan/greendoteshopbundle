@@ -41,13 +41,9 @@ class GoogleAuthenticator extends OAuth2Authenticator
             new UserBadge($accessToken->getToken(), function () use ($accessToken, $client) {
                 /** @var GoogleUser $googleUser */
                 $googleUser = $client->fetchUserFromToken($accessToken);
-
                 $email = $googleUser->getEmail();
 
-                $existingUser = $this->entityManager->getRepository(Client::class)
-                    ->findOneBy(['mail' => $email])
-                ;
-
+                $existingUser = $this->entityManager->getRepository(Client::class)->findNonAnonymousByEmail($email);
                 if ($existingUser) return $existingUser;
 
                 $user = new Client();
