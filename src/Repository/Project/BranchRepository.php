@@ -38,13 +38,11 @@ class BranchRepository extends ServiceEntityRepository
         return $qb->getQuery()->execute();
     }
 
-    public function findOneByProviderIdAndTypeId(string $providerId, int $typeId): ?Branch
+    public function findOneByProviderId(string $providerId): ?Branch
     {
         return $this->createQueryBuilder('b')
             ->where('b.provider_id = :pid')
-            ->andWhere('IDENTITY(b.BranchType) = :tid')
             ->setParameter('pid', $providerId)
-            ->setParameter('tid', $typeId)
             ->getQuery()
             ->getOneOrNullResult()
         ;

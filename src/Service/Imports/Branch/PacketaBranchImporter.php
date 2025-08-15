@@ -95,7 +95,7 @@ final class PacketaBranchImporter implements ProviderImporterInterface
         if ((string)$b->country === 'cz') {
             return 'Zásilkovna';
         } else if ((string)$b->country === 'sk') {
-            return 'Packeta na adresu - Slovensko';
+            return 'Packeta na výdejní místo - Slovensko';
         } else {
             throw new Exception('Unsupported country: ' . $b->country);
         }

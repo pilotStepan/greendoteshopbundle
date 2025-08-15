@@ -73,7 +73,7 @@ final class ManageBranch
 
                     $seenByType[$row->branchTypeName][] = $row->providerId;
 
-                    $branch = $this->branchRepository->findOneByProviderIdAndTypeId($row->providerId, $typeId);
+                    $branch = $this->branchRepository->findOneByProviderId($row->providerId);
 
                     if ($branch) {
                         $this->updateBranch($branch, $row);
