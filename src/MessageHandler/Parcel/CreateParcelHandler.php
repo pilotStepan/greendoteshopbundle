@@ -43,6 +43,7 @@ readonly class CreateParcelHandler
 
         if (!$purchase) {
             // Permanent: do not retry
+            $this->logger->error('Purchase not found', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
@@ -59,8 +60,8 @@ readonly class CreateParcelHandler
         // Resolve service
         $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
         if (!$parcelService) {
-            $this->logger->warning('No parcel service available; skipping', ['purchaseId' => $purchaseId]);
-            return;
+            $this->logger->error('No parcel service available', ['purchaseId' => $purchaseId]);
+            throw new UnrecoverableMessageHandlingException("No parcel service available (Purchase ID: $purchaseId)");
         }
 
         // Create parcel

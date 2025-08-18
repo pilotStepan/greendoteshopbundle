@@ -46,7 +46,8 @@ readonly class UpdateDeliveryStatusHandler
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
-            // Permanent: don’t retry forever
+            // Permanent: do not retry
+            $this->logger->error('Purchase not found', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
@@ -122,7 +123,6 @@ readonly class UpdateDeliveryStatusHandler
         if ($workflow->can($purchase, 'prepare_for_sending')) {
             $workflow->apply($purchase, 'prepare_for_sending');
         } else {
-            // Log errors but don't stop polling status
             $errors = array_map(
                 static fn($b) => $b->getMessage(),
                 iterator_to_array($workflow->buildTransitionBlockerList($purchase, 'prepare_for_sending')),
@@ -131,6 +131,7 @@ readonly class UpdateDeliveryStatusHandler
                 'purchaseId' => $purchase->getId(),
                 'errors' => $errors,
             ]);
+            throw new UnrecoverableMessageHandlingException("Cannot apply transition to prepare for sending (Purchase ID: {$purchase->getId()}");
         }
     }
 }

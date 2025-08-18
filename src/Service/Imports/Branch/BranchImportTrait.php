@@ -9,8 +9,6 @@ use RuntimeException;
 
 trait BranchImportTrait
 {
-    private array $transportationIdCache = [];
-
     protected const DAYS_CZ = [
         'monday' => 'Pondělí', 'tuesday' => 'Úterý', 'wednesday' => 'Středa',
         'thursday' => 'Čtvrtek', 'friday' => 'Pátek', 'saturday' => 'Sobota', 'sunday' => 'Neděle',
@@ -46,13 +44,6 @@ trait BranchImportTrait
         } finally {
             $reader->close();
         }
-    }
-
-    protected function providerIdFromCoords(string $prefix, string $x, string $y, string $suffix = ''): string
-    {
-        $lat = number_format((float)$x, 6, '.', '');
-        $lng = number_format((float)$y, 6, '.', '');
-        return "{$prefix}_{$lat}_{$lng}_{$suffix}";
     }
 
     protected function downloadStreamToFile(
