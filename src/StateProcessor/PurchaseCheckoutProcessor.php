@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\StateProcessor;
 
+use Exception;
+use LogicException;
 use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
 use ApiPlatform\Metadata\Operation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
@@ -47,13 +50,13 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             $violations = $this->validator->validate($data);
             if ($violations->count()) {
                 $msg = (string)$violations;
-                throw new \InvalidArgumentException($msg);
+                throw new InvalidArgumentException($msg);
             }
 
             // 1. Get existing purchase
             $purchase = $this->em->getRepository(Purchase::class)->findOneBySession();
             if (!$purchase) {
-                throw new \InvalidArgumentException('Košík nenalezen');
+                throw new InvalidArgumentException('Košík nenalezen');
             }
 
             // 2. Validate provided consents exist and store them
@@ -79,7 +82,9 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
                 // 6. Notes
                 foreach ($data->notes as $noteText) {
-                    $purchase->addDiscussion($this->createDiscussion($noteText));
+                    $purchase->addDiscussion(
+                        $this->createDiscussion($noteText),
+                    );
                 }
 
                 // 7. Workflow transitions
@@ -95,10 +100,10 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             $redirectUrl = $this->buildRedirectUrl($purchase);
             return new JsonResponse(['redirect' => $redirectUrl], 200);
 
-        } catch (\LogicException $e) {
+        } catch (LogicException $e) {
             // Validation errors or other invalid arguments
             return new JsonResponse(['errors' => [$e->getMessage()]], 400);
-        } catch (\Exception|ORMException $e) {
+        } catch (Exception|ORMException $e) {
             // General exceptions or ORM errors
             $this->logger->error('Unexpected exception', ['exception' => $e]);
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
@@ -110,7 +115,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         $consent = $this->em->find(Consent::class, $id);
 
         if (!$consent) {
-            throw new \InvalidArgumentException(sprintf('Souhlas %d nebyl nalezen', $id));
+            throw new InvalidArgumentException(sprintf('Souhlas %d nebyl nalezen', $id));
         }
 
         return $consent;
@@ -179,7 +184,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 static fn($b) => $b->getMessage(),
                 iterator_to_array($workflow->buildTransitionBlockerList($purchase, $transition)),
             );
-            throw new \LogicException(json_encode($errors));
+            throw new LogicException(json_encode($errors));
         }
 
         // If it should be paid via gateway, apply transition silently (without notifications)
@@ -203,7 +208,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 $this->managePurchase->preparePrices($purchase);
             }
             return $this->gatewayProvider->getByPurchase($purchase)->getPayLink($purchase);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
             return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
         }

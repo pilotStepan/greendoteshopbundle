@@ -132,18 +132,18 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     public function onPrepareForPickup(Event $event): void
     {
         /** @var Purchase $purchase */
-        $purchase = $event->getSubject();
+        // $purchase = $event->getSubject();
     }
 
     public function onSend(Event $event): void
     {
         /** @var Purchase $purchase */
-        $purchase = $event->getSubject();
+        // $purchase = $event->getSubject();
     }
 
     public function onPickUp(Event $event): void
     {
         /** @var Purchase $purchase */
-        $purchase = $event->getSubject();
+        // $purchase = $event->getSubject();
     }
 }

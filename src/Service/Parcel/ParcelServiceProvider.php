@@ -27,7 +27,7 @@ readonly class ParcelServiceProvider
     /**
      * Retrieves the parcel service that supports the given transportation ID.
      *
-     * @param int $transportationAPI The transportationAPI to find a service for.
+     * @param TransportationAPI $transportationAPI The transportationAPI to find a service for.
      * @return ?ParcelServiceInterface The parcel service that supports the transportation ID.
      */
     public function get(TransportationAPI $transportationAPI): ?ParcelServiceInterface
