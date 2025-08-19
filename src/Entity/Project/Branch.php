@@ -20,7 +20,7 @@ use Greendot\EshopBundle\Repository\Project\BranchRepository;
     denormalizationContext: ['groups' => ['branch:write']],
     paginationEnabled: true
 )]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'country' => 'exact', 'transportation' => 'exact', 'BranchType.id' => 'exact', 'transportation.groups.id' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'country' => 'exact', 'transportation' => 'exact', 'transportation.id' => 'exact', 'BranchType.id' => 'exact', 'transportation.groups.id' => 'exact'])]
 #[ApiFilter(BooleanFilter::class, properties: ['isActive'])]
 #[ApiFilter(BoundingBoxFilter::class)]
 class Branch
