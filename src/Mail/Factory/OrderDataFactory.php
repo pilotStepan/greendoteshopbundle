@@ -236,8 +236,8 @@ final class OrderDataFactory
 
     private function isPaid(Purchase $purchase): bool
     {
-        // FIXME: not implemented yet. Should be evaluated outside of this factory
-        return false;
+        // Considering purchase is paid if it has invoice number set
+        return $purchase->getInvoiceNumber() !== null && $purchase->getInvoiceNumber() !== '';
     }
 
     private function canBePaid(Purchase $purchase): bool
