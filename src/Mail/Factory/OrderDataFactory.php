@@ -65,7 +65,7 @@ final class OrderDataFactory
             vatExempted: $purchase->isVatExempted(),
             qrCodeUri: $qr,
             payLink: $payLink,
-            trackingUrl: $this->buildTrackingUrl($purchase),
+            trackingUrl: $this->purchaseUrlGenerator->buildTrackingUrl($purchase),
             trackingNumber: $purchase->getTransportNumber(),
             purchaseNote: $purchaseNote,
             transportation: $transportation,
@@ -79,7 +79,6 @@ final class OrderDataFactory
             clientSectionUrl: $clientSectionUrl,
         );
     }
-
 
     /** @return array{Currency, Currency} */
     private function loadCurrencies(): array
@@ -257,14 +256,5 @@ final class OrderDataFactory
         // Don't allow to pay if cash on delivery
         $actionGroup = $purchase->getPaymentType()->getActionGroup();
         return $actionGroup !== PaymentTypeActionGroup::ON_DELIVERY;
-    }
-
-    private function buildTrackingUrl(Purchase $purchase): ?string
-    {
-        if (!$purchase->getTransportNumber()) {
-            return null;
-        }
-
-        return $purchase->getTransportation()->getStateUrl() . $purchase->getTransportNumber();
     }
 }

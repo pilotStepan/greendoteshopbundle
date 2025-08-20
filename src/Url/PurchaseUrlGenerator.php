@@ -49,4 +49,16 @@ final readonly class PurchaseUrlGenerator
 
         return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
     }
+
+    public function buildTrackingUrl(Purchase $purchase): ?string
+    {
+        if (!$purchase->getTransportNumber() || !$purchase->getTransportation()?->getStateUrl()) {
+            return null;
+        }
+
+        $stateUrl = rtrim($purchase->getTransportation()->getStateUrl(), '/');
+        $transportNumber = ltrim($purchase->getTransportNumber(), '/');
+
+        return $stateUrl . '/' . $transportNumber;
+    }
 }
