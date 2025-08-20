@@ -131,6 +131,10 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $name;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $internalNumber;
+
     #[ORM\ManyToOne(targetEntity: PaymentType::class, cascade: ['persist'], inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -432,6 +436,17 @@ class Purchase
     public function setName($name): void
     {
         $this->name = $name;
+    }
+
+    public function getInternalNumber(): ?string
+    {
+        return $this->internalNumber;
+    }
+
+    public function setInternalNumber($internalNumber): static
+    {
+        $this->internalNumber = $internalNumber;
+        return $this;
     }
 
     /**
