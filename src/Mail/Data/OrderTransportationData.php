@@ -11,5 +11,6 @@ class OrderTransportationData
         public string $description,
         public string $priceCzk,
         public string $priceEur,
+        public ?string $branchName,
     ) {}
 }
