@@ -9,7 +9,7 @@ class OrderTransportationData
         public string $country,
         public string $name,
         public string $description,
-        public string $priceVatCzk,
-        public string $priceVatEur,
+        public string $priceCzk,
+        public string $priceEur,
     ) {}
 }

@@ -6,6 +6,7 @@ class OrderData
 {
     public function __construct(
         public int                     $purchaseId,
+        public bool                    $vatExempted,
         public ?string                 $qrCodeUri,
         public ?string                 $payLink,
         public ?string                 $trackingUrl,
@@ -20,8 +21,8 @@ class OrderData
         /** @var 'czk'|'eur' */
         public string                  $primaryCurrency,
         public bool                    $paid,
-        public string                  $totalPriceVatCzk,
-        public string                  $totalPriceVatEur,
+        public string                  $totalPriceCzk,
+        public string                  $totalPriceEur,
         public string                  $clientSectionUrl,
     ) {}
 }
