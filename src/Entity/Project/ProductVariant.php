@@ -51,12 +51,6 @@ class ProductVariant implements Translatable
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: PurchaseProductVariant::class)]
     private $orderProductVariants;
 
-    /*
-     * TO-DO remove
-     */
-    #[ORM\ManyToOne(targetEntity: Colour::class, inversedBy: 'productVariants')]
-    #[Groups(['product_variant:read', 'product_variant:write', "SearchProductResultApiModel"])]
-    private $colour;
 
     #[ORM\OneToMany(targetEntity: Video::class, mappedBy: 'productVariant')]
     #[Groups(['product_variant:read', 'product_variant:write', "SearchProductResultApiModel"])]
@@ -185,18 +179,6 @@ class ProductVariant implements Translatable
     public function setProduct(?Product $product): self
     {
         $this->product = $product;
-
-        return $this;
-    }
-
-    public function getColour(): ?Colour
-    {
-        return $this->colour;
-    }
-
-    public function setColour(?Colour $colour): self
-    {
-        $this->colour = $colour;
 
         return $this;
     }
