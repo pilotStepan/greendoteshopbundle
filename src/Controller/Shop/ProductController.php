@@ -21,6 +21,7 @@ use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -85,7 +86,11 @@ class ProductController extends AbstractController
     }
 
     #[Route('/{slug}-p/add', name: 'add_product', priority: 2, requirements: ['slug' => '[A-Za-z0-9\-]+'])]
-    public function add(Product $product, Session $session): Response
+    public function add(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        Product $product,
+        Session $session
+    ): Response
     {
         if ($session->has('purchase')) {
             $purchase = $session->get('purchase');
