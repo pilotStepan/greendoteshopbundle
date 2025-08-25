@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -21,6 +22,7 @@ class CategoryController extends AbstractController
 {
     #[Route('/{slug}_c', name: 'shop_category')]
     public function index(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category           $category,
         ProductRepository  $productRepository,
         PaginatorInterface $paginator,

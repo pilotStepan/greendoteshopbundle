@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Repository\Project\LabelRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -71,7 +72,12 @@ class BlogController extends AbstractController
     }
 
     #[Route(path: '/blog/{slug}', name: 'web_blog_detail', priority: 2)]
-    public function blogDetail(Category $category, LabelRepository $labelRepository, CategoryRepository $categoryRepository): Response
+    public function blogDetail(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        Category $category,
+        LabelRepository $labelRepository,
+        CategoryRepository $categoryRepository
+    ): Response
     {
 
         $blogLabels     = $labelRepository->findBy(['labelType' => 3]);

@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -23,7 +24,10 @@ class SupplierController extends AbstractController
     }
 
     #[Route('/{slug}', name: 'shop_supplier_list')]
-    public function producerList(Category $category, ProducerRepository $producerRepository): Response
+    public function producerList(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        Category $category,
+        ProducerRepository $producerRepository): Response
     {
         return $this->render('shop/supplier/suppliers.html.twig', [
             'suppliers' => $producerRepository->findAll(),
@@ -33,7 +37,10 @@ class SupplierController extends AbstractController
     }
 
     #[Route('/{slug}-v', name: 'shop_producer_products', priority: 2)]
-    public function producerProducts(Producer $producer): Response
+    public function producerProducts(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        Producer $producer
+    ): Response
     {
 
 

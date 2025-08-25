@@ -17,7 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Greendot\EshopBundle\Service\dynamicReplacement;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class PageController extends AbstractController implements WebController
@@ -29,45 +28,19 @@ class PageController extends AbstractController implements WebController
     )]
     public function getPage(
         Category               $category,
-        CategoryRepository     $categoryRepository,
         UrlGeneratorInterface  $urlGenerator,
-        Request                $request,
-        EntityManagerInterface $entityManager,
-        dynamicReplacement     $dynamicReplacement,
-        CategoryInfoGetter     $categoryInfoGetter): Response
+        ): Response
     {
-        $contactMessage = new ContactMessage();
-        $form           = $this->createForm(ContactFormType::class, $contactMessage, ['attr' => ['class' => 'contact-form']]);
-        $form->handleRequest($request);
-        if ($form->isSubmitted()) {
-            if ($form->isValid()) {
-                $entityManager->persist($contactMessage);
-                $entityManager->flush();
-                $this->addFlash(
-                    'success',
-                    'Zpráva byla odeslána!'
-                );
-                return new RedirectResponse($category->getSlug());
-            } else {
-                $this->addFlash(
-                    'warning',
-                    'Error'
-                );
-                return new RedirectResponse($category->getSlug());
-            }
-        }
         if ($category !== null) {
             if ($category->getTitle() === null || $category->getTitle() === '') {
                 $title = $category->getName();
             } else {
                 $title = $category->getTitle();
             }
-            $replaced_content = $dynamicReplacement->dynamicCategoryReplace($category->getHtml());
             return $this->render('web/pages/empty_page.html.twig', [
                 'title'            => $title,
                 'category'         => $category,
-                'contact_form'     => $form->createView(),
-                'replaced_content' => $replaced_content
+                'replaced_content' => $category->getHtml()
             ]);
         } else {
             return new RedirectResponse($urlGenerator->generate('web_homepage'));

@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 
 readonly class CurrencyResolver
 {
@@ -19,7 +20,13 @@ readonly class CurrencyResolver
      */
     public function resolve(): Currency
     {
-        $sessionCurrency = $this->requestStack->getSession()->get('currency');
+        try {
+            $session = $this->requestStack->getSession();
+        } catch (SessionNotFoundException $e) {
+            $session = null;
+        }
+
+        $sessionCurrency = $session?->get('currency');
 
         if ($sessionCurrency instanceof Currency) {
             return $sessionCurrency;
