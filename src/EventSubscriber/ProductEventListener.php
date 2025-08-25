@@ -50,7 +50,7 @@ class ProductEventListener
 
         $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
         if (!isset($product->getCalculatedPrices()['priceNoVat'])) {
-            dd($product);
+            // dd($product);
             $product->setPriceFrom(0);
         }
         else
