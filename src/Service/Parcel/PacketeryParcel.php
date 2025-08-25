@@ -114,8 +114,7 @@ class PacketeryParcel implements ParcelServiceInterface
             : null;
 
 
-        // TODO: figure out how to determine currency
-        //* brobably best to always use CZ, but idk
+        // TODO: based on country
         $currency = 'CZK'   ;
 
         // TODO: make weight, is required
