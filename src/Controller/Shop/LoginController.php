@@ -70,7 +70,7 @@ class LoginController extends AbstractController
     */
 
     // this reqisters the route. Symfony overrides it so it can be empty
-    #[Route('/api/anonymous_login_check', name: 'anonymous_login_check')]
+    #[Route('/api/anonymous_login_check', name: 'api_anonymous_login_check')]
     public function anonymousLoginCheck(): void
     { }
 

@@ -36,7 +36,7 @@ class SimpleController extends AbstractController
     }
 
     // this reqisters the route. Symfony overrides it so it can be empty
-    #[Route('/simple/api/anonymous_login_check', name: 'simple_anonymous_login_check')]
+    #[Route('/simple/api/anonymous_login_check', name: 'simple_api_anonymous_login_check')]
     public function anonymousLoginCheck(): void
     { }
 }
