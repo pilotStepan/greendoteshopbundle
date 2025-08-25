@@ -242,22 +242,22 @@ readonly class ManageMails
     }
 
 
-    private function setLocaleAndRefreshEntities(Purchase $purchase): void
-    {
-        if (!$this->requestStack->getCurrentRequest() || !$this->requestStack->getCurrentRequest()->getLocale()) {
-            $this->localeAware->setLocale('cs');
-
-            $entityManager = $this->managerRegistry->getManager();
-
-            $transportation = $this->refreshEntity($purchase->getTransportation(), 'cs');
-            $payment = $this->refreshEntity($purchase->getPaymentType(), 'cs');
-
-            $entityManager->refresh($purchase);
-
-            $purchase->setTransportation($transportation);
-            $purchase->setPaymentType($payment);
-        }
-    }
+//    private function setLocaleAndRefreshEntities(Purchase $purchase): void
+//    {
+//        if (!$this->requestStack->getCurrentRequest() || !$this->requestStack->getCurrentRequest()->getLocale()) {
+//            $this->localeAware->setLocale('cs');
+//
+//            $entityManager = $this->managerRegistry->getManager();
+//
+//            $transportation = $this->refreshEntity($purchase->getTransportation(), 'cs');
+//            $payment = $this->refreshEntity($purchase->getPaymentType(), 'cs');
+//
+//            $entityManager->refresh($purchase);
+//
+//            $purchase->setTransportation($transportation);
+//            $purchase->setPaymentType($payment);
+//        }
+//    }
 
     private function refreshEntity($entity, string $locale)
     {

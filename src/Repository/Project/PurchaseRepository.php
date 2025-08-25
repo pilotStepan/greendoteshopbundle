@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 
 /**
  * @method Purchase|null find($id, $lockMode = null, $lockVersion = null)
@@ -79,8 +80,14 @@ class PurchaseRepository extends ServiceEntityRepository
     public function findBySession(QueryBuilder $queryBuilder): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
-        $session = $this->requestStack->getCurrentRequest()->getSession();
-        if ($session->has('purchase')) {
+
+        try {
+            $session = $this->requestStack->getCurrentRequest()?->getSession();
+        } catch (SessionNotFoundException $e) {
+            $session = null;
+        }
+
+        if ($session?->has('purchase')) {
             $purchaseId = $session->get('purchase');
         } else {
             $purchaseId = 0;
@@ -95,8 +102,14 @@ class PurchaseRepository extends ServiceEntityRepository
     public function findOneBySession(): ?Purchase
     {
         $qb = $this->createQueryBuilder('p');
-        $session = $this->requestStack->getCurrentRequest()->getSession();
-        if ($session->has('purchase')) {
+
+        try {
+            $session = $this->requestStack->getCurrentRequest()?->getSession();
+        } catch (SessionNotFoundException $e) {
+            return null;
+        }
+
+        if ($session?->has('purchase')) {
             $purchaseId = $session->get('purchase');
             $qb->andWhere('p.id = :purchaseId')
                 ->setParameter('purchaseId', $purchaseId);
