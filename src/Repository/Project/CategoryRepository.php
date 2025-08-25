@@ -141,24 +141,36 @@ class CategoryRepository extends ServiceEntityRepository
         ];
     }
 
-    public function findMenuCategories(MenuType $menuType)
+    public function findMenuCategories(MenuType|int $menuType)
     {
+        $menuTypeId = $menuType instanceof MenuType ? $menuType->getId() : $menuType;
         return $this->createQueryBuilder('c')
-            ->leftJoin('c.menuType', 'mt')
             ->andWhere('c.isActive = :is_active')
             ->setParameter('is_active', 1)
+
             ->andWhere('c.id >= :val')
             ->setParameter('val', 2)
-            ->andWhere('mt.id = :menuType')
-            ->setParameter('menuType', $menuType->getId())
+
             ->leftJoin('c.categorySubCategories', 'a')
             ->andWhere('a is NULL')
-            ->orderBy('c.sequence', 'ASC')
+
+            ->leftJoin('c.menuType', 'mt')
+            ->andWhere('mt.menu_type = :menuTypeId')
+            ->setParameter('menuTypeId', $menuTypeId)
+
+            ->orderBy('mt.sequence', 'ASC')
             ->getQuery()
             ->getResult();
     }
 
-    public function findSubMenuCategories(Category $category, SubMenuType $menuType)
+    /**
+     * @param Category $category
+     * @param SubMenuType $menuType
+     * @param int[] $allowedCategoryTypes
+     * @param int[] $excludedCategoryTypes
+     * @return mixed
+     */
+    public function findSubMenuCategories(Category $category, SubMenuType $menuType, array $allowedCategoryTypes = [], array $excludedCategoryTypes = [])
     {
         $qb = $this->createQueryBuilder('c')
             ->leftJoin('c.subMenuType', 'mt')
@@ -179,11 +191,19 @@ class CategoryRepository extends ServiceEntityRepository
             ->andWhere('mt.id = :menuType')
             ->setParameter('menuType', $menuType->getId())
 
-            ->orderBy('c.sequence', 'ASC')
-            ->getQuery();
+            ->orderBy('c.sequence', 'ASC');
+
+        if ($allowedCategoryTypes){
+            $qb->andWhere('c.categoryType IN (:allowedCategoryTypes)')
+                ->setParameter('allowedCategoryTypes', $allowedCategoryTypes);
+        }
+        if ($excludedCategoryTypes){
+            $qb->andWhere('c.categoryType NOT IN (:excludedCategoryTypes)')
+                ->setParameter('excludedCategoryTypes', $excludedCategoryTypes);
+        }
 
         //dd($qb->getSQL());
-        return $qb->getResult();
+        return $qb->getQuery()->getResult();
     }
 
     public function findMenuCategoriesByMenuID($menu_id)

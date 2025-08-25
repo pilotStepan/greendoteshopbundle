@@ -26,9 +26,6 @@ use Symfony\Component\Validator\Constraints\Existence;
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 #[ORM\Table(name: 'p_category')]
 #[ApiResource(
-    normalizationContext: ['groups' => ['category:read']],
-    denormalizationContext: ['groups' => ['category:write']],
-    paginationEnabled: true,
     operations: [
         new GetCollection(),
         new GetCollection(
@@ -37,7 +34,10 @@ use Symfony\Component\Validator\Constraints\Existence;
             forceEager: false
         ),
         new Get(),
-    ]
+    ],
+    normalizationContext: ['groups' => ['category:read']],
+    denormalizationContext: ['groups' => ['category:write']],
+    paginationEnabled: true,
 )]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial', 'categoryProducts.product' => 'exact', 'categoryType.id' => 'exact'])]
 //#[ApiFilter(TranslationAwareSearchFilter::class)]
@@ -174,8 +174,8 @@ class Category implements Translatable
     #[Groups(['category_with_parents:read'])]
     private ?Upload $upload = null;
 
-    #[ORM\ManyToMany(targetEntity: MenuType::class, inversedBy: 'categories')]
-    private Collection|null $menuType = null;
+    #[ORM\OneToMany(mappedBy: 'category', targetEntity: CategoryMenuType::class)]
+    private Collection $menuType;
 
     #[ORM\ManyToMany(targetEntity: SubMenuType::class ,inversedBy: 'categories')]
     #[MaxDepth(1)]
@@ -185,6 +185,14 @@ class Category implements Translatable
     #[MaxDepth(1)]
     #[Groups(['category:read'])]
     private Collection $parameterGroupCategories;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $created_at = null;
+
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write'])]
+    private ?\DateTimeImmutable $published_at = null;
 
     public function __construct()
     {
@@ -671,25 +679,30 @@ class Category implements Translatable
     }
 
     /**
-     * @return Collection
+     * @return Collection<int, CategoryMenuType>
      */
     public function getMenuType(): Collection
     {
         return $this->menuType;
     }
 
-    public function addMenuType(MenuType $menuType): self
+    public function addMenuType(CategoryMenuType $menuType): self
     {
         if (!$this->menuType->contains($menuType)) {
-            $this->menuType[] = $menuType;
+            $this->menuType->add($menuType);
+            $menuType->setCategory($this);
         }
 
         return $this;
     }
-
-    public function removeMenuType(Label $menuType): self
+    public function removeMenuType(CategoryMenuType $menuType): static
     {
-        $this->menuType->removeElement($menuType);
+        if ($this->menuType->removeElement($menuType)) {
+            // set the owning side to null (unless already changed)
+            if ($menuType->getCategory() === $this) {
+                $menuType->setCategory(null);
+            }
+        }
 
         return $this;
     }
@@ -752,6 +765,30 @@ class Category implements Translatable
                 $parameterGroupCategory->setCategory(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(?\DateTimeImmutable $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getPublishedAt(): ?\DateTimeImmutable
+    {
+        return $this->published_at;
+    }
+
+    public function setPublishedAt(?\DateTimeImmutable $published_at): self
+    {
+        $this->published_at = $published_at;
 
         return $this;
     }

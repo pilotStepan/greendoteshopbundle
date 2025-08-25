@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\PaymentGateway;
 
-use Exception;
+use Throwable;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -29,7 +29,7 @@ interface PaymentGatewayInterface
      *
      * @param Purchase $purchase
      * @return string
-     * @throws Exception
+     * @throws Throwable
      */
     public function getPayLink(Purchase $purchase): string;
 
@@ -37,7 +37,7 @@ interface PaymentGatewayInterface
      * Verifies the payment result.
      *
      * @return object
-     * @throws Exception
+     * @throws Throwable
      */
     public function verifyLink(): object;
 }

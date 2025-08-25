@@ -2,39 +2,40 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Throwable;
+use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
-use Greendot\EshopBundle\Entity\Project\Currency;
+use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Entity\Project\Note;
-use Greendot\EshopBundle\Entity\Project\Payment;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
-use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Form\ClientFormType;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
-use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Workflow\Registry;
+use Greendot\EshopBundle\Entity\Project\ClientAddress;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PurchaseController extends AbstractController
 {
-
-    #[Route('/api/client/submit', name: 'api_client_submit', methods: ['POST'])]
+    #[Route('/api/client/submit', name: 'api_client_submit', options: ['deprecation_message' => 'This endpoint is deprecated and will be removed in a future release.'], methods: ['POST'])]
     public function submitClientForm(
         Request                  $request,
         GPWebpay                 $GPWebpay,
@@ -161,38 +162,42 @@ class PurchaseController extends AbstractController
         GPWebpay               $gpWebpay,
         EntityManagerInterface $entityManager,
         Registry               $workflow,
-        PurchaseUrlGenerator   $urlGenerator
+        PurchaseUrlGenerator   $urlGenerator,
+        LoggerInterface        $logger,
     ): Response
     {
         try {
             $response = $gpWebpay->verifyLink();
-        } catch (\Exception $e) {
-            // FIXME: Handle exception properly
+            $paymentId = $response->getORDERNUMBER();
+
+            $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
+            if (!$payment) throw $this->createNotFoundException('No payment found');
+
+            $purchase = $payment->getPurchase();
+            if (!$purchase) throw $this->createNotFoundException('Purchase not found');
+
+            $flow = $workflow->get($purchase);
+            $transition = $response->getPRCODE() === 0 && $response->getSRCODE() === 0
+                ? 'payment'
+                : 'payment_issue';
+
+            if ($flow->can($purchase, $transition)) {
+                $flow->apply($purchase, $transition);
+                $entityManager->flush();
+            }
+
+            return $this->redirectToRoute(
+                $urlGenerator->buildOrderEndscreenUrl($purchase),
+            );
+        }
+        catch (Throwable $e) {
+            // TODO: Redirect to error page and transition to payment_issue state
+            $logger->error('Error during order verification', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return $this->redirectToRoute('web_homepage');
         }
-
-        $paymentId = $response->getORDERNUMBER();
-        $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
-
-        $purchase = $payment?->getPurchase();
-
-        if (!$payment || !$purchase) {
-            return $this->redirectToRoute('web_homepage');
-        }
-
-        $flow = $workflow->get($purchase);
-        $transition = $response->getPRCODE() === 0 && $response->getSRCODE() === 0
-            ? 'payment'
-            : 'payment_issue';
-
-        if ($flow->can($purchase, $transition)) {
-            $flow->apply($purchase, $transition);
-            $entityManager->flush();
-        }
-
-        return $this->redirectToRoute(
-            $urlGenerator->buildOrderEndscreenUrl($purchase)
-        );
     }
 
 

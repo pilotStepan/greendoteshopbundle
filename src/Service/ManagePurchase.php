@@ -114,7 +114,8 @@ readonly class ManagePurchase
     public function processVatNumber(Purchase $purchase): void
     {
         $vatNumber = $purchase->getPurchaseAddress()->getDic();
-        if (!$vatNumber) return;
+        if (!$vatNumber || stripos($vatNumber, 'CZ') === 0) return;
+
 
         $vatInfo = $this->manageVies->getVatInfo($vatNumber);
 

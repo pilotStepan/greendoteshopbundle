@@ -47,23 +47,25 @@ final class OrderDataFactory
     public function create(Purchase $purchase): OrderData
     {
         [$czk, $eur] = $this->loadCurrencies();
-        $this->purchasePrice = $this->purchasePriceFactory->create($purchase, $czk, VatCalculationType::WithVAT);
+        $vatCalculation = $purchase->isVatExempted() ? VatCalculationType::WithoutVAT : VatCalculationType::WithVAT;
+        $this->purchasePrice = $this->purchasePriceFactory->create($purchase, $czk, $vatCalculation);
 
         $qr = $this->buildQrCode($purchase);
         $payLink = $this->buildPayLink($purchase);
-        $items = $this->buildItems($purchase, $czk);
+        $items = $this->buildItems($purchase, $czk, $vatCalculation);
         $transportation = $this->buildTransportation($purchase, $czk, $eur);
         $payment = $this->buildPayment($purchase, $czk, $eur);
         $addresses = $this->buildAddresses($purchase);
         $purchaseNote = $this->extractNote($purchase);
-        [$totalPriceVatCzk, $totalPriceVatEur] = array_values($this->buildTotalPrices($czk, $eur));
+        [$totalPriceCzk, $totalPriceEur] = array_values($this->buildTotalPrices($czk, $eur));
         $clientSectionUrl = $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase);
 
         return new OrderData(
             purchaseId: $purchase->getId(),
+            vatExempted: $purchase->isVatExempted(),
             qrCodeUri: $qr,
             payLink: $payLink,
-            trackingUrl: $purchase->getTransportNumber(), // FIXME: get tracking URL
+            trackingUrl: $this->purchaseUrlGenerator->buildTrackingUrl($purchase),
             trackingNumber: $purchase->getTransportNumber(),
             purchaseNote: $purchaseNote,
             transportation: $transportation,
@@ -72,12 +74,11 @@ final class OrderDataFactory
             items: $items,
             primaryCurrency: 'czk', // FIXME
             paid: $this->isPaid($purchase),
-            totalPriceVatCzk: $totalPriceVatCzk,
-            totalPriceVatEur: $totalPriceVatEur,
+            totalPriceCzk: $totalPriceCzk,
+            totalPriceEur: $totalPriceEur,
             clientSectionUrl: $clientSectionUrl,
         );
     }
-
 
     /** @return array{Currency, Currency} */
     private function loadCurrencies(): array
@@ -95,7 +96,10 @@ final class OrderDataFactory
     private function buildQrCode(Purchase $purchase): ?string
     {
         // Don't build if cant be paid or already paid
-        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) return null;
+        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) {
+            return null;
+        }
+
         try {
             $dueDate = new DateTimeImmutable('+14 days');
             return $this->qrGenerator->getFullUrl($purchase, $dueDate);
@@ -107,7 +111,10 @@ final class OrderDataFactory
     private function buildPayLink(Purchase $purchase): ?string
     {
         // Don't build if cant be paid or already paid
-        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) return null;
+        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) {
+            return null;
+        }
+
         try {
             $paymentGateway = $this->gatewayProvider->getByPurchase($purchase)
                 ?? $this->gatewayProvider->getDefault();
@@ -118,12 +125,12 @@ final class OrderDataFactory
     }
 
     /** @return OrderItemData[] */
-    private function buildItems(Purchase $purchase, Currency $currency): array
+    private function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
     {
         $items = [];
 
         foreach ($purchase->getProductVariants() as $ppv) {
-            $priceCalc = $this->productVariantPriceFactory->create($ppv, $currency, vatCalculationType: VatCalculationType::WithVAT);
+            $priceCalc = $this->productVariantPriceFactory->create($ppv, $currency, vatCalculationType: $vatCalculation);
             $variant = $ppv->getProductVariant();
             $product = $variant->getProduct();
             $unitPrice = $priceCalc->getPiecePrice() ?? 0.0;
@@ -146,8 +153,8 @@ final class OrderDataFactory
     {
         $transportation = $purchase->getTransportation();
 
-        $priceVatCzk = $this->purchasePrice->setCurrency($czk)->getTransportationPrice() ?? 0.0;
-        $priceVatEur = $this->purchasePrice->setCurrency($eur)->getTransportationPrice() ?? 0.0;
+        $priceCzk = $this->purchasePrice->setCurrency($czk)->getTransportationPrice() ?? 0.0;
+        $priceEur = $this->purchasePrice->setCurrency($eur)->getTransportationPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderTransportationData(
@@ -155,8 +162,9 @@ final class OrderDataFactory
             country: $transportation->getCountry(),
             name: $transportation->getName(),
             description: $transportation->getDescription(),
-            priceVatCzk: PriceHelper::formatPrice($priceVatCzk, $czk),
-            priceVatEur: PriceHelper::formatPrice($priceVatEur, $eur),
+            priceCzk: PriceHelper::formatPrice($priceCzk, $czk),
+            priceEur: PriceHelper::formatPrice($priceEur, $eur),
+            branchName: $purchase->getBranch()?->getName(),
         );
     }
 
@@ -164,8 +172,8 @@ final class OrderDataFactory
     {
         $paymentType = $purchase->getPaymentType();
 
-        $priceVatCzk = $this->purchasePrice->setCurrency($czk)->getPaymentPrice() ?? 0.0;
-        $priceVatEur = $this->purchasePrice->setCurrency($eur)->getPaymentPrice() ?? 0.0;
+        $priceCzk = $this->purchasePrice->setCurrency($czk)->getPaymentPrice() ?? 0.0;
+        $priceEur = $this->purchasePrice->setCurrency($eur)->getPaymentPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderPaymentData(
@@ -173,8 +181,8 @@ final class OrderDataFactory
             country: $paymentType->getCountry(),
             name: $paymentType->getName(),
             description: $paymentType->getDescription(),
-            priceVatCzk: PriceHelper::formatPrice($priceVatCzk, $czk),
-            priceVatEur: PriceHelper::formatPrice($priceVatEur, $eur),
+            priceCzk: PriceHelper::formatPrice($priceCzk, $czk),
+            priceEur: PriceHelper::formatPrice($priceEur, $eur),
             bankNumber: $paymentType->getBankNumber(),
             bankAccount: $paymentType->getAccount(),
             bankName: $paymentType->getBankName(),
@@ -242,8 +250,9 @@ final class OrderDataFactory
 
     private function canBePaid(Purchase $purchase): bool
     {
-        // Don't allow to pay if already paid
-        if ($this->isPaid($purchase)) return false;
+        if ($this->isPaid($purchase)) {
+            return false;
+        }
 
         // Don't allow to pay if cash on delivery
         $actionGroup = $purchase->getPaymentType()->getActionGroup();

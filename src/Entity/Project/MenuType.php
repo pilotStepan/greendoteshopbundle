@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\MenuTypeRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -26,7 +25,9 @@ class MenuType
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $controllerName = null;
 
-    #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'menuType')]
+//    #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'menuType')]
+//    private Collection $categories;
+    #[ORM\OneToMany(mappedBy: 'menu_type', targetEntity: CategoryMenuType::class)]
     private Collection $categories;
 
     public function __construct()
@@ -83,11 +84,26 @@ class MenuType
         return $this->categories;
     }
 
-    /**
-     * @param Collection $categories
-     */
-    public function setCategories(Collection $categories): void
+
+    public function addCategories(CategoryMenuType $category): static
     {
-        $this->categories = $categories;
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+            $category->setMenuType($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCategory(CategoryMenuType $category): static
+    {
+        if ($this->categories->removeElement($category)) {
+            // set the owning side to null (unless already changed)
+            if ($category->getMenuType() === $this) {
+                $category->setMenuType(null);
+            }
+        }
+
+        return $this;
     }
 }
