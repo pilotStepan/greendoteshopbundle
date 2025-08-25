@@ -34,4 +34,9 @@ class SimpleController extends AbstractController
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
+
+    // this reqisters the route. Symfony overrides it so it can be empty
+    #[Route('/simple/api/anonymous_login_check', name: 'simple_api_anonymous_login_check')]
+    public function anonymousLoginCheck(): void
+    { }
 }
