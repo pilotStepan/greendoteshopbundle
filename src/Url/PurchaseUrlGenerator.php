@@ -14,8 +14,6 @@ final readonly class PurchaseUrlGenerator
         #[Autowire(service: 'security.authenticator.login_link_handler.main')] 
         private LoginLinkHandlerInterface $loginLinkHandler,
 
-        #[Autowire('%env(APP_URL)%')]
-        private string $appUrl,
     ) {}
 
     /**
@@ -52,7 +50,7 @@ final readonly class PurchaseUrlGenerator
         $client = $purchase->getClient();
         $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
 
-        return $this->appUrl . UrlGeneratorInterface::ABSOLUTE_URL . $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
+        return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
     }
 
     public function buildTrackingUrl(Purchase $purchase): ?string
