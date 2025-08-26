@@ -49,7 +49,7 @@ final readonly class PurchaseUrlGenerator
         $client = $purchase->getClient();
         $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
 
-        return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
+        return UrlGeneratorInterface::ABSOLUTE_URL . $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
     }
 
     public function buildTrackingUrl(Purchase $purchase): ?string

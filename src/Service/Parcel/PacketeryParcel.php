@@ -114,17 +114,28 @@ class PacketeryParcel implements ParcelServiceInterface
             : null;
 
 
-        // TODO: based on country
-        $currency = 'CZK'   ;
+        //? maybe country should be an enum or something like that to not make this check value match dependant
+        // TODO: make cod and value calculation in the currency as well
+        $country = $purchase->getPurchaseAddress()->getCountry();
+        switch ($country) {
+            case 'cz':
+                $currency = 'CZK';
+                break;
 
-        // TODO: make weight, is required
+            case 'sk':
+                $currency = 'EUR';
+                
+            default:
+                $currency = 'CZK';
+                break;
+        }
+
+        $currency = 'CZK'; // should be removed after cod and value calculation is done
+
+        //! hardcoded 2Kg
+        $weight = 2;
         // see "2 Parameters of the Shipment" on https://www.packeta.com/general-terms-conditions        
-
-
-        //TODO: is adult content a concern?
-
-        //TODO: security https://docs.packeta.com/docs/api-reference/data-structures#security
-
+        
         // docs: https://docs.packeta.com/docs/api-reference/data-structures#packetattributes
         return  [
             'apiPassword' => $purchase->getTransportation()->getSecretKey(),
@@ -139,7 +150,7 @@ class PacketeryParcel implements ParcelServiceInterface
                 'eshop' => 'yogashop',
                 ...($cod !== null ? ['cod' => $cod] : []),
                 'currency' => $currency,
-                
+                'weight' => $weight, 
             ],
         ];
     }
