@@ -14,6 +14,7 @@ use Granam\GpWebPay\Codes\CurrencyCodes;
 use Granam\GpWebPay\CardPayRequestValues;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Payment;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -39,6 +40,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
         private UrlGeneratorInterface  $urlGenerator,
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
+        private ManagePurchase         $managePurchase,
     ) {}
 
     /**
@@ -46,6 +48,10 @@ readonly class GPWebpay implements PaymentGatewayInterface
      */
     public function getPayLink(Purchase $purchase): string
     {
+        if (!$purchase->getTotalPrice()) {
+            $this->managePurchase->preparePrices($purchase);
+        }
+
         $this->logger->info('GPW getPayLink initiated', [
             'purchaseId' => $purchase->getId(),
             'totalPrice' => $purchase->getTotalPrice(),
@@ -91,8 +97,8 @@ readonly class GPWebpay implements PaymentGatewayInterface
 
             $requestValues = CardPayRequestValues::createFromArray([
                 'ORDERNUMBER' => $payment->getId(),
-                'AMOUNT'      => $purchase->getTotalPrice(),
-                'CURRENCY'    => '203',
+                'AMOUNT' => $purchase->getTotalPrice(),
+                'CURRENCY' => '203',
                 'DEPOSITFLAG' => true,
                 'MERORDERNUM' => $purchase->getId(),
             ], $currencyCodes);

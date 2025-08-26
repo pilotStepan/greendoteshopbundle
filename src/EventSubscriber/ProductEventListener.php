@@ -49,10 +49,15 @@ class ProductEventListener
 
 
         $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
-//        if (!isset($product->getCalculatedPrices()['priceNoVat'])) {
-//            dd($product);
-//        }
-        $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
+        if (!isset($product->getCalculatedPrices()['priceNoVat'])) {
+            // dd($product);
+            $product->setPriceFrom(0);
+        }
+        else
+        {
+            $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
+        }
+       
         $product->setCurrencySymbol($currencySymbol);
         $product->setAvailability($availability);
         $product->setParameters($parameters);
