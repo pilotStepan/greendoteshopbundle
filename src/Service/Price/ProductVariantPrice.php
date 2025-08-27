@@ -155,10 +155,18 @@ class ProductVariantPrice
         return $this;
     }
 
-    public function setVatCalculationType(VatCalculationType $vatCalculationType): self
+    public function setVatCalculationType(VatCalculationType $vatCalculationType, bool $force = false): self
     {
-        $this->vatCalculationType = $vatCalculationType;
-        $this->recalculateNoQuery();
+        $isVatExempted = false;
+        if ($this->productVariant instanceof PurchaseProductVariant and $this->productVariant?->getPurchase()){
+            $isVatExempted = $this->productVariant->getPurchase()->isVatExempted();
+        }
+
+        if (!$isVatExempted or $force) {
+            $this->vatCalculationType = $vatCalculationType;
+            $this->recalculateNoQuery();
+        }
+
         return $this;
     }
 

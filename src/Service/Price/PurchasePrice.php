@@ -134,10 +134,17 @@ class PurchasePrice
         return $this;
     }
 
-    public function setVatCalculationType(VatCalculationType $vatCalculationType): self
+    /**
+     * @param VatCalculationType $vatCalculationType
+     * @param bool $force - Forces VatCalculationType change event when isVatExempted is true
+     * @return $this
+     */
+    public function setVatCalculationType(VatCalculationType $vatCalculationType, bool $force = false): self
     {
-        $this->vatCalculationType = $vatCalculationType;
-        $this->recalculatePrices();
+        if (!$this->purchase->isVatExempted() or $force){
+            $this->vatCalculationType = $vatCalculationType;
+            $this->recalculatePrices();
+        }
         return $this;
     }
 
