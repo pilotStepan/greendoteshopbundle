@@ -21,7 +21,7 @@ class MasterController extends AbstractController
             return $this->forward('Greendot\EshopBundle\Controller\Web\HomepageController::index', ['_locale' => $slug]);
         }
 
-        $category = $categoryRepository->findOneBy(['slug' => $slug]);
+        $category = $categoryRepository->findOneByHinted(['slug' => $slug]);
         if (!$category){
             return $this->createNotFoundException('Category not found');
         }

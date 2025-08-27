@@ -214,7 +214,7 @@ class ParameterRepository extends ServiceEntityRepository
 
     public function getByManufacturerGroupAndMostSuperiorCategoryQB(QueryBuilder $queryBuilder, int $category){
 
-        $category = $this->categoryRepository->find($category);
+        $category = $this->categoryRepository->findHinted($category);
         $parameterGroup = $this->parameterGroupRepository->findOneBy(["name" => "Manufacturer"]);
         $alias = $queryBuilder->getRootAliases()[0];
 

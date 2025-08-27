@@ -71,7 +71,7 @@ class SitemapGenerator
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>');
         $baseUrl = $this->urlGenerator->generate('shop_category', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $categories = $this->categoryRepository->findAll();
+        $categories = $this->categoryRepository->findAllHinted();
         foreach ($categories as $category) {
             $url = $xml->addChild('url');
             $url->addChild('loc', $baseUrl . $category->getSlug());

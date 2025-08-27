@@ -32,7 +32,7 @@ class MenuController extends AbstractController
     public function shopOpen(Request $request, ?int $category = 0): Response
     {
         $currentCategory = $category !== 0
-            ? $this->categoryRepository->find($category)
+            ? $this->categoryRepository->findHinted($category)
             : $request->attributes->get("category");
 
         $superCategory = $currentCategory
