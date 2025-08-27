@@ -88,9 +88,28 @@ class PacketeryParcel implements ParcelServiceInterface
     {
         $client = $purchase->getClient();
 
-        $czk = $this->currencyRepository->findOneBy(['isDefault' => true]);
+         //? maybe country should be an enum or something like that to not make this check value match dependant
+        $country = $purchase->getPurchaseAddress()->getCountry();
+        switch ($country) {
+            case 'cz':
+                $currency = 'CZK';
+                break;
 
-        $purchasePriceCalculator = $this->purchasePriceFactory->create($purchase, $czk);
+            case 'sk':
+                $currency = 'EUR';
+                break;
+                
+            default:
+                $currency = 'CZK';
+                break;
+        }
+
+        $calculatorCurrencies = [
+            'CZK' => $this->currencyRepository->findOneBy(['isDefault' => true]),
+            'EUR' => $currency = $this->currencyRepository->findOneBy(['name' => 'Euro']),
+        ];
+
+        $purchasePriceCalculator = $this->purchasePriceFactory->create($purchase, $$calculatorCurrencies[$currency]);
 
         // TODO: check that calculation types for value and cod correct
 
@@ -104,7 +123,6 @@ class PacketeryParcel implements ParcelServiceInterface
 
 
         // calculate cash on delivery (null if cash on delivery payment not wanted)
-        // TODO: is vat-exempted
         //* this is automatically converted to the countrys currency by Packeta, and will be payed to sender in CZK
         $cod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY
             ? $purchasePriceCalculator
@@ -112,25 +130,6 @@ class PacketeryParcel implements ParcelServiceInterface
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
                 ->getPrice()
             : null;
-
-
-        //? maybe country should be an enum or something like that to not make this check value match dependant
-        // TODO: make cod and value calculation in the currency as well
-        $country = $purchase->getPurchaseAddress()->getCountry();
-        switch ($country) {
-            case 'cz':
-                $currency = 'CZK';
-                break;
-
-            case 'sk':
-                $currency = 'EUR';
-                
-            default:
-                $currency = 'CZK';
-                break;
-        }
-
-        $currency = 'CZK'; // should be removed after cod and value calculation is done
 
         //! hardcoded 2Kg
         $weight = 2;
