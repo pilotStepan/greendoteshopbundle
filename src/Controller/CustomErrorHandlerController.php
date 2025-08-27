@@ -27,7 +27,7 @@ class CustomErrorHandlerController extends AbstractController
             $request->setLocale('cs');
         }
 
-        $category = $categoryRepository->find(9);
+        $category = $categoryRepository->findHinted(9);
         if ($startedLocale != $request->getLocale()){
             $category->setTranslatableLocale($request->getLocale());
             $entityManager->refresh($category);

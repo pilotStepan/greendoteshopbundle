@@ -17,8 +17,8 @@ class BlogController extends AbstractController
     #[Route(path: '/blog/stranka-{page}', name: 'web_blog_landing_paged', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['slug' => null, 'page' => null], priority: 2)]
     public function blogLandingPage($page, PaginatorInterface $paginator, CategoryRepository $categoryRepository, LabelRepository $labelRepository): Response
     {
-        $blogLandingPage = $categoryRepository->findOneBy(['id' => 2]);
-        $blogArticles    = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+        $blogLandingPage = $categoryRepository->findOneByHinted(['id' => 2]);
+        $blogArticles    = $categoryRepository->findByHinted(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
         $blogLabels      = $labelRepository->findBy(['labelType' => 3]);
 
         if ($page == null) {
@@ -44,7 +44,7 @@ class BlogController extends AbstractController
     {
 
         if ($slug == null) {
-            $blogArticles = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+            $blogArticles = $categoryRepository->findByHinted(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
             $title        = "Všechny články";
         } else {
             $selectedLabel = $labelRepository->findOneBy(['slug' => $slug]);
@@ -81,7 +81,7 @@ class BlogController extends AbstractController
     {
 
         $blogLabels     = $labelRepository->findBy(['labelType' => 3]);
-        $latestArticles = $categoryRepository->findBy(['categoryType' => 6], ['id' => 'DESC'], 3);
+        $latestArticles = $categoryRepository->findByHinted(['categoryType' => 6], ['id' => 'DESC'], 3);
 
         return $this->render('web/blog/detail.html.twig', [
             'category'       => $category,

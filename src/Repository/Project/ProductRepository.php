@@ -318,7 +318,7 @@ class ProductRepository extends ServiceEntityRepository
     {
         $alias = $qb->getRootAliases()[0];
 
-        $category = $this->categoryRepository->find($category);
+        $category = $this->categoryRepository->findHinted($category);
         $qb->join($alias . '.categoryProducts', 'c');
 
         $qb->setParameter('val', 1);

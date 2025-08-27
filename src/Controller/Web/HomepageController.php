@@ -23,9 +23,8 @@ class HomepageController extends AbstractController implements WebController
     )]
     public function index(CategoryRepository $categoryRepository, Request $request, EntityManagerInterface $entityManager): Response
     {
-        $category = $categoryRepository->findOneBy(['id' => 1]);
-        $category->setTranslatableLocale($request->getLocale());
-        $entityManager->refresh($category);
+        $category = $categoryRepository->findOneByHinted(['id' => 1]);
+
 
         return $this->render('web/homepage/index.html.twig', [
             'title'            => $category->getTitle(),
