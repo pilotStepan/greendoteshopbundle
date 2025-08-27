@@ -126,7 +126,7 @@ class ProductVariantPrice
             case DiscountCalculationType::OnlyProductDiscount:
                 return $this->discountPercentage;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                return $this->afterRegistrationBonus;
+                return $this->clientDiscount ?? $this->afterRegistrationBonus;
         }
         return $this->discountPercentage;
     }
