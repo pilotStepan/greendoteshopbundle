@@ -235,6 +235,8 @@ final class InvoiceDataFactory
         $priceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPaymentPrice() ?? 0;
         $this->purchasePrice->setCurrency($currencyPrimary);
 
+
+
         return new InvoicePaymentData(
             name:                   $paymentType->getName(),
             price:                  $priceVatPrimary,
@@ -243,6 +245,7 @@ final class InvoiceDataFactory
             priceNoVatSecondary:    $priceNoVatSecondary,
             bankAccount:            $paymentType->getAccount(),
             iban:                   $paymentType->getIban(),
+            actionGroup:            $paymentType->getActionGroup(),
         );
     }
 

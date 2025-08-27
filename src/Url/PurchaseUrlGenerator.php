@@ -13,6 +13,7 @@ final readonly class PurchaseUrlGenerator
         private UrlGeneratorInterface     $router,
         #[Autowire(service: 'security.authenticator.login_link_handler.main')] 
         private LoginLinkHandlerInterface $loginLinkHandler,
+
     ) {}
 
     /**
