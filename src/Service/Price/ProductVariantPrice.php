@@ -205,7 +205,7 @@ class ProductVariantPrice
                 }
                 break;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->afterRegistrationBonus;
+                $totalDiscountedPercentage = $this->clientDiscount ?? $this->afterRegistrationBonus;
                 break;
         }
 
