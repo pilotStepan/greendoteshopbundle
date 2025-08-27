@@ -112,7 +112,9 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
         $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
-        $this->managePurchase->issueInvoice($purchase);
+
+        //? We don't want automatic invoice issue on payment
+        // $this->managePurchase->issueInvoice($purchase); 
     }
 
     public function onPaymentIssue(Event $event): void
