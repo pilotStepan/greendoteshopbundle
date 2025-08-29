@@ -37,6 +37,8 @@ class ProductEventListener
                     $productUploads[] = $upload;
                 }
             }
+            dump($product);
+            dd($productUploads);
             if (count($productUploads) > 1) {
                 usort($productUploads, function($a, $b) {
                     return $a->getSequence() <=> $b->getSequence();
