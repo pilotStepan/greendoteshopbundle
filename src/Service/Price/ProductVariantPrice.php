@@ -126,7 +126,7 @@ class ProductVariantPrice
             case DiscountCalculationType::OnlyProductDiscount:
                 return $this->discountPercentage;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                return $this->afterRegistrationBonus;
+                return $this->clientDiscount ?? $this->afterRegistrationBonus;
         }
         return $this->discountPercentage;
     }
@@ -155,10 +155,18 @@ class ProductVariantPrice
         return $this;
     }
 
-    public function setVatCalculationType(VatCalculationType $vatCalculationType): self
+    public function setVatCalculationType(VatCalculationType $vatCalculationType, bool $force = false): self
     {
-        $this->vatCalculationType = $vatCalculationType;
-        $this->recalculateNoQuery();
+        $isVatExempted = false;
+        if ($this->productVariant instanceof PurchaseProductVariant and $this->productVariant?->getPurchase()){
+            $isVatExempted = $this->productVariant->getPurchase()->isVatExempted();
+        }
+
+        if (!$isVatExempted or $force) {
+            $this->vatCalculationType = $vatCalculationType;
+            $this->recalculateNoQuery();
+        }
+
         return $this;
     }
 
@@ -197,7 +205,7 @@ class ProductVariantPrice
                 }
                 break;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->afterRegistrationBonus;
+                $totalDiscountedPercentage = $this->clientDiscount ?? $this->afterRegistrationBonus;
                 break;
         }
 

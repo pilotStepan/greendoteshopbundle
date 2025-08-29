@@ -30,6 +30,10 @@ readonly class ProductVariantPriceFactory
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount
     ): ProductVariantPrice
     {
+        if ($pv instanceof PurchaseProductVariant and $pv?->getPurchase() and $pv->getPurchase()->isVatExempted()){
+            $vatCalculationType = VatCalculationType::WithoutVAT;
+        }
+
         return new ProductVariantPrice(
             $pv,
             $amount,
