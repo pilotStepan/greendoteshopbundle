@@ -10,18 +10,21 @@ use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Message\Affiliate\CreateAffiliateEntry;
+use Greendot\EshopBundle\Service\AffiliateService;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-
+use Symfony\Component\Messenger\MessageBusInterface;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
     public function __construct
     (
-        private EntityManagerInterface $entityManager,
-        private ManageVoucher          $manageVoucher,
-        private ManagePurchase         $managePurchase,
-        private ManageClientDiscount   $manageClientDiscount,
+        private EntityManagerInterface  $entityManager,
+        private ManageVoucher           $manageVoucher,
+        private ManagePurchase          $managePurchase,
+        private ManageClientDiscount    $manageClientDiscount,
+        private AffiliateService        $affiliateService,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -111,7 +114,12 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
+        if(!$purchase instanceof Purchase){
+            return;
+        }
+
         $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
+        $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
 
         //? We don't want automatic invoice issue on payment
         // $this->managePurchase->issueInvoice($purchase); 
@@ -121,14 +129,24 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
+        if(!$purchase instanceof Purchase){
+            return;
+        }
+
         $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
+        $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
     }
 
     public function onCancellation(Event $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
+        if(!$purchase instanceof Purchase){
+            return;
+        }
+
         $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
+        $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
     }
 
     public function onPrepareForPickup(Event $event): void
@@ -140,12 +158,22 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     public function onSend(Event $event): void
     {
         /** @var Purchase $purchase */
-        // $purchase = $event->getSubject();
+        $purchase = $event->getSubject();
+        if(!$purchase instanceof Purchase){
+            return;
+        }
+
+        $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
     }
 
     public function onPickUp(Event $event): void
     {
         /** @var Purchase $purchase */
-        // $purchase = $event->getSubject();
+        $purchase = $event->getSubject();
+        if(!$purchase instanceof Purchase){
+            return;
+        }
+
+        $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
     }
 }
