@@ -98,8 +98,6 @@ class AffiliateService
             'datetime'          => $now->format('Y-m-d H:i:s'),
         ];  
 
-        dd($this->affiliateDbConnection);
-
         $this->affiliateDbConnection->insert('vydelky', $data);
 
     }
