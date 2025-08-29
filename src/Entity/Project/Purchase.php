@@ -220,10 +220,10 @@ class Purchase
     private Collection $transportationEvents;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private string $affiliateId = null;
+    private ?string $affiliateId = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    private int $adId = null;
+    private ?int $adId = null;
 
     public function __construct()
     {
