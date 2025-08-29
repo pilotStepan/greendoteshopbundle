@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 class AffiliateService
 {
@@ -38,7 +39,7 @@ class AffiliateService
     }
 
     // save affiliate data to cookies from request get params
-    public function setAffiliateCookiesFromRequest(RequestEvent $event) : void
+    public function setAffiliateCookiesFromRequest(ResponseEvent $event) : void
     {
         if(!$this->isAffiliate())
         {

@@ -14,6 +14,7 @@ use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Twig\Environment;
 
@@ -44,7 +45,6 @@ class BeforeControllerListener implements EventSubscriberInterface
             );
         }
 
-        $this->affiliateService->setAffiliateCookiesFromRequest($event);
     }
 
     /**
@@ -125,6 +125,11 @@ class BeforeControllerListener implements EventSubscriberInterface
         }
     }
 
+    public function onKernelResponse(ResponseEvent $event) : void
+    {
+        $this->affiliateService->setAffiliateCookiesFromRequest($event);
+    }
+
     /**
      * @return string[]
      */
@@ -133,6 +138,7 @@ class BeforeControllerListener implements EventSubscriberInterface
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 100],
             KernelEvents::CONTROLLER => 'onKernelController',
+            KernelEvents::RESPONSE => 'onKernelResponse',
         ];
     }
 }
