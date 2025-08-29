@@ -29,6 +29,7 @@ class Label implements Translatable
     private $id;
 
     #[ORM\Column(type: 'string', length: 150)]
+    #[Gedmo\Translatable]
     #[Groups(['category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private $name;
 
@@ -48,9 +49,11 @@ class Label implements Translatable
 
     
     #[ORM\Column(length: 255, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $slug = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Gedmo\Translatable]
     private $description;
 
     #[ORM\Column(nullable: true)]
