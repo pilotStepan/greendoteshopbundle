@@ -27,7 +27,7 @@ class AffiliateService
         private ?Connection             $affiliateDbConnection,
         private LoggerInterface         $logger,
     ) 
-    {}
+    { }
 
     // set affiliate data to purchase from cookies
     public function setAffiliateToPurchase(Purchase $purchase) : void
@@ -96,6 +96,8 @@ class AffiliateService
             'referer'           => null,
             'datetime'          => $now->format('Y-m-d H:i:s'),
         ];  
+
+        dd($this->affiliateDbConnection);
 
         $this->affiliateDbConnection->insert('vydelky', $data);
 
