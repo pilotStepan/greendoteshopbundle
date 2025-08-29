@@ -60,9 +60,13 @@ class Producer
     #[Groups(['product_item:read'])]
     private ?string $slug = null;
 
+    #[ORM\OneToMany(mappedBy: 'producer', targetEntity: ProducerUploadGroup::class)]
+    private Collection $producerUploadGroups;
+
     public function __construct()
     {
         $this->Product = new ArrayCollection();
+        $this->producerUploadGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -192,6 +196,36 @@ class Producer
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProducerUploadGroup>
+     */
+    public function getProducerUploadGroups(): Collection
+    {
+        return $this->producerUploadGroups;
+    }
+
+    public function addProducerUploadGroup(ProducerUploadGroup $producerUploadGroup): static
+    {
+        if (!$this->producerUploadGroups->contains($producerUploadGroup)) {
+            $this->producerUploadGroups->add($producerUploadGroup);
+            $producerUploadGroup->setProducer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProducerUploadGroup(ProducerUploadGroup $producerUploadGroup): static
+    {
+        if ($this->producerUploadGroups->removeElement($producerUploadGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($producerUploadGroup->getProducer() === $this) {
+                $producerUploadGroup->setProducer(null);
+            }
+        }
 
         return $this;
     }
