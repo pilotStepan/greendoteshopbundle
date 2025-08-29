@@ -6,11 +6,14 @@ use Doctrine\DBAL\Connection;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Message\Affiliate\CancelAffiliateEntry;
+use Greendot\EshopBundle\Message\Affiliate\CreateAffiliateEntry;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class AffiliateService
 {
@@ -19,6 +22,7 @@ class AffiliateService
         private RequestStack            $requestStack,
         private PurchasePriceFactory    $purchasePriceFactory,
         private CurrencyRepository      $currencyRepository,
+        private MessageBusInterface     $messageBus,
         private ?Connection             $affiliateDbConnection,
     ) 
     {}
@@ -75,6 +79,11 @@ class AffiliateService
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount);
         $now = new \DateTime();
 
+        if($this->affiliateEntryExists($purchase))
+        {
+            return;
+        }
+
         $data = [
             'castka'            => $priceCalculator->getPrice() * 0.1,
             'cenaObj'           => $priceCalculator->getPrice(),
@@ -102,6 +111,34 @@ class AffiliateService
 
         // send request to db
         $this->affiliateDbConnection->update('vydelky', ['stav' => 4], ['purchaseId'=> $purchase->getId()]);
+    }
+
+    public function dispatchCreateAffiliateEntryMessage(Purchase $purchase) : void
+    {
+        $this->messageBus->dispatch(
+            new CreateAffiliateEntry(
+                $purchase->getId()
+            )
+        );
+    }
+
+    public function dispatchCancelAffiliateEntryMessage(Purchase $purchase) : void
+    {
+        $this->messageBus->dispatch(
+            new CancelAffiliateEntry(
+                $purchase->getId()
+            )
+        );
+    }
+
+    private function affiliateEntryExists(Purchase $purchase): bool
+    {
+        $exists = $this->affiliateDbConnection->fetchOne(
+            'SELECT 1 FROM vydelky WHERE FK_idobjednavky = :id LIMIT 1',
+            ['id' => $purchase->getId()]
+        );
+
+        return (bool) $exists;
     }
     
     private function isAffiliate() : bool
