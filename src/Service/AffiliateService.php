@@ -84,7 +84,7 @@ class AffiliateService
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount);
         $now = new \DateTime();
 
-
+        // TODO: check if data are passed correctly
         $data = [
             'castka'            => $priceCalculator->getPrice() * 0.1,
             'cenaObj'           => $priceCalculator->getPrice(),
