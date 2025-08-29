@@ -28,8 +28,7 @@ class AffiliateService
         private LoggerInterface         $logger,
     ) 
     { 
-                dd($this->affiliateDbConnection);
-
+        dd($this->affiliateDbConnection);
     }
 
     // set affiliate data to purchase from cookies
