@@ -27,7 +27,10 @@ class AffiliateService
         private ?Connection             $affiliateDbConnection,
         private LoggerInterface         $logger,
     ) 
-    { }
+    { 
+                dd($this->affiliateDbConnection);
+
+    }
 
     // set affiliate data to purchase from cookies
     public function setAffiliateToPurchase(Purchase $purchase) : void
