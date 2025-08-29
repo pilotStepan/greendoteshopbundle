@@ -2,6 +2,11 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use Greendot\EshopBundle\Entity\Project\ParameterGroup;
+use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
+use Greendot\EshopBundle\Entity\Project\Producer;
+use Greendot\EshopBundle\Repository\Project\ProducerRepository;
+use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Service\SessionService;
@@ -53,6 +58,8 @@ class AppExtension extends AbstractExtension
         private readonly RouterInterface         $router,
         private readonly InformationBlockService $informationBlockService,
         private readonly SessionService          $sessionService,
+        private readonly ProducerRepository      $producerRepository,
+        private readonly UploadRepository        $uploadRepository
     )
     {
     }
@@ -63,6 +70,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('product_price', [$this, 'getProductPriceString']),
             new TwigFunction('product_price_old', [$this, 'getProductPriceStringWithoutDiscount']),
             new TwigFunction('product_discount', [$this, 'getProductDiscount']),
+            new TwigFunction('get_product_uploads', [$this, 'getProductUploads']),
 
             new TwigFunction('get_product_author', [$this, 'getProductAuthor']),
             new TwigFunction('has_active_product', [$this, 'hasActiveProduct']),
@@ -108,10 +116,18 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_category_related_categories_both_ways', [$this, 'getCategoryRelatedCategoriesBothWays']),
             new TwigFunction('get_all_parent_subcategories', [$this, 'getAllParentSubcategories']),
             new TwigFunction('get_categories_from_related_products', [$this, 'getCategoriesFromRelatedProducts']),
+            new TwigFunction('get_categories', [$this, 'getCategoriesForEntity']),
 
             new TwigFunction('get_information_blocks', [$this, 'getInformationBlocksForEntity']),
 
             new TwigFunction('format_color_hex', [$this, 'formatColorHex']),
+
+            new TwigFunction('get_producers_for_category', [$this, 'getProducersForCategory']),
+            new TwigFunction('get_products_for_entity', [$this, 'getProductsForEntity']),
+
+            new TwigFunction('get_parameters_by_category_and_group_type', [$this, 'getParametersByCategoryAndGroupType']),
+            new TwigFunction('get_category_parameter_by_group', [$this, 'getCategoryParameterByGroup']),
+            new TwigFunction('get_parents_for_categories', [$this, 'getParentsForCategories'])
         ];
     }
 
@@ -227,21 +243,6 @@ class AppExtension extends AbstractExtension
         return $this->addedTaxCalculator->getTotalNoVat($order, $vat, $discount);
     }
 
-    /*
-    public function getGHSImagesForProduct(Product $product): array
-    {
-        $parameterGroupType = $this->parameterGroupTypeRepository->findOneBy(['name' => 'GHS']);
-        $parameters = $this->parameterRepository->findDistinctResultsByParameterGroupTypeForProduct($product, $parameterGroupType );
-        $returnArray = [];
-        if ($parameters and !empty($parameters)){
-            foreach ($parameters as $parameter){
-                $code = $parameter->getParameterGroup()->getName();
-                $returnArray[$code] = "/build/img/".$code.".png";
-            }
-        }
-        return $returnArray;
-
-    }*/
 
     public function getGoogleAnalyticsArray(string $type, mixed $value): false|string|array
     {
@@ -528,5 +529,47 @@ class AppExtension extends AbstractExtension
         }
 
         return '#' . $color;
+    }
+
+    public function getCategoriesForEntity($entity, $onlyActive = true, null|int|array $categoryTypeIds = null, null|int|array $excludeTypeIds = null)
+    {
+        return $this->categoryRepository->getCategoriesForEntity($entity, $onlyActive, $categoryTypeIds, $excludeTypeIds);
+    }
+
+    /**
+     * returns producer for category with directly related products
+     *
+     * @param Category $category
+     * @param bool $onlyActive
+     * @return Producer[]
+     */
+    public function getProducersForCategory(Category $category, bool $onlyActive = true): array
+    {
+        return $this->producerRepository->getProducersForCategory($category, $onlyActive);
+    }
+
+    public function getProductsForEntity($entity, $onlyActive = true, $deep = true): array
+    {
+        return $this->productRepository->getProductsForEntity($entity, $onlyActive, $deep);
+    }
+
+        public function getParametersByCategoryAndGroupType(Category|int $category, ParameterGroupType|int $parameterGroupType): array
+    {
+        return $this->parameterRepository->getByCategoryAndGroupType($category, $parameterGroupType);
+    }
+
+    public function getCategoryParameterByGroup(Category|int $category, ParameterGroup|int $parameterGroup): array
+    {
+        return $this->parameterRepository->getCategoryParameterByGroup($category, $parameterGroup);
+    }
+
+    public function getParentsForCategories(array $childCategories, bool $onlyActive = true): array
+    {
+        return $this->categoryRepository->findAllParents($childCategories, $onlyActive);
+    }
+
+    public function getProductUploads(Product $product, bool $includeVariants = false, ?int $uploadGroupType = null): array
+    {
+        return $this->uploadRepository->getProductUploads($product, $includeVariants, $uploadGroupType);
     }
 }

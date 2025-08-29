@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller;
 
 use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Enum\ReservedCategoryIds;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -24,6 +25,10 @@ class MasterController extends AbstractController
         $category = $categoryRepository->findOneByHinted(['slug' => $slug]);
         if (!$category){
             return $this->createNotFoundException('Category not found');
+        }
+        assert($category instanceof Category);
+        if ($category->getId() === ReservedCategoryIds::BLOG->value){
+            return $this->forward('Greendot\EshopBundle\Controller\Web\BlogController::blogLandingPage', ['blogSlug' => $category->getSlug()]);
         }
 
         if ($category->getCategoryType() && $category->getCategoryType()->getControllerName()) {

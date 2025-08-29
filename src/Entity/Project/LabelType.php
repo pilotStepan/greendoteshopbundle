@@ -34,7 +34,6 @@ class LabelType
      * @var Collection<int, Label>
      */
     #[ORM\OneToMany(mappedBy: 'labelType', targetEntity: Label::class)]
-    #[Groups(['labelType:read', 'labelType:write', 'label:read', 'label:write'])]
     private Collection $labels;
 
     public function __construct()

@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\UploadGroup;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -56,5 +58,48 @@ class UploadGroupRepository extends ServiceEntityRepository
 
         return  $productUploadGroups;
 
+    }
+
+    /**
+     * @param Category|int $category
+     * @param null|int $type
+     * @return UploadGroup[]
+     */
+    public function getCategoryUploadGroup(Category|int $category, ?int $type = null):array
+    {
+        if ($category instanceof Category){
+            $category = $category->getId();
+        }
+
+        $qb =  $this->createQueryBuilder('upload_group')
+            ->leftJoin('upload_group.categoryUploadGroups', 'cup')
+            ->andWhere('cup.Category = :category')
+            ->setParameter('category', $category);
+
+        if ($type !== null){
+            $qb->andWhere('upload_group.type = :type')
+                ->setParameter('type', $type);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getPersonUploadGroup(Person|int $person, ?int $type = null): array
+    {
+        if($person instanceof Person){
+            $person = $person->getId();
+        }
+
+        $qb = $this->createQueryBuilder('upload_group')
+            ->leftJoin('upload_group.personUploadGroups', 'person_upload_groups')
+            ->andWhere('person_upload_groups.Person = :person')
+            ->setParameter('person', $person);
+
+        if ($type !== null){
+            $qb->andWhere('upload_group.type = :type')
+                ->setParameter('type', $type);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

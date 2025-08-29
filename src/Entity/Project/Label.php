@@ -2,7 +2,11 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\LabelRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -15,7 +19,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['label:read']],
     denormalizationContext: ['groups' => ['label:write']]
 )]
-class Label
+#[ApiFilter(SearchFilter::class, properties: ['labelType'=>'exact'])]
+class Label implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -48,6 +53,11 @@ class Label
     #[ORM\Column(type: 'text', nullable: true)]
     private $description;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $sequence = null;
+
+    #[Gedmo\Locale]
+    private $locale;
     public function __construct()
     {
         $this->categories = new ArrayCollection();
@@ -163,5 +173,22 @@ class Label
         $this->slug = $description;
 
         return $this;
+    }
+
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(?int $sequence): static
+    {
+        $this->sequence = $sequence;
+
+        return $this;
+    }
+
+    public function setTranslatableLocale($locale)
+    {
+        $this->locale = $locale;
     }
 }

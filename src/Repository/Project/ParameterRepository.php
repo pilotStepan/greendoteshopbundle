@@ -8,6 +8,7 @@ use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\CategoryParameterGroup;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
+use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
@@ -323,5 +324,42 @@ class ParameterRepository extends ServiceEntityRepository
             $qb = null;
         }
         return $qb;
+    }
+
+
+    public function getByCategoryAndGroupType(Category|int $category, ParameterGroupType|int $parameterGroupType): array
+    {
+        if ($category instanceof Category) {
+            $category = $category->getId();
+        }
+        if ($parameterGroupType instanceof ParameterGroupType) {
+            $parameterGroupType = $parameterGroupType->getId();
+        }
+
+
+        return $this->createQueryBuilder('parameter')
+            ->leftJoin('parameter.parameterGroup', 'pg')
+            ->andWhere('parameter.category = :category')
+            ->setParameter('category', $category)
+            ->andWhere('pg.type = :type')
+            ->setParameter('type', $parameterGroupType)
+            ->getQuery()->getResult();
+    }
+
+    public function getCategoryParameterByGroup(Category|int $category, ParameterGroup|int $parameterGroup): array
+    {
+        if ($category instanceof Category){
+            $category = $category->getId();
+        }
+        if ($parameterGroup instanceof ParameterGroup){
+            $parameterGroup = $parameterGroup->getId();
+        }
+
+        return $this->createQueryBuilder('parameter')
+            ->andWhere('parameter.category = :category')
+            ->setParameter('category', $category)
+            ->andWhere('parameter.parameterGroup = :pg')
+            ->setParameter('pg', $parameterGroup)
+            ->getQuery()->getResult();
     }
 }
