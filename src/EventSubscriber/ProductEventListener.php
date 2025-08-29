@@ -37,7 +37,17 @@ class ProductEventListener
                     $productUploads[] = $upload;
                 }
             }
-            //TODO: try to get from variants if no product uploads still
+            if(count($productUploads) === 0)
+            {
+                foreach ($product->getProductVariants() as $productVariant) {
+                    foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
+                        foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
+                        {
+                            $productUploads[] = $upload;
+                        }
+                    }
+                }
+            }
             if (count($productUploads) > 0) {
                 usort($productUploads, function($a, $b) {
                     return $a->getSequence() <=> $b->getSequence();
