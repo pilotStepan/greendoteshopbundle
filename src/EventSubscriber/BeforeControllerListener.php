@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController as ControllerTurnOffIsActiveFilterController;
+use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -23,6 +24,7 @@ class BeforeControllerListener implements EventSubscriberInterface
         private readonly Environment            $twig,
         private readonly CategoryRepository     $categoryRepository,
         private readonly CurrencyRepository     $currencyRepository,
+        private readonly AffiliateService       $affiliateService,
     )
     {
     }
@@ -41,6 +43,8 @@ class BeforeControllerListener implements EventSubscriberInterface
                 $this->currencyRepository->findOneBy(['isDefault' => true])
             );
         }
+
+        $this->affiliateService->setAffiliateCookiesFromRequest($event);
     }
 
     /**

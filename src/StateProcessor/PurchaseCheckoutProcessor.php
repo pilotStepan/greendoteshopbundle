@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
+use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
@@ -41,6 +42,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         private PaymentGatewayProvider $gatewayProvider,
         private PurchaseUrlGenerator   $urlGenerator,
         private ManagePurchase         $managePurchase,
+        private AffiliateService       $affiliateService,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
@@ -86,17 +88,20 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                         $this->createDiscussion($noteText),
                     );
                 }
+                
+                // 7. affiliate
+                $this->affiliateService->setAffiliateToPurchase($purchase);
 
-                // 7. Workflow transitions
+                // 8. Workflow transitions
                 $purchaseWorkflow = $this->workflowRegistry->get($purchase);
                 $this->applyTransition($purchaseWorkflow, $purchase, 'create');
                 $this->applyTransition($purchaseWorkflow, $purchase, 'receive');
             });
 
-            // 8. Cleanup session
+            // 9. Cleanup session
             $this->requestStack->getSession()?->remove('purchase');
 
-            // 9. Build redirect URL
+            // 10. Build redirect URL
             $redirectUrl = $this->buildRedirectUrl($purchase);
             return new JsonResponse(['redirect' => $redirectUrl], 200);
 

@@ -219,6 +219,12 @@ class Purchase
     #[ORM\OneToMany(mappedBy: 'purchase', targetEntity: TransportationEvent::class, cascade: ['persist', 'remove'])]
     private Collection $transportationEvents;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private string $affiliateId = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private int $adId = null;
+
     public function __construct()
     {
         $this->date_issue = new \DateTime();
@@ -855,4 +861,29 @@ class Purchase
 
         return $events[0] ?? null;
     }
+
+    public function setAffiliateId(string $affiliateId) : self
+    {
+        $this->affiliateId = $affiliateId;
+
+        return $this;
+    }
+
+    public function getAffiliateId() : string
+    {
+        return $this->affiliateId;
+    }
+
+    public function setAdId(int $adId) : self
+    {
+        $this->adId = $adId;
+
+        return $this;
+    }
+
+    public function getAdId() : int
+    {
+        return $this->adId;
+    }
+
 }
