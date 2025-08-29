@@ -862,7 +862,7 @@ class Purchase
         return $events[0] ?? null;
     }
 
-    public function setAffiliateId(string $affiliateId) : self
+    public function setAffiliateId(?string $affiliateId) : self
     {
         $this->affiliateId = $affiliateId;
 
@@ -874,7 +874,7 @@ class Purchase
         return $this->affiliateId;
     }
 
-    public function setAdId(int $adId) : self
+    public function setAdId(?int $adId) : self
     {
         $this->adId = $adId;
 
