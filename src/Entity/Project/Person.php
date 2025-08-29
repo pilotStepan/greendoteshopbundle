@@ -2,14 +2,26 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\PersonRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PersonRepository::class)]
-class Person
+#[ApiResource(
+    normalizationContext: ['groups' => ['person:read']],
+    denormalizationContext: ['groups' => ['person:write']],
+    paginationEnabled: false,
+)]
+#[ApiFilter(SearchFilter::class,properties: ['isActive'=>'exact'])]
+class Person implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -64,11 +76,22 @@ class Person
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: ProductPerson::class)]
     private Collection $productPeople;
 
+    #[ORM\ManyToOne(inversedBy: 'people')]
+    #[Groups(['person:read'])]
+    private ?Upload $upload = null;
+
+    #[Gedmo\Locale]
+    private $locale;
     public function __construct()
     {
         $this->category = new ArrayCollection();
         $this->personUploadGroups = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
+    }
+
+    public function setTranslatableLocale($locale)
+    {
+        $this->locale = $locale;
     }
 
     public function getId(): ?int
@@ -336,6 +359,18 @@ class Person
                 $productPerson->setPerson(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getUpload(): ?Upload
+    {
+        return $this->upload;
+    }
+
+    public function setUpload(?Upload $upload): static
+    {
+        $this->upload = $upload;
 
         return $this;
     }

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -20,13 +21,39 @@ class ProducerRepository extends ServiceEntityRepository
         parent::__construct($registry, Producer::class);
     }
 
-    public function findByCategory(QueryBuilder $queryBuilder, int $category_id): QueryBuilder
+    public function findByCategory(QueryBuilder $queryBuilder, int|array $categories): QueryBuilder
     {
         $alias = $queryBuilder->getAllAliases()[0];
 
-        return $queryBuilder->join($alias.'.Product', 'prod')
-            ->join('prod.categoryProducts', 'cp')
-            ->where('cp.category=:val')
-            ->setParameter('val', $category_id);
+        $qb = $queryBuilder
+            ->join($alias . '.Product', 'prod')
+            ->join('prod.categoryProducts', 'cp');
+
+        if (!is_array($categories)) {
+            $categories = [$categories];
+        }
+
+        $qb->where('cp.category in (:val)')
+            ->setParameter('val', $categories);
+
+        return $qb;
+    }
+
+    /**
+     * @param Category $category
+     * @param bool $onlyActive
+     * @return Producer[]
+     */
+    public function getProducersForCategory(Category $category, bool $onlyActive): array
+    {
+        $qb = $this->createQueryBuilder('p');
+        $qb = $this->findByCategory($qb, [$category->getId()]);
+
+        if ($onlyActive) {
+            $qb = $qb->andWhere('prod.isActive = true');
+        }
+
+        return $qb->getQuery()->getResult();
+
     }
 }

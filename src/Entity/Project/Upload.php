@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\ProductUploads;
 use Greendot\EshopBundle\ApiResource\ProductVariantUploads;
+use Greendot\EshopBundle\Enum\DownloadRestriction;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -87,12 +88,25 @@ class Upload
     #[ORM\OneToMany(mappedBy: 'upload', targetEntity: Category::class)]
     private Collection $categories;
 
+    /**
+     * @var Collection<int, Person>
+     */
+    #[ORM\OneToMany(mappedBy: 'upload', targetEntity: Person::class)]
+    private Collection $people;
+
+    #[ORM\ManyToOne(inversedBy: 'upload')]
+    private ?UploadType $uploadType = null;
+
+    #[ORM\Column(type: 'integer', enumType: DownloadRestriction::class)]
+    private DownloadRestriction $restriction = DownloadRestriction::NoRestrictions;
+
     public function __construct()
     {
         $this->products = new ArrayCollection();
         $this->productVariants = new ArrayCollection();
         $this->producers = new ArrayCollection();
         $this->categories = new ArrayCollection();
+        $this->people = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -372,6 +386,70 @@ class Upload
                 $category->setUpload(null);
             }
         }
+
+        return $this;
+    }
+    public function getRestriction(): DownloadRestriction
+    {
+        return $this->restriction;
+    }
+
+    public function getRestrictionValue(): int
+    {
+        return $this->restriction->value;
+    }
+
+    public function getRestrictionName(): string
+    {
+        return $this->restriction->name;
+    }
+
+
+    public function setRestriction(DownloadRestriction $restriction): self
+    {
+        $this->restriction = $restriction;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Person>
+     */
+    public function getPeople(): Collection
+    {
+        return $this->people;
+    }
+
+    public function addPerson(Person $person): static
+    {
+        if (!$this->people->contains($person)) {
+            $this->people->add($person);
+            $person->setUpload($this);
+        }
+
+        return $this;
+    }
+
+    public function removePerson(Person $person): static
+    {
+        if ($this->people->removeElement($person)) {
+            // set the owning side to null (unless already changed)
+            if ($person->getUpload() === $this) {
+                $person->setUpload(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getUploadType(): ?UploadType
+    {
+        return $this->uploadType;
+    }
+
+    public function setUploadType(?UploadType $uploadType): static
+    {
+        $this->uploadType = $uploadType;
 
         return $this;
     }

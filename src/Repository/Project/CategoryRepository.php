@@ -312,17 +312,35 @@ class CategoryRepository extends HintedRepositoryBase
     /**
      * @throws Exception
      */
-    public function getCategoriesForEntity($entity, $onlyActive = true, $categoryTypeID = null)
+    public function getCategoriesForEntity(Category|Product|Person|Event $entity, ?bool $onlyActive = true, null|int|array $categoryTypeIds = null, null|int|array $excludeTypeIds = null)
     {
         $qb = $this->createQueryBuilder('c');
+
+        $selectedCategoryTypes = null;
+        if ($categoryTypeIds){
+            $selectedCategoryTypes = is_int($categoryTypeIds) ? [$categoryTypeIds] : $categoryTypeIds;
+        }
+
+        $excludeCategoryTypes = null;
+        if ($excludeTypeIds){
+            $excludeCategoryTypes = is_int($excludeTypeIds) ? [$excludeTypeIds] : $excludeTypeIds;
+        }
+
         if ($onlyActive) {
             $qb->andWhere('c.isActive = :active')->setParameter('active', true);
         }
-        if ($categoryTypeID) {
+
+        if ($selectedCategoryTypes) {
             $qb->leftJoin('c.categoryType', 'ct')
-                ->andWhere('ct.id = :ct_id')
-                ->setParameter('ct_id', $categoryTypeID);
+                ->andWhere('ct.id in (:selectedCategoryTypes)')
+                ->setParameter('selectedCategoryTypes', $selectedCategoryTypes);
         }
+        if ($excludeCategoryTypes) {
+            $qb->leftJoin('c.categoryType', 'ct')
+                ->andWhere('ct.id not in (:excludedCategoryTypes)')
+                ->setParameter('excludedCategoryTypes', $excludeCategoryTypes);
+        }
+
         if ($entity instanceof Category) {
             $qb
                 ->leftJoin('c.categorySubCategories', 'cc')
@@ -406,5 +424,27 @@ class CategoryRepository extends HintedRepositoryBase
         //hydrates category
         $query = $this->createQueryBuilder('c')->andWhere('c.id in (:categorie)')->setParameter('categorie', $categories)->getQuery();
         return $this->hintQuery($query)->getResult();
+    }
+
+
+    /**
+     * returns array of superCategories for given categories
+     *
+     * @param array int[]
+     * @param bool $onlyActive
+     * @return Category[]
+     */
+    public function findAllParents(array $childCategories, bool $onlyActive = true): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->leftJoin('c.categoryCategories', 'cc')
+            ->andWhere('cc.category_sub in (:subCategoris)')
+            ->setParameter('subCategoris', $childCategories);
+
+        if ($onlyActive){
+            $qb->andWhere('c.isActive = true');
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }
