@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Message\Affiliate\CancelAffiliateEntry;
 use Greendot\EshopBundle\Message\Affiliate\CreateAffiliateEntry;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -24,6 +25,7 @@ class AffiliateService
         private CurrencyRepository      $currencyRepository,
         private MessageBusInterface     $messageBus,
         private ?Connection             $affiliateDbConnection,
+        private LoggerInterface         $logger,
     ) 
     {}
 
@@ -70,19 +72,17 @@ class AffiliateService
     // send request to affiliate db to create an entry for purchase
     public function createAffiliateEntry(Purchase $purchase) : void
     {
-        if(!$this->isAffiliate())
+        if(!$this->isAffiliate() || $this->affiliateEntryExists($purchase))
         {
             return;
         }
 
+        $this->logger->info('Creating affiliate entry.', ['purchaseId' => $purchase->getId()]);
+        
         $currency = $this->currencyRepository->findOneBy(['isDefault' => true]);
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount);
         $now = new \DateTime();
 
-        if($this->affiliateEntryExists($purchase))
-        {
-            return;
-        }
 
         $data = [
             'castka'            => $priceCalculator->getPrice() * 0.1,
@@ -108,6 +108,8 @@ class AffiliateService
         {
             return;
         }
+
+        $this->logger->info('Canceling affiliate entry.', ['purchaseId' => $purchase->getId()]);
 
         // send request to db
         $this->affiliateDbConnection->update('vydelky', ['stav' => 4], ['purchaseId'=> $purchase->getId()]);
