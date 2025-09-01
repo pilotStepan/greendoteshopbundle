@@ -299,7 +299,7 @@ class PurchaseController extends AbstractController
         $managePurchase->preparePrices($purchase);
 
 
-        $dueDate    = $purchase->getDateIssue()->modify('+14 days');
+        $dueDate    = (clone $purchase->getDateIssue())->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
         $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
