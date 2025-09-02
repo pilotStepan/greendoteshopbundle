@@ -201,6 +201,7 @@ class PurchaseController extends AbstractController
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
             ]);
+            dd($e);
             return $this->redirectToRoute('web_homepage');
         }
     }

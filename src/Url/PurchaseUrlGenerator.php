@@ -21,6 +21,9 @@ final readonly class PurchaseUrlGenerator
      */
     public function buildOrderEndscreenUrl(Purchase $purchase): string
     {
+        return $this->buildOrderDetailUrl($purchase, true);
+
+        /*
         $route = $purchase->getClient()->isIsAnonymous()
             ? 'thank_you'
             : 'client_section_order_detail';
@@ -33,6 +36,7 @@ final readonly class PurchaseUrlGenerator
             ],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
+        */
     }
 
     public function buildOrderDetailUrl(Purchase $purchase, bool $isCreated=false): string
