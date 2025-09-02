@@ -278,6 +278,7 @@ class PurchaseController extends AbstractController
         return $this->render('shop/cart/steps.html.twig');
     }
 
+    /* removed and replaced with client section
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
     public function thankYou(
         int                         $id,
@@ -316,6 +317,7 @@ class PurchaseController extends AbstractController
             'payLink'                   => $paylink,
         ]);
     }
+    */
 
     #[Route('/api/client/form', name: 'api_client_form', methods: ['GET'])]
     public function getClientForm(SerializerInterface $serializer): Response|JsonResponse
