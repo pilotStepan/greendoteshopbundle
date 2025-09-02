@@ -35,13 +35,18 @@ final readonly class PurchaseUrlGenerator
         );
     }
 
-    public function buildOrderDetailUrl(Purchase $purchase): string
+    public function buildOrderDetailUrl(Purchase $purchase, bool $isCreated=false): string
     {
         $orderDetailUrl = $this->router->generate(
             'client_section_order_detail',
             ['id' => $purchase->getId()],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
+
+        if ($isCreated) {
+            $separator = (parse_url($orderDetailUrl, PHP_URL_QUERY) ? '&' : '?');
+            $orderDetailUrl .= $separator . 'created=1';
+        }
 
         // If the client is registered, return the URL directly
         if (!$purchase->getClient()->isIsAnonymous()) return $orderDetailUrl;
