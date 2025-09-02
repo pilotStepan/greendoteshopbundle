@@ -29,7 +29,7 @@ class ProductWithVariantsUploads extends AbstractFilter
         $entityManager = $this->getManagerRegistry()->getManagerForClass(Upload::class);
         $repository = $entityManager->getRepository(Upload::class);
 
-        $repository->findUploadsForProductQB($value, $queryBuilder);
+        $repository->getProductWithVariantsUploadsQB($value, $queryBuilder);
     }
 
     public function getDescription(string $resourceClass): array
