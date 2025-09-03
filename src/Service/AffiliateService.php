@@ -27,7 +27,8 @@ class AffiliateService
         private ?Connection             $affiliateDbConnection,
         private LoggerInterface         $logger,
     ) 
-    { }
+    { 
+    }
 
     // set affiliate data to purchase from cookies
     public function setAffiliateToPurchase(Purchase $purchase) : void
@@ -83,21 +84,19 @@ class AffiliateService
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount);
         $now = new \DateTime();
 
-
+        // TODO: check if data are passed correctly
         $data = [
             'castka'            => $priceCalculator->getPrice() * 0.1,
             'cenaObj'           => $priceCalculator->getPrice(),
             'FK_idobjednavky'   => $purchase->getId(),
             'stav'              => 1,
             'datum'             => $now->getTimestamp(),
-            'FK_idklient'       => $purchase->getClient()->getId(),
-            'FK_idvybery'       => $purchase->getAffiliateId(),
+            'FK_idklient'       => $purchase->getAffiliateId(),
+            'FK_idvybery'       => null,
             'FK_idreklama'      => $purchase->getAdId(),
             'referer'           => null,
             'datetime'          => $now->format('Y-m-d H:i:s'),
         ];  
-
-        dd($this->affiliateDbConnection);
 
         $this->affiliateDbConnection->insert('vydelky', $data);
 

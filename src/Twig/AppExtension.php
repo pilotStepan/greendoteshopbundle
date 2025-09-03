@@ -275,9 +275,14 @@ class AppExtension extends AbstractExtension
         return $this->messageRepository->findOneBy(['purchase' => $purchase->getId(), 'type' => $type]);
     }
 
-    public function getSizedImage(Upload $upload, string|null $sizeString = null): string
+    public function getSizedImage(Upload|string $upload, string|null $sizeString = null): string
     {
-        $path = $upload->getPath();
+        if ($upload instanceof Upload) {
+            $path = $upload->getPath();
+        }
+        else {
+            $path = $upload;
+        }
         if ($sizeString) {
             $path_parts = pathinfo($path);
 

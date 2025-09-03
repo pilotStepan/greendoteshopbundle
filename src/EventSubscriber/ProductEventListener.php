@@ -37,7 +37,18 @@ class ProductEventListener
                     $productUploads[] = $upload;
                 }
             }
-            if (count($productUploads) > 1) {
+            if(count($productUploads) === 0)
+            {
+                foreach ($product->getProductVariants() as $productVariant) {
+                    foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
+                        foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
+                        {
+                            $productUploads[] = $upload;
+                        }
+                    }
+                }
+            }
+            if (count($productUploads) > 0) {
                 usort($productUploads, function($a, $b) {
                     return $a->getSequence() <=> $b->getSequence();
                 });

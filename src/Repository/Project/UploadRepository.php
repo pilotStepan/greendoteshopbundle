@@ -135,4 +135,21 @@ class UploadRepository extends ServiceEntityRepository
             ->setParameter('uploadGroups', $uploadGroups);
         return $qb->getQuery()->getResult();
     }
+
+    public function getProductWithVariantsUploadsQB(int $productId, QueryBuilder $qb): QueryBuilder
+    {
+
+        $alias = $qb->getRootAliases()[0];
+
+        $qb ->innerJoin($alias . '.uploadGroup', 'ug')
+            ->leftJoin('ug.productUploadGroup', 'pug')
+            ->leftJoin('pug.Product', 'p')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->leftJoin('pvug.ProductVariant', 'pv')
+            ->leftJoin('pv.product', 'pvp')
+            ->andWhere('(p.id = :productId OR pvp.id = :productId)')
+            ->setParameter('productId', $productId);
+
+        return $qb;
+    }
 }

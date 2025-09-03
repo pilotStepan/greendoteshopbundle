@@ -25,9 +25,14 @@ use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Symfony\Component\Serializer\SerializerInterface;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -196,6 +201,7 @@ class PurchaseController extends AbstractController
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
             ]);
+            dd($e);
             return $this->redirectToRoute('web_homepage');
         }
     }
@@ -273,16 +279,46 @@ class PurchaseController extends AbstractController
         return $this->render('shop/cart/steps.html.twig');
     }
 
+    /* removed and replaced with client section
     #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
-    public function thankYou($id): Response
+    public function thankYou(
+        int                         $id,
+        PurchaseRepository          $purchaseRepository,   
+        PurchasePriceFactory        $purchasePriceFactory,
+        ManagePurchase              $managePurchase,     
+        SessionInterface            $session,
+        ProductVariantPriceFactory  $productVariantPriceFactory,
+        QRcodeGenerator             $qrCodeGenerator,
+        PaymentGatewayProvider      $gatewayProvider,
+           
+    ): Response
     {
-        $orderDate = (new \DateTime())->modify('+2 weeks')->format('j.n.Y');
+        $purchase = $purchaseRepository->find($id);
+
+        $currency = $session->get('selectedCurrency');
+
+        $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
+        $managePurchase->preparePrices($purchase);
+
+
+        $dueDate    = (clone $purchase->getDateIssue())->modify('+14 days');
+        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
+
+        $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
+        $paylink = $paymentGateway->getPayLink($purchase);
+
 
         return $this->render('thank-you-pages/thank-you-cart.html.twig', [
-            'orderId'   => $id,
-            'orderDate' => $orderDate
+            'purchase'                  => $purchase,
+            'priceCalculator'           => $priceCalculator,
+            'productPriceCalculator'    => $productVariantPriceFactory,
+            'currency'                  => $currency,
+            'deliveryDate'              => $dueDate,
+            'QRcode'                    => $qrCodePath,
+            'payLink'                   => $paylink,
         ]);
     }
+    */
 
     #[Route('/api/client/form', name: 'api_client_form', methods: ['GET'])]
     public function getClientForm(SerializerInterface $serializer): Response|JsonResponse
