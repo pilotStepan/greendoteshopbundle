@@ -180,7 +180,9 @@ class Product implements Translatable
     #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
     private string $currencySymbol;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['searchable', 'product_item:read', 'product_list:read', 'comment:read'])]
     private ?string $metaDescription = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductPerson::class)]

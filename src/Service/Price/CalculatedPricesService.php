@@ -90,8 +90,10 @@ class CalculatedPricesService
             // debug
             if (empty($variantCalculatedPrices))
             {
-                dump($variant);
-                dd($product);
+                $product->setCalculatedPrices([]);
+                return $product;
+//                dump($variant);
+//                dd($product);
             }
 
             // get the 1st (with the lowest minimalAmount) calculated prices object from variant

@@ -73,7 +73,7 @@ class ProductRepository extends ServiceEntityRepository
     {
         $hasAvailability = false;
         foreach ($product->getProductVariants() as $variant) {
-            if ($variant->getAvailability()->getName() === 'skladem') {
+            if ($variant?->getAvailability()?->getName() === 'skladem') {
                 $hasAvailability = true;
                 break;
             }
@@ -365,7 +365,7 @@ class ProductRepository extends ServiceEntityRepository
 
 
         //$qb->join($alias . '.producers', 'pp');
-        $qb->where($alias . '.producer IN (:producers)');
+        $qb->andWhere($alias . '.producer IN (:producers)');
         $qb->setParameter('producers', $producers);
 
 

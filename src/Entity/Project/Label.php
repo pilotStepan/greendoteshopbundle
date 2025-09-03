@@ -30,7 +30,7 @@ class Label implements Translatable
 
     #[ORM\Column(type: 'string', length: 150)]
     #[Gedmo\Translatable]
-    #[Groups(['category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
+    #[Groups(['label:read','category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private $name;
 
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'labels')]
@@ -50,13 +50,16 @@ class Label implements Translatable
     
     #[ORM\Column(length: 255, nullable: true)]
     #[Gedmo\Translatable]
+    #[Groups(['label:read','category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Gedmo\Translatable]
+    #[Groups(['label:read','category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private $description;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['label:read','category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private ?int $sequence = null;
 
     #[Gedmo\Locale]
