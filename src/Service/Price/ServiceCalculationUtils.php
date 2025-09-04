@@ -64,8 +64,8 @@ class ServiceCalculationUtils
             return true;
         }
 
-        // no free_from_price set -> never free
-        if ($price->getFreeFromPrice() === null) {
+        // no free_from_price set and price >= 1 -> not free
+        if ($price->getFreeFromPrice() === null && $price->getPrice() >= 1) {
             return false;
         }
 
