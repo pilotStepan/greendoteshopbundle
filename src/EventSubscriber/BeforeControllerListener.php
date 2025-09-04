@@ -127,6 +127,10 @@ class BeforeControllerListener implements EventSubscriberInterface
 
     public function onKernelResponse(ResponseEvent $event) : void
     {
+        if (!$event->isMainRequest())
+        {
+            return;
+        }
         $this->affiliateService->setAffiliateCookiesFromRequest($event);
     }
 
