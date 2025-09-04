@@ -165,6 +165,8 @@ final class OrderDataFactory
             priceCzk: PriceHelper::formatPrice($priceCzk, $czk),
             priceEur: PriceHelper::formatPrice($priceEur, $eur),
             branchName: $purchase->getBranch()?->getName(),
+            mailDescription: $transportation->getDescriptionMail(),
+            mailDuration: $transportation->getDescriptionDuration(),
         );
     }
 

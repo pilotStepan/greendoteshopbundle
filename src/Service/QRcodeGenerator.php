@@ -30,7 +30,7 @@ class QRcodeGenerator
 
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($purchase->getTotalPrice(), 2, '.', '') .
-            '*CC:CZK*DT:' . $dueDate->format("Y.m.d") .
+            '*CC:CZK*DT:' . $dueDate->format("Ymd") .
             '*X-VS:' . $purchase->getInvoiceNumber();
 
         $builderParams = [

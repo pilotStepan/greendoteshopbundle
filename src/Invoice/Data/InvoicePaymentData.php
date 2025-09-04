@@ -13,6 +13,7 @@ class InvoicePaymentData
         public float                    $priceNoVat,
         public float                    $priceNoVatSecondary,     
         public ?string                  $bankAccount,
+        public ?string                  $bankNumber,
         public ?string                  $iban,
         public ?PaymentTypeActionGroup  $actionGroup,
     ) { }
