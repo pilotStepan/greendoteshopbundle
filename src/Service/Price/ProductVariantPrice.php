@@ -48,6 +48,8 @@ class ProductVariantPrice
     private Currency $currency;
     private readonly int $afterRegistrationBonus;
 
+    private bool $emptyPrice = false;
+
 
     public function __construct(
         ProductVariant|PurchaseProductVariant $productVariant,
@@ -257,6 +259,10 @@ class ProductVariantPrice
     private function constructForProductVariant(): void
     {
         $this->minAmount = $this->priceRepository->getMinimalAmount($this->productVariant, new \DateTime("now"));
+        if (!$this->minAmount and !$this->amount){
+            $this->emptyPrice = true;
+            return;
+        }
         $client = $this->security->getUser();
         if (!$client || ($client instanceof InMemoryUser && $client->getRoles() === ['ROLE_API'])) {
             // Skip clientDiscount calculation for Simple-ws requests (ROLE_API), as $client is not a Client instance in this case.
@@ -271,6 +277,10 @@ class ProductVariantPrice
 
     private function recalculatePrice(): void
     {
+        if ($this->emptyPrice){
+            return;
+        }
+
         if (!$this->amount and $this->minAmount) {
             $this->amount = $this->minAmount;
         } elseif (!$this->amount) {

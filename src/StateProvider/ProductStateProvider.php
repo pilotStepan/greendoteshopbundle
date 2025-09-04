@@ -6,6 +6,8 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use ApiPlatform\Doctrine\Orm\Paginator as ApiPlatformPaginator;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use Greendot\EshopBundle\Doctrine\TranslatableResultExtension;
+use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\PriceCalculator;
@@ -13,13 +15,10 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 class ProductStateProvider implements ProviderInterface
 {
-
-    private ProductRepository $productRepository;
-
-    public function __construct(ProductRepository $productRepository)
-    {
-        $this->productRepository = $productRepository;
-    }
+    public function __construct(
+        private readonly ProductRepository $productRepository,
+        private readonly TranslatableResultExtension $translatableResultExtension)
+    {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
     {
@@ -67,7 +66,7 @@ class ProductStateProvider implements ProviderInterface
         $offset = ($page - 1) * $limit;
         $qb->setMaxResults($limit);
         $qb->setFirstResult($offset);
-
+        $this->translatableResultExtension->addHints($qb, Product::class);
         $doctrinePaginator = new DoctrinePaginator($qb->getQuery(), true);
         return new ApiPlatformPaginator($doctrinePaginator);
 //        return $qb->getQuery()->getResult();
