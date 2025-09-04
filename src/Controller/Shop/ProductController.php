@@ -76,10 +76,12 @@ class ProductController extends AbstractController
         if (!$product) {
             throw $this->createNotFoundException('Produkt nenalezen!');
         }
+        $template = 'shop/product/index.html.twig';
+        if ($product?->getProductViewType()?->getTemplate()){
+            $template = $product->getProductViewType()->getTemplate();
+        }
 
-        //return $this->render('template/product-detail.html.twig');
-
-        return $this->render('shop/product/index.html.twig', [
+        return $this->render($template, [
             'product' => $product,
             'productId' => $product->getId(),
         ]);

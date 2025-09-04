@@ -236,6 +236,9 @@ class Product implements Translatable
     #[Groups(['product_item:read'])]
     private Collection $productInformationBlocks;
 
+    #[ORM\ManyToOne(inversedBy: 'product')]
+    private ?ProductViewType $productViewType = null;
+
     /**
      * Precalculated price values from the variant with the lowest priceNoVat.
      * @var array<string, float>
@@ -846,6 +849,18 @@ class Product implements Translatable
     public function setCalculatedPrices(array $calculatedPrices): self
     {
         $this->calculatedPrices = $calculatedPrices;
+        return $this;
+    }
+
+    public function getProductViewType(): ?ProductViewType
+    {
+        return $this->productViewType;
+    }
+
+    public function setProductViewType(?ProductViewType $productViewType): static
+    {
+        $this->productViewType = $productViewType;
+
         return $this;
     }
 }
