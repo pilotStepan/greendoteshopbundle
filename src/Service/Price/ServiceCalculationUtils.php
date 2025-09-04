@@ -59,7 +59,18 @@ class ServiceCalculationUtils
      */
     private function isFreeHandling(?HandlingPrice $price, float $theoreticalAmount): bool
     {
-        return !$price || $price->getPrice() < 1 || $theoreticalAmount >= $price->getFreeFromPrice();
+        // no price record -> free
+        if ($price === null) {
+            return true;
+        }
+
+        // no free_from_price set and price >= 1 -> not free
+        if ($price->getFreeFromPrice() === null && $price->getPrice() >= 1) {
+            return false;
+        }
+
+        // price < 1 or theoretical amount >= free_from_price -> free
+        return $price->getPrice() < 1 || $theoreticalAmount >= $price->getFreeFromPrice();
     }
 
     /**
