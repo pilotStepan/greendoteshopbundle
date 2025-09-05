@@ -95,6 +95,10 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $date_invoiced;
 
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private $date_delivery;
+
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $state = "draft";
@@ -293,6 +297,18 @@ class Purchase
     public function setDateInvoiced(?\DateTimeInterface $date_invoiced): self
     {
         $this->date_invoiced = $date_invoiced;
+
+        return $this;
+    }
+
+    public function getDateDelivery(): ?\DateTimeInterface
+    {
+        return $this->date_delivery;
+    }
+
+    public function setDateDelivery(?\DateTimeInterface $date_delivery): self
+    {
+        $this->date_delivery = $date_delivery;
 
         return $this;
     }

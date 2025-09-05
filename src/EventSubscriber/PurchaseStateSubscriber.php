@@ -12,6 +12,7 @@ use Symfony\Component\Workflow\Event\GuardEvent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Message\Affiliate\CreateAffiliateEntry;
 use Greendot\EshopBundle\Service\AffiliateService;
+use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -25,6 +26,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private ManagePurchase          $managePurchase,
         private ManageClientDiscount    $manageClientDiscount,
         private AffiliateService        $affiliateService,
+        private DateService             $dateService,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -108,6 +110,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $this->manageClientDiscount->use($purchase, $purchase->getClientDiscount());
         $this->manageVoucher->initiateVouchers($purchase);
         $this->managePurchase->generateTransportData($purchase);
+        $this->dateService->calculatePurchaseDeliveryDate($purchase);
     }
 
     public function onPayment(Event $event): void
