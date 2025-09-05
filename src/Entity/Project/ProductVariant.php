@@ -78,7 +78,7 @@ class ProductVariant implements Translatable
 
     #[ORM\ManyToOne(inversedBy: 'productVariants')]
     //#[Groups(["SearchProductResultApiModel"])]
-    #[Groups(['product_variant:read', 'purchase:read'])]
+    #[Groups(['product_variant:read', 'purchase:read', 'product_item:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: ProductVariantUploadGroup::class)]
