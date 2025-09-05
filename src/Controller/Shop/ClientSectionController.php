@@ -42,8 +42,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
-
-
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 
 class ClientSectionController extends AbstractController implements TurnOffIsActiveFilterController
 {
@@ -228,6 +227,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         SessionInterface            $session,
         Request                     $request,
         PaymentGatewayProvider      $gatewayProvider,
+        PurchaseUrlGenerator        $purchaseUrlGenerator
     ): Response
     {
         $purchase = $purchaseRepository->find($id);
@@ -245,7 +245,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
         $paylink = $paymentGateway->getPayLink($purchase);
-
+        $trackingUrl = $purchaseUrlGenerator->buildTrackingUrl($purchase);
 
         return $this->render('client-section/order-detail.html.twig', [
             'purchase'                  => $purchase,
@@ -255,6 +255,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             'currency'                  => $currency,
             'created'                   => $created,
             'payLink'                   => $paylink,
+            'trackingUrl'               => $trackingUrl,
         ]);
     }
 
