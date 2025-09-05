@@ -13,6 +13,5 @@ class OrderTransportationData
         public string   $priceEur,
         public ?string  $branchName,
         public ?string  $mailDescription,
-        public ?int     $mailDuration,
     ) {}
 }
