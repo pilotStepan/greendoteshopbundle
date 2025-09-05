@@ -113,6 +113,10 @@ class Transportation implements Translatable
     #[Groups(['transportation:read', 'transportation_group:read'])]
     private $freeFromPrice;
 
+    /* Calculated in TransportationEventListener */
+    #[Groups(['transportation:read'])]
+    private $amountUntilFree;
+
     #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
     private ?float $price = null;
 
@@ -522,6 +526,17 @@ class Transportation implements Translatable
     public function setFreeFromPrice(float $free_from_price): static
     {
         $this->freeFromPrice = $free_from_price;
+
+        return $this;
+    }
+
+    public function getAmountUntilFree(): ?float
+    {
+        return $this->amountUntilFree;
+    }
+    public function setAmountUntilFree(?float $amountUntilFree): static
+    {
+        $this->amountUntilFree = $amountUntilFree;
 
         return $this;
     }
