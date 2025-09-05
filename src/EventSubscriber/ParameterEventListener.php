@@ -21,15 +21,12 @@ class ParameterEventListener
 
         if ($entity instanceof Parameter) {
             $paramData = $entity->getData();
-
+            
             // if param is color
-            if ((strlen($paramData) === 6 && ctype_xdigit($paramData))){
+            if ($entity->getParameterGroup()->getParameterGroupFilterType()->getName() === "color"){
                 // create hex with # from $paramData
-                if (strpos($paramData, '#') !== 0) {
-                    $hex = '#' . $paramData;
-                } else {
-                    $hex = $paramData;
-                }  
+                $hex = str_starts_with($paramData, '#') ? $paramData : '#' . $paramData;
+
                 // try to find color name and add it
                 $color = $this->colourRepository->findOneBy(['hex'=>$hex]);
                 if ($color){
