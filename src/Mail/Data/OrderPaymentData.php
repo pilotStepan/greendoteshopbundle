@@ -9,6 +9,7 @@ class OrderPaymentData
         public string  $country,
         public string  $name,
         public string  $description,
+        public string  $mailDescription,
         public string  $priceCzk,
         public string  $priceEur,
         public ?string $bankNumber,

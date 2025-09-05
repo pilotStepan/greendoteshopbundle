@@ -182,6 +182,7 @@ final class OrderDataFactory
             country: $paymentType->getCountry(),
             name: $paymentType->getName(),
             description: $paymentType->getDescription(),
+            mailDescription: $paymentType->getDescritionMail(),
             priceCzk: PriceHelper::formatPrice($priceCzk, $czk),
             priceEur: PriceHelper::formatPrice($priceEur, $eur),
             bankNumber: $paymentType->getBankNumber(),
