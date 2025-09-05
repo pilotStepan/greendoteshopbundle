@@ -24,7 +24,12 @@ class ParameterEventListener
 
             // if param is color
             if ((strlen($paramData) === 6 && ctype_xdigit($paramData))){
-                $hex = '#'.$paramData;
+                // create hex with # from $paramData
+                if (strpos($paramData, '#') !== 0) {
+                    $hex = '#' . $paramData;
+                } else {
+                    $hex = $paramData;
+                }  
                 // try to find color name and add it
                 $color = $this->colourRepository->findOneBy(['hex'=>$hex]);
                 if ($color){
