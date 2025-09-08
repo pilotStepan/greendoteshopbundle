@@ -28,7 +28,7 @@ class ProductEventListener
         $availability = $this->productRepository->findAvailabilityByProduct($product);
         $parameters = $this->productRepository->calculateParameters($product);
 
-        // if it doesnt have main upload, it tries to substitue it
+        // if it doesn't have main upload, it tries to substitute it
         if ($product->getUpload() === null) {
             $productUploads = [];
             foreach($product->getProductUploadGroups() as $productUploadGroup) {

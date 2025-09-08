@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Service;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\CategoryCategory;
 use Greendot\EshopBundle\Entity\Project\MenuType;
+use Greendot\EshopBundle\Entity\Project\SubMenuType;
 use Greendot\EshopBundle\Repository\Project\CategoryCategoryRepository;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Exception;
@@ -70,7 +71,7 @@ class CategoryInfoGetter
 
     }
 
-    public function findSubMenuCategories(Category $category, MenuType $menuType)
+    public function findSubMenuCategories(Category $category, SubMenuType $menuType)
     {
         return $this->categoryRepository->findSubMenuCategories($category, $menuType);
     }
