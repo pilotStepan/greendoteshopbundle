@@ -11,7 +11,7 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 
 class PurchasePrice
 {
@@ -46,14 +46,18 @@ class PurchasePrice
         private readonly CurrencyRepository         $currencyRepository,
         private readonly PriceUtils                 $priceUtils,
         private readonly ServiceCalculationUtils    $serviceCalculationUtils,
-        private readonly ParameterBagInterface      $parameterBag
+        SettingsRepository         $settingsRepository
     )
     {
         foreach ($this->purchase->getVouchersUsed() as $voucher) {
             $this->vouchersUsed[] = $voucher;
         }
         $this->defaultCurrency = $this->currencyRepository->findOneBy(['conversionRate' => 1]);
-        $this->freeFromPriceIncludesVat = $parameterBag->get('greendot_eshop.price.free_from_price.includes_vat') ?? false;
+        $doesFreeFromPriceIncludesVat = $settingsRepository->findOneBy(['value' => 'free_from_price_includes_vat']);
+
+        if ($doesFreeFromPriceIncludesVat && is_bool($doesFreeFromPriceIncludesVat->getValue()) && $doesFreeFromPriceIncludesVat->getValue()){
+            $this->freeFromPriceIncludesVat = true;
+        }
         $this->loadVariants();
         $this->calculateVouchersValue();
     }

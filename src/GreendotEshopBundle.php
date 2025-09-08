@@ -26,16 +26,6 @@ class GreendotEshopBundle extends AbstractBundle
                         ->booleanNode('has_landing')->defaultValue(true)->end()
                     ->end()
                 ->end()
-                ->arrayNode('price')
-                    ->children()
-                        ->arrayNode('free_from_price')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->booleanNode('includes_vat')->defaultValue(false)->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
 //                ->arrayNode('transportation')
 //                    ->children()
 //                        ->arrayNode('dpd')
@@ -110,10 +100,6 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.global.absolute_url',
             $absoluteUrl
-        );
-        $builder->setParameter(
-            'greendot_eshop.price.free_from_price.includes_vat',
-            $config['price']['free_from_price']['includes_vat'] ?? false
         );
         $builder->setParameter(
             'greendot_eshop.blog.has_landing',
