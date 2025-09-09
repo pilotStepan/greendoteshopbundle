@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service\Price;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Settings;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -54,8 +55,13 @@ class PurchasePrice
         }
         $this->defaultCurrency = $this->currencyRepository->findOneBy(['conversionRate' => 1]);
         $doesFreeFromPriceIncludesVat = $settingsRepository->findOneBy(['value' => 'free_from_price_includes_vat']);
+        if ($doesFreeFromPriceIncludesVat instanceof Settings){
+            $doesFreeFromPriceIncludesVat = filter_var($doesFreeFromPriceIncludesVat->getValue(), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        }else{
+            $doesFreeFromPriceIncludesVat = false;
+        }
 
-        if ($doesFreeFromPriceIncludesVat && is_bool($doesFreeFromPriceIncludesVat->getValue()) && $doesFreeFromPriceIncludesVat->getValue()){
+        if (is_bool($doesFreeFromPriceIncludesVat) && $doesFreeFromPriceIncludesVat){
             $this->freeFromPriceIncludesVat = true;
         }
         $this->loadVariants();
