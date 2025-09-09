@@ -31,7 +31,7 @@ class ProductStateProvider implements ProviderInterface
         if(count($filters->supplierIds) > 0) {
             $this->productRepository->findProductsForProducers($qb, $filters->supplierIds);
         }
-        if ($filters?->productViewTypes && count($filters->productViewTypes) > 0){
+        if (isset($filters->productViewTypes) && count($filters->productViewTypes) > 0){
             $qb->andWhere('p.productViewType in (:productViewTypes)')
                 ->setParameter('productViewTypes', $filters->productViewTypes);
         }
