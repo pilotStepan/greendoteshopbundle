@@ -112,7 +112,7 @@ class AffiliateService
         $this->logger->info('Canceling affiliate entry.', ['purchaseId' => $purchase->getId()]);
 
         // send request to db
-        $this->affiliateDbConnection->update('vydelky', ['stav' => 4], ['purchaseId'=> $purchase->getId()]);
+        $this->affiliateDbConnection->update('vydelky', ['stav' => 4], ['FK_idobjednavky'=> $purchase->getId()]);
     }
 
     public function dispatchCreateAffiliateEntryMessage(Purchase $purchase) : void
