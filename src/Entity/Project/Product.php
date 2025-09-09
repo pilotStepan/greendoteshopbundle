@@ -59,7 +59,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['product_info:write']],
     paginationClientItemsPerPage: true
 )]
-#[ApiFilter(SearchFilter::class, properties: ['categoryProducts.category' => "exact"])]
+#[ApiFilter(SearchFilter::class, properties: ['categoryProducts.category' => "exact", 'productViewType.id' => 'exact'])]
 #[ApiFilter(RangeFilter::class, properties: ['productVariants.stock'])]
 #[ApiFilter(OrderFilter::class, properties: ['productVariants.price.price', 'sequence', 'id', 'externalId', 'name'])]
 #[ApiFilter(ProductSearchFilter::class)]

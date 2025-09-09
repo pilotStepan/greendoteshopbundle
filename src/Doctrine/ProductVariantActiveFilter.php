@@ -4,20 +4,19 @@ namespace Greendot\EshopBundle\Doctrine;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\Filter\SQLFilter;
-use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 
-class ProductIsActiveFilter extends SQLFilter
+class ProductVariantActiveFilter extends SQLFilter
 {
 
+    /**
+     * @inheritDoc
+     */
     public function addFilterConstraint(ClassMetadata $targetEntity, string $targetTableAlias): string
     {
-        // check if product
-        if ($targetEntity->getReflectionClass()->name !== Product::class)
-        {
-            return "";
+        if ($targetEntity->getReflectionClass()->name !== ProductVariant::class) {
+            return '';
         }
-
-        // filter
         return sprintf('%s.is_active = true', $targetTableAlias);
     }
 }

@@ -13,8 +13,8 @@ use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 
 /**
- * This class listens to postLoad events for Transportation and PaymentType entities
- * to set their prices based on the current purchase session.
+ * This class listens to postLoad events for PaymentType entity
+ * to set its prices based on the current purchase session.
  * Removes the need for manual handling price calculation on frontend.
  */
 #[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: PaymentType::class)]
@@ -30,7 +30,8 @@ readonly class PaymentTypeEventListener
     public function postLoad(PaymentType $paymentType): void
     {
         $currency = $this->currencyResolver->resolve();
-        $cart = $this->entityManager->getRepository(Purchase::class)->findOneBySession('purchase');
+        $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession('purchase');
+        $cart = $cartEntity ? clone $cartEntity : null;
 
         // Base price for the given service
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(

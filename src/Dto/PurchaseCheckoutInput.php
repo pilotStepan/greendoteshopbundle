@@ -15,15 +15,15 @@ class PurchaseCheckoutInput
         fields: [
             'name' => new Assert\Required([
                 new Assert\NotBlank,
-                new Assert\Length(max: 100)
+                new Assert\Length(max: 100),
             ]),
             'surname' => new Assert\Required([
                 new Assert\NotBlank,
-                new Assert\Length(max: 100)
+                new Assert\Length(max: 100),
             ]),
             'phone' => new Assert\Required([
                 new Assert\NotBlank,
-                new Assert\Length(max: 20)
+                new Assert\Length(max: 20),
             ]),
             'mail' => new Assert\Email(),
         ]
@@ -57,7 +57,7 @@ class PurchaseCheckoutInput
     #[Assert\Type('array')]
     #[Assert\All([
         new Assert\Type('string'),
-        new Assert\Length(max: 1000)
+        new Assert\Length(max: 1000),
     ])]
     public array $notes = [];
 
@@ -72,7 +72,8 @@ class PurchaseCheckoutInput
                 if (empty($address[$field])) {
                     $context->buildViolation('Všechny firemní údaje jsou povinné při zadání kteréhokoliv z nich')
                         ->atPath("address[{$field}]")
-                        ->addViolation();
+                        ->addViolation()
+                    ;
                 }
             }
         }
@@ -81,14 +82,16 @@ class PurchaseCheckoutInput
         $hasShippingData = !empty($address['ship_street']) ||
             !empty($address['ship_city']) ||
             !empty($address['ship_zip']) ||
-            !empty($address['ship_country']);
+            !empty($address['ship_country'])
+        ;
 
         if ($hasShippingData) {
             foreach (['ship_street', 'ship_city', 'ship_zip', 'ship_country'] as $field) {
                 if (empty($address[$field])) {
                     $context->buildViolation('Všechny položky doručovací adresy jsou povinné při zadání kteréhokoliv z nich')
                         ->atPath("address[{$field}]")
-                        ->addViolation();
+                        ->addViolation()
+                    ;
                 }
             }
         }

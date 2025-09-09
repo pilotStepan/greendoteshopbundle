@@ -8,7 +8,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 
 readonly class PurchasePriceFactory
 {
@@ -17,7 +17,7 @@ readonly class PurchasePriceFactory
         private CurrencyRepository         $currencyRepository,
         private PriceUtils                 $priceUtils,
         private ServiceCalculationUtils    $serviceCalculationUtils,
-        private ParameterBagInterface      $parameterBag,
+        private SettingsRepository         $settingsRepository
     ) {}
 
     public function create(
@@ -44,7 +44,7 @@ readonly class PurchasePriceFactory
             $this->currencyRepository,
             $this->priceUtils,
             $this->serviceCalculationUtils,
-            $this->parameterBag,
+            $this->settingsRepository,
         );
     }
 }

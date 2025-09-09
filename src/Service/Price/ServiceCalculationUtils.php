@@ -4,20 +4,18 @@ declare(strict_types=1);
 namespace Greendot\EshopBundle\Service\Price;
 
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\HandlingPrice;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
-use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Entity\Project\HandlingPrice;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 
-class ServiceCalculationUtils
+readonly class ServiceCalculationUtils
 {
     public function __construct(
         private HandlingPriceRepository $handlingPriceRepository,
         private PriceUtils              $priceUtils,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Calculate handling (service) price
@@ -27,7 +25,7 @@ class ServiceCalculationUtils
         Currency                   $currency,
         VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
         float                      $theoreticalAmount = 0.0,
-        bool                       $returnRaw = false
+        bool                       $returnRaw = false,
     ): float
     {
         $handlingPrice = $this->handlingPriceRepository->getByDate($service);
@@ -39,13 +37,13 @@ class ServiceCalculationUtils
 
         $price = match ($vatCalculationType) {
             VatCalculationType::WithoutVAT => $basePrice,
-            VatCalculationType::WithVAT => $basePrice + $vatAmount,
-            VatCalculationType::OnlyVAT => $vatAmount,
-            default => throw new \InvalidArgumentException(
-                sprintf('Unsupported VAT calculation type "%s"', $vatCalculationType->name)
+            VatCalculationType::WithVAT    => $basePrice + $vatAmount,
+            VatCalculationType::OnlyVAT    => $vatAmount,
+            default                        => throw new \InvalidArgumentException(
+                sprintf('Unsupported VAT calculation type "%s"', $vatCalculationType->name),
             ),
         };
-        if (!$returnRaw){
+        if (!$returnRaw) {
             return $this->priceUtils->convertCurrency($price, $currency);
         }
         return $price;
@@ -75,18 +73,24 @@ class ServiceCalculationUtils
 
     /**
      * @param Transportation|PaymentType $service
-     * @param Currency $currency
-     * @return float - the total purchase price threshold for the given service to be free
+     * @param Currency                   $currency
+     * @return ?float - the total purchase price threshold for the given service to be free
      */
     public function getFreeFromPrice(
-        Transportation|PaymentType  $service,
-        Currency                    $currency,
-    ): float
+        Transportation|PaymentType $service,
+        Currency                   $currency,
+    ): ?float
     {
         $handlingPrice = $this->handlingPriceRepository->getByDate($service);
+        if ($handlingPrice === null) {
+            return 0.0;
+        }
+
         $freeFromPrice = $handlingPrice->getFreeFromPrice();
+        if ($freeFromPrice === null) {
+            return null;
+        }
+
         return $this->priceUtils->convertCurrency($freeFromPrice, $currency);
     }
-
-
 }
