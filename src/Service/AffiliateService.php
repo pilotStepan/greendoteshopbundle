@@ -73,7 +73,7 @@ class AffiliateService
     // send request to affiliate db to create an entry for purchase
     public function createAffiliateEntry(Purchase $purchase) : void
     {
-        if(!$this->isAffiliate() || $this->affiliateEntryExists($purchase))
+        if(!$this->isAffiliate())
         {
             return;
         }
@@ -84,7 +84,6 @@ class AffiliateService
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount);
         $now = new \DateTime();
 
-        // TODO: check if data are passed correctly
         $data = [
             'castka'            => $priceCalculator->getPrice() * 0.1,
             'cenaObj'           => $priceCalculator->getPrice(),
@@ -118,6 +117,11 @@ class AffiliateService
 
     public function dispatchCreateAffiliateEntryMessage(Purchase $purchase) : void
     {
+        if(!$this->isAffiliate() || !$this->purchaseIsAffiliate($purchase) || $this->affiliateEntryExists($purchase))
+        {
+            return;
+        }
+
         $this->messageBus->dispatch(
             new CreateAffiliateEntry(
                 $purchase->getId()
@@ -127,6 +131,11 @@ class AffiliateService
 
     public function dispatchCancelAffiliateEntryMessage(Purchase $purchase) : void
     {
+        if(!$this->isAffiliate() || !$this->purchaseIsAffiliate($purchase) || !$this->affiliateEntryExists($purchase))
+        {
+            return;
+        }
+
         $this->messageBus->dispatch(
             new CancelAffiliateEntry(
                 $purchase->getId()
@@ -147,5 +156,10 @@ class AffiliateService
     private function isAffiliate() : bool
     {
         return ($this->affiliateDbConnection !== null);
+    }
+
+    private function purchaseIsAffiliate(Purchase $purchase) : bool
+    {
+        return $purchase->getAffiliateId() and $purchase->getAdId();
     }
 }
