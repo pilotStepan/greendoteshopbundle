@@ -885,7 +885,7 @@ class Purchase
         return $this;
     }
 
-    public function getAffiliateId() : string
+    public function getAffiliateId() : ?string
     {
         return $this->affiliateId;
     }
@@ -897,7 +897,7 @@ class Purchase
         return $this;
     }
 
-    public function getAdId() : int
+    public function getAdId() : ?int
     {
         return $this->adId;
     }

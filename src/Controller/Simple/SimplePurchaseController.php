@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Simple;
 
+use JsonException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\Registry;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Greendot\EshopBundle\Message\Notification\PurchaseDiscussionEmail;
@@ -21,7 +23,8 @@ use Greendot\EshopBundle\Message\Notification\PurchaseDiscussionEmail;
 class SimplePurchaseController extends AbstractController
 {
     public function __construct(
-        private readonly MessageBusInterface $messageBus,
+        private readonly MessageBusInterface    $messageBus,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route(path: '/workflow-places', name: 'workflow_places')]
@@ -54,7 +57,7 @@ class SimplePurchaseController extends AbstractController
     {
         try {
             $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (JsonException) {
             throw new BadRequestHttpException('Invalid JSON format');
         }
 
@@ -95,7 +98,7 @@ class SimplePurchaseController extends AbstractController
     {
         try {
             $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (JsonException) {
             throw new BadRequestHttpException('Invalid JSON format');
         }
 
@@ -103,12 +106,18 @@ class SimplePurchaseController extends AbstractController
             throw new BadRequestHttpException('Missing content');
         }
 
+        $discussion = (new PurchaseDiscussion())
+            ->setPurchase($purchase)
+            ->setContent($data['content'])
+            ->setIsAdmin(true)
+            ->setIsRead(false)
+        ;
+
+        $this->em->persist($discussion);
+        $this->em->flush();
+
         $this->messageBus->dispatch(
-            new PurchaseDiscussionEmail(
-                $purchase->getId(),
-                $data['content'],
-                new \DateTimeImmutable(),
-            ),
+            new PurchaseDiscussionEmail($purchase->getId(), $data['content']),
         );
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
