@@ -27,7 +27,7 @@ class LabelType
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['labelType:read', 'labelType:write', 'label:read', 'label:write'])]
+    #[Groups(['product_item:read', 'product_list:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write'])]
     private ?string $color = null;
 
     /**
