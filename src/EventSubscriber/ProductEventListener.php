@@ -12,7 +12,7 @@ use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Symfony\Component\Validator\Constraints\Length;
 
-#[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: Product::class)]
+#[AsEntityListener(event: Events::postLoad, priority: 10, method: 'postLoad', entity: Product::class)]
 class ProductEventListener
 {
 
