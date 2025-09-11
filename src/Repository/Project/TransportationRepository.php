@@ -26,6 +26,7 @@ class TransportationRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('t');
         $qb->select('t')
             ->innerJoin('t.handlingPrices', 'h')
+            ->andWhere('h.price > 0')
             ->andWhere('h.free_from_price >= 0')
             ->andWhere('h.validFrom <= :now')
             ->andWhere(
