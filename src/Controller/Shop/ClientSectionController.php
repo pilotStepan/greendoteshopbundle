@@ -115,15 +115,18 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         PurchaseRepository $purchaseRepository,
         QRcodeGenerator    $qrCodeGenerator,
         PriceCalculator    $priceCalculator,
-        SessionInterface   $session
+        SessionInterface   $session,
+        ClientRepository   $clientRepository,
     ): Response
     {
+        $client = $clientRepository->find($this->getUser());
+
         $purchase = $purchaseRepository->find($purchaseID);
         $currency = $session->get('selectedCurrency');
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
-
+        
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
             $currency,
@@ -134,11 +137,12 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             VoucherCalculationType::WithoutVoucher,
             true
         );
-
+        
         $dueDate    = $purchase->getDateIssue()->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
         return $this->render('client-section/payment.html.twig', [
+            'client'         => $client,
             'purchase'       => $purchase,
             'QRcode'         => $qrCodePath,
             'totalPrice'     => $totalPrice,
@@ -210,6 +214,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         }
 
         return $this->render('client-section/orders.html.twig', [
+            'client'     => $client,
             'orders'     => $orders,
             'drafts'     => $drafts,
             'pagination' => $pagination
@@ -227,7 +232,8 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         SessionInterface            $session,
         Request                     $request,
         PaymentGatewayProvider      $gatewayProvider,
-        PurchaseUrlGenerator        $purchaseUrlGenerator
+        PurchaseUrlGenerator        $purchaseUrlGenerator,
+        ClientRepository            $clientRepository,
     ): Response
     {
         $purchase = $purchaseRepository->find($id);
@@ -247,7 +253,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $paylink = $paymentGateway->getPayLink($purchase);
         $trackingUrl = $purchaseUrlGenerator->buildTrackingUrl($purchase);
 
+        $client = $clientRepository->find($this->getUser());
+
         return $this->render('client-section/order-detail.html.twig', [
+            'client'                    => $client,
             'purchase'                  => $purchase,
             'QRcode'                    => $qrCodePath,
             'priceCalculator'           => $priceCalculator,
@@ -277,6 +286,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $pagination->setTemplate('pagination/pagination.html.twig');
 
         return $this->render('client-section/draft-orders.html.twig', [
+            'client'     => $client,
             'orders'     => $orders,
             'pagination' => $pagination
         ]);
@@ -496,8 +506,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         }
 
         return $this->render('client-section/certificates.html.twig', [
-            'vouchers' => $vouchers,
-            'voucherMetadata' => $voucherMetadata
+            'client'            => $client,
+            'vouchers'          => $vouchers,
+            'voucherMetadata'   => $voucherMetadata
         ]);
     }
 
