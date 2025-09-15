@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use JetBrains\PhpStorm\ArrayShape;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -41,10 +42,14 @@ use Symfony\Component\Serializer\Annotation\Groups;
         ),
         new Get(
             uriTemplate: '/purchases/wishlist',
+            normalizationContext: ['groups' => ['purchase:wishlist']],
+            denormalizationContext: ['groups' => ['default']],
             provider: PurchaseWishlistStateProvider::class,
         ),
         new GetCollection(
             uriTemplate: '/purchases/wishlist',
+            normalizationContext: ['groups' => ['purchase:wishlist']],
+            denormalizationContext: ['groups' => ['default']],
             provider: PurchaseWishlistStateProvider::class,
         ),
         new Post(),
@@ -80,7 +85,7 @@ class Purchase
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $id;
 
     #[ORM\Column(type: 'datetime')]
@@ -132,7 +137,7 @@ class Purchase
     private $review_type;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $name;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -151,14 +156,23 @@ class Purchase
 
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $client;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     private $total_price_no_services;
 
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $total_price;
+
+    #[Groups(['purchase:wishlist'])]
+    #[ArrayShape([
+        'total_with_vat_main' => "float",
+        'total_no_vat_main' => "float",
+        'total_with_vat_secondary' => "float",
+        'total_no_vat_secondary' => "float",
+        ])]
+    private array $prices;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     private $transportation_price;
@@ -167,7 +181,7 @@ class Purchase
     private $payment_price;
 
     #[ORM\OneToMany(targetEntity: PurchaseProductVariant::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private Collection $ProductVariants;
 
     #[ORM\OneToMany(targetEntity: PurchaseEvent::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
@@ -902,4 +916,14 @@ class Purchase
         return $this->adId;
     }
 
+    public function getPrices(): array
+    {
+        return $this->prices;
+    }
+
+    public function setPrices(array $prices): Purchase
+    {
+        $this->prices = $prices;
+        return $this;
+    }
 }

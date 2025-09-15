@@ -18,17 +18,18 @@ class PurchaseProductVariant
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['purchase:wishlist'])]
     private $id;
 
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'ProductVariants')]
     private $purchase;
 
     #[ORM\ManyToOne(targetEntity: ProductVariant::class, inversedBy: 'orderProductVariants', cascade: ['persist'])]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $ProductVariant;
 
     #[ORM\Column(type: 'integer')]
-    #[Groups(['purchase:read', 'purchase:write'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $amount;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -40,7 +41,7 @@ class PurchaseProductVariant
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $delivery_until = null;
 
-    #[Groups(['purchase:read'])]
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
     private $total_price;
 
     #[ORM\OneToOne(targetEntity: Price::class, inversedBy: 'purchaseProductVariant', cascade: ['persist', 'remove'])]

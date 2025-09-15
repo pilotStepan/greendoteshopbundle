@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
+use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
 use Greendot\EshopBundle\ApiResource\ParameterSupplierFilter;
 use Greendot\EshopBundle\ApiResource\ParameterDiscountFilter;
@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ParameterRepository::class)]
-#[\ApiPlatform\Metadata\ApiResource(
+#[ApiResource(
     normalizationContext: ['groups' => ['parameter:read']],
     denormalizationContext: ['groups' => ['parameter:write']],
     paginationEnabled: false
@@ -32,11 +32,11 @@ class Parameter
     private $id;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
+    #[Groups(['category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
     private $data;
 
     #[ORM\ManyToOne(targetEntity: ParameterGroup::class, inversedBy: 'parameter')]
-    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read'])]
+    #[Groups(['product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
     private $parameterGroup;
 
     #[Groups(['parameter:read', 'parameter:write'])]
@@ -54,7 +54,7 @@ class Parameter
     private ?int $sequence = null;
 
     #[ApiProperty]
-    #[Groups(['product_item:read', 'product_list:read', 'parameter:read', 'purchase:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'parameter:read', 'purchase:read', 'purchase:wishlist'])]
     private ?string $colorName = null;
 
     public function getId(): ?int
