@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Core\Annotation\ApiResource;
 use Greendot\EshopBundle\Repository\Project\AvailabilityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -20,7 +19,7 @@ class Availability
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $name;
 
     #[ORM\Column(type: 'text')]
@@ -28,7 +27,7 @@ class Availability
     private $description;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['product_list:read', 'product_item:read'])]
+    #[Groups(['product_list:read', 'product_item:read', 'purchase:wishlist'])]
     private $class;
 
     #[ORM\Column(type: 'boolean')]

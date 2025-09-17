@@ -104,7 +104,7 @@ class Product implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read', 'purchase:wishlist'])]
     private $slug;
 
     /**
