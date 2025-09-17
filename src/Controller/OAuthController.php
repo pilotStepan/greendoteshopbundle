@@ -63,7 +63,7 @@ class OAuthController extends AbstractController
                 (function () {
                     try {
                         if (window.opener) {
-                            window.opener.postMessage({ token: "$tokenJs", redirect: "$redirectJs" }, "$originJs");
+                            window.opener.postMessage({ token: $tokenJs, redirect: $redirectJs }, $originJs);
                             window.close();
                             return;
                         }
