@@ -47,17 +47,30 @@ class OAuthController extends AbstractController
     #[Route('/auth/callback', name: 'auth_callback')]
     public function authCallback(Request $request): Response
     {
-        $token = $request->query->get('token');
+        $token = (string)$request->query->get('token');
+        $redirect = (string)($request->query->get('redirect') ?? '/');
         $origin = $request->getSchemeAndHttpHost();
+
+        $tokenJs = json_encode($token, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $redirectJs = json_encode($redirect, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $originJs = json_encode($origin, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
         $content = <<<HTML
             <!DOCTYPE html>
             <html lang="">
             <body>
-                <script>
-                    window.opener.postMessage({ token: "$token" }, "$origin");
-                    window.close();
-                </script>
+            <script>
+                (function () {
+                    try {
+                        if (window.opener) {
+                            window.opener.postMessage({ token: "$tokenJs", redirect: "$redirectJs" }, "$originJs");
+                            window.close();
+                            return;
+                        }
+                    } catch (e) {}
+                    window.location.href = $redirectJs;
+                })();
+            </script>
             </body>
             </html>
         HTML;
