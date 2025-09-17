@@ -18,7 +18,7 @@ class RegisteredUserProvider implements UserProviderInterface
     {
         $user = $this->em->getRepository(Client::class)->findOneBy([
             'mail' => $identifier,
-            'isAnonymous' => false,
+            'is_anonymous' => false,
         ]);
 
         if (!$user) {
