@@ -44,7 +44,7 @@ class AnonymousClientLogoutListener
             $response = $this->security->logout();
 
             // Redirect immediately to logout
-            $event->setResponse($request);
+            $event->setResponse($response);
         }
     }
 }
