@@ -17,7 +17,6 @@ class AnonymousClientLogoutListener
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        dump('test trigger');
         $request = $event->getRequest();
 
         // Skip sub-requests (e.g. when rendering fragments)
@@ -30,20 +29,16 @@ class AnonymousClientLogoutListener
 
         // If not an anonymous Client entity → ignore
         if (!$user instanceof Client || !$user->isIsAnonymous()) {
-            dd($user);
             return;
         }
 
         // Allow only the order detail route
         if ($request->attributes->get('_route') !== 'client_section_order_detail') {
             // Build the logout URL for your "main" firewall
-            $response = $this->security->logout();
+            $response = $this->security->logout(false);
 
             // Redirect immediately to logout
             $event->setResponse($response);
-        }
-        else{
-            dd('route correct');
         }
     }
 }
