@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Entity\Project\Client;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator;
@@ -12,8 +13,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class AnonymousClientLogoutListener
 {
     public function __construct(
-        private TokenStorageInterface $tokenStorage,
-        private LogoutUrlGenerator $logoutUrlGenerator,
+        private TokenStorageInterface   $tokenStorage,
+        private Security                $security,
     ) {}
 
     public function onKernelRequest(RequestEvent $event): void
@@ -40,10 +41,10 @@ class AnonymousClientLogoutListener
         // Allow only the order detail route
         if ($request->attributes->get('_route') !== 'client_section_order_detail') {
             // Build the logout URL for your "main" firewall
-            $logoutUrl = $this->logoutUrlGenerator->getLogoutPath('main');
+            $response = $this->security->logout();
 
             // Redirect immediately to logout
-            $event->setResponse(new RedirectResponse($logoutUrl));
+            $event->setResponse($request);
         }
     }
 }
