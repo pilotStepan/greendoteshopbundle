@@ -19,6 +19,7 @@ class AnonymousClientLogoutListener
 
     public function onKernelRequest(RequestEvent $event): void
     {
+        dump('test trigger');
         $request = $event->getRequest();
 
         // Skip sub-requests (e.g. when rendering fragments)
@@ -31,6 +32,7 @@ class AnonymousClientLogoutListener
 
         // If not an anonymous Client entity → ignore
         if (!$user instanceof Client || !$user->isIsAnonymous()) {
+            dd('user not anonymous');
             return;
         }
 
@@ -41,6 +43,9 @@ class AnonymousClientLogoutListener
 
             // Redirect immediately to logout
             $event->setResponse($response);
+        }
+        else{
+            dd('route correct');
         }
     }
 }
