@@ -32,7 +32,7 @@ class AnonymousClientLogoutListener
 
         // If not an anonymous Client entity → ignore
         if (!$user instanceof Client || !$user->isIsAnonymous()) {
-            dd('user not anonymous');
+            dd($user);
             return;
         }
 
