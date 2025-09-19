@@ -26,14 +26,10 @@ class AnonymousClientLogoutListener
             return;
         }
 
-        $token = $this->tokenStorage->getToken();
-        if (!$token) {
-            return;
-        }
+        $user = $this->security->getUser();
 
-        $user = $token->getUser();
 
-        // If not a anonymous Client entity → ignore
+        // If not an anonymous Client entity → ignore
         if (!$user instanceof Client || !$user->isIsAnonymous()) {
             return;
         }
