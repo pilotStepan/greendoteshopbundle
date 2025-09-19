@@ -4,16 +4,14 @@ namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Entity\Project\Client;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\Security\Core\User\UserInterface;
 
+#[AsEventListener(event: 'kernel.request', priority: -10)]
 class AnonymousClientLogoutListener
 {
     public function __construct(
-        private TokenStorageInterface   $tokenStorage,
         private Security                $security,
     ) {}
 
