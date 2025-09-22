@@ -116,7 +116,7 @@ class ProductVariant implements Translatable
      * }>
      */
     #[ApiProperty]
-    #[Groups(['product_item:read', 'product_variant:read'])]
+    #[Groups(['product_item:read', 'product_variant:read', 'product_list:read'])]
     private array $calculatedPrices = [];
 
 
