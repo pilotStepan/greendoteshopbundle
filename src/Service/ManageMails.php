@@ -152,15 +152,15 @@ readonly class ManageMails
 //            );
 //        }
 
-        // Attach invoice
-        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
-        if ($invoicePath) {
-            $email->attachFromPath(
-                $invoicePath,
-                'faktura_' . $purchase->getId() . '.pdf',
-                'application/pdf',
-            );
-        }
+        // UPDATE: Don't attach invoice nor proforma on payment
+//        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
+//        if ($invoicePath) {
+//            $email->attachFromPath(
+//                $invoicePath,
+//                'faktura_' . $purchase->getId() . '.pdf',
+//                'application/pdf',
+//            );
+//        }
 
         return $email;
     }
