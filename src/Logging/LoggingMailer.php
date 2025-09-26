@@ -24,6 +24,9 @@ final readonly class LoggingMailer implements MailerInterface
     public function send(RawMessage $message, ?Envelope $envelope = null): void
     {
         try {
+            $this->logger->info('Sending email', [
+                'recipients' => $envelope?->getRecipients() ?? [],
+            ]);
             $this->inner->send($message, $envelope);
         } catch (TransportExceptionInterface $e) {
             $this->logger->critical('Mailer failure', [

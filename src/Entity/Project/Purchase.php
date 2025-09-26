@@ -814,6 +814,24 @@ class Purchase
         return $this;
     }
 
+    public function getLastAdminMessage(): ?PurchaseDiscussion
+    {
+        $clientMessages = $this->purchaseDiscussions->filter(
+            fn(PurchaseDiscussion $discussion) => $discussion->getIsAdmin(),
+        );
+
+        if ($clientMessages->isEmpty()) {
+            return null;
+        }
+
+        $iterator = $clientMessages->getIterator();
+        $iterator->uasort(function (PurchaseDiscussion $a, PurchaseDiscussion $b) {
+            return $b->getCreatedAt() <=> $a->getCreatedAt();
+        });
+
+        return $iterator->count() > 0 ? $iterator->current() : null;
+    }
+
     public function isDiscussionResolved(): bool
     {
         return $this->isDiscussionResolved;

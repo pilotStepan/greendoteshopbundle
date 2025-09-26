@@ -80,6 +80,7 @@ readonly class ManageMails
             ->context([
                 'purchase_id' => $purchase->getId(),
                 'client_section_link' => $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase),
+                'last_admin_message' => $purchase->getLastAdminMessage(),
             ])
         ;
 
