@@ -11,7 +11,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 readonly class ClientStateProvider implements ProviderInterface
 {
-    public function __construct(private Security $security) {}
+    public function __construct(
+        private Security $security
+    ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): Client
     {

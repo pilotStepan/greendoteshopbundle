@@ -141,7 +141,7 @@ class PurchaseRepository extends ServiceEntityRepository
             ->andWhere('p.client = :client')
             ->andWhere('p.state IN (:states)')
             ->setParameter('client', $client)
-            ->setParameter('states', ['draft', 'new'])
+            ->setParameter('states', ['draft'])
             ->orderBy('p.date_issue', 'DESC')
             ->setMaxResults(1)
             ->getQuery()

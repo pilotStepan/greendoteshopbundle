@@ -12,21 +12,25 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Service\CurrencyResolver;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 
 readonly class PurchaseWishlistStateProvider implements ProviderInterface
 {
     public function __construct(
-        private EntityManagerInterface $em,
-        private PurchaseRepository     $purchaseRepository,
-        private Registry               $workflowRegistry,
-        private Security               $security,
-        private RequestStack           $requestStack,
-        private PurchasePriceFactory   $purchasePriceFactory,
-        private CurrencyRepository     $currencyRepository,
+        private EntityManagerInterface     $em,
+        private PurchaseRepository         $purchaseRepository,
+        private Registry                   $workflowRegistry,
+        private Security                   $security,
+        private RequestStack               $requestStack,
+        private PurchasePriceFactory       $purchasePriceFactory,
+        private ProductVariantPriceFactory $productVariantPriceFactory,
+        private CurrencyResolver           $currencyResolver,
+        private CurrencyRepository         $currencyRepository,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): Purchase
@@ -93,5 +97,17 @@ readonly class PurchaseWishlistStateProvider implements ProviderInterface
             'total_with_vat_secondary' => $totalWithVatSecondary,
             'total_no_vat_secondary' => $totalNoVatSecondary,
         ]);
+
+        $resolvedCurrency = $this->currencyResolver->resolve();
+        foreach ($wishlist->getProductVariants() as $productVariant) {
+            $productVariantPriceCalc = $this->productVariantPriceFactory->create(
+                $productVariant,
+                $resolvedCurrency,
+                vatCalculationType: VatCalculationType::WithVAT,
+            );
+            $productVariant->setTotalPrice(
+                $productVariantPriceCalc->getPrice(),
+            );
+        }
     }
 }
