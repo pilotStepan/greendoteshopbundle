@@ -18,9 +18,11 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Service\PriceCalculator;
+use Greendot\EshopBundle\Service\WishlistService;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Symfony\Component\Serializer\SerializerInterface;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
@@ -29,13 +31,8 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
-use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -462,13 +459,33 @@ class PurchaseController extends AbstractController
     }
 
     #[Route('/seznam-prani', name: 'shop_wishlist', priority: 2)]
-    public function wishlist(): Response
+    public function wishlist(RequestStack $requestStack, WishlistService $wishlistService, PurchaseRepository $repo): Response
     {
-        if (!$this->getUser()) {
-            return $this->redirect('/');
-        }
+        if (!$this->getUser()) return $this->redirect('/');
 
-        return $this->render('wishlist/index.html.twig');
+        $wishlistId = $requestStack->getSession()->get('wishlist');
+        $wishlist = $repo->find($wishlistId);
+        $urlToken = $wishlistService->generateUrlToken($wishlist);
+
+        return $this->render('wishlist/index.html.twig', ['props' => [
+            'urlToken' => $urlToken,
+        ]]);
+    }
+
+    #[Route('/seznam-prani/{token}', name: 'shop_wishlist_shared', priority: 2)]
+    public function wishlistShared(string $token, WishlistService $wishlistService, SerializerInterface $serializer): Response
+    {
+        try {
+            $wishlist = $wishlistService->getFromUrlToken($token);
+        } catch (\InvalidArgumentException $e) {
+            throw $this->createNotFoundException('Seznam přání nebyl nalezen');
+        }
+        $wishlistService->preparePrices($wishlist);
+        $wishlistDto = $serializer->normalize($wishlist, null, ['groups' => ['purchase:wishlist']]);
+
+        return $this->render('wishlist/shared.html.twig', ['props' => [
+            'wishlist' => $wishlistDto,
+        ]]);
     }
 }
 
