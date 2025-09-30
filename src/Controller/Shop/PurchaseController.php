@@ -35,6 +35,7 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -210,6 +211,7 @@ class PurchaseController extends AbstractController
     #[Route('/order/cancel', name: 'order_cancel',  methods: ['GET'])]
     public function cancelOrder(
         Request                 $request,
+        RequestStack            $requestStack,
         PurchaseRepository      $purchaseRepository,
         Registry                $workflow,
         EntityManagerInterface  $entityManager,
@@ -217,19 +219,27 @@ class PurchaseController extends AbstractController
     {
         $id = $request->query->get('id');
         $redirectRoute = $request->query->get('redirect', 'web_homepage');
-
         $purchase = $purchaseRepository->find($id);
-        $this->denyAccessUnlessGranted('view', $purchase);
 
+        $this->denyAccessUnlessGranted('view', $purchase);
+        
         $flow = $workflow->get($purchase);
         if($purchase->getState() == 'draft')
         {
             $flow->apply($purchase, 'create');
         }
-
         if ($flow->can($purchase, 'cancellation')) {
             $flow->apply($purchase, 'cancellation');
             $entityManager->flush();
+            
+        }
+
+        $session = $requestStack->getSession();
+        if ($session->has('purchase')) {
+            $cart = $purchaseRepository->find($session->get('purchase'));
+            if ($cart->getId() === $purchase->getId()) {
+                $session->remove('purchase');
+            }
         }
 
         return $this->redirectToRoute($redirectRoute);   
