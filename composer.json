@@ -57,7 +57,8 @@
     "dragonbe/vies": "^2.3",
     "monolog/monolog": "^3.9",
     "ext-xmlreader": "*",
-    "ext-libxml": "*"
+    "ext-libxml": "*",
+    "nzo/url-encryptor-bundle": "^6.4"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
