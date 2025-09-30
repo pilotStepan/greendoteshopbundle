@@ -116,7 +116,7 @@ final class InvoiceDataFactory
     {
         try {
             $dueDate = new DateTimeImmutable('+14 days');
-            return $this->qrGenerator->getUri($purchase, $dueDate);
+            return $this->qrGenerator->getFullUrl($purchase, $dueDate);
         } catch (Throwable) {
             return null;
         }
