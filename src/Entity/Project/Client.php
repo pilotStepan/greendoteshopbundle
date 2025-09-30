@@ -28,20 +28,20 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
+        new GetCollection(security: 'is_granted("ROLE_USER") and object.id() == user.id()'),
         new GetCollection(uriTemplate: '/clients/session', provider: ClientStateProvider::class),
         new Post(validationContext: ['groups' => ['Default', 'client:create']], processor: ClientRegistrationStateProcessor::class),
-        new Get(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
-        new Put(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()', processor: ClientRegistrationStateProcessor::class),
+        new Get(security: 'is_granted("ROLE_USER") and object.id() == user.id()'),
+        new Put(security: 'is_granted("ROLE_USER") and object.id() == user.id()', processor: ClientRegistrationStateProcessor::class),
         new Patch(
             denormalizationContext: [
                 'groups' => ['client:write'],
                 'api_allow_update' => true,
             ],
-            security: 'is_granted("ROLE_USER") and object.getId() == user.getId()',
+            security: 'is_granted("ROLE_USER") and object.id() == user.id()',
             processor: ClientRegistrationStateProcessor::class
         ),
-        new Delete(security: 'is_granted("ROLE_USER") and object.getId() == user.getId()'),
+        new Delete(security: 'is_granted("ROLE_USER") and object.id() == user.id()'),
     ],
     normalizationContext: ['groups' => ['client:read']],
     denormalizationContext: ['groups' => ['client:write']],
