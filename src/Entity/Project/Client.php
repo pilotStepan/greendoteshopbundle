@@ -28,20 +28,20 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(security: 'is_granted("ROLE_USER") and object.id == user'),
+        new GetCollection(security: 'is_granted("ROLE_USER") and object == user'),
         new GetCollection(uriTemplate: '/clients/session', provider: ClientStateProvider::class),
         new Post(validationContext: ['groups' => ['Default', 'client:create']], processor: ClientRegistrationStateProcessor::class),
-        new Get(security: 'is_granted("ROLE_USER") and object.id == user'),
-        new Put(security: 'is_granted("ROLE_USER") and object.id == user', processor: ClientRegistrationStateProcessor::class),
+        new Get(security: 'is_granted("ROLE_USER") and object == user'),
+        new Put(security: 'is_granted("ROLE_USER") and object == user', processor: ClientRegistrationStateProcessor::class),
         new Patch(
             denormalizationContext: [
                 'groups' => ['client:write'],
                 'api_allow_update' => true,
             ],
-            security: 'is_granted("ROLE_USER") and object.id == user',
+            security: 'is_granted("ROLE_USER") and object == user',
             processor: ClientRegistrationStateProcessor::class
         ),
-        new Delete(security: 'is_granted("ROLE_USER") and object.id == user'),
+        new Delete(security: 'is_granted("ROLE_USER") and object == user'),
     ],
     normalizationContext: ['groups' => ['client:read']],
     denormalizationContext: ['groups' => ['client:write']],
