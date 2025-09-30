@@ -477,7 +477,7 @@ class PurchaseController extends AbstractController
     {
         try {
             $wishlist = $wishlistService->getFromUrlToken($token);
-        } catch (\InvalidArgumentException $e) {
+        } catch (\Throwable $e) {
             throw $this->createNotFoundException('Seznam přání nebyl nalezen');
         }
         $wishlistService->preparePrices($wishlist);

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Throwable;
 use InvalidArgumentException;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -28,6 +29,9 @@ readonly class WishlistService
         return $this->encryptor->encrypt($data);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function getFromUrlToken(string $token): Purchase
     {
         [$wishlistId, $clientId] = explode(':', $this->encryptor->decrypt($token));
