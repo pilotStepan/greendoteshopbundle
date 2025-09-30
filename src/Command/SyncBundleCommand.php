@@ -2,21 +2,20 @@
 
 namespace Greendot\EshopBundle\Command;
 
-use Composer\Autoload\ClassLoader;
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use ReflectionClass;
 use RuntimeException;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Filesystem\Filesystem;
+use FilesystemIterator;
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
+use Composer\Autoload\ClassLoader;
 use Symfony\Component\Process\Process;
-
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'greendot:eshop:sync',
@@ -39,7 +38,10 @@ class SyncBundleCommand extends Command
     {
         $this
             ->setHelp('Synchronizes changes from your local bundle development directory to the vendor directory')
-            ->addOption('clean', null, InputOption::VALUE_NONE, 'Overrides entire /src folder');
+            ->addOption('clean', null, InputOption::VALUE_NONE, 'Overrides entire /src folder')
+            ->addOption('watch', null, InputOption::VALUE_NONE, 'Keeps running and syncs on file changes (like yarn watch)')
+            ->addOption('interval', null, InputOption::VALUE_REQUIRED, 'Polling interval (seconds) when using --watch', '1')
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -50,7 +52,9 @@ class SyncBundleCommand extends Command
         $bundlePath = $this->localBundlePath;
         $projectVendorPath = $this->getProjectRootPath() . '/vendor/greendot/eshopbundle';
 
-        $clean = $input->getOption('clean');
+        $clean = (bool)$input->getOption('clean');
+        $watch = (bool)$input->getOption('watch');
+        $interval = max(0, (int)$input->getOption('interval'));
 
         $io->info("Source path: $bundlePath");
         $io->info("Target path: $projectVendorPath");
@@ -60,60 +64,112 @@ class SyncBundleCommand extends Command
             return Command::FAILURE;
         }
 
-        if ($clean) {
-            $srcSourcePath = $bundlePath . '/src';
-            $srcTargetPath = $projectVendorPath . '/src';
-            $tmpTargetPath = $projectVendorPath . '/.sync_tmp_src';
+        $result = $clean
+            ? $this->syncClean($bundlePath, $projectVendorPath, $io, $filesystem)
+            : $this->syncIncremental($bundlePath, $projectVendorPath, $io, $filesystem);
+        if (!$watch) {
+            return $result;
+        }
 
-            if (!is_dir($srcSourcePath)) {
-                $io->error('Source src/ directory not found');
-                return Command::FAILURE;
+        // WATCH MODE
+        $io->info('Starting in watch mode. Press CTRL+C to stop.');
+
+        // Initial signature to avoid immediate duplicate run
+        $lastSignature = $this->getGitStatusSignature($bundlePath);
+
+        while (true) {
+            $currentSignature = $this->getGitStatusSignature($bundlePath);
+
+            if ($currentSignature !== $lastSignature) {
+                $io->section(date('H:i:s') . ' Change detected → syncing…');
+
+                $result = $clean
+                    ? $this->syncClean($bundlePath, $projectVendorPath, $io, $filesystem)
+                    : $this->syncIncremental($bundlePath, $projectVendorPath, $io, $filesystem);
+
+                if ($result === Command::FAILURE) {
+                    // keep watching, just report the failure
+                    $io->error('Incremental sync failed (watch continues).');
+                }
+                $lastSignature = $currentSignature;
             }
 
-            // Remove temp dir if exists
+            if ($interval > 0) {
+                sleep($interval);
+            } else {
+                // busy loop safeguard
+                usleep(200_000);
+            }
+        }
+    }
+
+    /**
+     * CLEAN SYNC (copy src/ fully, remove extras)
+     */
+    private function syncClean(string $bundlePath, string $projectVendorPath, SymfonyStyle $io, Filesystem $filesystem): int
+    {
+        $srcSourcePath = $bundlePath . '/src';
+        $srcTargetPath = $projectVendorPath . '/src';
+        $tmpTargetPath = $projectVendorPath . '/.sync_tmp_src';
+
+        if (!is_dir($srcSourcePath)) {
+            $io->error('Source src/ directory not found');
+            return Command::FAILURE;
+        }
+
+        // Remove temp dir if exists
+        if (is_dir($tmpTargetPath)) {
+            $filesystem->remove($tmpTargetPath);
+        }
+
+        try {
+            $changedFiles = $this->getAllFilesRelative($srcSourcePath);
+            $io->info(sprintf('Clean sync: copying all %d files from src/ to temp', count($changedFiles)));
+
+            // Copy all files to temp dir
+            foreach ($changedFiles as $file) {
+                $sourcePath = $srcSourcePath . '/' . $file;
+                $targetPath = $tmpTargetPath . '/' . $file;
+                $targetDir = dirname($targetPath);
+                if (!is_dir($targetDir)) {
+                    $filesystem->mkdir($targetDir);
+                }
+                $filesystem->copy($sourcePath, $targetPath, true);
+            }
+
+            // Remove extra files in temp dir (to match source exactly)
+            $this->removeExtraFiles($tmpTargetPath, $srcSourcePath, $io, $filesystem);
+
+            // Ensure vendor path exists
+            if (!is_dir($projectVendorPath)) {
+                $filesystem->mkdir($projectVendorPath);
+            }
+
+            // Remove old src (but keep .git etc. in parent)
+            if (is_dir($srcTargetPath)) {
+                $filesystem->remove($srcTargetPath);
+            }
+
+            // Move temp dir to src
+            $filesystem->rename($tmpTargetPath, $srcTargetPath, true);
+
+            $io->success(sprintf('Successfully synced %d files to vendor', count($changedFiles)));
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            // Cleanup temp dir
             if (is_dir($tmpTargetPath)) {
                 $filesystem->remove($tmpTargetPath);
             }
-
-            try {
-                $changedFiles = $this->getAllFilesRelative($srcSourcePath);
-                $io->info(sprintf('Clean sync: copying all %d files from src/ to temp', count($changedFiles)));
-
-                // Copy all files to temp dir
-                foreach ($changedFiles as $file) {
-                    $sourcePath = $srcSourcePath . '/' . $file;
-                    $targetPath = $tmpTargetPath . '/' . $file;
-                    $targetDir = dirname($targetPath);
-                    if (!is_dir($targetDir)) {
-                        $filesystem->mkdir($targetDir);
-                    }
-                    $filesystem->copy($sourcePath, $targetPath, true);
-                }
-
-                // Remove extra files in temp dir (to match source exactly)
-                $this->removeExtraFiles($tmpTargetPath, $srcSourcePath, $io, $filesystem);
-
-                // Remove old src (but keep .git etc. in parent)
-                if (is_dir($srcTargetPath)) {
-                    $filesystem->remove($srcTargetPath);
-                }
-
-                // Move temp dir to src
-                $filesystem->rename($tmpTargetPath, $srcTargetPath, true);
-
-                $io->success(sprintf('Successfully synced %d files to vendor', count($changedFiles)));
-                return Command::SUCCESS;
-            } catch (\Throwable $e) {
-                // Cleanup temp dir
-                if (is_dir($tmpTargetPath)) {
-                    $filesystem->remove($tmpTargetPath);
-                }
-                $io->error('Sync failed: ' . $e->getMessage());
-                return Command::FAILURE;
-            }
+            $io->error('Sync failed: ' . $e->getMessage());
+            return Command::FAILURE;
         }
+    }
 
-        // Non-clean sync (incremental)
+    /**
+     * INCREMENTAL SYNC (uses git to detect changed files)
+     */
+    private function syncIncremental(string $bundlePath, string $projectVendorPath, SymfonyStyle $io, Filesystem $filesystem): int
+    {
         $io->info('Getting changed files from Git...');
         $changedFiles = $this->getGitChangedFiles($bundlePath);
         if (empty($changedFiles)) {
@@ -186,7 +242,7 @@ class SyncBundleCommand extends Command
             $gitCommands = [
                 ['git', 'diff', '--name-only', '--cached'],
                 ['git', 'diff', '--name-only'],
-                ['git', 'ls-files', '--others', '--exclude-standard']
+                ['git', 'ls-files', '--others', '--exclude-standard'],
             ];
 
             foreach ($gitCommands as $command) {
@@ -194,13 +250,29 @@ class SyncBundleCommand extends Command
                 $process->run();
                 if ($process->isSuccessful()) {
                     $output = trim($process->getOutput());
-                    if (!empty($output)) {
+                    if ($output !== '') {
                         $changedFiles = array_merge($changedFiles, explode("\n", $output));
                     }
                 }
             }
 
-            return array_filter(array_unique($changedFiles));
+            return array_values(array_filter(array_unique($changedFiles)));
+        } finally {
+            chdir($currentDir);
+        }
+    }
+
+    private function getGitStatusSignature(string $repoPath): string
+    {
+        $currentDir = getcwd();
+        try {
+            chdir($repoPath);
+
+            $process = new Process(['git', 'status', '--porcelain=1', '--untracked-files=normal']);
+            $process->run();
+
+            $out = $process->isSuccessful() ? $process->getOutput() : '';
+            return sha1($out);
         } finally {
             chdir($currentDir);
         }

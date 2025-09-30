@@ -80,6 +80,7 @@ readonly class ManageMails
             ->context([
                 'purchase_id' => $purchase->getId(),
                 'client_section_link' => $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase),
+                'last_admin_message' => $purchase->getLastAdminMessage(),
             ])
         ;
 
@@ -152,15 +153,15 @@ readonly class ManageMails
 //            );
 //        }
 
-        // Attach invoice
-        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
-        if ($invoicePath) {
-            $email->attachFromPath(
-                $invoicePath,
-                'faktura_' . $purchase->getId() . '.pdf',
-                'application/pdf',
-            );
-        }
+        // UPDATE: Don't attach invoice nor proforma on payment
+//        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
+//        if ($invoicePath) {
+//            $email->attachFromPath(
+//                $invoicePath,
+//                'faktura_' . $purchase->getId() . '.pdf',
+//                'application/pdf',
+//            );
+//        }
 
         return $email;
     }

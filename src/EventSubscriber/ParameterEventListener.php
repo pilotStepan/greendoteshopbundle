@@ -23,7 +23,7 @@ class ParameterEventListener
             $paramData = $entity->getData();
             
             // if param is color
-            if ($entity->getParameterGroup()->getParameterGroupFilterType()->getName() === "color"){
+            if ($entity?->getParameterGroup()?->getParameterGroupFilterType()?->getName() === "color"){
                 // create hex with # from $paramData
                 $hex = str_starts_with($paramData, '#') ? $paramData : '#' . $paramData;
 

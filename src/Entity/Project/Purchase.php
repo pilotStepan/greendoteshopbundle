@@ -57,10 +57,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
             uriTemplate: '/purchases/session/checkout',
             status: 200,
             denormalizationContext: [
-                'groups' => ['purchase:checkout']
+                'groups' => ['purchase:checkout'],
             ],
             input: PurchaseCheckoutInput::class,
-            processor: PurchaseCheckoutProcessor::class
+            processor: PurchaseCheckoutProcessor::class,
         ),
         new Patch(
             uriTemplate: '/purchases/session',
@@ -165,13 +165,15 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $total_price;
 
+    /**
+     * @return array{
+     *     total_with_vat_main: float,
+     *     total_no_vat_main: float,
+     *     total_with_vat_secondary: float,
+     *     total_no_vat_secondary: float
+     * }
+     */
     #[Groups(['purchase:wishlist'])]
-    #[ArrayShape([
-        'total_with_vat_main' => "float",
-        'total_no_vat_main' => "float",
-        'total_with_vat_secondary' => "float",
-        'total_no_vat_secondary' => "float",
-        ])]
     private array $prices;
 
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -810,6 +812,24 @@ class Purchase
         }
 
         return $this;
+    }
+
+    public function getLastAdminMessage(): ?PurchaseDiscussion
+    {
+        $clientMessages = $this->purchaseDiscussions->filter(
+            fn(PurchaseDiscussion $discussion) => $discussion->getIsAdmin(),
+        );
+
+        if ($clientMessages->isEmpty()) {
+            return null;
+        }
+
+        $iterator = $clientMessages->getIterator();
+        $iterator->uasort(function (PurchaseDiscussion $a, PurchaseDiscussion $b) {
+            return $b->getCreatedAt() <=> $a->getCreatedAt();
+        });
+
+        return $iterator->count() > 0 ? $iterator->current() : null;
     }
 
     public function isDiscussionResolved(): bool

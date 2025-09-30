@@ -10,6 +10,7 @@ use League\OAuth2\Client\Provider\FacebookUser;
 use Greendot\EshopBundle\Entity\Project\Client;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Security\Http\Util\TargetPathTrait;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
@@ -20,6 +21,8 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
 
 class FacebookAuthenticator extends OAuth2Authenticator
 {
+    use TargetPathTrait;
+
     public function __construct(
         private readonly ClientRegistry           $clientRegistry,
         private readonly JWTTokenManagerInterface $jwtManager,
@@ -61,10 +64,17 @@ class FacebookAuthenticator extends OAuth2Authenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
+        $target = $this->getTargetPath($request->getSession(), $firewallName)
+            ?? $request->query->get('target')
+            ?? $this->router->generate('web_homepage');
+
         $jwt = $this->jwtManager->create($token->getUser());
 
         return new RedirectResponse(
-            $this->router->generate('auth_callback', ['token' => $jwt]),
+            $this->router->generate('auth_callback', [
+                'token' => $jwt,
+                'redirect' => $target,
+            ]),
         );
     }
 
