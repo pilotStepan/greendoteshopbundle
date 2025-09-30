@@ -11,17 +11,17 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Exception;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class QRcodeGenerator
 {
-    private Filesystem   $filesystem;
-    private RequestStack $requestStack;
-
-    public function __construct(Filesystem $filesystem, RequestStack $requestStack)
-    {
-        $this->filesystem =     $filesystem;
-        $this->requestStack =   $requestStack;
-    }
+   
+    public function __construct(
+        private Filesystem $filesystem, 
+        private RequestStack $requestStack,
+        private UrlGeneratorInterface $router,
+    )
+    { }
 
     public function getUri(Purchase $purchase, \DateTimeInterface $dueDate): string
     {
@@ -67,14 +67,14 @@ class QRcodeGenerator
     public function getFullUrl(Purchase $purchase, \DateTimeInterface $dueDate) : string
     {
         $request = $this->requestStack->getCurrentRequest();
-        if (!$request) {
-            throw new \RuntimeException('No current request available');
+            
+        if ($request) {
+            $domain = $request->getSchemeAndHttpHost(); 
+        } else {
+            $context = $this->router->getContext();
+            $domain = $context->getScheme() . '://' . $context->getHost();
         }
 
-        $domain = $request->getSchemeAndHttpHost();
-
-
-        return $domain.$this->getUri($purchase, $dueDate);
-        
+        return $domain . $this->getUri($purchase, $dueDate);
     }
 }
