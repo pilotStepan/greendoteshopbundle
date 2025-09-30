@@ -207,7 +207,7 @@ class PurchaseController extends AbstractController
     }
 
     
-    #[Route('/order/cancel', name: 'client_section_order_cancel',  methods: ['POST'])]
+    #[Route('/order/cancel', name: 'order_cancel',  methods: ['GET'])]
     public function cancelOrder(
         Request                 $request,
         PurchaseRepository      $purchaseRepository,
@@ -215,8 +215,8 @@ class PurchaseController extends AbstractController
         EntityManagerInterface  $entityManager,
     ) : Response
     {
-        $id = $request->request->get('id');
-        $redirectRoute = $request->request->get('redirect', 'web_homepage');
+        $id = $request->query->get('id');
+        $redirectRoute = $request->query->get('redirect', 'web_homepage');
 
         $purchase = $purchaseRepository->find($id);
         $this->denyAccessUnlessGranted('view', $purchase);
