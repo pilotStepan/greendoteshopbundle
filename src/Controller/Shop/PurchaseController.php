@@ -206,6 +206,35 @@ class PurchaseController extends AbstractController
         }
     }
 
+    
+    #[Route('/order/cancel', name: 'client_section_order_cancel',  methods: ['POST'])]
+    public function cancelOrder(
+        Request                 $request,
+        PurchaseRepository      $purchaseRepository,
+        Registry                $workflow,
+        EntityManagerInterface  $entityManager,
+    ) : Response
+    {
+        $id = $request->request->get('id');
+        $redirectRoute = $request->request->get('redirect', 'web_homepage');
+
+        $purchase = $purchaseRepository->find($id);
+        $this->denyAccessUnlessGranted('view', $purchase);
+
+        $flow = $workflow->get($purchase);
+        if($purchase->getState() == 'draft')
+        {
+            $flow->apply($purchase, 'create');
+        }
+
+        if ($flow->can($purchase, 'cancellation')) {
+            $flow->apply($purchase, 'cancellation');
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute($redirectRoute);   
+    }
+
 
     #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]
     public function removeOrderItem(int $productVariantId, SessionInterface $session): JsonResponse
