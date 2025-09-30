@@ -221,6 +221,26 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ]);
     }
 
+    #[Route('/zakaznik/zrusit-objednavku/{id}', name: 'client_section_order_cancel')]
+    public function cancelOrder(
+        int                     $id,
+        PurchaseRepository      $purchaseRepository,
+        Registry                $workflow,
+        EntityManagerInterface  $entityManager,
+    ) : Response
+    {
+        $purchase = $purchaseRepository->find($id);
+        $this->denyAccessUnlessGranted('view', $purchase);
+
+        $flow = $workflow->get($purchase);
+        if ($flow->can($purchase, 'cancellation')) {
+            $flow->apply($purchase, 'cancellation');
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute('client_section_orders');   
+    }
+
     #[Route('/zakaznik/objednavka/{id}', name: 'client_section_order_detail')]
     public function order(
         int                         $id,
