@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Url;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
@@ -11,9 +12,9 @@ final readonly class PurchaseUrlGenerator
 {
     public function __construct(
         private UrlGeneratorInterface     $router,
-        #[Autowire(service: 'security.authenticator.login_link_handler.main')] 
+        #[Autowire(service: 'security.authenticator.login_link_handler.main')]
         private LoginLinkHandlerInterface $loginLinkHandler,
-
+        private WishlistService           $wishlistService,
     ) {}
 
     /**
@@ -39,7 +40,7 @@ final readonly class PurchaseUrlGenerator
         */
     }
 
-    public function buildOrderDetailUrl(Purchase $purchase, bool $isCreated=false): string
+    public function buildOrderDetailUrl(Purchase $purchase, bool $isCreated = false): string
     {
         $orderDetailUrl = $this->router->generate(
             'client_section_order_detail',
@@ -72,5 +73,14 @@ final readonly class PurchaseUrlGenerator
         $transportNumber = ltrim($purchase->getTransportNumber(), '/');
 
         return $stateUrl . '/' . $transportNumber;
+    }
+
+    public function buildSharedWishlistUrl(Purchase $wishlist): string
+    {
+        return $this->router->generate(
+            'shop_wishlist_shared',
+            ['token' => $this->wishlistService->generateUrlToken($wishlist)],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
     }
 }

@@ -25,8 +25,8 @@ readonly class WishlistService
 
     public function generateUrlToken(Purchase $wishlist): string
     {
-        $data = sprintf('%d:%d', $wishlist->getId(), $wishlist->getClient()->getId());
-        return $this->encryptor->encrypt($data);
+        $data = ['v' => 1, 'wid' => $wishlist->getId()];
+        return $this->encryptor->encrypt(json_encode($data));
     }
 
     /**
@@ -34,11 +34,16 @@ readonly class WishlistService
      */
     public function getFromUrlToken(string $token): Purchase
     {
-        [$wishlistId, $clientId] = explode(':', $this->encryptor->decrypt($token));
-        $wishlist = $this->purchaseRepository->findOneBy(['id' => $wishlistId, 'client' => $clientId]);
+        $decrypted = $this->encryptor->decrypt($token);
+        $data = json_decode($decrypted, true);
 
+        if (!is_array($data) || ($data['v'] ?? null) !== 1 || !isset($data['wid'])) {
+            throw new \UnexpectedValueException('Invalid or unsupported token');
+        }
+
+        $wishlist = $this->purchaseRepository->find($data['wid']);
         if (!$wishlist) {
-            throw new InvalidArgumentException('Wishlist not found');
+            throw new \OutOfBoundsException('Wishlist not found');
         }
 
         return $wishlist;

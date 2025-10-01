@@ -87,6 +87,23 @@ readonly class ManageMails
         $this->mailer->send($email);
     }
 
+    public function sendWishlistEmail(string $recipientEmail, Purchase $wishlist): void
+    {
+        $clientName = $wishlist->getClient()->getName();
+        $email = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($recipientEmail)
+            ->subject($this->translator->trans('email.subject.wishlist', ['%name%' => $clientName], 'emails'))
+            ->htmlTemplate('email/wishlist/wishlist.html.twig')
+            ->context(['data' => [
+                'clientName' => $clientName,
+                'url' => $this->purchaseUrlGenerator->buildSharedWishlistUrl($wishlist),
+            ]])
+        ;
+
+        $this->mailer->send($email);
+    }
+
     public function sendFreeSampleMailToInfo($formData, Product $product): void
     {
         $email = new TemplatedEmail();
