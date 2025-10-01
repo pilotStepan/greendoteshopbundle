@@ -30,6 +30,8 @@ use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ProductController extends AbstractController
 {
@@ -124,6 +126,7 @@ class ProductController extends AbstractController
         ManagePurchase $manageOrder,
         PurchaseRepository $purchaseRepository,
         EntityManagerInterface $entityManager,
+        SerializerInterface $serializer,
     ): Response
     {
         $session = $requestStack->getSession();
@@ -154,7 +157,13 @@ class ProductController extends AbstractController
             $session->set('purchase', $purchase->getId());
         }
 
-        return new Response();
+        $response = [
+            'amount' => $amount,
+            'productVariant' => $productVariant
+        ];
+        $context = [AbstractNormalizer::GROUPS => ['product_variant:read']];
+
+        return new JsonResponse($serializer->serialize($response, 'json', $context), Response::HTTP_OK, [], true);
     }
 
     #[Route('/shop/api/cart/add_modal', name: 'cart_add_modal')]
