@@ -52,17 +52,17 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['client:read', 'order:read', 'purchase:read'])]
+    #[Groups(['client:read', 'order:read', 'purchase:read', 'purchase:wishlist'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 65, nullable: true)]
     #[Assert\NotBlank]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $name;
 
     #[ORM\Column(type: 'string', length: 65, nullable: true)]
     #[Assert\NotBlank]
-    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
+    #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $surname;
 
     #[ORM\Column(type: 'string', length: 45, nullable: true)]

@@ -9,6 +9,7 @@ use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Form\ClientFormType;
 use Symfony\Component\HttpFoundation\Request;
+use Greendot\EshopBundle\Service\ManageMails;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Client;
@@ -477,7 +478,7 @@ class PurchaseController extends AbstractController
     {
         try {
             $wishlist = $wishlistService->getFromUrlToken($token);
-        } catch (\InvalidArgumentException $e) {
+        } catch (\Throwable $e) {
             throw $this->createNotFoundException('Seznam přání nebyl nalezen');
         }
         $wishlistService->preparePrices($wishlist);
@@ -487,6 +488,31 @@ class PurchaseController extends AbstractController
             'wishlist' => $wishlistDto,
         ]]);
     }
+
+    #[Route('/api/wishlist/send-email', name: 'api_wishlist_send_email', methods: ['POST'])]
+    public function sendWishlistEmail(Request $request, WishlistService $wishlistService, ManageMails $manageMails, LoggerInterface $logger): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? null;
+        $token = $data['token'] ?? null;
+
+        if (!$email || !$token) {
+            return new JsonResponse(['error' => 'E-mail a token jsou povinné'], 400);
+        }
+
+        try {
+            $wishlist = $wishlistService->getFromUrlToken($token);
+            $manageMails->sendWishlistEmail($email, $wishlist);
+            return new JsonResponse(['message' => 'Seznam přání byl úspěšně odeslán'], 200);
+        } catch (\UnexpectedValueException | \OutOfBoundsException $e) {
+            return new JsonResponse(['error' => 'Seznam přání nebyl nalezen'], 400);
+        }
+        catch (\Throwable $e) {
+            $logger->error('Error sending wishlist email', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return new JsonResponse(['error' => 'E-mail se nepodařilo odeslat. Prosím zkuste to znovu.'], 500);
+        }
+    }
 }
-
-
