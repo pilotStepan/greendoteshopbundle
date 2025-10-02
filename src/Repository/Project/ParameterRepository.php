@@ -172,18 +172,22 @@ class ParameterRepository extends ServiceEntityRepository
 
     public function getProductParametersByTopCategory(QueryBuilder $queryBuilder, int $categoryId): QueryBuilder
     {
+        $allCategoryIds = array_merge(
+            [$categoryId],
+            array_map(fn($category) => $category->getId(), $this->categoryRepository->findAllChildren($categoryId))
+        );
+
         $alias = $queryBuilder->getRootAliases()[0];
-        return $queryBuilder->join($alias.'.productVariant', 'pv')
-            ->join('pv.product', 'pr')
-            ->join('pr.categoryProducts', 'cp')
-            ->join('cp.category', 'ca')
+        return $queryBuilder->innerJoin($alias.'.productVariant', 'pv')
+            ->innerJoin('pv.product', 'pr')
+            ->innerJoin('pr.categoryProducts', 'cp')
+            ->innerJoin('cp.category', 'ca')
             ->leftJoin('ca.categorySubCategories', 'cc')
-            ->join($alias.'.parameterGroup', 'pg')
-            ->andWhere('ca.id = :categoryId OR cc.category_super = :categoryId')
-//            ->orWhere('cc.category_super = :categoryId')
+            ->innerJoin($alias.'.parameterGroup', 'pg')
+            ->andWhere('ca.id IN (:categoryIds)')
             ->andWhere('pg.isFilter=1')
-            ->setParameter('categoryId', $categoryId)
-            ->groupBy($alias.'.data');
+            ->setParameter('categoryIds', $allCategoryIds)
+            ->distinct($alias.'.data');
     }
 
     public function getProductParametersByProducer(QueryBuilder $queryBuilder, int $producerId) : QueryBuilder
