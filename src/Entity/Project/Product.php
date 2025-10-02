@@ -207,7 +207,7 @@ class Product implements Translatable
     private ?string $imagePath = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParameterGroup::class)]
-    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read', 'purchase:read'])]
     private Collection $productParameterGroups;
 
     #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
