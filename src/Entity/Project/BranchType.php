@@ -27,7 +27,7 @@ class BranchType
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['branch_type:read', 'branch_type:write'])]
+    #[Groups(['branch_type:read', 'branch_type:write', 'branch:read', 'branch:write', 'purchase:read', 'purchase:write'])]
     private ?string $name = null;
 
     /**
