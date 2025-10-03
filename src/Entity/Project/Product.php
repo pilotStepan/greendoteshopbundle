@@ -195,12 +195,11 @@ class Product implements Translatable
     #[Groups(['product_item:read', 'product_list:read', 'product_info:write', 'search_result', 'comment:read'])]
     private Collection $labels;
 
-    /**
-     * @deprecated get availability from product variants
+    /** 
+     * Availability from variants with lowest sequence
      */
     #[Groups(['product_item:read', 'product_list:read', 'search_result', 'comment:read'])]
-    private ?string $availability = null;
-
+    private ?Availability $availability = null;
 
     private array $parameters = [];
 
@@ -208,7 +207,7 @@ class Product implements Translatable
     private ?string $imagePath = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParameterGroup::class)]
-    #[Groups(['product_item:read', 'product_list:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_list:read', 'comment:read', 'purchase:read'])]
     private Collection $productParameterGroups;
 
     #[ORM\OneToMany(mappedBy: 'parentProduct', targetEntity: ProductProduct::class)]
@@ -652,12 +651,12 @@ class Product implements Translatable
         return $this;
     }
 
-    public function getAvailability(): ?string
+    public function getAvailability(): ?Availability
     {
         return $this->availability;
     }
 
-    public function setAvailability(?string $availability): self
+    public function setAvailability(?Availability $availability): self
     {
         $this->availability = $availability;
         return $this;

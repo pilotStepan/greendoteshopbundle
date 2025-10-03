@@ -14,6 +14,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\Availability;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -69,16 +70,16 @@ class ProductRepository extends ServiceEntityRepository
     }
 
 
-    public function findAvailabilityByProduct(Product $product): ?string
+    public function findAvailabilityByProduct(Product $product): ?Availability
     {
-        $hasAvailability = false;
+        $productAvailability = null;
         foreach ($product->getProductVariants() as $variant) {
-            if ($variant?->getAvailability()?->getName() === 'skladem') {
-                $hasAvailability = true;
-                break;
+            $variantAvailability = $variant->getAvailability();
+            if (!$productAvailability || $variantAvailability->getSequence() < $productAvailability->getSequence()){
+                $productAvailability = $variantAvailability;
             }
         }
-        return $hasAvailability ? 'skladem' : 'vyprodáno';
+        return $productAvailability;
     }
 
     public function findTopSellingProducts(array $products, int $limit): array
@@ -86,10 +87,10 @@ class ProductRepository extends ServiceEntityRepository
         $productIds = array_map(fn($product) => $product->getId(), $products);
 
         $qb = $this->createQueryBuilder('p')
-            ->select('p, COUNT(ppv.id) AS variantCount, u.path AS imagePath')
+            ->select('p, COUNT(ppv.id) AS variantCount' /*u.path AS imagePath'*/)
             ->join('p.productVariants', 'pv')
             ->join('pv.orderProductVariants', 'ppv')
-            ->leftJoin('p.upload', 'u') //
+            // ->leftJoin('p.upload', 'u') //
             ->where('p.id IN (:productIds)')
             ->setParameter('productIds', $productIds)
             ->groupBy('p.id, u.path')
@@ -97,29 +98,31 @@ class ProductRepository extends ServiceEntityRepository
             ->setMaxResults($limit);
 
         $result = $qb->getQuery()->getResult();
-
-        $topProducts = [];
-
-        foreach ($result as $row) {
-            $product = $row[0];
-            $imagePath = $row['imagePath'];
-
-            $availabilityCheckQb = $this->createQueryBuilder('p')
-                ->select('COUNT(pv.id)')
-                ->join('p.productVariants', 'pv')
-                ->where('p.id = :productId')
-                ->andWhere('pv.availability = 1')
-                ->setParameter('productId', $product->getId());
-
-            $hasAvailability = $availabilityCheckQb->getQuery()->getSingleScalarResult() > 0;
-
-            $product->setAvailability($hasAvailability ? 'Skladem' : 'Vyprodáno');
-            $product->setImagePath($imagePath);
-
-            $topProducts[] = $product;
-        }
-
+        $topProducts = array_map(fn($row) => $row[0], $result);
         return $topProducts;
+
+        /**
+         * ProductEventListener->postLoad() already does this
+         */
+        // foreach ($result as $row) {
+        //     $product = $row[0];
+        //     $imagePath = $row['imagePath'];
+
+        //     $availabilityCheckQb = $this->createQueryBuilder('p')
+        //         ->select('COUNT(pv.id)')
+        //         ->join('p.productVariants', 'pv')
+        //         ->where('p.id = :productId')
+        //         ->andWhere('pv.availability = 1')
+        //         ->setParameter('productId', $product->getId());
+
+        //     $hasAvailability = $availabilityCheckQb->getQuery()->getSingleScalarResult() > 0;
+
+        //     $product->setAvailability($hasAvailability ? 'Skladem' : 'Vyprodáno');
+        //     $product->setImagePath($imagePath);
+
+        //     $topProducts[] = $product;
+        // }
+
     }
 
     public function findActive()
