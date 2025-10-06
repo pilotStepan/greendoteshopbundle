@@ -181,7 +181,6 @@ class ParameterRepository extends ServiceEntityRepository
 
         $alias = $queryBuilder->getRootAliases()[0];
         return $queryBuilder
-            ->distinct($alias.'.data')
             ->join($alias.'.productVariant', 'pv')
             ->join('pv.product', 'pr')
             ->join('pr.categoryProducts', 'cp')
@@ -190,14 +189,16 @@ class ParameterRepository extends ServiceEntityRepository
             ->join($alias.'.parameterGroup', 'pg')
             ->andWhere('ca.id IN (:categoryIds)')
             ->andWhere('pg.isFilter=1')
-            ->setParameter('categoryIds', $allCategoryIds);
+            ->setParameter('categoryIds', $allCategoryIds)
+            ->groupBy($alias . '.data');
     }
 
     public function getProductParametersByProducer(QueryBuilder $queryBuilder, int $producerId) : QueryBuilder
     {
         // HACK: there is redundant join on pv,pr and pg. Merge with the "getProductParametersByTopCategory" function?
         $alias = $queryBuilder->getRootAliases()[0];
-        return $queryBuilder->join($alias.'.productVariant', 'pv2')
+        return $queryBuilder
+            ->join($alias.'.productVariant', 'pv2')
             ->join('pv2.product', 'pr2')
             ->join('pr2.producer', 'pc')
             ->join($alias.'.parameterGroup', 'pg2')
@@ -211,7 +212,8 @@ class ParameterRepository extends ServiceEntityRepository
      public function getProductParametersByDiscount(QueryBuilder $queryBuilder, DateTime $date = new \DateTime): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
-        return $queryBuilder->join($alias.'.productVariant', 'pv')
+        return $queryBuilder
+            ->join($alias.'.productVariant', 'pv')
             ->leftJoin('pv.price', 'price')
             ->andWhere('price.validFrom <= :date')
             ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')

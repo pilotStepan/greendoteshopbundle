@@ -5,17 +5,24 @@ namespace Greendot\EshopBundle\StateProvider;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\EventSubscriber\ParameterEventListener;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
+use Greendot\EshopBundle\Service\ListenerManager;
 
 class FilteredParametersStateProvider implements ProviderInterface
 {
     public function __construct(
         private ParameterRepository     $parameterRepository,
         private EntityManagerInterface  $em,
+        private ListenerManager         $listenerManager,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
+
+        // disable for performance
+        $this->listenerManager->disable(ParameterEventListener::class);
+
         $qb = $this->parameterRepository->createQueryBuilder('p');
         $qb->select('p');
 
