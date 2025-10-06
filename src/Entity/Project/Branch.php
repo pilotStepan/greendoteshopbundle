@@ -36,7 +36,7 @@ class Branch
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['branch:read', 'branch:write'])]
+    #[Groups(['branch:read', 'branch:write', 'purchase:read', 'purchase:write'])]
     private ?string $street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -68,7 +68,7 @@ class Branch
     private ?string $provider_id = null;
 
     #[ORM\ManyToOne(targetEntity: BranchType::class, cascade: ['persist'], inversedBy: 'Branch')]
-    #[Groups(['branch:read', 'branch:write'])]
+    #[Groups(['branch:read', 'branch:write', 'purchase:read', 'purchase:write'])]
     private ?BranchType $BranchType = null;
 
     #[ORM\Column(nullable: true)]
