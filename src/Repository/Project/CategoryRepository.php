@@ -449,16 +449,16 @@ class CategoryRepository extends HintedRepositoryBase
     }
 
     /**
-     * returns array of subCategories for given category
+     * returns array of subCategories ids for given category
      *
      * @param int
      * @param bool $onlyActive
-     * @return Category[]
+     * @return int[]
      */
-
-    public function findAllChildren(int $parentId, bool $onlyActive = true): array
+    public function findAllChildrenIds(int $parentId, bool $onlyActive = true): array
     {
         $qb = $this->createQueryBuilder('c')
+            ->select('c.id')
             ->leftJoin('c.categorySubCategories', 'cc')
             ->andWhere('cc.category_super = :parentCategory')
             ->setParameter('parentCategory', $parentId);
@@ -467,7 +467,7 @@ class CategoryRepository extends HintedRepositoryBase
             $qb->andWhere('c.isActive = true');
         }
 
-        return $qb->getQuery()->getResult();
+        return array_map(fn($row) => (int)$row['id'], $qb->getQuery()->getScalarResult());;
     }
 
 

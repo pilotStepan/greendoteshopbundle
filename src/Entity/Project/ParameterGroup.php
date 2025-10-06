@@ -26,11 +26,11 @@ class ParameterGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'category_parameter_group:read','purchase:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'category_parameter_group:read','purchase:read'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read', 'purchase:wishlist','purchase:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read', 'purchase:wishlist','purchase:read'])]
     private $name;
 
     /**
@@ -38,7 +38,7 @@ class ParameterGroup
      * Defines the unit that should be displayed with the parameter value.     *
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'category_parameter_group:read','purchase:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'category_parameter_group:read','purchase:read'])]
     private $unit;
 
     /**
@@ -46,7 +46,7 @@ class ParameterGroup
      * Defines the class to specify for example icon.     *
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'category_parameter_group:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'category_parameter_group:read'])]
     private $class;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: Parameter::class)]
@@ -59,13 +59,13 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroups')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'category_parameter_group:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'category_parameter_group:read'])]
     private ?ParameterGroupType $type = null;
 
 
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'searchable', 'category_parameter_group:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'searchable', 'category_parameter_group:read'])]
     private ?bool $isFilter = null;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: CategoryParameterGroup::class)]
@@ -77,7 +77,7 @@ class ParameterGroup
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
     /**
