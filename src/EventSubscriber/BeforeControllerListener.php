@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\EventSubscriber;
 
 use App\Controller\Shop\OrderController;
 use App\Controller\Shop\ProductController;
+use Symfony\Component\HttpFoundation\Request;
 use App\Controller\TurnOffIsActiveFilterController;
 use App\Controller\WebController;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
@@ -20,6 +21,8 @@ use Twig\Environment;
 
 class BeforeControllerListener implements EventSubscriberInterface
 {
+    private const API_PREFIXES = ['/shop/api', '/api', '/simple/api', '/my-api'];
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly Environment            $twig,
@@ -53,8 +56,10 @@ class BeforeControllerListener implements EventSubscriberInterface
      */
     public function onKernelController(ControllerEvent $event): void
     {
-        if (!$event->isMainRequest()) {
-            return;   // never touch the session in sub-requests
+        if (!$event->isMainRequest() || $this->isApiRequest($event->getRequest())) {
+            // never touch the session in sub-requests
+            // do not proceed for API requests
+            return;
         }
 
         $controller = is_array($event->getController())
@@ -127,11 +132,21 @@ class BeforeControllerListener implements EventSubscriberInterface
 
     public function onKernelResponse(ResponseEvent $event) : void
     {
-        if (!$event->isMainRequest())
-        {
+        if (!$event->isMainRequest() || $this->isApiRequest($event->getRequest())){
             return;
         }
         $this->affiliateService->setAffiliateCookiesFromRequest($event);
+    }
+
+    private function isApiRequest(Request $request): bool
+    {
+        $path = $request->getPathInfo();
+        foreach (self::API_PREFIXES as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
