@@ -21,7 +21,14 @@ use Twig\Environment;
 
 class BeforeControllerListener implements EventSubscriberInterface
 {
-    private const API_PREFIXES = ['/shop/api', '/api', '/simple/api', '/my-api'];
+    private const API_PREFIXES = [
+        '/shop/api',
+        '/api',
+        '/simple/api',
+        '/my-api',
+        '/translate',
+        '/_fragment',
+    ];
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -35,7 +42,7 @@ class BeforeControllerListener implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        if (!$event->isMainRequest()) {
+        if (!$event->isMainRequest() || $this->isApiRequest($event->getRequest())) {
             return;
         }
 
