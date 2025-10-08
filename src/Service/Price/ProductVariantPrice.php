@@ -46,7 +46,6 @@ class ProductVariantPrice
     private DiscountCalculationType $discountCalculationType;
 
     private Currency $currency;
-    private readonly int $afterRegistrationBonus;
 
     private bool $emptyPrice = false;
 
@@ -57,18 +56,18 @@ class ProductVariantPrice
         Currency                              $currency,
         VatCalculationType                    $vatCalculationType,
         DiscountCalculationType               $discountCalculationType,
-        private readonly SettingsRepository   $settingsRepository,
+        private readonly int $afterRegistrationBonus,
         private readonly Security             $security,
         private readonly PriceRepository      $priceRepository,
         private readonly DiscountService      $discountService,
-        private readonly PriceUtils           $priceUtils
+        private readonly PriceUtils           $priceUtils,
+        private readonly ?Price                $priceEntity = null
     )
     {
         if ($productVariant instanceof PurchaseProductVariant and !is_null($setAmount)) {
             throw new \Exception('Cannot set amount for ' . PurchaseProductVariant::class);
         }
 
-        $this->afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
 
         $this->vatCalculationType = $vatCalculationType;
         $this->discountCalculationType = $discountCalculationType;
@@ -238,12 +237,41 @@ class ProductVariantPrice
 
     private function loadPrice(): void
     {
-        if ($this->productVariant instanceof PurchaseProductVariant) {
+        if ($this->priceEntity){
+            $this->constructForPriceEntity();
+            return;
+        }elseif ($this->productVariant instanceof PurchaseProductVariant) {
             $this->constructForPurchaseProductVariant();
         } else {
             $this->constructForProductVariant();
         }
         $this->recalculatePrice();
+    }
+
+    private function constructForPriceEntity(): void
+    {
+        if (!$this->priceEntity->getMinimalAmount() or $this->priceEntity->getMinimalAmount() < 1){
+            throw new \Exception('Amount and Minimal Amount missing!');
+
+        }
+        if (!$this->amount){
+            $this->amount = $this->priceEntity->getMinimalAmount();
+        }
+        $this->minAmount = $this->priceEntity->getMinimalAmount();
+
+        $this->setCurrentUserDiscount();
+
+        $this->minPrice = $this->priceEntity->getMinPrice();
+        $this->vatPercentage = $this->priceEntity->getVat();
+
+        if ($this->priceEntity->getDiscount()){
+            $this->discountPercentage = $this->priceEntity->getDiscount();
+            $this->discountValidUntil = $this->priceEntity->getValidUntil();
+        }
+
+        $this->priceValidUntil = $this->priceEntity->getValidUntil();
+        $values = $this->calculateValues($this->amount, $this->priceEntity);
+        $this->price = $values['price'];
     }
 
     private function constructForPurchaseProductVariant(): void
@@ -263,6 +291,11 @@ class ProductVariantPrice
             $this->emptyPrice = true;
             return;
         }
+        $this->setCurrentUserDiscount();
+    }
+
+    private function setCurrentUserDiscount(): void
+    {
         $client = $this->security->getUser();
         if (!$client || ($client instanceof InMemoryUser && $client->getRoles() === ['ROLE_API'])) {
             // Skip clientDiscount calculation for Simple-ws requests (ROLE_API), as $client is not a Client instance in this case.
