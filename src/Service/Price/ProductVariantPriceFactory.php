@@ -56,14 +56,11 @@ readonly class ProductVariantPriceFactory
     public function entityLoad(
         Price $price,
         Currency $currency,
-        ?int $amount = null,
         VatCalculationType $vatCalculationType = VatCalculationType::WithoutVAT,
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount
     ): ProductVariantPrice
     {
-        if (!$amount){
-            $amount = $price->getMinimalAmount();
-        }
+        $amount = $price->getMinimalAmount();
 
         return new ProductVariantPrice(
             $price->getProductVariant(),
