@@ -83,7 +83,6 @@ class TranslatableResultExtension implements QueryItemExtensionInterface, QueryC
      */
     public function addHints(QueryBuilder $queryBuilder, string $resourceClass)
     {
-        dump($this->requestStack->getCurrentRequest()->headers->get('referer'));
         if ($this->requestStack->getCurrentRequest()->headers->get('referer') !== null) {
             if (count(array_slice(explode("/", $this->requestStack->getCurrentRequest()->headers->get('referer')), 3, 1)) < 1) {
                 $locale = $this->defaultLocale;
