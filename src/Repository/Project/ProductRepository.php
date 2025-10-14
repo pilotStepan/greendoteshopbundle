@@ -344,20 +344,11 @@ class ProductRepository extends ServiceEntityRepository
     public function findProductsInCategory(QueryBuilder $qb, int $categoryId): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
-
-
-        $qb->join($alias . '.categoryProducts', 'cp');
-        //$qb->join('p.categories', 'c');
-        $qb->join('cp.category', 'ca');
-        $qb->leftJoin('ca.categorySubCategories', 'cc');
+        $this->safeJoin($qb, $alias, 'categoryProducts', 'cp'); 
+        $this->safeJoin($qb, 'cp', 'category', 'ca'); 
+        $this->safeJoin($qb, 'ca', 'categorySubCategories', 'cc'); 
         $qb->where('cp.category = :categoryId OR cc.category_super = :categoryId');
         $qb->setParameter('categoryId', $categoryId);
-
-
-        $qb->andWhere($alias . '.isVisible = :val');
-        $qb->setParameter('val', 1);
-
-        $qb->distinct();
 
         return $qb;
     }
@@ -366,11 +357,8 @@ class ProductRepository extends ServiceEntityRepository
     {
         $alias = $qb->getRootAliases()[0];
 
-
-        //$qb->join($alias . '.producers', 'pp');
         $qb->andWhere($alias . '.producer IN (:producers)');
         $qb->setParameter('producers', $producers);
-
 
         return $qb;
     }

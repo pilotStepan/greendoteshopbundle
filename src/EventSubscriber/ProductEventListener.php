@@ -9,21 +9,28 @@ use Greendot\EshopBundle\Service\SessionService;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
+use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Symfony\Component\Validator\Constraints\Length;
 
 #[AsEntityListener(event: Events::postLoad, priority: 10, method: 'postLoad', entity: Product::class)]
 class ProductEventListener
 {
-
+ 
     public function __construct(
-        private readonly ProductRepository       $productRepository,
-        private readonly CalculatedPricesService $calculatedPricesService,
-        private readonly SessionService          $sessionService,
+        private ProductRepository       $productRepository,
+        private CalculatedPricesService $calculatedPricesService,
+        private SessionService          $sessionService,
+        private ListenerManager         $listenerManager,
     ) {}
 
     public function postLoad(Product $product, PostLoadEventArgs $args): void
     {
+
+        if (!$this->supports()) {
+            return;
+        }
+
         $currencySymbol = $this->sessionService->getCurrency(true);;
         $availability = $this->productRepository->findAvailabilityByProduct($product);
         $parameters = $this->productRepository->calculateParameters($product);
@@ -72,5 +79,10 @@ class ProductEventListener
         $product->setCurrencySymbol($currencySymbol);
         $product->setAvailability($availability);
         $product->setParameters($parameters);
+    }
+
+    public function supports() : bool
+    {
+        return !$this->listenerManager->isDisabled(self::class);
     }
 }
