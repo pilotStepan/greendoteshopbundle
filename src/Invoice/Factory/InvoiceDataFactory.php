@@ -265,7 +265,7 @@ final class InvoiceDataFactory
         $totalPriceVatNoDiscountSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
-                            ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher);
+                            ->setVoucherCalculationType(VoucherCalculationType::WithVoucher);
         $totalPriceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
         $totalPriceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
