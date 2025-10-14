@@ -80,6 +80,9 @@ class Person implements Translatable
     #[Groups(['person:read'])]
     private ?Upload $upload = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $html = null;
+
     #[Gedmo\Locale]
     private $locale;
     public function __construct()
@@ -371,6 +374,18 @@ class Person implements Translatable
     public function setUpload(?Upload $upload): static
     {
         $this->upload = $upload;
+
+        return $this;
+    }
+
+    public function getHtml(): ?string
+    {
+        return $this->html;
+    }
+
+    public function setHtml(?string $html): static
+    {
+        $this->html = $html;
 
         return $this;
     }

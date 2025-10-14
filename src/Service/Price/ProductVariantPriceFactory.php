@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\Price;
 
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -14,13 +15,17 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 readonly class ProductVariantPriceFactory
 {
+    private readonly int $afterRegistrationBonus;
+
     public function __construct(
         private Security        $security,
         private PriceRepository $priceRepository,
         private DiscountService $discountService,
         private PriceUtils      $priceUtils,
         private SettingsRepository $settingsRepository
-    ){}
+    ){
+        $this->afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
+    }
 
     public function create(
         ProductVariant|PurchaseProductVariant $pv,
@@ -40,11 +45,35 @@ readonly class ProductVariantPriceFactory
             $currency,
             $vatCalculationType,
             $discountCalculationType,
-            $this->settingsRepository,
+            $this->afterRegistrationBonus,
             $this->security,
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils
+        );
+    }
+
+    public function entityLoad(
+        Price $price,
+        Currency $currency,
+        VatCalculationType $vatCalculationType = VatCalculationType::WithoutVAT,
+        DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount
+    ): ProductVariantPrice
+    {
+        $amount = $price->getMinimalAmount();
+
+        return new ProductVariantPrice(
+            $price->getProductVariant(),
+            $amount,
+            $currency,
+            $vatCalculationType,
+            $discountCalculationType,
+            $this->afterRegistrationBonus,
+            $this->security,
+            $this->priceRepository,
+            $this->discountService,
+            $this->priceUtils,
+            $price
         );
     }
 }
