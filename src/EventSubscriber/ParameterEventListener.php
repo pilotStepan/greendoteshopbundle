@@ -15,7 +15,7 @@ class ParameterEventListener
     ) { }
 
     public function postLoad(LifecycleEventArgs $args): void
-    {
+    { 
         $entity = $args->getObject();
 
         if (!$this->supports($entity)) {

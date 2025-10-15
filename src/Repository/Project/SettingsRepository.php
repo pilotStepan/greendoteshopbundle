@@ -41,7 +41,7 @@ class SettingsRepository extends ServiceEntityRepository
      * @return int
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function findParameterValueWithName(string $name): int
+    public function findParameterValueWithName(string $name): ?int
     {
         $qb = $this->createQueryBuilder('s')
             ->select('s.value')
@@ -51,7 +51,11 @@ class SettingsRepository extends ServiceEntityRepository
 
         $query = $qb->getQuery();
 
-        return $query->setMaxResults(1)->getSingleScalarResult();
+        try {
+            return $query->setMaxResults(1)->getSingleScalarResult();
+        } catch (\Doctrine\ORM\NoResultException $e) {
+            return null; 
+        }    
     }
 
     // /**

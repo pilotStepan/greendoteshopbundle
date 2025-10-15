@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Service\ListenerManager;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -12,20 +13,19 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 class AnonymousClientLogoutListener
 {
     public function __construct(
-        private Security                $security,
+        private Security        $security,
+        private ListenerManager $listenerManager
     ) {}
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        $request = $event->getRequest();
-
         // Skip sub-requests (e.g. when rendering fragments)
-        if (!$event->isMainRequest()) {
+        if (!$this->supports($event)) {
             return;
         }
 
+        $request = $event->getRequest();
         $user = $this->security->getUser();
-
 
         // If not an anonymous Client entity → ignore
         if (!$user instanceof Client || !$user->isIsAnonymous()) {
@@ -40,5 +40,10 @@ class AnonymousClientLogoutListener
             // Redirect immediately to logout
             $event->setResponse($response);
         }
+    }
+
+    public function supports($event) : bool
+    {
+        return $event->isMainRequest() && !$this->listenerManager->isDisabled(self::class);
     }
 }
