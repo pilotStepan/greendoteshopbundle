@@ -39,7 +39,7 @@ class CertificateMaker
             'validUntil' => $voucher->getDateUntil(),
             'type' => $voucher->getType(),
             'purchaseIssued' => $voucher->getPurchaseIssued(),
-            'clientIssued' => $voucher->getPurchaseIssued()->getClient(),
+            'clientIssued' => $voucher->getPurchaseIssued()?->getClient(),
         ];
     }
 

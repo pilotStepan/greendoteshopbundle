@@ -46,7 +46,7 @@ class Voucher
      * Link to the purchase within which the certificate was bought and according to which state is linked its validity.
      */
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'VouchersIssued')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['voucher:read', 'voucher:write'])]
     private ?Purchase $Purchase_issued = null;
 
