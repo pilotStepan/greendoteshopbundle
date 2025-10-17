@@ -36,30 +36,32 @@ use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
+use Greendot\EshopBundle\Repository\Project\CountryRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 
 class AppExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly ProductRepository       $productRepository,
-        private readonly PriceCalculator         $priceCalculator,
-        private readonly ProductInfoGetter       $productInfoGetter,
-        private readonly CurrencyRepository      $currencyRepository,
-        private readonly ParameterRepository     $parameterRepository,
-        private readonly PriceRepository         $priceRepository,
-        private readonly ValueAddedTaxCalculator $addedTaxCalculator,
-        private readonly CategoryInfoGetter      $categoryInfoGetter,
-        private readonly ManageWorkflows         $manageWorkflows,
-        private readonly MessageRepository       $messageRepository,
-        private readonly GoogleAnalytics         $googleAnalytics,
-        private readonly CategoryRepository      $categoryRepository,
-        private readonly RequestStack            $requestStack,
-        private readonly RouterInterface         $router,
-        private readonly InformationBlockService $informationBlockService,
-        private readonly SessionService          $sessionService,
-        private readonly ProducerRepository      $producerRepository,
-        private readonly UploadRepository        $uploadRepository
+        private readonly ProductRepository          $productRepository,
+        private readonly PriceCalculator            $priceCalculator,
+        private readonly ProductInfoGetter          $productInfoGetter,
+        private readonly CurrencyRepository         $currencyRepository,
+        private readonly ParameterRepository        $parameterRepository,
+        private readonly PriceRepository            $priceRepository,
+        private readonly ValueAddedTaxCalculator    $addedTaxCalculator,
+        private readonly CategoryInfoGetter         $categoryInfoGetter,
+        private readonly ManageWorkflows            $manageWorkflows,
+        private readonly MessageRepository          $messageRepository,
+        private readonly GoogleAnalytics            $googleAnalytics,
+        private readonly CategoryRepository         $categoryRepository,
+        private readonly RequestStack               $requestStack,
+        private readonly RouterInterface            $router,
+        private readonly InformationBlockService    $informationBlockService,
+        private readonly SessionService             $sessionService,
+        private readonly ProducerRepository         $producerRepository,
+        private readonly UploadRepository           $uploadRepository,
+        private readonly CountryRepository          $countryRepository,
     )
     {
     }
@@ -67,7 +69,7 @@ class AppExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('product_price', [$this, 'getProductPriceString']),
+            new TwigFunction('product_price', [ $this, 'getProductPriceString']),
             new TwigFunction('product_price_old', [$this, 'getProductPriceStringWithoutDiscount']),
             new TwigFunction('product_discount', [$this, 'getProductDiscount']),
             new TwigFunction('get_product_uploads', [$this, 'getProductUploads']),
@@ -127,7 +129,9 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('get_parameters_by_category_and_group_type', [$this, 'getParametersByCategoryAndGroupType']),
             new TwigFunction('get_category_parameter_by_group', [$this, 'getCategoryParameterByGroup']),
-            new TwigFunction('get_parents_for_categories', [$this, 'getParentsForCategories'])
+            new TwigFunction('get_parents_for_categories', [$this, 'getParentsForCategories']),
+
+            new TwigFunction('country_code_to_description', [$this, 'countryCodeToDescription']),
         ];
     }
 
@@ -421,6 +425,11 @@ class AppExtension extends AbstractExtension
         } else {
             return null;
         }
+    }
+
+    public function countryCodeToDescription(string $code): string
+    {
+        return $this->countryRepository->findByCode($code)?->getDescription() ?? $code;
     }
 
     /*

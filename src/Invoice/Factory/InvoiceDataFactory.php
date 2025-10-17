@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Invoice\Data\VatCategoryData;
+use Greendot\EshopBundle\Repository\Project\CountryRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -34,10 +35,11 @@ final class InvoiceDataFactory
     private PurchasePrice $purchasePrice;
 
     public function __construct(
-        private PurchasePriceFactory       $purchasePriceFactory,
-        private ProductVariantPriceFactory $productVariantPriceFactory,
-        private CurrencyRepository         $currencyRepository,
-        private QRcodeGenerator            $qrGenerator,
+        private PurchasePriceFactory        $purchasePriceFactory,
+        private ProductVariantPriceFactory  $productVariantPriceFactory,
+        private CurrencyRepository          $currencyRepository,
+        private CountryRepository           $countryRepository,
+        private QRcodeGenerator             $qrGenerator,
     ) {}
 
     public function create(Purchase $purchase): InvoiceData
@@ -297,6 +299,7 @@ final class InvoiceDataFactory
         $client = $purchase->getClient();
         $clientName = $client->getName();
         $clientSurname = $client->getSurname();
+        $country = $this->countryRepository->findByCode($purchaseAddress->getCountry())?->getDescription() ?? $purchaseAddress->getCountry();
 
         return new InvoicePersonData(
             $purchaseAddress->getCompany(),
@@ -304,7 +307,7 @@ final class InvoiceDataFactory
             $purchaseAddress->getStreet(),
             $purchaseAddress->getZip(),
             $purchaseAddress->getCity(),
-            $purchaseAddress->getCountry(),
+            $country,
             $purchaseAddress->getIc(),
             $purchaseAddress->getDic(),
             $client->getPhone(),
