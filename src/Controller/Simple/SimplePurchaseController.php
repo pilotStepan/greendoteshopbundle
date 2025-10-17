@@ -35,9 +35,11 @@ class SimplePurchaseController extends AbstractController
         $places = $pFlow->getDefinition()->getPlaces();
         $placesMetaData = [];
         foreach ($places as $place) {
-            $placesMetaData[$place]['desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['description'];
-            $placesMetaData[$place]['short_desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['short_description'];
-            $placesMetaData[$place]['icon'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['icon'];
+            $metadataArray = $pFlow->getMetadataStore()->getPlaceMetadata($place);
+            $placesMetaData[$place]['desc'] = $metadataArray['description'];
+            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'];
+            $placesMetaData[$place]['icon'] = $metadataArray['icon'];
+            $placesMetaData[$place]['simple_color'] = $metadataArray['simple_color'] ?? '#999999';
             $placesMetaData[$place]['name'] = $place;
         }
         return $this->json($placesMetaData, 200);
