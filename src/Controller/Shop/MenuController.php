@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
@@ -46,6 +47,7 @@ class MenuController extends AbstractController
         ]);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/shop_menu/superCategoryOfCurrentCategory/{category}', name: 'api_superCategory')]
     public function getSuperCategoryOfCurrentCategory(
         Category            $category,

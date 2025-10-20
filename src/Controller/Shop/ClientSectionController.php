@@ -25,6 +25,9 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Attribute\DisableListeners;
+use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
@@ -48,6 +51,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 {
     private const ARES_ENDPOINT = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/";
 
+    #[DisableListeners([
+        AnonymousClientLogoutListener::class
+    ])]
     #[Route('/client/download-invoice/{orderId}', name: 'client_download_invoice')]
     public function downloadInvoice(
         int                    $orderId,
@@ -109,6 +115,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ]);
     }
 
+    #[DisableListeners([
+        AnonymousClientLogoutListener::class
+    ])]
     #[Route('/zakaznik/platba/{purchaseID}', name: 'client_section_payment')]
     public function payment(
         int                $purchaseID,
@@ -222,6 +231,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
 
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
     #[Route('/zakaznik/objednavka/{id}', name: 'client_section_order_detail')]
     public function order(
         int                         $id,
@@ -373,6 +383,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ]);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/calculate-purchase/{purchaseID}', name: 'api_calculate_purchase')]
     public function calculatePurchase(
         int                $purchaseID,
@@ -399,6 +410,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         return new JsonResponse(['purchasePrice' => $purchasePrice], 200);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/calculate-variant/{variantID}/{amount}', name: 'api_calculate_variant')]
     public function calculateVariant(
         int                      $variantID,
@@ -438,6 +450,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ], 200);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/ares-{ico}', name: 'ares_api')]
     public function aresTest($ico): JsonResponse
     {

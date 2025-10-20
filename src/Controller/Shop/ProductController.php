@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -44,6 +45,7 @@ class ProductController extends AbstractController
         $this->productVariantRepository = $productVariantRepository;
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/store-last-viewed-product', name: 'store_last_viewed_product', methods: ['POST'])]
     public function storeLastViewedProduct(Request $request, SessionInterface $session): JsonResponse
     {
@@ -58,6 +60,7 @@ class ProductController extends AbstractController
         return $this->json(['error' => 'Invalid product slug'], 400);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/get-last-viewed-product', name: 'get_last_viewed_product', methods: ['GET'])]
     public function getLastViewedProduct(SessionInterface $session): JsonResponse
     {
@@ -112,6 +115,7 @@ class ProductController extends AbstractController
         return $this->redirectToRoute('shop_product', ['slug' => $product->getSlug()]);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/cart/add-{variant_id}/amount-{amount}', name: 'add_to_cart', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
     public function addToCart
     (
@@ -166,6 +170,7 @@ class ProductController extends AbstractController
         return new JsonResponse($serializer->serialize($response, 'json', $context), Response::HTTP_OK, [], true);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/cart/add_modal', name: 'cart_add_modal')]
     public function cart_add_modal(RequestStack $requestStack, ProductVariantRepository $productVariantRepository): Response
     {
@@ -186,6 +191,7 @@ class ProductController extends AbstractController
         );
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/wishlist/add-{variant_id}/amount-{amount}', name: 'add_to_wishlist', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
     public function addToWishlist
     (
@@ -222,6 +228,7 @@ class ProductController extends AbstractController
         return new Response();
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/inquiry/add-{variant_id}/amount-{amount}', name: 'add_to_inquiry', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
     public function addToInquiry
     (
@@ -263,6 +270,7 @@ class ProductController extends AbstractController
         );
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/cart/remove-{variant_id}-{type}', name: 'remove_from_cart', defaults: ['amount' => 0])]
     public function removeFromCart
     (
@@ -286,6 +294,7 @@ class ProductController extends AbstractController
         );
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/cart/change_amount-{variant_id}-{amount}-{type}', name: 'change_amount_in_cart', requirements: ['slug' => '[A-Za-z0-9\-]+'], priority: 2)]
     public function changeAmountInCart
     (
@@ -311,6 +320,7 @@ class ProductController extends AbstractController
         );
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/vue/price_string_for_product/{product}', name: 'api_vue_price_string_for_product')]
     public function getPriceStringForProduct(Product $product, Session $session, CurrencyRepository $deleteThis, ProductInfoGetter $productInfoGetter): JsonResponse
     {
@@ -324,6 +334,7 @@ class ProductController extends AbstractController
         return $this->json($finalString, headers: ['Content-Type' => 'application/json;chatset=UTF-8']);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/parameters/available', name: 'api_parameters_available', methods: ['GET'])]
     public function getAvailableParameters(Request $request, ParameterRepository $parameterRepository): JsonResponse
     {
@@ -339,6 +350,7 @@ class ProductController extends AbstractController
     /*
      * TODO přehodit do API Platform - k variantám
      */
+    #[CustomApiEndpoint]
     #[Route('/api/product-variant/{id}/prices', name: 'api_get_product_variant_prices', methods: ['GET'])]
     public function getProductVariantPrices(int $id): JsonResponse
     {

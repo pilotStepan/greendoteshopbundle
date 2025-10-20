@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\ManagePurchase;
@@ -37,6 +38,7 @@ class LoginController extends AbstractController
         ]);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api_login', name: 'custom_api_login', methods: ['POST'], priority: 100)]
     public function api_login(#[CurrentUser] $user = null): Response
     {
@@ -70,6 +72,7 @@ class LoginController extends AbstractController
     */
 
     // this reqisters the route. Symfony overrides it so it can be empty
+    #[CustomApiEndpoint]
     #[Route('/api/anonymous_login_check', name: 'api_anonymous_login_check')]
     public function anonymousLoginCheck(): void
     { }

@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Greendot\EshopBundle\Service\GenerateTranslation;
 use DeepL\DeepLException;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +29,7 @@ class TranslationController extends AbstractController
     /**
      * @throws DeepLException
      */
+    #[CustomApiEndpoint]
     #[Route('/translate/category-{id}', name: 'app_category_translation', defaults: ['id' => 0])]
     public function category(Category $category, EntityManagerInterface $entityManager, GenerateTranslation $generateTranslation): Response
     {
@@ -39,6 +41,7 @@ class TranslationController extends AbstractController
     /**
      * @throws DeepLException
      */
+    #[CustomApiEndpoint]
     #[Route('/translate/shop/category-{id}', name: 'app_shop_category_translation', defaults: ['id' => 0])]
     public function categoryShop(Category $category,CategoryInfoGetter $categoryInfoGetter, EntityManagerInterface $entityManager, GenerateTranslation $generateTranslation): Response
     {
@@ -53,6 +56,7 @@ class TranslationController extends AbstractController
     /**
      * @throws DeepLException
      */
+    #[CustomApiEndpoint]
     #[Route('/translate/product-{id}', name: 'app_product_translation', defaults: ['id' => 0])]
     public function product(Product $product, EntityManagerInterface $entityManager, GenerateTranslation $generateTranslation): Response
     {
@@ -88,6 +92,7 @@ class TranslationController extends AbstractController
         return new Response('Prelozeno '.$offset+$translated.' produktu', 200);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/translate/javascript/locale-{locale}', name: 'translate_js')]
     public function translateJS($locale, TranslatorInterface $translator, Request $request): Response
     {

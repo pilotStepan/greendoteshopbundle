@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Service\AresService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,6 +16,7 @@ class AresController extends AbstractController
     {
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/ares/company/{ic}', name: 'api_ares_company', methods: ['GET'])]
     public function getCompanyInfo(string $ic): JsonResponse
     {
@@ -27,6 +29,7 @@ class AresController extends AbstractController
         return new JsonResponse($result['data']);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/ares/addresses', name: 'api_ares_addresses', methods: ['GET'])]
     public function getAddresses(Request $request): JsonResponse
     {

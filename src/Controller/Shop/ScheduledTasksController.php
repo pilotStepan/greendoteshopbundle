@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Service\PaymentService;
@@ -20,6 +21,7 @@ class ScheduledTasksController extends AbstractController
         private readonly ManageBranch           $manageBranch,
     ) {}
 
+    #[CustomApiEndpoint]
     #[Route('/scheduled/sales', name: 'scheduled_sales', methods: ['GET'])]
     public function scheduleSales(): JsonResponse
     {
@@ -47,6 +49,7 @@ class ScheduledTasksController extends AbstractController
         return $this->json($result);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/scheduled/bank/{startDate}', name: 'scheduled_bank', methods: ['GET'])]
     public function scheduleBank(string $startDate): JsonResponse
     {
@@ -60,6 +63,7 @@ class ScheduledTasksController extends AbstractController
         return $this->json(['message' => 'Payments processed successfully']);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/scheduled/czechpost', name: 'scheduled_czechpost', methods: ['GET'])]
     public function importCzechPost(): JsonResponse
     {

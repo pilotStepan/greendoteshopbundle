@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Exception;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
@@ -16,6 +17,7 @@ class ViesController extends AbstractController
         private readonly ManageVies $manageVies,
     ) {}
 
+    #[CustomApiEndpoint]
     #[Route('/vat/{vat}', name: 'vat', methods: ['GET'])]
     public function getVatInfo(Request $request): JsonResponse
     {

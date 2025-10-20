@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\ReservedTimeRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -47,6 +48,7 @@ class PageController extends AbstractController implements WebController
         }
     }
 
+    #[CustomApiEndpoint]
     #[Route(
         path: '/my-api/time-reservations',
         name: 'web_get_reservations',

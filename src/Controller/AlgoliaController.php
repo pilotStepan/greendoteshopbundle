@@ -7,6 +7,7 @@ use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -25,6 +26,7 @@ class AlgoliaController extends AbstractController
         private SerializerInterface      $serializer
     ) {}
 
+    #[CustomApiEndpoint]
     #[Route('/api/search-categories', name: 'api_search_categories', methods: ['GET'])]
     public function searchCategories(Request $request, CategoryRepository $categoryRepository): JsonResponse
     {
@@ -50,6 +52,7 @@ class AlgoliaController extends AbstractController
         return new JsonResponse($json, 200, [], true);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/algolia/search/{query}', name: 'search_algolia', defaults: ['hits' => 6, 'page' => 0])]
     #[Route('/api/algolia/search/{query}/max-hits-{hits}/page-{page}', name: 'search_algolia_parameters')]
     public function search(
@@ -66,12 +69,14 @@ class AlgoliaController extends AbstractController
         return $this->json($this->algoliaSearch->search($query, $currency, $hits, $page, true, $filters));
     }
 
+    #[CustomApiEndpoint]
     #[Route('/algolia/products', name: 'algolia_product_import')]
     public function indexProducts(Request $request): RedirectResponse
     {
         return $this->indexEntities($request, 'product');
     }
 
+    #[CustomApiEndpoint]
     #[Route('/algolia/variants', name: 'algolia_variants')]
     public function indexVariants(Request $request): RedirectResponse
     {

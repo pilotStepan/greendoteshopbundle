@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Controller\Shop;
 use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Form\ClientFormType;
@@ -39,6 +40,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PurchaseController extends AbstractController
 {
+    
+    #[CustomApiEndpoint]
     #[Route('/api/client/submit', name: 'api_client_submit', options: ['deprecation_message' => 'This endpoint is deprecated and will be removed in a future release.'], methods: ['POST'])]
     public function submitClientForm(
         Request                  $request,
@@ -244,6 +247,7 @@ class PurchaseController extends AbstractController
     }
 
 
+    #[CustomApiEndpoint]
     #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]
     public function removeOrderItem(int $productVariantId, SessionInterface $session): JsonResponse
     {
@@ -271,6 +275,7 @@ class PurchaseController extends AbstractController
     }
 
 
+    #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
     public function createParcel(
         Purchase               $purchase,
@@ -294,6 +299,7 @@ class PurchaseController extends AbstractController
         ]);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
     public function getParcelStatus(
         Purchase              $purchase,
@@ -357,6 +363,7 @@ class PurchaseController extends AbstractController
     }
     */
 
+    #[CustomApiEndpoint]
     #[Route('/api/client/form', name: 'api_client_form', methods: ['GET'])]
     public function getClientForm(SerializerInterface $serializer): Response|JsonResponse
     {
@@ -368,6 +375,7 @@ class PurchaseController extends AbstractController
         return new Response($formData, 200, ['Content-Type' => 'application/json']);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/shop/api/session/currency-{currency}', name: "shop_api_session_currency")]
     public function shopApiSessionCurrency(Currency $currency)
     {
@@ -489,6 +497,7 @@ class PurchaseController extends AbstractController
         ]]);
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/wishlist/send-email', name: 'api_wishlist_send_email', methods: ['POST'])]
     public function sendWishlistEmail(Request $request, WishlistService $wishlistService, ManageMails $manageMails, LoggerInterface $logger): Response
     {

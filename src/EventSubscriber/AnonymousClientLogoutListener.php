@@ -3,23 +3,25 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Service\ApiRequestDetector;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
-#[AsEventListener(event: 'kernel.request', priority: -10)]
+#[AsEventListener(event: 'kernel.controller', priority: -10)]
 class AnonymousClientLogoutListener
 {
     public function __construct(
-        private Security        $security,
-        private ListenerManager $listenerManager
+        private Security            $security,
+        private ListenerManager     $listenerManager,
+        private ApiRequestDetector  $apiRequestDetector,
     ) {}
 
-    public function onKernelRequest(RequestEvent $event): void
+    public function onKernelController(ControllerEvent $event): void
     {
-        // Skip sub-requests (e.g. when rendering fragments)
         if (!$this->supports($event)) {
             return;
         }
@@ -27,23 +29,18 @@ class AnonymousClientLogoutListener
         $request = $event->getRequest();
         $user = $this->security->getUser();
 
-        // If not an anonymous Client entity → ignore
         if (!$user instanceof Client || !$user->isIsAnonymous()) {
             return;
         }
 
-        // Allow only the order detail route
         if ($request->attributes->get('_route') !== 'client_section_order_detail') {
-            // Build the logout URL for your "main" firewall
             $response = $this->security->logout(false);
-
-            // Redirect immediately to logout
-            $event->setResponse($response);
+            $event->setController(fn() => $response);
         }
     }
 
     public function supports($event) : bool
     {
-        return $event->isMainRequest() && !$this->listenerManager->isDisabled(self::class);
+        return $event->isMainRequest() && !$this->listenerManager->isDisabled(self::class) && !$this->apiRequestDetector->isApiRequest($event->getRequest());
     }
 }

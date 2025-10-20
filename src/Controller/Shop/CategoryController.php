@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Enum\CategoryTypeEnum;
@@ -48,6 +49,7 @@ class CategoryController extends AbstractController
 
 
 
+    #[CustomApiEndpoint]
     #[Route('/_fragment/allUnderCategories-{category}', name: 'under_categories')]
     public function fragUnderCategories(Category $category, CategoryInfoGetter $categoryInfoGetter): JsonResponse
     {
@@ -69,6 +71,7 @@ class CategoryController extends AbstractController
         return $this->redirect($request->headers->get('referer'));
     }
 
+    #[CustomApiEndpoint]
     #[Route("/api/categories", name: 'api_search_categories', options: ['expose' => true], methods: ['GET'])]
     public function searchCategories(Request $request, CategoryRepository $categoryRepository): JsonResponse
     {

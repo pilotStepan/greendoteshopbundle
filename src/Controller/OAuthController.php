@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller;
 
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -10,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class OAuthController extends AbstractController
 {
+ 
     #[Route('/connect/google', name: 'connect_google')]
     public function connectGoogle(ClientRegistry $clientRegistry): Response
     {
@@ -21,6 +23,7 @@ class OAuthController extends AbstractController
         ;
     }
 
+    #[CustomApiEndpoint]
     #[Route('/connect/google/check', name: 'connect_google_check')]
     public function connectGoogleCheck(): Response
     {
@@ -38,12 +41,14 @@ class OAuthController extends AbstractController
         ;
     }
 
+    #[CustomApiEndpoint]
     #[Route('/connect/facebook/check', name: 'connect_facebook_check')]
     public function connectFacebookCheck(): Response
     {
         return new Response('Facebook check');
     }
 
+    #[CustomApiEndpoint]
     #[Route('/auth/callback', name: 'auth_callback')]
     public function authCallback(Request $request): Response
     {

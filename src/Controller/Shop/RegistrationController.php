@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Form\RegistrationFormType;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Security\EmailVerifier;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -57,6 +58,7 @@ class RegistrationController extends AbstractController
         return $this->redirectToRoute('web_homepage');
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/register', name: 'shop_register_user')]
     public function registerUser(
         Request                     $request,
@@ -137,6 +139,7 @@ class RegistrationController extends AbstractController
         return $errors;
     }
 
+    #[CustomApiEndpoint]
     #[Route('/api/validate-email-{email}', name: 'shop_validate_email')]
     public function checkEmail($email, ClientRepository $clientRepository): Response
     {
