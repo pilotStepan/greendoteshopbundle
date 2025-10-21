@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use DateTimeInterface;
 use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
 use Doctrine\ORM\Mapping as ORM;
+use PhpParser\Builder\Function_;
 
 #[ORM\Entity(repositoryClass: ConversionRateRepository::class)]
 class ConversionRate
@@ -19,6 +20,9 @@ class ConversionRate
 
     #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $validFrom;
+
+    #[ORM\Column(type: 'float')]
+    private float $rate;
 
     #[ORM\ManyToOne(targetEntity: Currency::class, cascade: ['persist'], inversedBy: 'conversionRates')]
     private Currency $currency;
@@ -50,6 +54,18 @@ class ConversionRate
     public function getValidFrom() : DateTimeInterface 
     {
         return $this->validFrom;    
+    }
+    
+    public function setRate(float $rate) : self
+    {
+        $this->rate = $rate;    
+        
+        return $this;
+    }
+    
+    public function getRate() : float 
+    {
+        return $this->rate;    
     }
 
     public function setCurrency(Currency $currency) : self 
