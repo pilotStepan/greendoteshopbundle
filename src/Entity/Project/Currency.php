@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -19,8 +21,8 @@ class Currency
     #[ORM\Column(length: 15)]
     private ?string $symbol = null;
 
-    #[ORM\Column]
-    private ?float $conversionRate = null;
+    #[ORM\OneToMany(targetEntity: ConversionRate::class, mappedBy: 'currency')]
+    private Collection $conversionRates = null;
 
     #[ORM\Column]
     private ?int $rounding = null;
@@ -30,6 +32,11 @@ class Currency
 
     #[ORM\Column(options: ["default" => false])]
     private ?bool $is_symbol_left = true;
+
+      public function __construct()
+    {
+        $this->conversionRates = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -60,14 +67,28 @@ class Currency
         return $this;
     }
 
-    public function getConversionRate(): ?float
+    public function getConversionRates(): Collection
     {
-        return $this->conversionRate;
+        return $this->conversionRates;
     }
 
-    public function setConversionRate(float $conversionRate): self
+    public function addConversionRate(ConversionRate $conversionRate): self
     {
-        $this->conversionRate = $conversionRate;
+        if (!$this->conversionRates->contains($conversionRate)) {
+            $this->conversionRates->add($conversionRate);
+            $conversionRate->setCurrency($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConversionRate(ConversionRate $conversionRate): self
+    {
+        if ($this->conversionRates->removeElement($conversionRate)) {
+            // if ($conversionRate->getCurrency() === $this) {
+            //      $conversionRate->setCurrency(null);
+            // }
+        }
 
         return $this;
     }
