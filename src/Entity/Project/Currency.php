@@ -2,12 +2,19 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use ApiPlatform\Metadata\ApiResource;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CurrencyRepository::class)]
+#[ApiResource(
+    normalizationContext: ['currency:read'],
+    denormalizationContext: ['currency:write'],
+    paginationEnabled: false
+)]
 class Currency
 {
     #[ORM\Id]
@@ -22,7 +29,7 @@ class Currency
     private ?string $symbol = null;
 
     #[ORM\OneToMany(targetEntity: ConversionRate::class, mappedBy: 'currency')]
-    private Collection $conversionRates = null;
+    private Collection $conversionRates;
 
     #[ORM\Column]
     private ?int $rounding = null;
@@ -33,7 +40,7 @@ class Currency
     #[ORM\Column(options: ["default" => false])]
     private ?bool $is_symbol_left = true;
 
-      public function __construct()
+    public function __construct()
     {
         $this->conversionRates = new ArrayCollection();
     }
