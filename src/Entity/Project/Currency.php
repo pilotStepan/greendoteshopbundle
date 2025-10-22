@@ -28,7 +28,7 @@ class Currency
     #[ORM\Column(length: 15)]
     private ?string $symbol = null;
 
-    #[ORM\OneToMany(targetEntity: ConversionRate::class, mappedBy: 'currency')]
+    #[ORM\OneToMany(targetEntity: ConversionRate::class, cascade: ['persist'], mappedBy: 'currency')]
     private Collection $conversionRates;
 
     #[ORM\Column]
