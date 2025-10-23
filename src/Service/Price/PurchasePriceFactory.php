@@ -7,14 +7,12 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 
 readonly class PurchasePriceFactory
 {
     public function __construct(
         private ProductVariantPriceFactory $productVariantPriceFactory,
-        private CurrencyRepository         $currencyRepository,
         private PriceUtils                 $priceUtils,
         private ServiceCalculationUtils    $serviceCalculationUtils,
         private SettingsRepository         $settingsRepository
@@ -34,14 +32,16 @@ readonly class PurchasePriceFactory
         }
         //
 
+        $conversionRate = $this->priceUtils->getConversionRate($currency, $purchase);
+
         return new PurchasePrice(
             $purchase,
             $vatCalculationType,
             $discountCalculationType,
             $currency,
+            $conversionRate,
             $voucherCalculationType,
             $this->productVariantPriceFactory,
-            $this->currencyRepository,
             $this->priceUtils,
             $this->serviceCalculationUtils,
             $this->settingsRepository,

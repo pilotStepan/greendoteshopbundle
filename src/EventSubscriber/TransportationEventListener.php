@@ -42,6 +42,7 @@ readonly class TransportationEventListener
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(
             $transportation,
             $currency,
+            null,
             VatCalculationType::WithVAT,
         );
         $freeFromPrice = $this->serviceCalculationUtils->getFreeFromPrice($transportation, $currency);

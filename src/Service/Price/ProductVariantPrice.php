@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\Price;
 
 use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Symfony\Component\Security\Core\User\InMemoryUser;
@@ -54,6 +55,7 @@ class ProductVariantPrice
         ProductVariant|PurchaseProductVariant $productVariant,
         ?int                                  $setAmount,
         Currency                              $currency,
+        private ConversionRate                $conversionRate,
         VatCalculationType                    $vatCalculationType,
         DiscountCalculationType               $discountCalculationType,
         private readonly int $afterRegistrationBonus,
@@ -67,7 +69,6 @@ class ProductVariantPrice
         if ($productVariant instanceof PurchaseProductVariant and !is_null($setAmount)) {
             throw new \Exception('Cannot set amount for ' . PurchaseProductVariant::class);
         }
-
 
         $this->vatCalculationType = $vatCalculationType;
         $this->discountCalculationType = $discountCalculationType;
@@ -84,7 +85,7 @@ class ProductVariantPrice
         if ($noConversion) {
             return $this->calculatedPrice;
         }
-        return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->currency);
+        return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->currency, $this->conversionRate);
     }
 
     public function getPiecePrice(): ?float
@@ -94,7 +95,7 @@ class ProductVariantPrice
             return null;
         }
         $piecePrice = $price / $this->amount;
-        return $this->priceUtils->convertCurrency($piecePrice, $this->currency);
+        return $this->priceUtils->convertCurrency($piecePrice, $this->currency, $this->conversionRate);
     }
 
     public function getMinPrice(bool $noConversion = false): ?float
@@ -102,7 +103,7 @@ class ProductVariantPrice
         if ($noConversion) {
             return $this->minPrice;
         }
-        return $this->priceUtils->convertCurrency($this->minPrice, $this->currency);
+        return $this->priceUtils->convertCurrency($this->minPrice, $this->currency, $this->conversionRate);
     }
 
     public function getVatPercentage(): ?float
@@ -112,7 +113,7 @@ class ProductVariantPrice
 
     public function getVatValue(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->vatValue, $this->currency);
+        return $this->priceUtils->convertCurrency($this->vatValue, $this->currency, $this->conversionRate);
     }
 
     public function getDiscountPercentage(): ?float
@@ -134,7 +135,7 @@ class ProductVariantPrice
 
     public function getDiscountValue(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->discountValue, $this->currency);
+        return $this->priceUtils->convertCurrency($this->discountValue, $this->currency, $this->conversionRate);
     }
 
     public function getDiscountTimeUntil(): ?\DateTime
@@ -178,9 +179,14 @@ class ProductVariantPrice
         return $this;
     }
 
-    public function setCurrency(Currency $currency): self
+    public function setCurrency(Currency $currency, ?ConversionRate $conversionRate = null): self
     {
         $this->currency = $currency;
+        if ($conversionRate){
+            $this->conversionRate = $conversionRate;
+        }else{
+            $this->conversionRate = $this->priceUtils->getConversionRate($currency, $this->productVariant instanceof PurchaseProductVariant ? $this->productVariant->getPurchase() : null);
+        }
         $this->recalculateNoQuery();
         return $this;
     }
@@ -230,7 +236,7 @@ class ProductVariantPrice
         }
 
         $this->calculatedPrice = $price;
-        $this->vatValue = $this->priceUtils->convertCurrency($this->priceUtils->calculatePercentage($this->calculatedPrice, $this->vatPercentage), $this->currency);
+        $this->vatValue = $this->priceUtils->convertCurrency($this->priceUtils->calculatePercentage($this->calculatedPrice, $this->vatPercentage), $this->currency, $this->conversionRate);
         $this->discountValue = $fullDiscountValue;
     }
 

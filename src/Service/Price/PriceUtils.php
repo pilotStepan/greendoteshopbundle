@@ -2,10 +2,16 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
 
 class PriceUtils
 {
+    public function __construct(
+        private readonly ConversionRateRepository $conversionRateRepository
+    ){}
 
     /**
      * Calculates the percentage amount, percentage, or full amount based on the provided parameters.
@@ -42,10 +48,34 @@ class PriceUtils
         return null;
     }
 
-    public function convertCurrency(?float $price, Currency $currency): float
+    public function getConversionRate(Currency $currency, ?Purchase $purchase = null): ConversionRate
     {
+        $date = new \DateTime("now");
+
+        //TODO: This is not reusable way to do it.
+        if ($purchase && !in_array($purchase->getState(),['draft', 'wishlist', 'new'])){
+            $date = $purchase->getDateIssue();
+        }
+
+        $conversionRate = $this->conversionRateRepository->getByDate($currency, $date);
+
+        //TODO: Is there a better way to do this? So its fail-safe
+        if (!$conversionRate){
+            $conversionRate = new ConversionRate();
+            $conversionRate->setCurrency($currency);
+            $conversionRate->setRate(1);
+            $conversionRate->setValidFrom($date);
+        }
+
+        return $conversionRate;
+    }
+
+    public function convertCurrency(?float $price, Currency $currency, float|ConversionRate $conversionRate): float
+    {
+        if ($conversionRate instanceof ConversionRate) $conversionRate = $conversionRate->getRate();
+
         if (is_null($price)) return 0;
-        $price = $price * $currency->getConversionRate();
+        $price = $price * $conversionRate;
         return round($price, $currency->getRounding());
     }
 }

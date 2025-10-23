@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -23,6 +24,7 @@ readonly class ServiceCalculationUtils
     public function calculateServicePrice(
         Transportation|PaymentType $service,
         Currency                   $currency,
+        ?ConversionRate            $conversionRate = null,
         VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
         float                      $theoreticalAmount = 0.0,
         bool                       $returnRaw = false,
@@ -44,7 +46,10 @@ readonly class ServiceCalculationUtils
             ),
         };
         if (!$returnRaw) {
-            return $this->priceUtils->convertCurrency($price, $currency);
+            if (!$conversionRate){
+                $conversionRate = $this->priceUtils->getConversionRate($currency);
+            }
+            return $this->priceUtils->convertCurrency($price, $currency, $conversionRate);
         }
         return $price;
     }
@@ -79,6 +84,7 @@ readonly class ServiceCalculationUtils
     public function getFreeFromPrice(
         Transportation|PaymentType $service,
         Currency                   $currency,
+        ?ConversionRate            $conversionRate = null
     ): ?float
     {
         $handlingPrice = $this->handlingPriceRepository->getByDate($service);
@@ -91,6 +97,8 @@ readonly class ServiceCalculationUtils
             return null;
         }
 
-        return $this->priceUtils->convertCurrency($freeFromPrice, $currency);
+        if (!$conversionRate) $conversionRate = $this->priceUtils->getConversionRate($currency);
+
+        return $this->priceUtils->convertCurrency($freeFromPrice, $currency, $conversionRate);
     }
 }

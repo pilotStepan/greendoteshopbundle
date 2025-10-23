@@ -2,7 +2,9 @@
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Settings;
+use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -43,9 +45,23 @@ abstract class PriceCalculationTestCase extends TestCase
     protected $serviceCalculationUtils;
 
     protected $parameterBag;
+
+    protected $conversionRateRepository;
     protected function setUp(): void
     {
-        $this->priceUtils = new PriceUtils();
+        $this->conversionRateRepository = $this->createMock(ConversionRateRepository::class);
+        $this->conversionRateRepository->method('getByDate')
+            ->willReturnCallback(function (Currency $currency, ?\DateTime $dateTime = null){
+               switch ($currency->getName()){
+                   case 'CZK':
+                       return (new ConversionRate())->setRate(1);
+                   case 'EUR':
+                       return (new ConversionRate())->setRate(0.04);
+                   default:
+                       throw new \Exception('Invalid currency name');
+               }
+            });
+        $this->priceUtils = new PriceUtils($this->conversionRateRepository);
         $this->priceRepository = $this->createMock(PriceRepository::class);
         $this->security = $this->createMock(Security::class);
         $this->discountService = $this->createMock(DiscountService::class);
@@ -100,10 +116,12 @@ abstract class PriceCalculationTestCase extends TestCase
     ): ProductVariantPrice
     {
         $afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
+        $conversionRate = $currency->getConversionRates()->first();
         return new ProductVariantPrice(
             $variant,
             $amount,
             $currency,
+            $conversionRate,
             $vatType,
             $discCalc,
             $afterRegistrationBonus,
@@ -121,14 +139,15 @@ abstract class PriceCalculationTestCase extends TestCase
         Currency $currency,
     ): PurchasePrice
     {
+        $conversionRate = $currency->getConversionRates()->first();
         return new PurchasePrice(
             $purchase,
             $vatCalc,
             $discCalc,
             $currency,
+            $conversionRate,
             VouchCalc::WithoutVoucher,
             $this->productVariantPriceFactory,
-            $this->currencyRepository,
             $this->priceUtils,
             $this->serviceCalculationUtils,
             $this->settingsRepository
@@ -171,6 +190,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $purchase->method('getClientDiscount')->willReturn($clientDiscountMock);
         }
 
+        $purchase->method('getDateIssue')->willReturn(new \DateTime('now'));
         $purchase->method('getVouchersUsed')->willReturn(new ArrayCollection($vouchers ?? []));
 
         return $purchase;

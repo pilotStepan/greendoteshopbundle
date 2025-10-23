@@ -22,7 +22,7 @@ class Currency
     private ?string $symbol = null;
 
     #[ORM\OneToMany(targetEntity: ConversionRate::class, mappedBy: 'currency')]
-    private Collection $conversionRates = null;
+    private Collection $conversionRates;
 
     #[ORM\Column]
     private ?int $rounding = null;
