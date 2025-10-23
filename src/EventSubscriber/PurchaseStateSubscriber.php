@@ -53,6 +53,14 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             return;
         }
 
+        foreach ($purchase->getProductVariants() as $ppv) {
+            // pv doesn't have an availability set => it's purchasable
+            if ($ppv->getProductVariant()->getAvailability()?->getIsPurchasable() === false) {
+                $event->setBlocked(true, 'V košíku jsou nedostupné položky, než budete pokračovat, prosím je odeberte');
+                return;
+            }
+        }
+
         if (!$purchase->getClient()) {
             $event->setBlocked(true, 'Objednávka musí mít přiřazeného klienta');
             return;
