@@ -23,8 +23,7 @@ readonly class ServiceCalculationUtils
      */
     public function calculateServicePrice(
         Transportation|PaymentType $service,
-        Currency                   $currency,
-        ?ConversionRate            $conversionRate = null,
+        Currency|ConversionRate    $currencyOrConversionRate,
         VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
         float                      $theoreticalAmount = 0.0,
         bool                       $returnRaw = false,
@@ -46,10 +45,11 @@ readonly class ServiceCalculationUtils
             ),
         };
         if (!$returnRaw) {
-            if (!$conversionRate){
-                $conversionRate = $this->priceUtils->getConversionRate($currency);
+            $conversionRate = $currencyOrConversionRate;
+            if ($conversionRate instanceof Currency){
+                $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate);
             }
-            return $this->priceUtils->convertCurrency($price, $currency, $conversionRate);
+            return $this->priceUtils->convertCurrency($price, $conversionRate);
         }
         return $price;
     }
@@ -99,6 +99,6 @@ readonly class ServiceCalculationUtils
 
         if (!$conversionRate) $conversionRate = $this->priceUtils->getConversionRate($currency);
 
-        return $this->priceUtils->convertCurrency($freeFromPrice, $currency, $conversionRate);
+        return $this->priceUtils->convertCurrency($freeFromPrice, $conversionRate);
     }
 }

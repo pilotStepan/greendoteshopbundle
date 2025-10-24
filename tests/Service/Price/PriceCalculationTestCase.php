@@ -54,9 +54,10 @@ abstract class PriceCalculationTestCase extends TestCase
             ->willReturnCallback(function (Currency $currency, ?\DateTime $dateTime = null){
                switch ($currency->getName()){
                    case 'CZK':
-                       return (new ConversionRate())->setRate(1);
+                       return (new ConversionRate())->setRate(1)->setCurrency($currency);
                    case 'EUR':
-                       return (new ConversionRate())->setRate(0.04);
+
+                       return (new ConversionRate())->setRate(0.04)->setCurrency($currency);
                    default:
                        throw new \Exception('Invalid currency name');
                }
@@ -120,7 +121,6 @@ abstract class PriceCalculationTestCase extends TestCase
         return new ProductVariantPrice(
             $variant,
             $amount,
-            $currency,
             $conversionRate,
             $vatType,
             $discCalc,

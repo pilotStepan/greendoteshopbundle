@@ -70,12 +70,10 @@ class PriceUtils
         return $conversionRate;
     }
 
-    public function convertCurrency(?float $price, Currency $currency, float|ConversionRate $conversionRate): float
+    public function convertCurrency(?float $price, ConversionRate $conversionRate): float
     {
-        if ($conversionRate instanceof ConversionRate) $conversionRate = $conversionRate->getRate();
-
         if (is_null($price)) return 0;
-        $price = $price * $conversionRate;
-        return round($price, $currency->getRounding());
+        $price = $price * $conversionRate->getRate();
+        return round($price, $conversionRate->getCurrency()->getRounding());
     }
 }

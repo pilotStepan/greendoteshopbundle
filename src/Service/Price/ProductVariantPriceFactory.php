@@ -31,11 +31,10 @@ readonly class ProductVariantPriceFactory
 
     public function create(
         ProductVariant|PurchaseProductVariant $pv,
-        Currency                              $currency,
+        Currency|ConversionRate               $currencyOrConversionRate,
         ?int                                  $amount = null,
         VatCalculationType                    $vatCalculationType = VatCalculationType::WithoutVAT,
-        DiscountCalculationType               $discountCalculationType = DiscountCalculationType::WithDiscount,
-        ?ConversionRate                       $conversionRate = null
+        DiscountCalculationType               $discountCalculationType = DiscountCalculationType::WithDiscount
     ): ProductVariantPrice
     {
         $purchase = null;
@@ -46,12 +45,15 @@ readonly class ProductVariantPriceFactory
         if ($purchase) {
             if ($pv->getPurchase()->isVatExempted()) $vatCalculationType = VatCalculationType::WithoutVAT;
         }
-        if (!$conversionRate) $conversionRate = $this->priceUtils->getConversionRate($currency, $purchase);
+
+        $conversionRate = $currencyOrConversionRate;
+        if ($currencyOrConversionRate instanceof Currency){
+            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
+        }
 
         return new ProductVariantPrice(
             $pv,
             $amount,
-            $currency,
             $conversionRate,
             $vatCalculationType,
             $discountCalculationType,
@@ -65,19 +67,20 @@ readonly class ProductVariantPriceFactory
 
     public function entityLoad(
         Price                   $price,
-        Currency                $currency,
+        Currency|ConversionRate $currencyOrConversionRate,
         VatCalculationType      $vatCalculationType = VatCalculationType::WithoutVAT,
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
-        ?ConversionRate                       $conversionRate = null
     ): ProductVariantPrice
     {
         $amount = $price->getMinimalAmount();
-        if (!$conversionRate) $conversionRate = $this->priceUtils->getConversionRate($currency);
+        $conversionRate = $currencyOrConversionRate;
+        if ($currencyOrConversionRate instanceof Currency){
+            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
+        }
 
         return new ProductVariantPrice(
             $price->getProductVariant(),
             $amount,
-            $currency,
             $conversionRate,
             $vatCalculationType,
             $discountCalculationType,

@@ -12,7 +12,6 @@ use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 
 class PurchasePrice
@@ -84,7 +83,7 @@ class PurchasePrice
             $price += $this->paymentPrice;
         }
         $price = $this->applyVoucher($price);
-        return $this->priceUtils->convertCurrency($price, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($price, $this->conversionRate);
     }
 
     /**
@@ -92,7 +91,7 @@ class PurchasePrice
      */
     public function getMinPrice(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->minPrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->minPrice, $this->conversionRate);
     }
 
     public function getTransportationPrice(): ?float
@@ -100,7 +99,7 @@ class PurchasePrice
         if (!$this->transportationPrice) {
             return null;
         }
-        return $this->priceUtils->convertCurrency($this->transportationPrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->transportationPrice, $this->conversionRate);
     }
 
     public function getPaymentPrice(): ?float
@@ -108,7 +107,7 @@ class PurchasePrice
         if (!$this->paymentPrice) {
             return null;
         }
-        return $this->priceUtils->convertCurrency($this->paymentPrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->paymentPrice, $this->conversionRate);
     }
 
     /**
@@ -122,7 +121,7 @@ class PurchasePrice
     public function getVouchersUsedValue(): float
     {
         if ($this->vouchersValue > 0) {
-            return $this->priceUtils->convertCurrency($this->vouchersValue, $this->currency, $this->conversionRate);
+            return $this->priceUtils->convertCurrency($this->vouchersValue, $this->conversionRate);
         }
         return 0;
     }
@@ -182,7 +181,7 @@ class PurchasePrice
     private function loadVariants(): void
     {
         foreach ($this->purchase->getProductVariants() as $purchaseProductVariant) {
-            $this->productVariantPrices [] = $this->productVariantPriceFactory->create($purchaseProductVariant, $this->currency, null, $this->vatCalculationType, $this->discountCalculationType, $this->conversionRate);
+            $this->productVariantPrices [] = $this->productVariantPriceFactory->create($purchaseProductVariant, $this->conversionRate, null, $this->vatCalculationType, $this->discountCalculationType);
         }
         $this->loadPrice();
     }
@@ -207,7 +206,7 @@ class PurchasePrice
                 $price += $productVariantPrice->getPrice(true);
             }
         }
-        return $this->priceUtils->convertCurrency($price, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($price, $this->conversionRate);
 //        return $price;
     }
 
@@ -231,7 +230,7 @@ class PurchasePrice
         $purchasePrice = 0;
         foreach ($this->productVariantPrices as $productVariantPrice) {
             $clonedProductVariantPrice = clone $productVariantPrice;
-            $clonedProductVariantPrice->setCurrency($this->currency, $this->defaultConversionRate);
+            $clonedProductVariantPrice->setCurrency($this->defaultConversionRate);
             if ($this->freeFromPriceIncludesVat){
                 $clonedProductVariantPrice->setVatCalculationType(VatCalculationType::WithVAT);
             }else{
@@ -252,12 +251,12 @@ class PurchasePrice
 
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
     {
-        $this->paymentPrice = $this->serviceCalculationUtils->calculateServicePrice($paymentType, $this->currency, $this->conversionRate, $this->vatCalculationType, $purchasePrice, true);
+        $this->paymentPrice = $this->serviceCalculationUtils->calculateServicePrice($paymentType, $this->conversionRate, $this->vatCalculationType, $purchasePrice, true);
     }
 
     private function setTransportationPrice(float $purchasePrice, Transportation $transportation): void
     {
-        $this->transportationPrice = $this->serviceCalculationUtils->calculateServicePrice($transportation,$this->currency,$this->conversionRate, $this->vatCalculationType, $purchasePrice, true);
+        $this->transportationPrice = $this->serviceCalculationUtils->calculateServicePrice($transportation,$this->conversionRate, $this->vatCalculationType, $purchasePrice, true);
     }
 
     private function applyVoucher(?float $price): ?float
