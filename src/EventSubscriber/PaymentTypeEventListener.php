@@ -37,6 +37,7 @@ readonly class PaymentTypeEventListener
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(
             $paymentType,
             $currency,
+            null,
             VatCalculationType::WithVAT,
         );
 

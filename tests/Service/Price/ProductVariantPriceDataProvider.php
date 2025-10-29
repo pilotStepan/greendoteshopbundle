@@ -321,7 +321,7 @@ class ProductVariantPriceDataProvider
                 'vatCalc' => VatCalc::WithVAT,
                 'currency' => $eur,
                 'discCalc' => DiscCalc::WithoutDiscount,
-                'expectedPrice' => 10 * 10 * 1.21 * $eur->getConversionRate(),
+                'expectedPrice' => 10 * 10 * 1.21 * $eur->getConversionRates()->first()->getRate(),
             ],
             'free_item' => [
                 'price' => FactoryUtil::makePrice(0.0, 0.0),

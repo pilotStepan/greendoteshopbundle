@@ -32,6 +32,8 @@ readonly class CurrencyResolver
             return $sessionCurrency;
         }
 
-        return $this->currencyRepository->findOneBy(['conversionRate' => 1]);
+        $defaultCurrency = $this->currencyRepository->findDefaultCurrency();
+        if (!$defaultCurrency) throw new \Exception("No default currency set");
+        return $defaultCurrency;
     }
 }

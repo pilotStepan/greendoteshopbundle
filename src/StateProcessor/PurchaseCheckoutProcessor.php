@@ -111,7 +111,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         } catch (Exception|ORMException $e) {
             // General exceptions or ORM errors
             $this->logger->error('Unexpected exception', ['exception' => $e]);
-            return new JsonResponse(['errors' => ['Unexpected exception' => json_encode($e)]], 500);
+            return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -70,26 +71,44 @@ class PriceCalculationFactoryUtil
     public static function czk(): Currency
     {
         // for testing purposes, rounding = 1
+        $conversionRate = (new ConversionRate())
+            ->setRate(1)
+            ->setValidFrom(new \DateTime('-1 day'))
+            ->setCreated(new \DateTime('-1 day'));
+
         return (new Currency())
-            ->setConversionRate(1)
+            ->setName('CZK')
+            ->addConversionRate($conversionRate)
             ->setRounding(1)
             ->setIsDefault(1);
     }
 
     public static function czkThreeSpaceRounding(): Currency
     {
+
+        $conversionRate = (new ConversionRate())
+            ->setRate(1)
+            ->setValidFrom(new \DateTime('-1 day'))
+            ->setCreated(new \DateTime('-1 day'));
+
         // for testing purposes, rounding = 1
         return (new Currency())
-            ->setConversionRate(1)
+            ->setName('CZK')
+            ->addConversionRate($conversionRate)
             ->setRounding(3)
             ->setIsDefault(1);
     }
 
     public static function eur(): Currency
     {
+        $conversionRate = (new ConversionRate())
+            ->setRate(0.04)
+            ->setValidFrom(new \DateTime('-1 day'))
+            ->setCreated(new \DateTime('-1 day'));
         // for testing purposes, rounding = 2
         return (new Currency())
-            ->setConversionRate(0.04)
+            ->setName('EUR')
+            ->addConversionRate($conversionRate)
             ->setRounding(2)
             ->setIsDefault(0);
     }

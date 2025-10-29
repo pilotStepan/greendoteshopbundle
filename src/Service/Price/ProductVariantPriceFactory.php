@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -18,31 +19,42 @@ readonly class ProductVariantPriceFactory
     private readonly int $afterRegistrationBonus;
 
     public function __construct(
-        private Security        $security,
-        private PriceRepository $priceRepository,
-        private DiscountService $discountService,
-        private PriceUtils      $priceUtils,
+        private Security           $security,
+        private PriceRepository    $priceRepository,
+        private DiscountService    $discountService,
+        private PriceUtils         $priceUtils,
         private SettingsRepository $settingsRepository
-    ){
+    )
+    {
         $this->afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
     }
 
     public function create(
         ProductVariant|PurchaseProductVariant $pv,
-        Currency $currency,
-        ?int $amount = null,
-        VatCalculationType $vatCalculationType = VatCalculationType::WithoutVAT,
-        DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount
+        Currency|ConversionRate               $currencyOrConversionRate,
+        ?int                                  $amount = null,
+        VatCalculationType                    $vatCalculationType = VatCalculationType::WithoutVAT,
+        DiscountCalculationType               $discountCalculationType = DiscountCalculationType::WithDiscount
     ): ProductVariantPrice
     {
-        if ($pv instanceof PurchaseProductVariant and $pv?->getPurchase() and $pv->getPurchase()->isVatExempted()){
-            $vatCalculationType = VatCalculationType::WithoutVAT;
+        $purchase = null;
+        if ($pv instanceof PurchaseProductVariant and $pv?->getPurchase()) {
+            $purchase = $pv->getPurchase();
+        }
+
+        if ($purchase) {
+            if ($pv->getPurchase()->isVatExempted()) $vatCalculationType = VatCalculationType::WithoutVAT;
+        }
+
+        $conversionRate = $currencyOrConversionRate;
+        if ($currencyOrConversionRate instanceof Currency){
+            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
         }
 
         return new ProductVariantPrice(
             $pv,
             $amount,
-            $currency,
+            $conversionRate,
             $vatCalculationType,
             $discountCalculationType,
             $this->afterRegistrationBonus,
@@ -54,18 +66,22 @@ readonly class ProductVariantPriceFactory
     }
 
     public function entityLoad(
-        Price $price,
-        Currency $currency,
-        VatCalculationType $vatCalculationType = VatCalculationType::WithoutVAT,
-        DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount
+        Price                   $price,
+        Currency|ConversionRate $currencyOrConversionRate,
+        VatCalculationType      $vatCalculationType = VatCalculationType::WithoutVAT,
+        DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
     ): ProductVariantPrice
     {
         $amount = $price->getMinimalAmount();
+        $conversionRate = $currencyOrConversionRate;
+        if ($currencyOrConversionRate instanceof Currency){
+            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
+        }
 
         return new ProductVariantPrice(
             $price->getProductVariant(),
             $amount,
-            $currency,
+            $conversionRate,
             $vatCalculationType,
             $discountCalculationType,
             $this->afterRegistrationBonus,

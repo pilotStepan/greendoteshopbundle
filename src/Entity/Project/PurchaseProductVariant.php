@@ -161,4 +161,19 @@ class PurchaseProductVariant
 
         return $this;
     }
+
+    /* ApiPlatform field */
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
+    public function isAvailable(): bool
+    {
+        $productVariant = $this->getProductVariant();
+
+        $availability = $productVariant->getAvailability();
+        if (!$availability) {
+            // If no availability is set, consider the product variant as available
+            return true;
+        }
+
+        return $availability->getIsPurchasable() ?? true;
+    }
 }

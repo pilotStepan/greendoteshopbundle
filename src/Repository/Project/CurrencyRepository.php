@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -37,5 +38,17 @@ class CurrencyRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function findDefaultCurrency(\DateTime $date = new \DateTime("now")): ?Currency
+    {
+        return $this->createQueryBuilder('currency')
+            ->leftJoin('currency.conversionRates', 'conversion_rate')
+            ->andWhere('conversion_rate.rate = 1')
+            ->andWhere('conversion_rate.validFrom <= :date')
+            ->setParameter('date', $date)
+            ->orderBy('conversion_rate.validFrom', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()->getOneOrNullResult();
     }
 }

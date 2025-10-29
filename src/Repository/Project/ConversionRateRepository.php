@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
+use Greendot\EshopBundle\Entity\Project\Currency;
 
 /**
  * @extends ServiceEntityRepository<ConversionRate>
@@ -38,4 +39,19 @@ class ConversionRateRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    public function getByDate(int|Currency $currency, \DateTime $date = new \DateTime("now")): ?ConversionRate
+    {
+        if ($currency instanceof Currency) $currency = $currency->getId();
+
+        $qb = $this->createQueryBuilder('conversion_rate')
+            ->andWhere('conversion_rate.currency = :currency')
+            ->setParameter('currency', $currency)
+            ->andWhere('conversion_rate.validFrom <= :date')
+            ->setParameter('date', $date)
+            ->orderBy('conversion_rate.validFrom', 'DESC');
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
+
 }
