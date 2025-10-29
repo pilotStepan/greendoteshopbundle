@@ -30,27 +30,27 @@ readonly class PaymentTypeEventListener
     public function postLoad(PaymentType $paymentType): void
     {
         $currency = $this->currencyResolver->resolve();
-        $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession('purchase');
+        $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession();
         $cart = $cartEntity ? clone $cartEntity : null;
 
         // Base price for the given service
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(
             $paymentType,
             $currency,
-            null,
             VatCalculationType::WithVAT,
         );
 
         // Price influenced by the current cart (if any)
-        $cartPrice = $cart
-            ? $this->purchasePriceFactory
-            ->create(
-                $cart->setPaymentType($paymentType), // Pass the payment type to the cart
+        if ($cart) {
+            $calc = $this->purchasePriceFactory->create(
+                $cart->setPaymentType($paymentType),
                 $currency,
-                VatCalculationType::WithVAT
-            )
-            ->getPaymentPrice() ?? 0.0
-            : $basePrice;
+                VatCalculationType::WithVAT,
+            );
+            $cartPrice = $calc->getPaymentPrice() ?? 0.0;
+        } else {
+            $cartPrice = $basePrice;
+        }
 
         $paymentType
             ->setPrice($basePrice)

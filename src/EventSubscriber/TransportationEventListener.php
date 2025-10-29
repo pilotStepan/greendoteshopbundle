@@ -31,18 +31,12 @@ readonly class TransportationEventListener
     public function postLoad(Transportation $transportation): void
     {
         $currency = $this->currencyResolver->resolve();
-        $cartSession = $this->entityManager
-            ->getRepository(Purchase::class)
-            ->findOneBySession('purchase')
-        ;
-
-        // don't mutate the original, shallow clone is enough
-        $cart = $cartSession ? clone $cartSession : null;
+        $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession();
+        $cart = $cartEntity ? clone $cartEntity : null;
 
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(
             $transportation,
             $currency,
-            null,
             VatCalculationType::WithVAT,
         );
         $freeFromPrice = $this->serviceCalculationUtils->getFreeFromPrice($transportation, $currency);

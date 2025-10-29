@@ -22,10 +22,10 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
-use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
@@ -70,7 +70,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             // Wrap in transaction to ensure atomicity, don't wrap logic inside transaction listeners
             $this->em->wrapInTransaction(function () use ($data, $purchase, $providedConsents) {
                 // 3. Handle client
-                $client = $this->handleClient($data->client);
+                $client = $this->handleClient($data->client, $data->address);
                 $purchase->setClient($client);
 
                 // 4. Address
@@ -88,7 +88,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                         $this->createDiscussion($noteText),
                     );
                 }
-                
+
                 // 7. affiliate
                 $this->affiliateService->setAffiliateToPurchase($purchase);
 
@@ -126,20 +126,22 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         return $consent;
     }
 
-    private function handleClient(array $clientData): Client
+    private function handleClient(array $clientData, array $addressData): Client
     {
         $user = $this->security->getUser();
 
-        // If logged in, update info
+        // If logged in, update info and address
         if ($user instanceof Client) {
-            return $user
+            $user
                 ->setName($clientData['name'])
                 ->setSurname($clientData['surname'])
                 ->setPhone($clientData['phone'])
             ;
+            $user->getPrimaryAddress()->mergeFromArray($addressData);
+            $this->em->flush();
         }
 
-        // If not, create anonymous client
+        // If not, create anonymous client, without an address saved to client profile
         $client = (new Client())
             ->setName($clientData['name'])
             ->setSurname($clientData['surname'])
@@ -155,17 +157,8 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
     private function createPurchaseAddress(array $addressData): PurchaseAddress
     {
-        $address = new PurchaseAddress();
-
-        foreach ($addressData as $key => $value) {
-            $setter = 'set' . str_replace('_', '', ucwords($key, '_'));
-            if (method_exists($address, $setter)) {
-                $address->$setter($value);
-            }
-        }
-
+        $address = PurchaseAddress::fromArray($addressData);
         $this->em->persist($address);
-
         return $address;
     }
 

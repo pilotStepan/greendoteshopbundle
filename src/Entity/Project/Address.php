@@ -345,4 +345,18 @@ abstract class Address
     {
         return $this->company || $this->ic || $this->dic;
     }
+
+    static public function fromArray(array $data): static
+    {
+        $address = new static();
+
+        foreach ($data as $key => $value) {
+            $setter = 'set' . str_replace('_', '', ucwords($key, '_'));
+            if (method_exists($address, $setter)) {
+                $address->$setter($value);
+            }
+        }
+
+        return $address;
+    }
 }

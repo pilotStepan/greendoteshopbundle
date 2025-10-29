@@ -117,4 +117,16 @@ class ClientAddress extends Address
             $this->is_primary = true;
         }
     }
+
+    public function mergeFromArray(array $data): static
+    {
+        foreach ($data as $key => $value) {
+            $setter = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $key)));
+            if (method_exists($this, $setter)) {
+                $this->$setter($value);
+            }
+        }
+
+        return $this;
+    }
 }

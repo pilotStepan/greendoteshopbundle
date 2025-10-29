@@ -115,7 +115,6 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $clientAddresses;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['client:read', 'client:write'])]
     private ?string $description = null;
 
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'client')]
@@ -384,12 +383,23 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function addClientAddress(ClientAddress $clientAddress): static
     {
         if (!$this->clientAddresses->contains($clientAddress)) {
-            $this->clientAddresses->add($clientAddress);
-            $clientAddress->setClient($this);
 
-            if ($this->clientAddresses->count() === 1) {
+            // If this is the first address, set it as primary
+            if ($this->clientAddresses->count() === 0) {
                 $clientAddress->setIsPrimary(true);
             }
+
+            // If the new address is set as primary, unset any other primary address
+            if ($clientAddress->getIsPrimary()) {
+                foreach ($this->clientAddresses as $address) {
+                    if ($address->getIsPrimary()) {
+                        $address->setIsPrimary(false);
+                    }
+                }
+            }
+
+            $this->clientAddresses->add($clientAddress);
+            $clientAddress->setClient($this);
         }
 
         return $this;
