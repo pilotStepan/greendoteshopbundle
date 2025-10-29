@@ -148,20 +148,22 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 $address->updateFromArray($addressData);
             }
             $this->em->flush();
+
+            return $user;
+        } else {
+            // If not, create anonymous client, without an address saved to client profile
+            $client = (new Client())
+                ->setName($clientData['name'])
+                ->setSurname($clientData['surname'])
+                ->setPhone($clientData['phone'])
+                ->setMail($clientData['mail'])
+                ->setIsAnonymous(true)
+            ;
+
+            $this->em->persist($client);
+
+            return $client;
         }
-
-        // If not, create anonymous client, without an address saved to client profile
-        $client = (new Client())
-            ->setName($clientData['name'])
-            ->setSurname($clientData['surname'])
-            ->setPhone($clientData['phone'])
-            ->setMail($clientData['mail'])
-            ->setIsAnonymous(true)
-        ;
-
-        $this->em->persist($client);
-
-        return $client;
     }
 
     private function createPurchaseAddress(array $addressData): PurchaseAddress
