@@ -377,7 +377,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->clientAddresses
             ->filter(fn($address) => $address->getIsPrimary())
-            ->first() ?: null;
+            ->last() ?: null;
     }
 
     public function addClientAddress(ClientAddress $clientAddress): static
