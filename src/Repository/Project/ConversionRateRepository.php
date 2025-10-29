@@ -49,7 +49,8 @@ class ConversionRateRepository extends ServiceEntityRepository
             ->setParameter('currency', $currency)
             ->andWhere('conversion_rate.validFrom <= :date')
             ->setParameter('date', $date)
-            ->orderBy('conversion_rate.validFrom', 'DESC');
+            ->orderBy('conversion_rate.validFrom', 'DESC')
+            ->setMaxResults(1);
 
         return $qb->getQuery()->getOneOrNullResult();
     }
