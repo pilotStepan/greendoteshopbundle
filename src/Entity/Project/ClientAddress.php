@@ -118,7 +118,7 @@ class ClientAddress extends Address
         }
     }
 
-    public function mergeFromArray(array $data): static
+    public function updateFromArray(array $data): static
     {
         foreach ($data as $key => $value) {
             $setter = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $key)));

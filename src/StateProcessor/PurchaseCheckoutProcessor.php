@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -137,7 +138,15 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 ->setSurname($clientData['surname'])
                 ->setPhone($clientData['phone'])
             ;
-            $user->getPrimaryAddress()->mergeFromArray($addressData);
+            $address = $user->getPrimaryAddress();
+            if (!$address) {
+                $address = ClientAddress::fromArray($addressData);
+                $address->setIsPrimary(true);
+                $address->setClient($user);
+                $this->em->persist($address);
+            } else {
+                $address->updateFromArray($addressData);
+            }
             $this->em->flush();
         }
 
