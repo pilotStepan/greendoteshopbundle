@@ -225,6 +225,7 @@ class Product implements Translatable
     private ?int $sold_amount = null;
 
     #[ORM\ManyToOne(inversedBy: 'Products')]
+    #[Groups(['product_item:read', 'product_variant:read', 'purchase:read'])]
     private ?ProductType $productType = null;
 
     #[ORM\ManyToMany(targetEntity: Comment::class, mappedBy: 'products')]
