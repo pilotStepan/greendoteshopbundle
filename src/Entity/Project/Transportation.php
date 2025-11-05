@@ -149,7 +149,7 @@ class Transportation implements Translatable
 //    #[Groups(['transportation:read', 'purchase:read', 'transportation_group:read'])]
     private Collection $branches;
 
-    #[ORM\Column(type: 'string', length: 255, enumType: TransportationAPI::class)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true, enumType: TransportationAPI::class)]
     #[Groups(['transportation:read', 'purchase:read'])]
     private ?TransportationAPI $transportationAPI;
 
