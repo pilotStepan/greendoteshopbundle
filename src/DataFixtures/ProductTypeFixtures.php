@@ -6,15 +6,16 @@ use Greendot\EshopBundle\Entity\Project\ProductType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
+use Greendot\EshopBundle\Enum\ProductTypeEnum;
 
 class ProductTypeFixtures extends Fixture implements FixtureGroupInterface
 {
     public function load(ObjectManager $manager): void
     {
         $productTypes = [
-            ['id' => 1, 'name' => 'Standard'],
-            ['id' => 2, 'name' => 'Dárkový certifikát'],
-            ['id' => 3, 'name' => 'Software'],
+            ['id' => ProductTypeEnum::Standard->value, 'name' => 'Standard'],
+            ['id' => ProductTypeEnum::Voucher->value, 'name' => 'Dárkový certifikát'],
+            ['id' => ProductTypeEnum::Software->value, 'name' => 'Software'],
         ];
 
         foreach ($productTypes as $typeData) {

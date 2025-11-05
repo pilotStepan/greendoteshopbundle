@@ -11,6 +11,7 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Voucher;
+use Greendot\EshopBundle\Enum\ProductTypeEnum;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -35,9 +36,11 @@ class ManageVoucherTest extends TestCase
 
     public function testInitiateVouchersCreatesVouchersForGiftCertificates(): void
     {
+
+        
         // Set up a product variant that is a gift certificate
         $productType = new ProductType();
-        $productType->setName('Dárkový certifikát');
+        $productType->setId(ProductTypeEnum::Voucher->value);
         $product = new Product();
         $product->setProductType($productType);
         $variant = new ProductVariant();
@@ -77,7 +80,7 @@ class ManageVoucherTest extends TestCase
     {
         // Set up a product variant that is not a gift certificate
         $productType = new ProductType();
-        $productType->setName('Regular Product');
+        $productType->setId(ProductTypeEnum::Standard->value);
         $product = new Product();
         $product->setProductType($productType);
         $variant = new ProductVariant();
@@ -187,7 +190,7 @@ class ManageVoucherTest extends TestCase
     {
         // Set up a gift certificate without the certificate value parameter
         $productType = new ProductType();
-        $productType->setName('Dárkový certifikát');
+        $productType->setId(ProductTypeEnum::Voucher->value);
         $product = new Product();
         $product->setProductType($productType);
         $variant = new ProductVariant();

@@ -9,6 +9,8 @@ use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\Registry;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Entity\Project\ProductType;
+use Greendot\EshopBundle\Enum\ProductTypeEnum;
 
 class ManageVoucher
 {
@@ -32,7 +34,7 @@ class ManageVoucher
 
         foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
             $productVariant = $purchaseProductVariant->getProductVariant();
-            if ($productVariant->getProduct()?->getProductType()?->getName() === 'Dárkový certifikát') {
+            if ($productVariant->getProduct()?->getProductType()?->getId() === ProductTypeEnum::Voucher->value) {
                 $voucher = $this->initiateVoucher($productVariant, $purchase);
                 $vouchers->add($voucher);
             }
