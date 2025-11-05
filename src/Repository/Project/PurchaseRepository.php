@@ -67,14 +67,13 @@ class PurchaseRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
-    public function getNextInvoiceNumber(): ?int
+    public function findNextInvoiceNumber(): ?string
     {
-        $qb = $this->createQueryBuilder('p')
-            ->select('MAX(p.invoice_number) as max_invoice_number');
+        $connection = $this->getEntityManager()->getConnection();
+        $sql = 'SELECT MAX(CAST(invoice_number AS UNSIGNED)) AS max_invoice FROM purchase';
+        $maxInvoiceNumber = $connection->fetchOne($sql);
 
-        $result = $qb->getQuery()->getSingleScalarResult();
-
-        return $result !== null ? (int)$result + 1 : 1;
+        return $maxInvoiceNumber ? (string)($maxInvoiceNumber + 1) : '1';
     }
 
     public function findBySession(QueryBuilder $queryBuilder): QueryBuilder
