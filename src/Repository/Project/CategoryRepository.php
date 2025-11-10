@@ -135,7 +135,7 @@ class CategoryRepository extends HintedRepositoryBase
         ];
     }
 
-    public function findMenuCategories(MenuType|int $menuType)
+    public function findMenuCategories(MenuType|int $menuType, array $availableCategoryTypes = [])
     {
         $menuTypeId = $menuType instanceof MenuType ? $menuType->getId() : $menuType;
         $query = $this->createQueryBuilder('c')
@@ -148,9 +148,14 @@ class CategoryRepository extends HintedRepositoryBase
             ->leftJoin('c.menuType', 'mt')
             ->andWhere('mt.menu_type = :menuTypeId')
             ->setParameter('menuTypeId', $menuTypeId)
-            ->orderBy('mt.sequence', 'ASC')
-            ->getQuery();
+            ->orderBy('mt.sequence', 'ASC');
 
+        if ($availableCategoryTypes){
+            $query->andWhere('c.categoryType in (:availableCategoryTypes)')
+                ->setParameter('availableCategoryTypes', $availableCategoryTypes);
+        }
+
+        $query = $query->getQuery();
         return $this->hintQuery($query)->getResult();
     }
 
