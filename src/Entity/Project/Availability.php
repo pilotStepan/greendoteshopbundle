@@ -15,11 +15,11 @@ class Availability
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write','searchable', "search_result", "SearchProductResultApiModel"])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write','searchable', "search_result", "SearchProductResultApiModel"])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $name;
 
     #[ORM\Column(type: 'text')]
@@ -31,7 +31,7 @@ class Availability
     private $class;
 
     #[ORM\Column(type: 'boolean')]
-    #[Groups(['product_list:read', 'product_item:read'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_list:read', 'product_item:read'])]
     private $isPurchasable;
 
 
@@ -39,7 +39,7 @@ class Availability
      * @var int $sequence is used when determining product availability from variants. Lower sequence value takes priority.
      */
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_list:read', 'product_item:read'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_list:read', 'product_item:read'])]
     private $sequence = 1;
 
     #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'availability')]

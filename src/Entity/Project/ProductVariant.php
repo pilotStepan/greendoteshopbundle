@@ -36,7 +36,7 @@ class ProductVariant implements Translatable
     private $name;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(['product_variant:read', 'product_variant:write' , 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', "SearchProductResultApiModel"])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write' , 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', "SearchProductResultApiModel"])]
     private $stock;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -57,7 +57,7 @@ class ProductVariant implements Translatable
     private $video;
 
     #[ORM\ManyToOne(targetEntity: Availability::class, inversedBy: 'productVariants')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $availability;
 
     #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
