@@ -472,8 +472,39 @@ class CategoryRepository extends HintedRepositoryBase
             $qb->andWhere('c.isActive = true');
         }
 
-        return array_map(fn($row) => (int)$row['id'], $qb->getQuery()->getScalarResult());;
+        return array_map(fn($row) => (int)$row['id'], $qb->getQuery()->getScalarResult());
     }
+
+    /**
+     * @param int[] $labelIds
+     * @param int[] $categoryTypeIds
+     * @param int|null $maxResults
+     * @return Category[]
+     */
+    public function findByLabelsAndCategoryTypes(array $labelIds = [], array $categoryTypeIds = [], ?int $maxResults = null):array
+    {
+        $qb = $this->createQueryBuilder('category')
+            ->andWhere('category.isActive = 1');
+
+        if ($labelIds){
+            $qb->leftJoin('category.labels', 'label')
+                ->andWhere('label.id in (:labels)')
+                ->setParameter('labels', $labelIds);
+        }
+
+        if ($categoryTypeIds){
+            $qb->andWhere('category.categoryType in (:categoryTypes)')
+                ->setParameter('categoryTypes', $categoryTypeIds);
+        }
+        $qb->orderBy('category.sequence', 'DESC');
+
+        if ($maxResults !== null){
+            $qb->setMaxResults($maxResults);
+        }
+
+        return $this->hintQuery($qb->getQuery())->getResult();
+    }
+
 
 
 }
