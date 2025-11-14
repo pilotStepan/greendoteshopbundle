@@ -8,6 +8,7 @@ use ApiPlatform\Doctrine\Orm\Paginator as ApiPlatformPaginator;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Greendot\EshopBundle\Doctrine\TranslatableResultExtension;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\PriceCalculator;
@@ -17,7 +18,9 @@ class ProductStateProvider implements ProviderInterface
 {
     public function __construct(
         private readonly ProductRepository $productRepository,
-        private readonly TranslatableResultExtension $translatableResultExtension)
+        private readonly TranslatableResultExtension $translatableResultExtension,
+        private readonly CategoryRepository $categoryRepository
+    )
     {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
@@ -58,6 +61,13 @@ class ProductStateProvider implements ProviderInterface
                 $this->productRepository->sortProductsByReviews($qb, $filters->orderBy->direction);
                 break;
             default:
+                if ($filters?->categoryId && $filters->categoryId > 0){
+                    $category = $this->categoryRepository->find($filters->categoryId);
+                    if ($category->getCategoryCategories()->count() == 0){
+                        $qb->orderBy('cp.sequence', 'ASC');
+                        break;
+                    }
+                }
                 $this->productRepository->sortProductsBySequence($qb, 'DESC');
                 break;
         }
