@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Service\SessionService;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
@@ -39,6 +40,9 @@ class ProductEventListener
         if ($product->getUpload() === null) {
             $productUploads = [];
             foreach($product->getProductUploadGroups() as $productUploadGroup) {
+                if ($productUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
+                    continue;
+                }
                 foreach($productUploadGroup->getUploadGroup()->getUpload() as $upload)
                 {
                     $productUploads[] = $upload;
@@ -48,6 +52,9 @@ class ProductEventListener
             {
                 foreach ($product->getProductVariants() as $productVariant) {
                     foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
+                        if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
+                            continue;
+                        }
                         foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
                         {
                             $productUploads[] = $upload;
