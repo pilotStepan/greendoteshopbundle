@@ -58,7 +58,8 @@
     "monolog/monolog": "^3.9",
     "ext-xmlreader": "*",
     "ext-libxml": "*",
-    "nzo/url-encryptor-bundle": "^6.4"
+    "nzo/url-encryptor-bundle": "^6.4",
+    "symfony/translation": "^7.3"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
