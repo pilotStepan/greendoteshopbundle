@@ -593,10 +593,11 @@ class AppExtension extends AbstractExtension
     /**
      * @param Category|Product|ProductVariant|Person $entity
      * @param int|ParameterGroupType|null $parameterGroupType
-     * @return array
+     * @param array<'excludeIsVariant'|'unique', bool> $options
+    * @return array
      */
-    public function getFormattedParametersForEntity(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null): array
+    public function getFormattedParametersForEntity(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null, array $options = []): array
     {
-        return $this->parameterRepository->getFormattedParameters($entity, $parameterGroupType);
+        return $this->parameterRepository->getFormattedParameters($entity, $parameterGroupType, $options);
     }
 }

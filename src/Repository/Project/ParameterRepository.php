@@ -376,21 +376,28 @@ class ParameterRepository extends ServiceEntityRepository
     /**
      * @param Category|Product|ProductVariant|Person $entity
      * @param int|ParameterGroupType|null $parameterGroupType
+     * @param array<'excludeIsVariant'|'unique', bool> $options
      * @return array
      */
-    public function getFormattedParameters(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null): array
+    public function getFormattedParameters(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null, array $options = []): array
     {
         if ($parameterGroupType instanceof ParameterGroupType) $parameterGroupType = $parameterGroupType->getId();
 
         $qb = $this->createQueryBuilder('parameter')
-            ->select('parameter.data as data', 'parameter_group.name as parameter_group_name', 'parameter_group.unit as unit')
-            ->leftJoin('parameter.parameterGroup', 'parameter_group');
+            ->select('parameter.data as data', 'parameter_group.name as parameter_group_name', 'parameter_group.unit as unit', 'parameter_group_filter_type.name as filter_type')
+            ->leftJoin('parameter.parameterGroup', 'parameter_group')
+            ->leftJoin('parameter_group.parameterGroupFilterType', 'parameter_group_filter_type')
+        ;
+
+        if (isset($options['unique']) && $options['unique']){
+            $qb->distinct();
+        }
 
         if ($parameterGroupType){
             $qb->andWhere('parameter_group.type = :parameter_group_type')
                 ->setParameter('parameter_group_type', $parameterGroupType);
         }
-
+        $productToExclude = null;
         switch (get_class($entity)){
             case Category::class:
                 $qb->andWhere('parameter.category = :entity')
@@ -401,13 +408,27 @@ class ParameterRepository extends ServiceEntityRepository
                     ->setParameter('entity', $entity);
                 break;
             case ProductVariant::class:
+                $productToExclude = $entity->getProduct();
                 $qb->andWhere('parameter.productVariant = :entity')
                     ->setParameter('entity', $entity);
                 break;
             case Product::class:
+                $productToExclude = $entity;
                 $qb->andWhere('parameter.productVariant in (:entity)')
                     ->setParameter('entity', $entity->getProductVariants());
                 break;
+        }
+
+        if ($productToExclude && isset($options['excludeIsVariant']) && $options['excludeIsVariant']){
+            $excludedParameterGroupIds = [];
+            foreach ($productToExclude->getProductParameterGroups() as $parameterGroup){
+                if (!$parameterGroup->isIsVariant()) continue;
+                $excludedParameterGroupIds[] = $parameterGroup->getParameterGroup()->getId();
+            }
+            if (!empty($excludedParameterGroupIds)){
+                $qb->andWhere('parameter_group.id NOT IN (:excludedParameterGroups)')
+                    ->setParameter('excludedParameterGroups', $excludedParameterGroupIds);
+            }
         }
 
         $data = $qb->getQuery()->getResult();
@@ -419,6 +440,7 @@ class ParameterRepository extends ServiceEntityRepository
             if (!isset($result[$group])){
                 $result[$group] = [
                     'unit' => $item['unit'],
+                    'filter' => $item['filter_type'],
                     'values' => [],
                 ];
             }
@@ -427,6 +449,5 @@ class ParameterRepository extends ServiceEntityRepository
 
         return $result;
     }
-
 
 }
