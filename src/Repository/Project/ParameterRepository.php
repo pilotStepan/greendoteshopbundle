@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Entity\Project\CategoryParameterGroup;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
+use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
@@ -371,5 +372,61 @@ class ParameterRepository extends ServiceEntityRepository
             ->setParameter('pg', $parameterGroup)
             ->getQuery()->getResult();
     }
+
+    /**
+     * @param Category|Product|ProductVariant|Person $entity
+     * @param int|ParameterGroupType|null $parameterGroupType
+     * @return array
+     */
+    public function getFormattedParameters(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null): array
+    {
+        if ($parameterGroupType instanceof ParameterGroupType) $parameterGroupType = $parameterGroupType->getId();
+
+        $qb = $this->createQueryBuilder('parameter')
+            ->select('parameter.data as data', 'parameter_group.name as parameter_group_name', 'parameter_group.unit as unit')
+            ->leftJoin('parameter.parameterGroup', 'parameter_group');
+
+        if ($parameterGroupType){
+            $qb->andWhere('parameter_group.type = :parameter_group_type')
+                ->setParameter('parameter_group_type', $parameterGroupType);
+        }
+
+        switch (get_class($entity)){
+            case Category::class:
+                $qb->andWhere('parameter.category = :entity')
+                    ->setParameter('entity', $entity);
+                break;
+            case Person::class:
+                $qb->andWhere('parameter.person = :entity')
+                    ->setParameter('entity', $entity);
+                break;
+            case ProductVariant::class:
+                $qb->andWhere('parameter.productVariant = :entity')
+                    ->setParameter('entity', $entity);
+                break;
+            case Product::class:
+                $qb->andWhere('parameter.productVariant in (:entity)')
+                    ->setParameter('entity', $entity->getProductVariants());
+                break;
+        }
+
+        $data = $qb->getQuery()->getResult();
+
+        $result = [];
+        foreach ($data as $item){
+            $group = $item['parameter_group_name'];
+
+            if (!isset($result[$group])){
+                $result[$group] = [
+                    'unit' => $item['unit'],
+                    'values' => [],
+                ];
+            }
+            $result[$group]['values'][] = $item['data'];
+        }
+
+        return $result;
+    }
+
 
 }

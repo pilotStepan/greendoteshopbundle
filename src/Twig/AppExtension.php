@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Twig;
 
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
+use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
@@ -132,6 +133,8 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_parents_for_categories', [$this, 'getParentsForCategories']),
 
             new TwigFunction('country_code_to_description', [$this, 'countryCodeToDescription']),
+
+            new TwigFunction('get_formatted_parameters_for_entity', [$this, 'getFormattedParametersForEntity']),
         ];
     }
 
@@ -585,5 +588,15 @@ class AppExtension extends AbstractExtension
     public function getProductUploads(Product $product, bool $includeVariants = false, ?int $uploadGroupType = null): array
     {
         return $this->uploadRepository->getProductUploads($product, $includeVariants, $uploadGroupType);
+    }
+
+    /**
+     * @param Category|Product|ProductVariant|Person $entity
+     * @param int|ParameterGroupType|null $parameterGroupType
+     * @return array
+     */
+    public function getFormattedParametersForEntity(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null): array
+    {
+        return $this->parameterRepository->getFormattedParameters($entity, $parameterGroupType);
     }
 }
