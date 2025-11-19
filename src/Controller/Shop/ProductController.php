@@ -74,15 +74,10 @@ class ProductController extends AbstractController
     }
 
     #[Route('/{slug}-p', name: 'shop_product', requirements: ['slug' => '[A-Za-z0-9\-]+'], options: ['expose' => true], priority: 20)]
-    public function index(string $slug): Response
+    public function index(Product $product): Response
     {
-        $product = $this->productRepository->findOneBy(['slug' => $slug]);
-
-        if (!$product) {
-            throw $this->createNotFoundException('Produkt nenalezen!');
-        }
         $template = 'shop/product/index.html.twig';
-        if ($product?->getProductViewType()?->getTemplate()){
+        if ($product->getProductViewType()?->getTemplate()){
             $template = $product->getProductViewType()->getTemplate();
         }
 
