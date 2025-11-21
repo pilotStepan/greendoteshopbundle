@@ -35,6 +35,7 @@ class Person implements Translatable
     private ?string $surname = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $department = null;
 
     #[ORM\Column(length: 255)]
@@ -53,12 +54,15 @@ class Person implements Translatable
     private Collection $category;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $titleBefore = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $titleAfter = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: Parameter::class)]
@@ -68,6 +72,7 @@ class Person implements Translatable
     private Collection $personUploadGroups;
 
     #[ORM\Column(length: 255)]
+    #[Gedmo\Translatable]
     private ?string $slug = null;
 
     #[ORM\Column(nullable: true)]
@@ -81,6 +86,7 @@ class Person implements Translatable
     private ?Upload $upload = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $html = null;
 
     #[Gedmo\Locale]
@@ -92,7 +98,7 @@ class Person implements Translatable
         $this->productPeople = new ArrayCollection();
     }
 
-    public function setTranslatableLocale($locale)
+    public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
     }
