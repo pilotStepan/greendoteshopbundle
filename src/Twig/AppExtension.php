@@ -6,11 +6,13 @@ use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
+use Greendot\EshopBundle\I18n\RouteTranslator;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Service\SessionService;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
 use Greendot\EshopBundle\Entity\Project\Note;
@@ -63,6 +65,8 @@ class AppExtension extends AbstractExtension
         private readonly ProducerRepository         $producerRepository,
         private readonly UploadRepository           $uploadRepository,
         private readonly CountryRepository          $countryRepository,
+        private readonly ParameterBagInterface      $parameterBag,
+        private readonly RouteTranslator            $routeTranslator,
     )
     {
     }
@@ -135,7 +139,19 @@ class AppExtension extends AbstractExtension
             new TwigFunction('country_code_to_description', [$this, 'countryCodeToDescription']),
 
             new TwigFunction('get_formatted_parameters_for_entity', [$this, 'getFormattedParametersForEntity']),
+
+            new TwigFunction('locale_menu', [$this, 'localeMenu']),
         ];
+    }
+
+    public function localeMenu(): array
+    {
+        $availableLocales = $this->parameterBag->get('app.available.locales');
+        $paths = [];
+        foreach ($availableLocales as $locale){
+            $paths[$locale] = $this->routeTranslator->getByRequestStack($locale) ?? '/?unknown-translation';
+        }
+        return $paths;
     }
 
     public function getAllParentSubcategories(Category $category): array
