@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Comment;
-use Greendot\EshopBundle\Repository\Project\CommentRepository;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,8 +13,8 @@ use Symfony\Component\Routing\Attribute\Route;
 class AdviceController extends AbstractController
 {
     #[Route('/{slug}', name: 'app_advice')]
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     public function index(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category $category,
     ): Response
     {

@@ -59,7 +59,7 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         return $qb->getResult();
     }
 
-    public function findSlugInLocale(object $entity, string $targetLocale): ?string
+    public function findPropertyInLocale(object $entity,string $property, string $targetLocale): ?string
     {
         if ($entity instanceof Translatable && $entity->getTranslatableLocale() === $targetLocale) {
             return $entity->getSlug();
@@ -70,12 +70,12 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
 
         $translations = $repository->findTranslations($entity);
 
-        if (isset($translations[$targetLocale]['slug'])) {
-            return $translations[$targetLocale]['slug'];
+        if (isset($translations[$targetLocale][$property])) {
+            return $translations[$targetLocale][$property];
         }
 
         return $this->createQueryBuilder('e')
-            ->select('e.slug')
+            ->select("e.$property")
             ->where('e.id = :id')
             ->setParameter('id', $entity->getId())
             ->getQuery()

@@ -13,7 +13,8 @@ class HomepageController extends AbstractController implements WebController
     #[Route(
         path: '/',
         name: 'web_homepage',
-        options: ['expose' => true]
+        options: ['expose' => true],
+        priority: 999
     )]
     public function index(CategoryRepository $categoryRepository): Response
     {

@@ -16,32 +16,6 @@ use Greendot\EshopBundle\Repository\Project\ReservedTimeRepository;
 
 class PageController extends AbstractController implements WebController
 {
-    #[Route(
-        path: '/{slug}',
-        name: 'web_get_page',
-        options: ['expose' => true]
-    )]
-    public function getPage(
-        Category              $category,
-        UrlGeneratorInterface $urlGenerator,
-    ): Response
-    {
-        if ($category !== null) {
-            if ($category->getTitle() === null || $category->getTitle() === '') {
-                $title = $category->getName();
-            } else {
-                $title = $category->getTitle();
-            }
-            return $this->render('web/pages/empty_page.html.twig', [
-                'title' => $title,
-                'category' => $category,
-                'replaced_content' => $category->getHtml(),
-            ]);
-        } else {
-            return new RedirectResponse($urlGenerator->generate('web_homepage'));
-        }
-    }
-
     #[CustomApiEndpoint]
     #[Route(
         path: '/my-api/time-reservations',
