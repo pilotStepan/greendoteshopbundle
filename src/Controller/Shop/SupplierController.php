@@ -17,12 +17,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class SupplierController extends AbstractController
 {
-    public function __construct(
-        private readonly TranslatorInterface $translator
-    )
-    {
-    }
-
     #[Route('/{slug}', name: 'shop_supplier_list')]
     public function producerList(
         #[MapEntity(mapping: ['slug' => 'slug'])]
@@ -36,9 +30,19 @@ class SupplierController extends AbstractController
         ]);
     }
 
-    #[Route('/{slug}-v', name: 'shop_producer_products', priority: 2)]
+    /**
+     * requirements: ['slug' => '[a-z0-9\-]+'] to allow "-" in slug
+     *
+     * @param Producer $producer
+     * @return Response
+     */
+    #[Route(
+        path: '/{slug}-v',
+        name: 'shop_producer_products',
+        requirements: ['slug' => '[a-z0-9\-]+'],
+        priority: 2)
+    ]
     public function producerProducts(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Producer $producer
     ): Response
     {
