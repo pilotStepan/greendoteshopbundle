@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Repository;
 
+use Greendot\EshopBundle\I18n\Translatable;
+use Gedmo\Translatable\Entity\Translation as GedmoTranslation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
@@ -9,7 +11,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 abstract class HintedRepositoryBase extends ServiceEntityRepository
 {
-    public function __construct(private readonly ManagerRegistry $registry, private string $entityClass)
+    public function __construct(ManagerRegistry $registry, $entityClass)
     {
         parent::__construct($registry, $entityClass);
     }
@@ -57,6 +59,29 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         return $qb->getResult();
     }
 
+    public function findPropertyInLocale(object $entity,string $property, string $targetLocale): ?string
+    {
+        if ($entity instanceof Translatable && $entity->getTranslatableLocale() === $targetLocale) {
+            return $entity->getSlug();
+        }
+
+        $em = $this->getEntityManager();
+        $repository = $em->getRepository(GedmoTranslation::class);
+
+        $translations = $repository->findTranslations($entity);
+
+        if (isset($translations[$targetLocale][$property])) {
+            return $translations[$targetLocale][$property];
+        }
+
+        return $this->createQueryBuilder('e')
+            ->select("e.$property")
+            ->where('e.id = :id')
+            ->setParameter('id', $entity->getId())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     private function handleCriteria(QueryBuilder $qb, array $criteria): QueryBuilder
     {
         foreach ($criteria as $key => $value){
@@ -84,5 +109,6 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
             'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
         );
     }
+
 
 }

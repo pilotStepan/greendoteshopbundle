@@ -3,10 +3,8 @@
 namespace Greendot\EshopBundle\Repository\Project;
 
 use Exception;
-use Doctrine\ORM\Query;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use Gedmo\Translatable\TranslatableListener;
 use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -15,13 +13,9 @@ use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\MenuType;
 use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Entity\Project\SubMenuType;
-use Greendot\EshopBundle\Entity\Project\CategoryType;
 use Greendot\EshopBundle\Entity\Project\CategoryProduct;
 use Greendot\EshopBundle\Entity\Project\CategoryCategory;
-use Gedmo\Translatable\Query\TreeWalker\TranslationWalker;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @method Category|null find($id, $lockMode = null, $lockVersion = null)
@@ -33,7 +27,7 @@ class CategoryRepository extends HintedRepositoryBase
 {
     private $entityManager;
 
-    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager, private TranslatableListener $translatableListener, private RequestStack $requestStack)
+    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager)
     {
         parent::__construct($registry, Category::class);
         $this->entityManager = $entityManager;

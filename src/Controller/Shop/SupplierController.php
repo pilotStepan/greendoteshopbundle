@@ -2,24 +2,26 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class SupplierController extends AbstractController
 {
+    public function __construct(
+        private readonly TranslatorInterface $translator
+    )
+    {
+    }
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     #[Route('/{slug}', name: 'shop_supplier_list')]
     public function producerList(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category $category,
         ProducerRepository $producerRepository): Response
     {
@@ -36,6 +38,7 @@ class SupplierController extends AbstractController
      * @param Producer $producer
      * @return Response
      */
+    #[TranslatableRoute(class: Producer::class, property: 'slug')]
     #[Route(
         path: '/{slug}-v',
         name: 'shop_producer_products',
