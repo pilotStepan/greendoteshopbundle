@@ -15,7 +15,7 @@ use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 readonly class WishlistService
 {
     public function __construct(
-        private CurrencyResolver           $currencyResolver,
+        private CurrencyManager            $currencyManager,
         private PurchasePriceFactory       $purchasePriceFactory,
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private CurrencyRepository         $currencyRepository,
@@ -73,11 +73,11 @@ readonly class WishlistService
             'total_no_vat_secondary' => $totalNoVatSecondary,
         ]);
 
-        $resolvedCurrency = $this->currencyResolver->resolve();
+        $currency = $this->currencyManager->get();
         foreach ($wishlist->getProductVariants() as $productVariant) {
             $productVariantPriceCalc = $this->productVariantPriceFactory->create(
                 $productVariant,
-                $resolvedCurrency,
+                $currency,
                 vatCalculationType: VatCalculationType::WithVAT,
             );
             $productVariant->setTotalPrice(

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Category;
@@ -16,7 +17,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\Attribute\Route;
 
 class CategoryController extends AbstractController
@@ -64,9 +64,9 @@ class CategoryController extends AbstractController
     }
 
     #[Route('/_request/changeCurrency/{currency}', name: 'request_change_currency')]
-    public function changeCurrency(Currency $currency, Request $request, Session $session): RedirectResponse
+    public function changeCurrency(Currency $currency, Request $request, CurrencyManager $currencyManager): RedirectResponse
     {
-        $session->set('selectedCurrency', $currency);
+        $currencyManager->set($currency);
 
         return $this->redirect($request->headers->get('referer'));
     }

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -11,7 +12,6 @@ use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
-use Greendot\EshopBundle\Service\SessionService;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
@@ -46,30 +46,28 @@ use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 class AppExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly ProductRepository          $productRepository,
-        private readonly PriceCalculator            $priceCalculator,
-        private readonly ProductInfoGetter          $productInfoGetter,
-        private readonly CurrencyRepository         $currencyRepository,
-        private readonly ParameterRepository        $parameterRepository,
-        private readonly PriceRepository            $priceRepository,
-        private readonly ValueAddedTaxCalculator    $addedTaxCalculator,
-        private readonly CategoryInfoGetter         $categoryInfoGetter,
-        private readonly ManageWorkflows            $manageWorkflows,
-        private readonly MessageRepository          $messageRepository,
-        private readonly GoogleAnalytics            $googleAnalytics,
-        private readonly CategoryRepository         $categoryRepository,
-        private readonly RequestStack               $requestStack,
-        private readonly RouterInterface            $router,
-        private readonly InformationBlockService    $informationBlockService,
-        private readonly SessionService             $sessionService,
-        private readonly ProducerRepository         $producerRepository,
-        private readonly UploadRepository           $uploadRepository,
-        private readonly CountryRepository          $countryRepository,
-        private readonly ParameterBagInterface      $parameterBag,
-        private readonly RouteTranslator            $routeTranslator,
-    )
-    {
-    }
+        private readonly ProductRepository       $productRepository,
+        private readonly PriceCalculator         $priceCalculator,
+        private readonly ProductInfoGetter       $productInfoGetter,
+        private readonly CurrencyRepository      $currencyRepository,
+        private readonly ParameterRepository     $parameterRepository,
+        private readonly PriceRepository         $priceRepository,
+        private readonly ValueAddedTaxCalculator $addedTaxCalculator,
+        private readonly CategoryInfoGetter      $categoryInfoGetter,
+        private readonly ManageWorkflows         $manageWorkflows,
+        private readonly MessageRepository       $messageRepository,
+        private readonly GoogleAnalytics         $googleAnalytics,
+        private readonly CategoryRepository      $categoryRepository,
+        private readonly RequestStack            $requestStack,
+        private readonly RouterInterface         $router,
+        private readonly InformationBlockService $informationBlockService,
+        private readonly ProducerRepository      $producerRepository,
+        private readonly UploadRepository        $uploadRepository,
+        private readonly CountryRepository       $countryRepository,
+        private readonly ParameterBagInterface   $parameterBag,
+        private readonly RouteTranslator         $routeTranslator,
+        private readonly CurrencyManager         $currencyManager,
+    ) {}
 
     public function getFunctions(): array
     {
@@ -178,16 +176,14 @@ class AppExtension extends AbstractExtension
 
     public function formatPrice(float $price, ?Currency $currency = null, bool $showFree = false): string
     {
-        $currency ??= $this->requestStack->getCurrentRequest()->getSession()->get('selectedCurrency');
+        $currency ??= $this->currencyManager->get();
         return PriceHelper::formatPrice($price, $currency, $showFree);
     }
 
-    public function getCurrencyFromSession($symbolOnly = false): Currency|string {
-
-        return $this->sessionService->getCurrency($symbolOnly);
-//        $currency = $this->requestStack->getCurrentRequest()->getSession()?->get('selectedCurrency')
-//            ?? $this->currencyRepository->findOneBy(['isDefault' => true]);
-//        return $symbolOnly ? $currency->getSymbol() : $currency;
+    public function getCurrencyFromSession($symbolOnly = false): Currency|string
+    {
+        $currency = $this->currencyManager->get();
+        return $symbolOnly ? $currency->getSymbol() : $currency;
     }
 
     public function getRouteForLocale(string $locale): string
@@ -359,9 +355,7 @@ class AppExtension extends AbstractExtension
 
     public function transportationPrice(Purchase|Transportation $purchase, string $vatCalculationType, ?Currency $currency = null): ?float
     {
-        if (!$currency) {
-            $currency = $this->requestStack->getCurrentRequest()->getSession()->get('selectedCurrency');
-        }
+        $currency ??= $this->currencyManager->get();
 
         $vatCalculationType = VatCalculationType::from($vatCalculationType);
 
@@ -385,9 +379,7 @@ class AppExtension extends AbstractExtension
 
     public function calculatePurchasePrice(Purchase $purchase, Currency $currency = null): float
     {
-        if (!$currency) {
-            $currency = $this->requestStack->getCurrentRequest()->getSession()->get('selectedCurrency');
-        }
+        $currency ??= $this->currencyManager->get();
 
         return $this->priceCalculator->calculatePurchasePrice(
             $purchase,
@@ -403,9 +395,7 @@ class AppExtension extends AbstractExtension
 
     public function calculateProductVariantPrice(PurchaseProductVariant $purchaseProductVariant, Currency $currency = null): float
     {
-        if (!$currency) {
-            $currency = $this->requestStack->getCurrentRequest()->getSession()->get('selectedCurrency');
-        }
+        $currency ??= $this->currencyManager->get();
 
         return $this->priceCalculator->calculateProductVariantPrice(
             $purchaseProductVariant,

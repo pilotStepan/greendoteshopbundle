@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Client;
@@ -11,7 +12,6 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
@@ -315,14 +315,9 @@ class ProductController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/shop/api/vue/price_string_for_product/{product}', name: 'api_vue_price_string_for_product')]
-    public function getPriceStringForProduct(Product $product, Session $session, CurrencyRepository $deleteThis, ProductInfoGetter $productInfoGetter): JsonResponse
+    public function getPriceStringForProduct(Product $product, CurrencyManager $currencyManager, ProductInfoGetter $productInfoGetter): JsonResponse
     {
-        // TODO REMOVE THIS
-        $currency = $deleteThis->find(1);
-
-        //$currency = $session->get('selectedCurrency');
-
-        $finalString = $productInfoGetter->getProductPriceString($product, $currency);
+        $finalString = $productInfoGetter->getProductPriceString($product, $currencyManager->get());
 
         return $this->json($finalString, headers: ['Content-Type' => 'application/json;chatset=UTF-8']);
     }

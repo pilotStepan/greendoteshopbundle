@@ -2,25 +2,22 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Service\SessionService;
 
-class CalculatedPricesService
+readonly class CalculatedPricesService
 {
-
     public function __construct(
-        private readonly ProductVariantPriceFactory $productVariantPriceFactory,
-        private readonly SessionService             $sessionService,
-        private readonly EntityManagerInterface              $entityManager,
-    )
-    {
-    }
+        private ProductVariantPriceFactory $productVariantPriceFactory,
+        private CurrencyManager            $currencyManager,
+        private EntityManagerInterface     $entityManager,
+    ) {}
+
     public function makeCalculatedPricesForProductVariant(ProductVariant $variant, $date = new \DateTime()) : ProductVariant
     {
         if (!empty($variant->getCalculatedPrices())){
@@ -46,7 +43,7 @@ class CalculatedPricesService
         
         
         // for each minimalAmount, make calculated prices object and add them to list
-        $variantPrice = $this->productVariantPriceFactory->create($variant, $this->sessionService->getCurrency()); // price calculator object
+        $variantPrice = $this->productVariantPriceFactory->create($variant, $this->currencyManager->get()); // price calculator object
         $calculatedPricesList = [];
         foreach($uniqueMinimalAmounts as $minimalAmount){
             $variantPrice->setAmount($minimalAmount);

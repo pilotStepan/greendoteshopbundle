@@ -5,14 +5,12 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
-use Greendot\EshopBundle\Service\SessionService;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
-use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
-use Symfony\Component\Validator\Constraints\Length;
 
 #[AsEntityListener(event: Events::postLoad, priority: 10, method: 'postLoad', entity: Product::class)]
 class ProductEventListener
@@ -21,7 +19,7 @@ class ProductEventListener
     public function __construct(
         private ProductRepository       $productRepository,
         private CalculatedPricesService $calculatedPricesService,
-        private SessionService          $sessionService,
+        private CurrencyManager         $currencyManager,
         private ListenerManager         $listenerManager,
     ) {}
 
@@ -32,7 +30,7 @@ class ProductEventListener
             return;
         }
 
-        $currencySymbol = $this->sessionService->getCurrency(true);;
+        $currencySymbol = $this->currencyManager->get()->getSymbol();
         $availability = $this->productRepository->findAvailabilityByProduct($product);
         $parameters = $this->productRepository->calculateParameters($product);
 

@@ -23,7 +23,7 @@ use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 readonly class ManagePurchase
 {
     public function __construct(
-        private CurrencyResolver           $currencyResolver,
+        private CurrencyManager            $currencyManager,
         private PurchasePriceFactory       $purchasePriceFactory,
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private PurchaseRepository         $purchaseRepository,
@@ -133,7 +133,7 @@ readonly class ManagePurchase
     // sets required price data for pased Purchase entity
     public function preparePrices(Purchase $purchase): Purchase
     {
-        $currency = $this->currencyResolver->resolve();
+        $currency = $this->currencyManager->get();
 
         $purchasePriceCalc = $this->purchasePriceFactory->create(
             $purchase,

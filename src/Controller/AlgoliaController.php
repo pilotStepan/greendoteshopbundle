@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller;
 
 
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
@@ -12,7 +13,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -59,12 +59,12 @@ class AlgoliaController extends AbstractController
         string           $query,
         int              $hits,
         int              $page,
-        SessionInterface $session,
-        Request          $request
+        Request          $request,
+        CurrencyManager  $currencyManager,
     ): JsonResponse
     {
         $filters  = json_decode($request->getContent(), true) ?? [];
-        $currency = $session->get('selectedCurrency');
+        $currency = $currencyManager->get();
 
         return $this->json($this->algoliaSearch->search($query, $currency, $hits, $page, true, $filters));
     }
