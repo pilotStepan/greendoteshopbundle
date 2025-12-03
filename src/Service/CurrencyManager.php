@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
  */
 readonly class CurrencyManager implements LocaleAwareInterface
 {
-    private const SESSION_KEY_CURRENCY = 'selectedCurrency';
+    private const SESSION_KEY_CURRENCY_ID = 'selectedCurrencyId';
     private const SESSION_KEY_LOCALE = 'selectedCurrencyLocale';
 
     public function __construct(
@@ -32,13 +32,16 @@ readonly class CurrencyManager implements LocaleAwareInterface
         try {
             $session = $this->requestStack->getSession();
         } catch (SessionNotFoundException $e) {
-            $session = null;
+            return $this->currencyRepository->findOneBy(['isDefault' => true]);
         }
 
-        $sessionCurrency = $session?->get(self::SESSION_KEY_CURRENCY);
+        $currencyId = $session->get(self::SESSION_KEY_CURRENCY_ID);
 
-        if ($sessionCurrency instanceof Currency) {
-            return $sessionCurrency;
+        if ($currencyId) {
+            $currency = $this->currencyRepository->find($currencyId);
+            if ($currency instanceof Currency) {
+                return $currency;
+            }
         }
 
         return $this->currencyRepository->findOneBy(['isDefault' => true]);
@@ -52,17 +55,19 @@ readonly class CurrencyManager implements LocaleAwareInterface
     {
         $session = $this->requestStack->getSession();
 
-        $currentCurrency = $session->get(self::SESSION_KEY_CURRENCY);
         $storedLocale = $session->get(self::SESSION_KEY_LOCALE);
 
-        if ($currentCurrency instanceof Currency && $storedLocale === $locale) {
+        if ($storedLocale === $locale && $session->has(self::SESSION_KEY_CURRENCY_ID)) {
             return;
         }
 
         $currency = $this->currencyRepository->findCurrencyByLocale($locale);
 
-        $session->set(self::SESSION_KEY_CURRENCY, $currency);
-        $session->set(self::SESSION_KEY_LOCALE, $locale);
+        if (!$currency) {
+            $currency = $this->currencyRepository->findOneBy(['isDefault' => true]);
+        }
+
+        $this->storeInSession($currency, $locale);
     }
 
     /**
@@ -71,8 +76,13 @@ readonly class CurrencyManager implements LocaleAwareInterface
      */
     public function set(Currency $currency): void
     {
-        $session = $this->requestStack->getSession();
-        $session->set(self::SESSION_KEY_CURRENCY, $currency);
+        $currentLocale = $this->requestStack->getCurrentRequest()?->getLocale();
+
+        if (!$currentLocale) {
+            $currentLocale = $this->getLocale();
+        }
+
+        $this->storeInSession($currency, $currentLocale);
     }
 
     public function setLocale(string $locale): void
@@ -82,7 +92,13 @@ readonly class CurrencyManager implements LocaleAwareInterface
 
     public function getLocale(): string
     {
+        return $this->requestStack->getSession()->get(self::SESSION_KEY_LOCALE) ?? '';
+    }
+
+    private function storeInSession(Currency $currency, ?string $locale): void
+    {
         $session = $this->requestStack->getSession();
-        return $session->get(self::SESSION_KEY_LOCALE);
+        $session->set(self::SESSION_KEY_CURRENCY_ID, $currency->getId());
+        $session->set(self::SESSION_KEY_LOCALE, $locale);
     }
 }

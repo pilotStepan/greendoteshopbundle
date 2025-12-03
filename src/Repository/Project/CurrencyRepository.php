@@ -21,10 +21,10 @@ class CurrencyRepository extends ServiceEntityRepository
         parent::__construct($registry, Currency::class);
     }
 
-    public function findCurrencyByLocale(string $locale): Currency
+    public function findCurrencyByLocale(string $locale): ?Currency
     {
         return $this->createQueryBuilder('currency')
-            ->andWhere('currency.defaultLocale = :locale OR currency.isDefault = true')
+            ->andWhere('currency.defaultLocale = :locale')
             ->setParameter('locale', $locale)
             ->setMaxResults(1)
             ->getQuery()

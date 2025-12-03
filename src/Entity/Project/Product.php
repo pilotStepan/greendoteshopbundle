@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use Greendot\EshopBundle\I18n\Translatable;
+use Gedmo\Translatable\Translatable;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
