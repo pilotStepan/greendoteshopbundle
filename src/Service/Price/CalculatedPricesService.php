@@ -10,7 +10,8 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 
-readonly class CalculatedPricesService
+//DO NOT MAKE FINAL!!!!
+class CalculatedPricesService
 {
     public function __construct(
         private ProductVariantPriceFactory $productVariantPriceFactory,
