@@ -383,7 +383,6 @@ class CategoryRepository extends HintedRepositoryBase
             ->andWhere('sub_categories.category_super = :cat')
             ->setParameter('cat', $category)
             ->orderBy('sub_categories.sequence', 'ASC')
-            ->addOrderBy('category.sequence', 'ASC')
             ->getQuery();
         return $this->hintQuery($query)->getResult();
 
