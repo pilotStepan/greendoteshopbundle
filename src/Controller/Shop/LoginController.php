@@ -132,7 +132,7 @@ class LoginController extends AbstractController
     }
     */
 
-    #[Route('/logout', name: 'shop_logout', priority: 100)]
+    #[Route('/logout', name: 'shop_logout', options: ['expose' => true], priority: 100)]
     public function logout(): RedirectResponse
     {
         return $this->redirectToRoute('web_homepage');

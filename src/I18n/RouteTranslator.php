@@ -22,7 +22,7 @@ readonly class RouteTranslator
         ParameterBagInterface          $parameterBag
     )
     {
-        $this->availableLocales = $parameterBag?->get('app.available.locales') ?? [];
+        $this->availableLocales = $parameterBag->get('app.available.locales') ?? [];
     }
 
     /**
@@ -37,7 +37,7 @@ readonly class RouteTranslator
     {
         if (!in_array($desiredLocale, $this->availableLocales)) return null;
 
-        $controller = $request->attributes?->get('_controller') ?? null;
+        $controller = $request->attributes->get('_controller') ?? null;
         if (!$controller) return null;
 
         $attributes = $this->parseAttribute($controller);
@@ -133,9 +133,8 @@ readonly class RouteTranslator
      * Builds uri based on current controller and route name
      *
      * @param Request $request
-     * @param string $pathAttributeName
-     * @param string $pathAttributeValue
-     * @param string $locale
+     * @param string  $locale
+     * @param array   $modifiedAttributes
      * @return string|null
      */
     private function buildUri(Request $request, string $locale = 'en', array $modifiedAttributes = []): ?string
@@ -148,7 +147,7 @@ readonly class RouteTranslator
 
         $path = $request->attributes?->get('_route' ?? null);
         if (!$path){
-            $controller = $request->attributes?->get('_controller') ?? null;
+            $controller = $request->attributes->get('_controller') ?? null;
             if (!$controller) return null;
             $path = $this->getPathByController($controller);
         }
@@ -161,7 +160,7 @@ readonly class RouteTranslator
     {
         foreach ($this->router->getRouteCollection()->all() as $routeName => $route) {
             if ($route->getDefault('_controller') == $controller) {
-                return $route?->getDefault('_canonical_route') ?? $routeName;
+                return $route->getDefault('_canonical_route') ?? $routeName;
             }
         }
         return null;
