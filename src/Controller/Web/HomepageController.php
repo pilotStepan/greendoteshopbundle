@@ -18,8 +18,7 @@ class HomepageController extends AbstractController implements WebController
     )]
     public function index(CategoryRepository $categoryRepository): Response
     {
-        $category = $categoryRepository->findOneByHinted(['id' => 1]);
-
+        $category = $categoryRepository->find(1);
 
         return $this->render('web/homepage/index.html.twig', [
             'title' => $category->getTitle(),

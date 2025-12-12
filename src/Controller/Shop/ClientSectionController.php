@@ -101,7 +101,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik', name: 'client_section_index', priority: 2)]
+    #[Route('/zakaznik', name: 'client_section_index', options: ['expose' => true], priority: 2)]
     public function index(
         ClientRepository   $clientRepository,
         PurchaseRepository $purchaseRepository
@@ -203,7 +203,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik/objednavky', name: 'client_section_orders')]
+    #[Route('/zakaznik/objednavky', name: 'client_section_orders', options: ['expose' => true])]
     public function orders(
         ClientRepository        $clientRepository,
         PurchaseRepository      $orderRepository,
@@ -306,7 +306,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik/zmena-udaju', name: 'client_section_personal')]
+    #[Route('/zakaznik/zmena-udaju', name: 'client_section_personal', options: ['expose' => true])]
     public function profileDataChange(
         Request                $request,
         ClientRepository       $clientRepository,
@@ -494,7 +494,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik/certifikaty', name: 'client_section_certificates')]
+    #[Route('/zakaznik/certifikaty', name: 'client_section_certificates', options: ['expose' => true])]
     public function certificates(
         ClientRepository $clientRepository,
         VoucherRepository $voucherRepository,

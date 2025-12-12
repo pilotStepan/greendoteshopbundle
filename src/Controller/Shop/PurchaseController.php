@@ -428,7 +428,7 @@ class PurchaseController extends AbstractController
         return $this->redirect('/objednavka/obsah');
     }
 
-    #[Route('/seznam-prani', name: 'shop_wishlist', priority: 2)]
+    #[Route('/seznam-prani', name: 'shop_wishlist', options: ['expose' => true], priority: 2)]
     public function wishlist(RequestStack $requestStack, WishlistService $wishlistService, PurchaseRepository $repo): Response
     {
         if (!$this->getUser()) return $this->redirect('/');

@@ -25,14 +25,14 @@ class BlogController extends AbstractController
         ParameterBagInterface $parameterBag
     ): Response
     {
-        $blogLandingPage = $categoryRepository->findOneByHinted(['id' => 2]);
+        $blogLandingPage = $categoryRepository->find(2);
 
         $hasLanding = $parameterBag->get('greendot_eshop.blog.has_landing');
         if (!$hasLanding){
             return $this->redirectToRoute('web_blog_all');
         }
 
-        $blogArticles    = $categoryRepository->findByHinted(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+        $blogArticles    = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
         $blogLabels      = $labelRepository->findBy(['labelType' => 3]);
 
         if ($page == null) {
@@ -57,9 +57,9 @@ class BlogController extends AbstractController
     #[Route(path: '/{slug}-c/stranka-{page}', requirements: ['slug' => '[A-Za-z0-9\-]+'], name: 'web_blog_filter_paged', priority: 2)]
     public function blogCategory(?string $slug, $page, CategoryRepository $categoryRepository, PaginatorInterface $paginator, LabelRepository $labelRepository): Response
     {
-        $blogLandingPage = $categoryRepository->findOneByHinted(['id' => 2]);
+        $blogLandingPage = $categoryRepository->find(2);
         if ($slug == null) {
-            $blogArticles = $categoryRepository->findByHinted(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+            $blogArticles = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
             $title        = "Všechny články";
         } else {
             $selectedLabel = $labelRepository->findOneBy(['slug' => $slug]);
@@ -97,7 +97,7 @@ class BlogController extends AbstractController
     {
 
         $blogLabels     = $labelRepository->findBy(['labelType' => 3]);
-        $latestArticles = $categoryRepository->findByHinted(['categoryType' => 6], ['id' => 'DESC'], 3);
+        $latestArticles = $categoryRepository->findBy(['categoryType' => 6], ['id' => 'DESC'], 3);
 
         return $this->render('web/blog/detail.html.twig', [
             'category'       => $category,

@@ -36,8 +36,9 @@ class SupplierController extends AbstractController
         path: '/{slug}-v',
         name: 'shop_producer_products',
         requirements: ['slug' => '[a-z0-9\-]+'],
-        priority: 2)
-    ]
+        options: ['expose' => true],
+        priority: 2,
+    )]
     public function producerProducts(Producer $producer): Response
     {
         return $this->render('shop/supplier/products.html.twig', [

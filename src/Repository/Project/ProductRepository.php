@@ -319,7 +319,7 @@ class ProductRepository extends HintedRepositoryBase
     {
         $alias = $qb->getRootAliases()[0];
 
-        $category = $this->categoryRepository->findHinted($category);
+        $category = $this->categoryRepository->find($category);
         $qb->join($alias . '.categoryProducts', 'c');
 
         $qb->setParameter('val', 1);
