@@ -97,6 +97,7 @@ class Upload
     private Collection $people;
 
     #[ORM\ManyToOne(inversedBy: 'upload')]
+    #[Groups(['upload:read'])]
     private ?UploadType $uploadType = null;
 
     #[ORM\Column(type: 'integer', enumType: DownloadRestriction::class)]
