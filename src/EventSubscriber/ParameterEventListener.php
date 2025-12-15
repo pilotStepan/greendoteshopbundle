@@ -23,9 +23,9 @@ class ParameterEventListener
         }
 
         $paramData = $entity->getData();
-        
+
         // if param is color, try to find color name and add it
-        if ($entity?->getParameterGroup()?->getParameterGroupFilterType()?->getName() === "color"){
+        if ($entity?->getParameterGroup()?->getParameterGroupFormat()?->getName() === "color"){
             $hex = str_starts_with($paramData, '#') ? $paramData : '#' . $paramData;
             $color = $this->colourRepository->findOneBy(['hex'=>$hex]);
             if ($color){

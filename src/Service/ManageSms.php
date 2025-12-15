@@ -18,7 +18,7 @@ readonly class ManageSms
         private TranslatorInterface  $translator,
         private SmsConnect           $client,
         private PurchasePriceFactory $priceFactory,
-        private CurrencyResolver     $currencyResolver,
+        private CurrencyManager      $currencyManager,
         private LoggerInterface      $logger,
     ) {}
 
@@ -72,7 +72,7 @@ readonly class ManageSms
 
         // TODO: make amounts for different currencies, maybe an array for each?
         if ($state === 'paid') {
-            $currency = $this->currencyResolver->resolve();
+            $currency = $this->currencyManager->get();
             $amount = $this->priceFactory
                 ->create($purchase, $currency, VatCalculationType::WithVAT)
                 ->getPrice(true)

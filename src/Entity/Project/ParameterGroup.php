@@ -88,6 +88,7 @@ class ParameterGroup
     private Collection $productParameterGroups;
 
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
     private ?ParameterGroupFormat $parameterGroupFormat = null;
     public function __construct()
     {

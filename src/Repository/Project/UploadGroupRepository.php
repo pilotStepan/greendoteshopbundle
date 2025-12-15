@@ -42,17 +42,28 @@ class UploadGroupRepository extends ServiceEntityRepository
         }
     }
 
-    public function getAllUploadGroupsForProduct(Product $product, $accountVariants = true): array
+    public function getAllUploadGroupsForProduct(Product $product, bool $accountVariants = true, ?int $type = null): array
     {
         $productUploadGroups = $this->createQueryBuilder('ug')
             ->leftJoin('ug.productUploadGroup', 'pug')
-            ->andWhere('pug.Product = :product')->setParameter('product', $product)
-            ->getQuery()->getResult();
+            ->andWhere('pug.Product = :product')
+            ->setParameter('product', $product);
+        if ($type !== null){
+            $productUploadGroups->andWhere('ug.type = :type')
+                ->setParameter('type', $type);
+        }
+        $productUploadGroups = $productUploadGroups->getQuery()->getResult();
+
         if ($accountVariants){
             $variantUploadGroups = $this->createQueryBuilder('ug')
                 ->leftJoin('ug.productVariantUploadGroups', 'pvug')
-                ->andWhere('pvug.ProductVariant in (:variants)')->setParameter('variants', $product->getProductVariants())
-                ->getQuery()->getResult();
+                ->andWhere('pvug.ProductVariant in (:variants)')->setParameter('variants', $product->getProductVariants());
+            if ($type !== null){
+                $variantUploadGroups
+                    ->andWhere('ug.type = :type')
+                    ->setParameter('type', $type);
+            }
+            $variantUploadGroups = $variantUploadGroups->getQuery()->getResult();
             return array_merge($productUploadGroups, $variantUploadGroups);
         }
 

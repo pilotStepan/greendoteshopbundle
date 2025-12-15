@@ -2,11 +2,11 @@
 
 namespace Greendot\EshopBundle\Controller\Web;
 
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Repository\Project\LabelRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,14 +25,14 @@ class BlogController extends AbstractController
         ParameterBagInterface $parameterBag
     ): Response
     {
-        $blogLandingPage = $categoryRepository->findOneByHinted(['id' => 2]);
+        $blogLandingPage = $categoryRepository->find(2);
 
         $hasLanding = $parameterBag->get('greendot_eshop.blog.has_landing');
         if (!$hasLanding){
             return $this->redirectToRoute('web_blog_all');
         }
 
-        $blogArticles    = $categoryRepository->findByHinted(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+        $blogArticles    = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
         $blogLabels      = $labelRepository->findBy(['labelType' => 3]);
 
         if ($page == null) {
@@ -50,15 +50,16 @@ class BlogController extends AbstractController
         ]);
     }
 
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     #[Route(path: '/vse', name: 'web_blog_all', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null, 'slug' => null], priority: 2)]
     #[Route(path: '/vse/stranka-{page}', name: 'web_blog_all_paged', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null, 'slug' => null], priority: 2)]
     #[Route(path: '/{slug}-c', name: 'web_blog_filter', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null], priority: 2)]
     #[Route(path: '/{slug}-c/stranka-{page}', requirements: ['slug' => '[A-Za-z0-9\-]+'], name: 'web_blog_filter_paged', priority: 2)]
     public function blogCategory(?string $slug, $page, CategoryRepository $categoryRepository, PaginatorInterface $paginator, LabelRepository $labelRepository): Response
     {
-        $blogLandingPage = $categoryRepository->findOneByHinted(['id' => 2]);
+        $blogLandingPage = $categoryRepository->find(2);
         if ($slug == null) {
-            $blogArticles = $categoryRepository->findByHinted(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+            $blogArticles = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
             $title        = "Všechny články";
         } else {
             $selectedLabel = $labelRepository->findOneBy(['slug' => $slug]);
@@ -86,9 +87,9 @@ class BlogController extends AbstractController
         ]);
     }
 
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     #[Route(path: '/{slug}', name: 'web_blog_detail', priority: 2)]
     public function blogDetail(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category $category,
         LabelRepository $labelRepository,
         CategoryRepository $categoryRepository
@@ -96,7 +97,7 @@ class BlogController extends AbstractController
     {
 
         $blogLabels     = $labelRepository->findBy(['labelType' => 3]);
-        $latestArticles = $categoryRepository->findByHinted(['categoryType' => 6], ['id' => 'DESC'], 3);
+        $latestArticles = $categoryRepository->findBy(['categoryType' => 6], ['id' => 'DESC'], 3);
 
         return $this->render('web/blog/detail.html.twig', [
             'category'       => $category,

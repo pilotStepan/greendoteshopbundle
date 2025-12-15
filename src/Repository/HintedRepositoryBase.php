@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository;
 
+use Gedmo\Translatable\Entity\Translation as GedmoTranslation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
@@ -9,7 +10,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 abstract class HintedRepositoryBase extends ServiceEntityRepository
 {
-    public function __construct(private readonly ManagerRegistry $registry, private string $entityClass)
+    public function __construct(ManagerRegistry $registry, $entityClass)
     {
         parent::__construct($registry, $entityClass);
     }
@@ -57,15 +58,35 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         return $qb->getResult();
     }
 
+    public function findPropertyInLocale(object $entity,string $property, string $targetLocale): ?string
+    {
+        $em = $this->getEntityManager();
+        $repository = $em->getRepository(GedmoTranslation::class);
+
+        $translations = $repository->findTranslations($entity);
+
+        if (isset($translations[$targetLocale][$property])) {
+            return $translations[$targetLocale][$property];
+        }
+
+        return $this->createQueryBuilder('e')
+            ->select("e.$property")
+            ->where('e.id = :id')
+            ->setParameter('id', $entity->getId())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     private function handleCriteria(QueryBuilder $qb, array $criteria): QueryBuilder
     {
-        foreach ($criteria as $key => $value){
-            $name = 'param_' . $key . uniqid();
-            $qb->andWhere('e.' . $key . ' = :'. $name);
-            $qb->setParameter($name, $value);
+        foreach ($criteria as $key => $value) {
+            $paramName = 'val_' . preg_replace('/[^a-zA-Z0-9_]/', '', $key);
+            $qb->andWhere(sprintf('e.%s = :%s', $key, $paramName));
+            $qb->setParameter($paramName, $value);
         }
         return $qb;
     }
+
     private function handleOrderBy(QueryBuilder $qb, ?array $orderArray): QueryBuilder
     {
         if (!$orderArray) return $qb;
@@ -84,5 +105,4 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
             'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
         );
     }
-
 }

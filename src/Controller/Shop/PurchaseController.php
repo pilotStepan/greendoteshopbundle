@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Controller\Shop;
 use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Entity\Project\Note;
@@ -44,12 +45,13 @@ class PurchaseController extends AbstractController
     #[CustomApiEndpoint]
     #[Route('/api/client/submit', name: 'api_client_submit', options: ['deprecation_message' => 'This endpoint is deprecated and will be removed in a future release.'], methods: ['POST'])]
     public function submitClientForm(
-        Request                  $request,
-        GPWebpay                 $GPWebpay,
-        EntityManagerInterface   $entityManager,
-        SessionInterface         $session,
-        Registry                 $workFlow,
-        PriceCalculator          $priceCalculator,
+        Request                $request,
+        GPWebpay               $GPWebpay,
+        EntityManagerInterface $entityManager,
+        SessionInterface       $session,
+        Registry               $workFlow,
+        PriceCalculator        $priceCalculator,
+        CurrencyManager        $currencyManager,
     ): Response|JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -127,7 +129,7 @@ class PurchaseController extends AbstractController
             $entityManager->flush();
         }
 
-        $currency = $session->get('selectedCurrency');
+        $currency = $currencyManager->get();
 
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $newPurchase,
@@ -322,47 +324,6 @@ class PurchaseController extends AbstractController
         return $this->render('shop/cart/steps.html.twig');
     }
 
-    /* removed and replaced with client section
-    #[Route('/objednavka-dokoncena/{id}', name: 'thank_you', priority: 3)]
-    public function thankYou(
-        int                         $id,
-        PurchaseRepository          $purchaseRepository,   
-        PurchasePriceFactory        $purchasePriceFactory,
-        ManagePurchase              $managePurchase,     
-        SessionInterface            $session,
-        ProductVariantPriceFactory  $productVariantPriceFactory,
-        QRcodeGenerator             $qrCodeGenerator,
-        PaymentGatewayProvider      $gatewayProvider,
-           
-    ): Response
-    {
-        $purchase = $purchaseRepository->find($id);
-
-        $currency = $session->get('selectedCurrency');
-
-        $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
-        $managePurchase->preparePrices($purchase);
-
-
-        $dueDate    = (clone $purchase->getDateIssue())->modify('+14 days');
-        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
-
-        $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
-        $paylink = $paymentGateway->getPayLink($purchase);
-
-
-        return $this->render('thank-you-pages/thank-you-cart.html.twig', [
-            'purchase'                  => $purchase,
-            'priceCalculator'           => $priceCalculator,
-            'productPriceCalculator'    => $productVariantPriceFactory,
-            'currency'                  => $currency,
-            'deliveryDate'              => $dueDate,
-            'QRcode'                    => $qrCodePath,
-            'payLink'                   => $paylink,
-        ]);
-    }
-    */
-
     #[CustomApiEndpoint]
     #[Route('/api/client/form', name: 'api_client_form', methods: ['GET'])]
     public function getClientForm(SerializerInterface $serializer): Response|JsonResponse
@@ -467,7 +428,7 @@ class PurchaseController extends AbstractController
         return $this->redirect('/objednavka/obsah');
     }
 
-    #[Route('/seznam-prani', name: 'shop_wishlist', priority: 2)]
+    #[Route('/seznam-prani', name: 'shop_wishlist', options: ['expose' => true], priority: 2)]
     public function wishlist(RequestStack $requestStack, WishlistService $wishlistService, PurchaseRepository $repo): Response
     {
         if (!$this->getUser()) return $this->redirect('/');

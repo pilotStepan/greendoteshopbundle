@@ -2,18 +2,17 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Category;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class DiscountsController extends AbstractController
 {
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     #[Route('/{slug}', name: 'shop_discounts_products')]
     public function index(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category $category
     ): Response
     {

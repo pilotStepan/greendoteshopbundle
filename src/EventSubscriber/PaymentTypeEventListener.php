@@ -6,7 +6,7 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Service\CurrencyResolver;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
@@ -24,12 +24,12 @@ readonly class PaymentTypeEventListener
         private EntityManagerInterface  $entityManager,
         private PurchasePriceFactory    $purchasePriceFactory,
         private ServiceCalculationUtils $serviceCalculationUtils,
-        private CurrencyResolver        $currencyResolver,
+        private CurrencyManager         $currencyManager,
     ) {}
 
     public function postLoad(PaymentType $paymentType): void
     {
-        $currency = $this->currencyResolver->resolve();
+        $currency = $this->currencyManager->get();
         $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession();
         $cart = $cartEntity ? clone $cartEntity : null;
 

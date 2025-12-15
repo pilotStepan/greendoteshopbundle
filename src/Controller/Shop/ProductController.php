@@ -3,17 +3,17 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\Repository\Project\ProductVariantDiscountRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
@@ -22,7 +22,6 @@ use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -72,17 +71,12 @@ class ProductController extends AbstractController
 
         return $this->json(['productSlug' => null]);
     }
-
+    #[TranslatableRoute(class: Product::class, property: 'slug')]
     #[Route('/{slug}-p', name: 'shop_product', requirements: ['slug' => '[A-Za-z0-9\-]+'], options: ['expose' => true], priority: 20)]
-    public function index(string $slug): Response
+    public function index(Product $product): Response
     {
-        $product = $this->productRepository->findOneBy(['slug' => $slug]);
-
-        if (!$product) {
-            throw $this->createNotFoundException('Produkt nenalezen!');
-        }
         $template = 'shop/product/index.html.twig';
-        if ($product?->getProductViewType()?->getTemplate()){
+        if ($product->getProductViewType()?->getTemplate()){
             $template = $product->getProductViewType()->getTemplate();
         }
 
@@ -91,10 +85,9 @@ class ProductController extends AbstractController
             'productId' => $product->getId(),
         ]);
     }
-
+    #[TranslatableRoute(class: Product::class, property: 'slug')]
     #[Route('/{slug}-p/add', name: 'add_product', priority: 2, requirements: ['slug' => '[A-Za-z0-9\-]+'])]
     public function add(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Product $product,
         Session $session
     ): Response
@@ -322,14 +315,9 @@ class ProductController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/shop/api/vue/price_string_for_product/{product}', name: 'api_vue_price_string_for_product')]
-    public function getPriceStringForProduct(Product $product, Session $session, CurrencyRepository $deleteThis, ProductInfoGetter $productInfoGetter): JsonResponse
+    public function getPriceStringForProduct(Product $product, CurrencyManager $currencyManager, ProductInfoGetter $productInfoGetter): JsonResponse
     {
-        // TODO REMOVE THIS
-        $currency = $deleteThis->find(1);
-
-        //$currency = $session->get('selectedCurrency');
-
-        $finalString = $productInfoGetter->getProductPriceString($product, $currency);
+        $finalString = $productInfoGetter->getProductPriceString($product, $currencyManager->get());
 
         return $this->json($finalString, headers: ['Content-Type' => 'application/json;chatset=UTF-8']);
     }

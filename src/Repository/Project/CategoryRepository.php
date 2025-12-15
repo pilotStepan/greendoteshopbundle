@@ -3,10 +3,8 @@
 namespace Greendot\EshopBundle\Repository\Project;
 
 use Exception;
-use Doctrine\ORM\Query;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use Gedmo\Translatable\TranslatableListener;
 use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -15,13 +13,9 @@ use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\MenuType;
 use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Entity\Project\SubMenuType;
-use Greendot\EshopBundle\Entity\Project\CategoryType;
 use Greendot\EshopBundle\Entity\Project\CategoryProduct;
 use Greendot\EshopBundle\Entity\Project\CategoryCategory;
-use Gedmo\Translatable\Query\TreeWalker\TranslationWalker;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @method Category|null find($id, $lockMode = null, $lockVersion = null)
@@ -33,7 +27,7 @@ class CategoryRepository extends HintedRepositoryBase
 {
     private $entityManager;
 
-    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager, private TranslatableListener $translatableListener, private RequestStack $requestStack)
+    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager)
     {
         parent::__construct($registry, Category::class);
         $this->entityManager = $entityManager;
@@ -135,7 +129,7 @@ class CategoryRepository extends HintedRepositoryBase
         ];
     }
 
-    public function findMenuCategories(MenuType|int $menuType)
+    public function findMenuCategories(MenuType|int $menuType, array $availableCategoryTypes = [])
     {
         $menuTypeId = $menuType instanceof MenuType ? $menuType->getId() : $menuType;
         $query = $this->createQueryBuilder('c')
@@ -148,9 +142,14 @@ class CategoryRepository extends HintedRepositoryBase
             ->leftJoin('c.menuType', 'mt')
             ->andWhere('mt.menu_type = :menuTypeId')
             ->setParameter('menuTypeId', $menuTypeId)
-            ->orderBy('mt.sequence', 'ASC')
-            ->getQuery();
+            ->orderBy('mt.sequence', 'ASC');
 
+        if ($availableCategoryTypes){
+            $query->andWhere('c.categoryType in (:availableCategoryTypes)')
+                ->setParameter('availableCategoryTypes', $availableCategoryTypes);
+        }
+
+        $query = $query->getQuery();
         return $this->hintQuery($query)->getResult();
     }
 
@@ -383,6 +382,7 @@ class CategoryRepository extends HintedRepositoryBase
             ->leftJoin('category.categorySubCategories', 'sub_categories')
             ->andWhere('sub_categories.category_super = :cat')
             ->setParameter('cat', $category)
+            ->orderBy('sub_categories.sequence', 'ASC')
             ->getQuery();
         return $this->hintQuery($query)->getResult();
 
@@ -467,8 +467,39 @@ class CategoryRepository extends HintedRepositoryBase
             $qb->andWhere('c.isActive = true');
         }
 
-        return array_map(fn($row) => (int)$row['id'], $qb->getQuery()->getScalarResult());;
+        return array_map(fn($row) => (int)$row['id'], $qb->getQuery()->getScalarResult());
     }
+
+    /**
+     * @param int[] $labelIds
+     * @param int[] $categoryTypeIds
+     * @param int|null $maxResults
+     * @return Category[]
+     */
+    public function findByLabelsAndCategoryTypes(array $labelIds = [], array $categoryTypeIds = [], ?int $maxResults = null):array
+    {
+        $qb = $this->createQueryBuilder('category')
+            ->andWhere('category.isActive = 1');
+
+        if ($labelIds){
+            $qb->leftJoin('category.labels', 'label')
+                ->andWhere('label.id in (:labels)')
+                ->setParameter('labels', $labelIds);
+        }
+
+        if ($categoryTypeIds){
+            $qb->andWhere('category.categoryType in (:categoryTypes)')
+                ->setParameter('categoryTypes', $categoryTypeIds);
+        }
+        $qb->orderBy('category.sequence', 'DESC');
+
+        if ($maxResults !== null){
+            $qb->setMaxResults($maxResults);
+        }
+
+        return $this->hintQuery($qb->getQuery())->getResult();
+    }
+
 
 
 }

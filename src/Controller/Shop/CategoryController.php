@@ -2,7 +2,9 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Enum\CategoryTypeEnum;
@@ -10,20 +12,18 @@ use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Knp\Component\Pager\PaginatorInterface;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\Attribute\Route;
 
 class CategoryController extends AbstractController
 {
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     #[Route('/{slug}_c', name: 'shop_category')]
     public function index(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category           $category,
         ProductRepository  $productRepository,
         PaginatorInterface $paginator,
@@ -64,9 +64,9 @@ class CategoryController extends AbstractController
     }
 
     #[Route('/_request/changeCurrency/{currency}', name: 'request_change_currency')]
-    public function changeCurrency(Currency $currency, Request $request, Session $session): RedirectResponse
+    public function changeCurrency(Currency $currency, Request $request, CurrencyManager $currencyManager): RedirectResponse
     {
-        $session->set('selectedCurrency', $currency);
+        $currencyManager->set($currency);
 
         return $this->redirect($request->headers->get('referer'));
     }

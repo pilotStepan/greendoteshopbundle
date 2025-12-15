@@ -30,7 +30,7 @@ class ResetPasswordController extends AbstractController
     /**
      * Display & process form to request a password reset.
      */
-    #[Route('', name: 'app_forgot_password_request')]
+    #[Route('', name: 'app_forgot_password_request', options: ['expose' => true])]
     public function request(Request $request): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);

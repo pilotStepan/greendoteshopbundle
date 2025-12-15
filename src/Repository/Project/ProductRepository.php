@@ -2,15 +2,13 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Category;
-use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use DateTime;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -22,7 +20,7 @@ use Greendot\EshopBundle\Entity\Project\Availability;
  * @method Product[]    findAll()
  * @method Product[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ProductRepository extends ServiceEntityRepository
+class ProductRepository extends HintedRepositoryBase
 {
     public function __construct(
         ManagerRegistry                     $registry,
@@ -321,7 +319,7 @@ class ProductRepository extends ServiceEntityRepository
     {
         $alias = $qb->getRootAliases()[0];
 
-        $category = $this->categoryRepository->findHinted($category);
+        $category = $this->categoryRepository->find($category);
         $qb->join($alias . '.categoryProducts', 'c');
 
         $qb->setParameter('val', 1);

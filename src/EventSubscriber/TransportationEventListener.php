@@ -7,7 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Service\CurrencyResolver;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
@@ -25,12 +25,12 @@ readonly class TransportationEventListener
         private EntityManagerInterface  $entityManager,
         private PurchasePriceFactory    $purchasePriceFactory,
         private ServiceCalculationUtils $serviceCalculationUtils,
-        private CurrencyResolver        $currencyResolver,
+        private CurrencyManager         $currencyManager,
     ) {}
 
     public function postLoad(Transportation $transportation): void
     {
-        $currency = $this->currencyResolver->resolve();
+        $currency = $this->currencyManager->get();
         $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession();
         $cart = $cartEntity ? clone $cartEntity : null;
 

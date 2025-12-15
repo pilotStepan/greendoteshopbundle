@@ -2,33 +2,27 @@
 
 namespace Greendot\EshopBundle\Controller\Web;
 
+use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Controller\WebController;
 use Greendot\EshopBundle\Entity\Project\Category;
-use Greendot\EshopBundle\Entity\Project\ContactMessage;
-use Greendot\EshopBundle\Form\ContactFormType;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  *
  */
 class GeneralPageController extends AbstractController implements WebController
 {
-
+    #[TranslatableRoute(class: Category::class, property: 'slug')]
     #[Route(
         path: '/{slug}',
         name: 'web_get_page',
         options: ['expose' => true]
-
     )]
     public function getPage(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
         Category $category,
         UrlGeneratorInterface $urlGenerator,
     ): Response

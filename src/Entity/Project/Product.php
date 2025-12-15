@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use Gedmo\Translatable\Translatable;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
@@ -22,14 +23,12 @@ use Greendot\EshopBundle\ApiResource\ProductLabel;
 use Greendot\EshopBundle\ApiResource\ProductParameterSearch;
 use Greendot\EshopBundle\ApiResource\ProductPriceSortFilter;
 use Greendot\EshopBundle\ApiResource\ProductSearchFilter;
-use Greendot\EshopBundle\Entity\Project\ProductProduct;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
-use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\StateProvider\ProductStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -571,7 +570,12 @@ class Product implements Translatable
         return $this;
     }
 
-    public function setTranslatableLocale($locale)
+    public function getTranslatableLocale(): ?string
+    {
+        return $this->locale;
+    }
+
+    public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
     }

@@ -37,6 +37,9 @@ class Currency
     #[ORM\Column]
     private ?bool $isDefault = null;
 
+    #[ORM\Column]
+    private ?string $defaultLocale = null;
+
     #[ORM\Column(options: ["default" => false])]
     private ?bool $is_symbol_left = true;
 

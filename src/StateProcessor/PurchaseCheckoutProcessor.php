@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -112,6 +113,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         } catch (Exception|ORMException $e) {
             // General exceptions or ORM errors
             $this->logger->error('Unexpected exception', ['exception' => $e]);
+            dd($e);
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
         }
     }
@@ -186,7 +188,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         return $note;
     }
 
-    private function applyTransition($workflow, Purchase $purchase, string $transition): void
+    private function applyTransition(WorkflowInterface $workflow, Purchase $purchase, string $transition): void
     {
         if (!$workflow->can($purchase, $transition)) {
             $errors = array_map(
@@ -196,12 +198,13 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             throw new LogicException(json_encode($errors));
         }
 
-        // If it should be paid via gateway, apply transition silently (without notifications)
-        if ($purchase->getPaymentType()->getPaymentTechnicalAction()) {
-            $workflow->apply($purchase, $transition, ['silent' => true]);
-        } else {
-            $workflow->apply($purchase, $transition);
-        }
+        $workflow->apply($purchase, $transition);
+            // If it should be paid via gateway, apply transition silently (without notifications)
+//        if ($purchase->getPaymentType()->getPaymentTechnicalAction()) {
+//            $workflow->apply($purchase, $transition, ['silent' => true]);
+//        } else {
+//            $workflow->apply($purchase, $transition);
+//        }
     }
 
     private function buildRedirectUrl(Purchase $purchase): string

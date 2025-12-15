@@ -5,6 +5,8 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\ApiResource\ProducerSearchFilter;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -19,7 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationClientItemsPerPage: true
 )]
 #[ORM\Entity(repositoryClass: ProducerRepository::class)]
-class Producer
+class Producer implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -28,22 +30,27 @@ class Producer
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Gedmo\Translatable]
     #[Groups(['producer_info:read','product_item:read', 'product_list:read', 'product_info:write', 'search_result'])]
     private $name;
 
     #[Groups(['producer_info:read'])]
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $menu_name;
 
     #[Groups(['producer_info:read'])]
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
     private $title;
 
     #[Groups(['producer_info:read'])]
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'text', nullable: true)]
     private $description;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Gedmo\Translatable]
     private $html;
 
     #[ORM\Column(type: 'boolean', options: ['default' => 0])]
@@ -58,15 +65,24 @@ class Producer
 
     #[ORM\Column(length: 255)]
     #[Groups(['product_item:read'])]
+    #[Gedmo\Translatable]
     private ?string $slug = null;
 
     #[ORM\OneToMany(mappedBy: 'producer', targetEntity: ProducerUploadGroup::class)]
     private Collection $producerUploadGroups;
 
+    #[Gedmo\Locale]
+    private $locale;
+
     public function __construct()
     {
         $this->Product = new ArrayCollection();
         $this->producerUploadGroups = new ArrayCollection();
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 
     public function getId(): ?int

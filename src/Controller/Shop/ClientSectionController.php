@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\Payment;
@@ -100,7 +101,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik', name: 'client_section_index', priority: 2)]
+    #[Route('/zakaznik', name: 'client_section_index', options: ['expose' => true], priority: 2)]
     public function index(
         ClientRepository   $clientRepository,
         PurchaseRepository $purchaseRepository
@@ -124,14 +125,14 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         PurchaseRepository $purchaseRepository,
         QRcodeGenerator    $qrCodeGenerator,
         PriceCalculator    $priceCalculator,
-        SessionInterface   $session,
         ClientRepository   $clientRepository,
+        CurrencyManager    $currencyManager,
     ): Response
     {
         $client = $clientRepository->find($this->getUser());
 
         $purchase = $purchaseRepository->find($purchaseID);
-        $currency = $session->get('selectedCurrency');
+        $currency = $currencyManager->get();
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
@@ -166,11 +167,11 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         EntityManagerInterface $entityManager,
         PriceCalculator        $priceCalculator,
         GPWebpay               $GPWebpay,
-        SessionInterface       $session
+        CurrencyManager        $currencyManager,
     ): RedirectResponse
     {
         $purchase = $purchaseRepository->find($purchaseID);
-        $currency = $session->get('selectedCurrency');
+        $currency = $currencyManager->get();
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
@@ -202,7 +203,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik/objednavky', name: 'client_section_orders')]
+    #[Route('/zakaznik/objednavky', name: 'client_section_orders', options: ['expose' => true])]
     public function orders(
         ClientRepository        $clientRepository,
         PurchaseRepository      $orderRepository,
@@ -234,27 +235,28 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     #[DisableListeners([AnonymousClientLogoutListener::class])]
     #[Route('/zakaznik/objednavka/{id}', name: 'client_section_order_detail')]
     public function order(
-        int                         $id,
-        PurchaseRepository          $purchaseRepository,
-        QRcodeGenerator             $qrCodeGenerator,
-        PurchasePriceFactory        $purchasePriceFactory,
-        ProductVariantPriceFactory  $productVariantPriceFactory,
-        ManagePurchase              $managePurchase,
-        SessionInterface            $session,
-        Request                     $request,
-        PaymentGatewayProvider      $gatewayProvider,
-        PurchaseUrlGenerator        $purchaseUrlGenerator,
-        ClientRepository            $clientRepository,
+        int                        $id,
+        PurchaseRepository         $purchaseRepository,
+        QRcodeGenerator            $qrCodeGenerator,
+        PurchasePriceFactory       $purchasePriceFactory,
+        ProductVariantPriceFactory $productVariantPriceFactory,
+        ManagePurchase             $managePurchase,
+        Request                    $request,
+        PaymentGatewayProvider     $gatewayProvider,
+        PurchaseUrlGenerator       $purchaseUrlGenerator,
+        ClientRepository           $clientRepository,
+        CurrencyManager            $currencyManager,
     ): Response
     {
         $purchase = $purchaseRepository->find($id);
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
-        $currency = $session->get('selectedCurrency');
+        $currency = $currencyManager->get();
+
         $created = $request->query->get('created');
 
-        $priceCalculator = $purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
+        $priceCalculator = $purchasePriceFactory->create($purchase, $currency);
         $managePurchase->preparePrices($purchase);
         
         $dueDate    = (clone $purchase->getDateIssue())->modify('+14 days');
@@ -304,7 +306,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik/zmena-udaju', name: 'client_section_personal')]
+    #[Route('/zakaznik/zmena-udaju', name: 'client_section_personal', options: ['expose' => true])]
     public function profileDataChange(
         Request                $request,
         ClientRepository       $clientRepository,
@@ -389,10 +391,11 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         int                $purchaseID,
         PriceCalculator    $priceCalculator,
         PurchaseRepository $purchaseRepository,
-        SessionInterface   $session): JsonResponse
+        CurrencyManager    $currencyManager,
+    ): JsonResponse
     {
         $purchase = $purchaseRepository->find($purchaseID);
-        $currency = $session->get('selectedCurrency');
+        $currency = $currencyManager->get();
 
         $purchasePrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
@@ -402,7 +405,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             VatCalculationType::WithVAT,
             DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
-            true
+            true,
         );
 
         $purchasePrice = (string)$purchasePrice . ' ' . $currency->getSymbol();
@@ -417,7 +420,8 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         int                      $amount,
         PriceCalculator          $priceCalculator,
         ProductVariantRepository $repository,
-        SessionInterface         $session): JsonResponse
+        CurrencyManager          $currencyManager,
+    ): JsonResponse
     {
         $productVariant         = $repository->find($variantID);
         $purchaseProductVariant = new PurchaseProductVariant();
@@ -427,7 +431,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $purchaseProductVariant->setAmount($amount);
         $purchaseProductVariant->setPurchase($purchase);
 
-        $currency = $session->get('currency');
+        $currency = $currencyManager->get();
 
         $productVariantPrice = $priceCalculator->calculateProductVariantPrice(
             $purchaseProductVariant,
@@ -490,7 +494,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/zakaznik/certifikaty', name: 'client_section_certificates')]
+    #[Route('/zakaznik/certifikaty', name: 'client_section_certificates', options: ['expose' => true])]
     public function certificates(
         ClientRepository $clientRepository,
         VoucherRepository $voucherRepository,
