@@ -70,6 +70,7 @@ readonly class ManageSms
             default                    => 'sms.order.default',
         };
 
+        // TODO: make amounts for different currencies, maybe an array for each?
         if ($state === 'paid') {
             $currency = $this->currencyResolver->resolve();
             $amount = $this->priceFactory
