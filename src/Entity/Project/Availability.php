@@ -27,7 +27,7 @@ class Availability
     private $description;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['purchase:read','product_list:read', 'product_item:read', 'purchase:wishlist'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $class;
 
     #[ORM\Column(type: 'boolean')]
