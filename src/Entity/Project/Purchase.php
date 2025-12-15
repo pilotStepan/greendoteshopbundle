@@ -145,12 +145,12 @@ class Purchase
     private $internalNumber;
 
     #[ORM\ManyToOne(targetEntity: PaymentType::class, cascade: ['persist'], inversedBy: 'purchases')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $PaymentType;
 
     #[ORM\ManyToOne(targetEntity: Transportation::class, cascade: ['persist'], inversedBy: 'purchases')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $Transportation;
 
