@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Query\Expr\Func;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PurchaseProductVariantRepository::class)]
@@ -42,12 +43,18 @@ class PurchaseProductVariant
     private ?\DateTimeInterface $delivery_until = null;
 
     #[Groups(['purchase:read', 'purchase:wishlist'])]
+    /**
+     * @deprecated use calculatedPrices instead  
+    */ 
     private $total_price;
 
     #[ORM\OneToOne(targetEntity: Price::class, inversedBy: 'purchaseProductVariant', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private ?Price $price = null;
+
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
+    private array $calculatedPrices = [];
 
     public function __construct()
     {
@@ -175,5 +182,17 @@ class PurchaseProductVariant
         }
 
         return $availability->getIsPurchasable() ?? true;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices) : self
+    {
+        $this->calculatedPrices = $calculatedPrices;
+
+        return $this;
+    }
+
+    public function getCalculatedPrices() : array
+    {
+        return $this->calculatedPrices;
     }
 }

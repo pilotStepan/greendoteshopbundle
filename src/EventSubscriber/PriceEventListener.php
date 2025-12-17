@@ -32,6 +32,7 @@ class PriceEventListener
         $discount = $entity->getDiscount();
 
 
+        // TODO: use calculated prices service instaed
         // basePrice
         $priceNoVatNoDiscount = $entity->getPrice();
         // basePrice + vat

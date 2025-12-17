@@ -160,12 +160,19 @@ class Purchase
     private $client;
 
     #[Groups(['purchase:read', 'purchase:write'])]
+    /**
+     * @deprecated use calculatedPrices instead 
+    */
     private $total_price_no_services;
 
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
+    /**
+     * @deprecated use calculatedPrices instead 
+    */
     private $total_price;
 
     /**
+     * @deprecated use calculatedPrices instead 
      * @return array{
      *     total_with_vat_main: float,
      *     total_no_vat_main: float,
@@ -175,6 +182,22 @@ class Purchase
      */
     #[Groups(['purchase:wishlist'])]
     private array $prices;
+
+    /**
+     * @return array {
+     *      priceVat: float,
+     *      priceNoVat: float,
+     *      priceVatNoDiscount: float,  
+     *      priceNoVatNoDiscount: float,
+     *      priceVatNoServices: float,
+     *      priceNoVatNoServices: float,
+     *      priceVatNoDiscountNoServices: float,
+     *      priceNoVatNoDiscountNoServices: float,
+     * }
+     * (if there isnt noDiscount=>price with discount, if there isnt noServices=>price with services)
+     */
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private array $calculatedPrices = [];
 
     #[Groups(['purchase:read', 'purchase:write'])]
     private $transportation_price;
@@ -944,6 +967,18 @@ class Purchase
     public function setPrices(array $prices): Purchase
     {
         $this->prices = $prices;
+        return $this;
+    }
+
+    
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): Purchase
+    {
+        $this->calculatedPrices = $calculatedPrices;
         return $this;
     }
 }

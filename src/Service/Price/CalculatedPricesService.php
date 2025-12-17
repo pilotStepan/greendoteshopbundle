@@ -7,6 +7,8 @@ use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 
@@ -14,9 +16,10 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 class CalculatedPricesService
 {
     public function __construct(
-        private ProductVariantPriceFactory $productVariantPriceFactory,
-        private CurrencyManager            $currencyManager,
-        private EntityManagerInterface     $entityManager,
+        private ProductVariantPriceFactory  $productVariantPriceFactory,
+        private PurchasePriceFactory        $purchasePriceFactory,
+        private CurrencyManager             $currencyManager,
+        private EntityManagerInterface      $entityManager,
     ) {}
 
     public function makeCalculatedPricesForProductVariant(ProductVariant $variant, $date = new \DateTime()) : ProductVariant
@@ -104,5 +107,78 @@ class CalculatedPricesService
             }
         }
         return $product;
+        
     }
+    public function makeCalculatedPricesForPurchase(Purchase $purchase) : Purchase
+    {
+        if (!empty($purchase->getCalculatedPrices())) {
+            return $purchase;
+        }
+
+        // Make calculated prices for purchase
+        $purchasePrice = $this->purchasePriceFactory->create($purchase, $this->currencyManager->get());
+
+        $calculatedPricesObject = [];
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $calculatedPricesObject['priceVat'] = $purchasePrice->getPrice(true);
+        $calculatedPricesObject['priceVatNoServices'] = $purchasePrice->getPrice(false);
+
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $calculatedPricesObject['priceNoVat'] = $purchasePrice->getPrice(true);
+        $calculatedPricesObject['priceNoVatNoServices'] = $purchasePrice->getPrice(false);
+
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);        
+        $calculatedPricesObject['priceVatNoDiscount'] = $purchasePrice->getPrice(true);
+        $calculatedPricesObject['priceVatNoDiscountNoServices'] = $purchasePrice->getPrice(false);
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);        
+        $calculatedPricesObject['priceNoVatNoDiscount'] = $purchasePrice->getPrice(true);
+        $calculatedPricesObject['priceNoVatNoDiscountNoServices'] = $purchasePrice->getPrice(false);
+        
+        $purchase->setCalculatedPrices($calculatedPricesObject);
+
+        // Make calculated prices for all purchaseVariants
+        foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
+            $this->makeCalculatedPricesForPurchaseProductVariant($purchaseProductVariant);
+        }
+
+        return $purchase;
+    }
+
+    public function makeCalculatedPricesForPurchaseProductVariant(PurchaseProductVariant $purchaseProductVariant) : PurchaseProductVariant
+    {
+        if (!empty($purchaseProductVariant->getCalculatedPrices())){
+            return $purchaseProductVariant;
+        }
+
+        $calculatedPricesObject = [];
+
+        $variantPrice = $this->productVariantPriceFactory->create($purchaseProductVariant, $this->currencyManager->get()); // price calculator object
+
+        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
+        $calculatedPricesObject['priceVat'] = $variantPrice->getPiecePrice();
+
+        $variantPrice->setVatCalculationType(vatCalculationType::WithoutVAT);
+        $calculatedPricesObject['priceNoVat'] = $variantPrice->getPiecePrice();
+
+        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
+        $calculatedPricesObject['priceNoVatNoDiscount'] = $variantPrice->getPiecePrice();
+
+        $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
+        $calculatedPricesObject['priceVatNoDiscount'] = $variantPrice->getPiecePrice();
+
+        $purchaseProductVariant->setCalculatedPrices($calculatedPricesObject);
+            
+        return $purchaseProductVariant;
+    }
+
+
 }
