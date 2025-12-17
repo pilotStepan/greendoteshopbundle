@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\EventSubscriber\Notification;
 
-use Greendot\EshopBundle\Service\ManageSms;
+use Greendot\EshopBundle\Sms\ManageSms;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\Event\CompletedEvent;
 use Symfony\Component\Messenger\MessageBusInterface;

@@ -3,8 +3,8 @@
 namespace Greendot\EshopBundle\MessageHandler\Notification;
 
 use Exception;
+use Greendot\EshopBundle\Sms\ManageSms;
 use Monolog\Attribute\WithMonologChannel;
-use Greendot\EshopBundle\Service\ManageSms;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Message\Notification\PurchaseTransitionSms;
