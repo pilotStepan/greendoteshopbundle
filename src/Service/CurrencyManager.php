@@ -53,7 +53,13 @@ readonly class CurrencyManager implements LocaleAwareInterface
      */
     public function setByLocale(string $locale): void
     {
-        $session = $this->requestStack->getSession();
+        try {
+            $session = $this->requestStack->getSession();
+        } catch (SessionNotFoundException $e) {
+            // No session, cannot store currency. (Messenger, CLI, ...)
+            // Project's default currency will be used on get().
+            return;
+        }
 
         $storedLocale = $session->get(self::SESSION_KEY_LOCALE);
 
