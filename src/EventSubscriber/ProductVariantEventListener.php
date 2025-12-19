@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Events;
+use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
@@ -25,6 +26,20 @@ class ProductVariantEventListener
         }
 
         $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
+
+        // if doesnt have upload try to substitue it
+        if (!$productVariant->getUpload()) {
+            foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
+                if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
+                    continue;
+                }
+                foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
+                {
+                    $productVariant->setUpload($upload);
+                    break;
+                }
+            }
+        }
     }
 
       public function supports() : bool
