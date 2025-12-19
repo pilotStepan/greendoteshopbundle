@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller;
 
-use Greendot\EshopBundle\Service\ManageSms;
+use Greendot\EshopBundle\Sms\ManageSms;
 use Greendot\EshopBundle\Service\ManageMails;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
