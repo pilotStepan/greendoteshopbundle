@@ -100,6 +100,8 @@ class Upload
     #[Groups(['upload:read'])]
     private ?UploadType $uploadType = null;
 
+    public bool $isDynamicallySet = false;
+
     #[ORM\Column(type: 'integer', enumType: DownloadRestriction::class)]
     private DownloadRestriction $restriction = DownloadRestriction::NoRestrictions;
 
