@@ -8,48 +8,38 @@ use Dompdf\Options;
 use Twig\Environment;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 
-class CertificateMaker
+readonly class CertificateMaker
 {
-    private const PDF_OUTPUT_DIR = '/public/receipts/';
-    private const EXCEL_OUTPUT_DIR = 'receipts/';
-    private const VAT_RATES = [10, 15, 21];
-
-    public function __construct(
-        private readonly Environment $twig,
-//        private readonly ContainerInterface $container,
-//        private readonly SettingsRepository $settingsRepository,
-//        private readonly ValueAddedTaxCalculator $valueAddedTaxCalculator,
-    ) {}
+    public function __construct(private Environment $twig) {}
 
     public function createCertificate(Voucher $voucher): string
     {
         $certificateData = $this->prepareCertificateData($voucher);
         $html = $this->renderHtml($certificateData);
-        $pdfFilePath = $this->generatePdf($html, $certificateData['id']);
-
-        return $pdfFilePath;
+        return $this->generatePdf($html);
     }
 
     private function prepareCertificateData(Voucher $voucher): array
     {
         return [
             'id' => $voucher->getId(),
-            'amount' => $voucher->getId(),
+            'amount' => $voucher->getAmount(),
+            'hash' => $voucher->getHash(),
             'validFrom' => $voucher->getDateIssued(),
             'validUntil' => $voucher->getDateUntil(),
             'type' => $voucher->getType(),
             'purchaseIssued' => $voucher->getPurchaseIssued(),
-            'clientIssued' => $voucher->getPurchaseIssued()?->getClient(),
+            'clientName' => $voucher->getPurchaseIssued()?->getClient()->getFullname(),
         ];
     }
 
     private function renderHtml(array $data): string
     {
-        $template = 'pdf/certificate.html.twig';
+        $template = 'pdf/voucher.html.twig';
         return $this->twig->render($template, $data);
     }
 
-    private function generatePdf(string $html, int $certificateId): string
+    private function generatePdf(string $html): string
     {
         $pdfOptions = new Options();
         $pdfOptions->set('isRemoteEnabled', true);
@@ -61,5 +51,12 @@ class CertificateMaker
         $dompdf->render();
 
         return $dompdf->output();
+    }
+
+    /* Used on the project side */
+    public function renderVoucherHtml(Voucher $voucher): string
+    {
+        $certificateData = $this->prepareCertificateData($voucher);
+        return $this->renderHtml($certificateData);
     }
 }
