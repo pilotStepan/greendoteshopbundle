@@ -29,14 +29,7 @@ class ProductVariantEventListener
 
         // if doesnt have upload try to substitue it
         if (!$productVariant->getUpload()) {
-            // main upload from product priority
-            $productUpload = $productVariant->getProduct()->getUpload();
-            if ($productUpload) 
-            {
-                $productVariant->setUpload($productUpload);
-            }
-            // else upload from variant
-            else
+            if (!$productVariant->getProduct()->getUpload())               
             {
                 foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
                     if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
