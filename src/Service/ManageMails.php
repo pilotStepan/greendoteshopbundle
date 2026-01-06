@@ -2,17 +2,16 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Mime\Address;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
-use Symfony\Contracts\Translation\LocaleAwareInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 
 readonly class ManageMails
@@ -21,9 +20,7 @@ readonly class ManageMails
 
     public function __construct(
         private MailerInterface      $mailer,
-        private LocaleAwareInterface $localeAware,
         private TranslatorInterface  $translator,
-        private RequestStack         $requestStack,
         private ManagerRegistry      $managerRegistry,
         private OrderDataFactory     $dataFactory,
         private CertificateMaker     $certificateMaker,
@@ -31,9 +28,30 @@ readonly class ManageMails
         private string               $fromEmail,
         private string               $fromName,
         private PurchaseUrlGenerator $purchaseUrlGenerator,
+        private LoggerInterface      $logger,
     )
     {
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
+    }
+
+    public function sendFreeSampleMailToInfo($formData, Product $product): void
+    {
+        $email = new TemplatedEmail();
+        $email
+            ->subject($this->translator->trans('email.free_sample.subject', [], 'emails'))
+            ->addFrom($formData['mail'])
+            ->addTo($this->fromAddress)
+        ;
+
+//        TODO: make this
+//        $email->htmlTemplate('email/free-sample.html.twig')
+//            ->context([
+//                'content'     => $content,
+//                'href'        => $link,
+//                'button_name' => $buttonName
+//            ]);
+
+        $this->mailer->send($email);
     }
 
     public function sendPurchaseTransitionEmail(Purchase $purchase, string $transition): void
@@ -104,26 +122,6 @@ readonly class ManageMails
         $this->mailer->send($email);
     }
 
-    public function sendFreeSampleMailToInfo($formData, Product $product): void
-    {
-        $email = new TemplatedEmail();
-        $email
-            ->subject($this->translator->trans('email.free_sample.subject', [], 'emails'))
-            ->addFrom($formData['mail'])
-            ->addTo($this->fromAddress)
-        ;
-
-//        TODO: make this
-//        $email->htmlTemplate('email/free-sample.html.twig')
-//            ->context([
-//                'content'     => $content,
-//                'href'        => $link,
-//                'button_name' => $buttonName
-//            ]);
-
-        $this->mailer->send($email);
-    }
-
     private function buildReceiveEmail(Purchase $purchase, $orderData): TemplatedEmail
     {
 
@@ -159,26 +157,19 @@ readonly class ManageMails
             ->context(['data' => $orderData])
         ;
 
-        // TODO: Uncomment when ready
         // Attach vouchers if any
-//        foreach ($purchase->getVouchersIssued() as $voucher) {
-//            $certificatePath = $this->certificateMaker->createCertificate($voucher);
-//            $email->attachFromPath(
-//                $certificatePath,
-//                'voucher_' . $voucher->getId() . '.pdf',
-//                'application/pdf',
-//            );
-//        }
-
-        // UPDATE: Don't attach invoice nor proforma on payment
-//        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
-//        if ($invoicePath) {
-//            $email->attachFromPath(
-//                $invoicePath,
-//                'faktura_' . $purchase->getId() . '.pdf',
-//                'application/pdf',
-//            );
-//        }
+        foreach ($purchase->getVouchersIssued() as $voucher) {
+            try {
+                $certificatePath = $this->certificateMaker->createCertificate($voucher);
+                $email->attachFromPath(
+                    $certificatePath,
+                    'voucher_' . $voucher->getId() . '.pdf',
+                    'application/pdf',
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error('Cannot attach voucher to mail, skipping...', ['e' => $e->getMessage()]);
+            }
+        }
 
         return $email;
     }
