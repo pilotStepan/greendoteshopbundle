@@ -28,7 +28,7 @@ class ProductVariantEventListener
         $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
 
         // if doesnt have upload try to substitue it
-        if ($productVariant->getUpload()) {
+        if (!$productVariant->getUpload()) {
             if (
                 $productVariant->getProduct()->getUpload() === null
                 || $productVariant->getProduct()->getUpload()?->isDynamicallySet
@@ -42,7 +42,7 @@ class ProductVariantEventListener
                     {
                         $upload->isDynamicallySet = true;
                         $productVariant->setUpload($upload);
-                        break;
+                        break 2;
                     }
                 }
             }
