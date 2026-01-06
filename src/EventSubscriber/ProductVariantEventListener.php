@@ -29,14 +29,24 @@ class ProductVariantEventListener
 
         // if doesnt have upload try to substitue it
         if (!$productVariant->getUpload()) {
-            foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
-                if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                    continue;
-                }
-                foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
-                {
-                    $productVariant->setUpload($upload);
-                    break;
+            // main upload from product priority
+            $productUpload = $productVariant->getProduct()->getUpload();
+            if ($productUpload) 
+            {
+                $productVariant->setUpload($productUpload);
+            }
+            // else upload from variant
+            else
+            {
+                foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
+                    if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
+                        continue;
+                    }
+                    foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
+                    {
+                        $productVariant->setUpload($upload);
+                        break;
+                    }
                 }
             }
         }
