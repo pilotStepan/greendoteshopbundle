@@ -139,6 +139,9 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_formatted_parameters_for_entity', [$this, 'getFormattedParametersForEntity']),
 
             new TwigFunction('locale_menu', [$this, 'localeMenu']),
+
+            new TwigFunction('get_full_name_person', [$this, 'getFullNamePerson']),
+
         ];
     }
 
@@ -605,5 +608,11 @@ class AppExtension extends AbstractExtension
     public function getFormattedParametersForEntity(Category|Product|ProductVariant|Person $entity, int|ParameterGroupType|null $parameterGroupType = null, array $options = []): array
     {
         return $this->parameterRepository->getFormattedParameters($entity, $parameterGroupType, $options);
+    }
+
+     public function getFullNamePerson(Person $person): string
+    {
+        $parts = array_filter([$person->getTitleBefore(), $person->getName(), $person->getSurname(), $person->getTitleAfter()]);
+        return implode(' ', $parts);
     }
 }
