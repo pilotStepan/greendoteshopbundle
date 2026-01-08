@@ -35,7 +35,6 @@ class PaymentType implements Translatable
     private $name;
 
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'PaymentType')]
-    #[Groups(['payment:read', 'payment:write'])]
     private $purchases;
 
     #[ORM\Column(type: 'text', nullable: true)]

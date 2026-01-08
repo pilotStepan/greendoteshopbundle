@@ -5,8 +5,10 @@ namespace Greendot\EshopBundle\Controller;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Repository\Project\PersonRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,5 +36,28 @@ class FragmentController extends AbstractController
         ]);
 
         return ($json ? new JsonResponse($html->getContent(), 200) : $html);
+    }
+
+    #[Route('/_assistant-box/category-{category}', name:'fragment_assistant_box', options:['expose' => true], priority: 50)]
+    public function fragmentAssistantBox(
+        #[MapEntity(mapping: ['category' => 'id'])]
+        Category $category,
+        PersonRepository $personRepository
+    ): Response
+    {
+        $person = null;
+        if (count($category->getPersons()) > 0){
+            $person = $category->getPersons()->first()->getPerson();
+        }
+
+        if($person) {
+            $person = $personRepository->findOneBy(['id' => $person->getId(), 'isActive' => 1]);
+        }
+
+
+        return $this->render('web/_assets/_assistant-box.html.twig', [
+            'category' => $category,
+            'person' => $person
+        ]);
     }
 }
