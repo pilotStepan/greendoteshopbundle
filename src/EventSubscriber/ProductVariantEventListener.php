@@ -47,10 +47,16 @@ class ProductVariantEventListener
                     }
                 }
             }
+            else
+            {
+                $upload = $productVariant->getProduct()->getUpload();
+                $upload->setIsDynamicallySet(true);
+                $productVariant->setUpload($upload);
+            }
         }
     }
 
-      public function supports() : bool
+    public function supports() : bool
     {
         return !$this->listenerManager->isDisabled(self::class);
     }
