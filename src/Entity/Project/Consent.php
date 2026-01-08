@@ -3,6 +3,8 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\ConsentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -13,7 +15,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['consent:read']],
 )]
 #[ORM\Entity(repositoryClass: ConsentRepository::class)]
-class Consent
+class Consent implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -23,10 +25,12 @@ class Consent
 
     #[ORM\Column(length: 255)]
     #[Groups(['consent:read'])]
+    #[Gedmo\Translatable]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['consent:read'])]
+    #[Gedmo\Translatable]
     private ?string $description = null;
 
     #[ORM\Column]
@@ -38,6 +42,9 @@ class Consent
      */
     #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'Consents')]
     private Collection $purchases;
+
+    #[Gedmo\Locale]
+    private $locale;
 
     public function __construct()
     {
@@ -107,5 +114,10 @@ class Consent
         $this->purchases->removeElement($purchase);
 
         return $this;
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 }
