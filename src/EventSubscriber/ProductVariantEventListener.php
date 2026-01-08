@@ -28,10 +28,11 @@ class ProductVariantEventListener
         $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
 
         // if doesnt have upload try to substitue it
+        
         if (!$productVariant->getUpload()) {
             if (
                 $productVariant->getProduct()->getUpload() === null
-                || $productVariant->getProduct()->getUpload()?->isDynamicallySet
+                || $productVariant->getProduct()->getUpload()?->isDynamicallySet()
             ) 
             {
                 foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
@@ -40,7 +41,7 @@ class ProductVariantEventListener
                     }
                     foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
                     {
-                        $upload->isDynamicallySet = true;
+                        $upload->setIsDynamicallySet(true);
                         $productVariant->setUpload($upload);
                         break 2;
                     }

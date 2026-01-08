@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\ApiResource\ProductUploads;
 use Greendot\EshopBundle\ApiResource\ProductVariantUploads;
@@ -100,7 +101,9 @@ class Upload
     #[Groups(['upload:read'])]
     private ?UploadType $uploadType = null;
 
-    public bool $isDynamicallySet = false;
+    #[ApiProperty]
+    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
+    private bool $isDynamicallySet = false;
 
     #[ORM\Column(type: 'integer', enumType: DownloadRestriction::class)]
     private DownloadRestriction $restriction = DownloadRestriction::NoRestrictions;
@@ -456,6 +459,18 @@ class Upload
     {
         $this->uploadType = $uploadType;
 
+        return $this;
+    }
+
+    public function isDynamicallySet() : bool
+    {
+        return $this->isDynamicallySet;
+    }
+
+    public function setIsDynamicallySet(bool $isDynamicallySet) : static
+    {
+        $this->isDynamicallySet = $isDynamicallySet;
+     
         return $this;
     }
 }

@@ -65,7 +65,7 @@ class ProductEventListener
                 usort($productUploads, function($a, $b) {
                     return $a->getSequence() <=> $b->getSequence();
                 });
-                $productUploads[0]->isDynamicallySet = true;
+                $productUploads[0]->setIsDynamicallySet(true);
                 $product->setUpload($productUploads[0]);
             }
         
