@@ -31,7 +31,8 @@ use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
  * This factory builds the data structure needed for order emails, including
  * items, transportation, payment details, and addresses.
  */
-final class OrderDataFactory
+//!!DONT MAKE FINALE!!
+class OrderDataFactory
 {
     private PurchasePrice $purchasePrice;
 
@@ -125,7 +126,7 @@ final class OrderDataFactory
     }
 
     /** @return OrderItemData[] */
-    private function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
+    public function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
     {
         $items = [];
 

@@ -14,6 +14,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Greendot\EshopBundle\Invoice\Data\InvoiceData;
 use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class InvoiceMaker
 {
@@ -27,11 +28,13 @@ class InvoiceMaker
         private readonly SettingsRepository      $settingsRepository,
         private readonly ValueAddedTaxCalculator $valueAddedTaxCalculator,
         private readonly InvoiceDataFactory      $invoiceDataFactory,
+        private readonly ParameterBagInterface   $parameterBag
     ) {}
 
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
         $invoiceData = $this->invoiceDataFactory->create($purchase);
+        if(!$invoiceData->isInvoice) return null;
         $html = $this->renderHtml($invoiceData);
         $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
 //        $this->generateExcel($invoiceData); FIXME: not ready yet
