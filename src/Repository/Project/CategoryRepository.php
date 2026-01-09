@@ -175,7 +175,8 @@ class CategoryRepository extends HintedRepositoryBase
             ->setParameter('cat', $category->getId())
             ->andWhere('mt.id = :menuType')
             ->setParameter('menuType', $menuType->getId())
-            ->orderBy('c.sequence', 'ASC');
+            ->orderBy('a.sequence', 'ASC')
+            ->addOrderBy('c.sequence', 'ASC');
 
         if ($allowedCategoryTypes) {
             $qb->andWhere('c.categoryType IN (:allowedCategoryTypes)')
