@@ -33,8 +33,8 @@ class InvoiceMaker
 
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
-
         $invoiceData = $this->invoiceDataFactory->create($purchase);
+<<<<<<< HEAD
 <<<<<<< HEAD
         if ($invoiceData === null) {
             throw new \RuntimeException('Invoice data factory returned null');
@@ -43,15 +43,10 @@ class InvoiceMaker
 =======
         if(!$invoiceData->isInvoice) return null;
 >>>>>>> 1a9009ccebec2cc0e50838b217856872b0cbb8bf
+=======
+>>>>>>> parent of 7ce04b7 (invoice error handling)
         $html = $this->renderHtml($invoiceData);
-        if ($html === null) {
-            throw new \RuntimeException('HTML rendering returned null');
-        }
-
         $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
-        if ($pdfFilePath === null) {
-            throw new \RuntimeException('PDF generation returned null');
-        }
 //        $this->generateExcel($invoiceData); FIXME: not ready yet
 
         return $pdfFilePath;
@@ -93,85 +88,34 @@ class InvoiceMaker
         $type = $data->isInvoice ? 'invoice' : 'proforma';
         $vatExempt = $data->isVatExempted ? '-vat-exempted' : '';
         $template = sprintf('pdf/%s%s.html.twig', $type, $vatExempt);
-        //        $template = 'pdf/test.html.twig';
+//        $template = 'pdf/test.html.twig';
         // $template = 'pdf/invoice-new.html.twig';
 
-
-        if (!$this->twig->getLoader()->exists($template)) {
-            throw new \RuntimeException(
-                sprintf('HTML rendering failed: Twig template "%s" does not exist', $template)
-            );
-        }
-
-        try {
-            $html = $this->twig->render($template, (array) $data);
-        } catch (\Throwable $e) {
-            throw new \RuntimeException(
-                sprintf('HTML rendering failed for template "%s"', $template),
-                previous: $e
-            );
-        }
-
-        if (trim($html) === '') {
-            throw new \RuntimeException(
-                sprintf('HTML rendering failed: empty output from template "%s"', $template)
-            );
-        }
-
-        return $html;
+        return $this->twig->render($template, (array) $data);
     }
-
 
     private function generatePdf(string $html, int $purchaseNumber): ?string
     {
-        if (trim($html) === '') {
-            throw new \RuntimeException('PDF generation failed: empty HTML input');
-        }
-
-        $projectDir = $this->container->getParameter('kernel.project_dir');
-        if (!is_string($projectDir)) {
-            throw new \RuntimeException('PDF generation failed: project dir parameter is invalid');
-        }
-
-        $outputDir = $projectDir . self::PDF_OUTPUT_DIR;
-        if (!is_dir($outputDir) && !mkdir($outputDir, 0775, true) && !is_dir($outputDir)) {
-            throw new \RuntimeException('PDF generation failed: output directory is not writable');
-        }
-
         $pdfOptions = new Options();
         $pdfOptions->set('isRemoteEnabled', true);
         $pdfOptions->set('isHtml5ParserEnabled', true);
-
-        $chroot = realpath('build');
-        if ($chroot === false) {
-            throw new \RuntimeException('PDF generation failed: chroot path does not exist');
-        }
-        $pdfOptions->setChroot($chroot);
+        $pdfOptions->setChroot(realpath('build'));
 
         $dompdf = new Dompdf($pdfOptions);
-
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
-
         $dompdf->render();
 
-        $output = $dompdf->output();
-        if ($output === '' || $output === null) {
-            throw new \RuntimeException('PDF generation failed: Dompdf returned empty output');
-        }
+        $pdfFilePath = $this->container->getParameter('kernel.project_dir')
+            . self::PDF_OUTPUT_DIR
+            . 'faktura-'
+            . $purchaseNumber
+            . '.pdf';
 
-        $pdfFilePath = $outputDir . 'faktura-' . $purchaseNumber . '.pdf';
-
-        $bytesWritten = @file_put_contents($pdfFilePath, $output);
-        if ($bytesWritten === false) {
-            throw new \RuntimeException(
-                sprintf('PDF generation failed: unable to write file "%s"', $pdfFilePath)
-            );
-        }
+        file_put_contents($pdfFilePath, $dompdf->output());
 
         return $pdfFilePath;
     }
-
 
     private function generateExcel(array $data): void
     {
