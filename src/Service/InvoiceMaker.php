@@ -22,29 +22,27 @@ class InvoiceMaker
     private const EXCEL_OUTPUT_DIR = 'receipts/';
     private const VAT_RATES = [10, 15, 21];
 
+    private bool $sendProforma;
     public function __construct(
         private readonly Environment             $twig,
         private readonly ContainerInterface      $container,
         private readonly SettingsRepository      $settingsRepository,
         private readonly ValueAddedTaxCalculator $valueAddedTaxCalculator,
         private readonly InvoiceDataFactory      $invoiceDataFactory,
-        private readonly ParameterBagInterface   $parameterBag
-    ) {}
+        ParameterBagInterface   $parameterBag
+    ) {
+        $this->sendProforma = $parameterBag->get('greendot_eshop.mail.order.send_proforma') ?? true;
+    }
 
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
         $invoiceData = $this->invoiceDataFactory->create($purchase);
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         if ($invoiceData === null) {
             throw new \RuntimeException('Invoice data factory returned null');
         }
-
-=======
         if(!$invoiceData->isInvoice) return null;
->>>>>>> 1a9009ccebec2cc0e50838b217856872b0cbb8bf
-=======
->>>>>>> parent of 7ce04b7 (invoice error handling)
+        if(!$invoiceData->isInvoice && !$this->sendProforma) return null;
         $html = $this->renderHtml($invoiceData);
         $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
 //        $this->generateExcel($invoiceData); FIXME: not ready yet
