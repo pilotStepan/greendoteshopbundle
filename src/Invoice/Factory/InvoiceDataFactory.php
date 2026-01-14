@@ -41,64 +41,140 @@ final class InvoiceDataFactory
         private CountryRepository           $countryRepository,
         private QRcodeGenerator             $qrGenerator,
     ) {}
-
-    public function create(Purchase $purchase): InvoiceData
-    {
+public function create(Purchase $purchase): InvoiceData
+{
+    try {
         [$czk, $eur] = $this->loadCurrencies();
-        $this->purchasePrice = $this->purchasePriceFactory->create($purchase, $czk, VatCalculationType::WithVAT, DiscountCalculationType::WithoutDiscount, VoucherCalculationType::WithoutVoucher);
-
-        $invoiceNumber = $purchase->getInvoiceNumber();
-        $isInvoice = $invoiceNumber !== null;
-    
-
-       $dateInvoiced = new \DateTime(
-            ($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue())->format('Y-m-d H:i:s')
-        );
-        $dateDue = (new \DateTime($dateInvoiced->format('Y-m-d H:i:s')))->modify('+10 days');
-
-        // $contractor =   $this->buildContractor();
-        $customer = $this->buildCustomer($purchase);
-        $payment = $this->buildPayment($purchase, $czk, $eur);
-        $qr = $this->buildQrCode($purchase);
-        $transportation = $this->buildTransportation($purchase, $czk, $eur);
-        $items = $this->buildItems($purchase, $czk, $eur);
-        $vatCategories = $this->buildVatCategories($purchase, $czk, $eur);
-        [$discountPercentage, $discountValueCzk, $discountValueEur] = array_values($this->buildDiscount($czk, $eur));
-        [$totalPriceNoVatCzk, $totalPriceNoVatEur, $totalPriceVatCzk, $totalPriceVatEur, $totalPriceNoVatNoDiscountCzk, $totalPriceNoVatNoDiscountEur, $totalPriceVatNoDiscountCzk, $totalPriceVatNoDiscountEur] = array_values($this->buildPrices($czk, $eur));
-        [$voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
-
-        return new InvoiceData(
-            invoiceId:                              $purchase->getInvoiceNumber(),
-            purchaseId:                             $purchase->getId(),
-            isInvoice:                              $isInvoice,
-            isVatExempted:                          $purchase->isVatExempted(),
-            invoiceNumber:                          $invoiceNumber,
-            dateInvoiced:                           $dateInvoiced,
-            dateDue:                                $dateDue,
-            // contractor:                 $contractor,
-            customer:                               $customer,
-            payment:                                $payment,
-            qrPath:                                 $qr,
-            transportation:                         $transportation,
-            currencyPrimary:                        $czk,
-            currencySecondary:                      $eur,
-            items:                                  $items,
-            vatCategories:                          $vatCategories,
-            totalPriceNoVat:                        $totalPriceNoVatCzk,
-            totalPriceNoVatSecondary:               $totalPriceNoVatEur,
-            totalPriceVat:                          $totalPriceVatCzk,
-            totalPriceVatSecondary:                 $totalPriceVatEur,
-            totalPriceNoVatNoDiscount:              $totalPriceNoVatNoDiscountCzk,
-            totalPriceNoVatNoDiscountSecondary:     $totalPriceNoVatNoDiscountEur,
-            totalPriceVatNoDiscount:                $totalPriceVatNoDiscountCzk,
-            totalPriceVatNoDiscountSecondary:       $totalPriceVatNoDiscountEur,
-            discountPercentage:                     $discountPercentage,
-            discountValue:                          $discountValueCzk,
-            discountValueSecondary:                 $discountValueEur,
-            voucherValue:                           $voucherValueCzk,
-            voucherValueSecondary:                  $voucherValueEur,
-        );
+    } catch (\Throwable $e) {
+        throw new RuntimeException('Failed to load currencies', previous: $e);
     }
+
+    if (!$czk || !$eur) {
+        throw new RuntimeException('Currency loading returned invalid values');
+    }
+
+    $this->purchasePrice = $this->purchasePriceFactory->create(
+        $purchase,
+        $czk,
+        VatCalculationType::WithVAT,
+        DiscountCalculationType::WithoutDiscount,
+        VoucherCalculationType::WithoutVoucher
+    );
+
+    if ($this->purchasePrice === null) {
+        throw new RuntimeException('Purchase price creation returned null');
+    }
+
+    $invoiceNumber = $purchase->getInvoiceNumber();
+    $isInvoice = $invoiceNumber !== null;
+
+    $issueDate = $isInvoice
+        ? $purchase->getDateInvoiced()
+        : $purchase->getDateIssue();
+
+    if (!$issueDate instanceof \DateTimeInterface) {
+        throw new RuntimeException('Invalid invoice / issue date on purchase');
+    }
+
+    $dateInvoiced = new \DateTime($issueDate->format('Y-m-d H:i:s'));
+    $dateDue = (clone $dateInvoiced)->modify('+10 days');
+
+    $customer = $this->buildCustomer($purchase);
+    if ($customer === null) {
+        throw new RuntimeException('Customer build failed');
+    }
+
+    $payment = $this->buildPayment($purchase, $czk, $eur);
+    if ($payment === null) {
+        throw new RuntimeException('Payment build failed');
+    }
+
+    $qr = $this->buildQrCode($purchase);
+    if ($qr === null) {
+        throw new RuntimeException('QR code build failed');
+    }
+
+    $transportation = $this->buildTransportation($purchase, $czk, $eur);
+    if ($transportation === null) {
+        throw new RuntimeException('Transportation build failed');
+    }
+
+    $items = $this->buildItems($purchase, $czk, $eur);
+    if (empty($items)) {
+        throw new RuntimeException('Invoice items build returned empty result');
+    }
+
+    $vatCategories = $this->buildVatCategories($purchase, $czk, $eur);
+    if (empty($vatCategories)) {
+        throw new RuntimeException('VAT categories build returned empty result');
+    }
+
+    $discount = $this->buildDiscount($czk, $eur);
+    if (!is_array($discount)) {
+        throw new RuntimeException('Discount build failed');
+    }
+
+    [
+        $discountPercentage,
+        $discountValueCzk,
+        $discountValueEur
+    ] = array_values($discount);
+
+    $prices = $this->buildPrices($czk, $eur);
+    if (!is_array($prices)) {
+        throw new RuntimeException('Price calculation failed');
+    }
+
+    [
+        $totalPriceNoVatCzk,
+        $totalPriceNoVatEur,
+        $totalPriceVatCzk,
+        $totalPriceVatEur,
+        $totalPriceNoVatNoDiscountCzk,
+        $totalPriceNoVatNoDiscountEur,
+        $totalPriceVatNoDiscountCzk,
+        $totalPriceVatNoDiscountEur
+    ] = array_values($prices);
+
+    $voucher = $this->buildVoucher($czk, $eur);
+    if (!is_array($voucher)) {
+        throw new RuntimeException('Voucher build failed');
+    }
+
+    [$voucherValueCzk, $voucherValueEur] = array_values($voucher);
+
+    return new InvoiceData(
+        invoiceId:                              $invoiceNumber,
+        purchaseId:                             $purchase->getId(),
+        isInvoice:                              $isInvoice,
+        isVatExempted:                          $purchase->isVatExempted(),
+        invoiceNumber:                          $invoiceNumber,
+        dateInvoiced:                           $dateInvoiced,
+        dateDue:                                $dateDue,
+        customer:                               $customer,
+        payment:                                $payment,
+        qrPath:                                 $qr,
+        transportation:                         $transportation,
+        currencyPrimary:                        $czk,
+        currencySecondary:                      $eur,
+        items:                                  $items,
+        vatCategories:                          $vatCategories,
+        totalPriceNoVat:                        $totalPriceNoVatCzk,
+        totalPriceNoVatSecondary:               $totalPriceNoVatEur,
+        totalPriceVat:                          $totalPriceVatCzk,
+        totalPriceVatSecondary:                 $totalPriceVatEur,
+        totalPriceNoVatNoDiscount:              $totalPriceNoVatNoDiscountCzk,
+        totalPriceNoVatNoDiscountSecondary:     $totalPriceNoVatNoDiscountEur,
+        totalPriceVatNoDiscount:                $totalPriceVatNoDiscountCzk,
+        totalPriceVatNoDiscountSecondary:       $totalPriceVatNoDiscountEur,
+        discountPercentage:                     $discountPercentage,
+        discountValue:                          $discountValueCzk,
+        discountValueSecondary:                 $discountValueEur,
+        voucherValue:                           $voucherValueCzk,
+        voucherValueSecondary:                  $voucherValueEur,
+    );
+}
+
 
 
     /** @return array{Currency, Currency} */
