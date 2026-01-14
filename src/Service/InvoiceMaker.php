@@ -14,6 +14,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Greendot\EshopBundle\Invoice\Data\InvoiceData;
 use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class InvoiceMaker
 {
@@ -27,16 +28,21 @@ class InvoiceMaker
         private readonly SettingsRepository      $settingsRepository,
         private readonly ValueAddedTaxCalculator $valueAddedTaxCalculator,
         private readonly InvoiceDataFactory      $invoiceDataFactory,
+        private readonly ParameterBagInterface   $parameterBag
     ) {}
 
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
 
         $invoiceData = $this->invoiceDataFactory->create($purchase);
+<<<<<<< HEAD
         if ($invoiceData === null) {
             throw new \RuntimeException('Invoice data factory returned null');
         }
 
+=======
+        if(!$invoiceData->isInvoice) return null;
+>>>>>>> 1a9009ccebec2cc0e50838b217856872b0cbb8bf
         $html = $this->renderHtml($invoiceData);
         if ($html === null) {
             throw new \RuntimeException('HTML rendering returned null');
