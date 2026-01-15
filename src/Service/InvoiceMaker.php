@@ -37,10 +37,23 @@ class InvoiceMaker
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
         $invoiceData = $this->invoiceDataFactory->create($purchase);
+        if ($invoiceData === null) {
+            throw new \RuntimeException('Invoice data factory returned null');
+        }
+        
         if(!$invoiceData->isInvoice && !$this->sendProforma) return null;
+        
         $html = $this->renderHtml($invoiceData);
+        if ($html === null) {
+            throw new \RuntimeException('HTML rendering returned null');
+        }
+
         $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
-//        $this->generateExcel($invoiceData); FIXME: not ready yet
+        if ($pdfFilePath === null) {
+            throw new \RuntimeException('PDF generation returned null');
+        }
+
+        // $this->generateExcel($invoiceData); FIXME: not ready yet
 
         return $pdfFilePath;
     }
