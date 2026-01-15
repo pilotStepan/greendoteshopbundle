@@ -248,6 +248,8 @@ class CategoryRepository extends HintedRepositoryBase
             ->leftJoin('c.labels', 'l')
             ->andWhere('l = :labelID')
             ->andWhere('c.categoryType = 6')
+            ->orderBy('c.published_at', 'DESC')
+            ->addOrderBy('c.id', 'DESC')
             ->setParameter('labelID', $label);
         if ($limit) {
             $result->setMaxResults($limit);
