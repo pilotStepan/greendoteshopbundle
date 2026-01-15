@@ -67,7 +67,7 @@ class BlogController extends AbstractController
             $title         = $selectedLabel->getName();
         }
 
-        $blogLabels = $labelRepository->findBy(['labelType' => 3, ['sequence' => 'DESC']]);
+        $blogLabels = $labelRepository->findBy(['labelType' => 3], ['sequence' => 'DESC']);
 
         if ($page == null) {
             $page = 1;
