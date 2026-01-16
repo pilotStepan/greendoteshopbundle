@@ -21,6 +21,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     paginationEnabled: false,
 )]
 #[ApiFilter(SearchFilter::class,properties: ['isActive'=>'exact'])]
+#[ORM\HasLifecycleCallbacks]
 class Person implements Translatable
 {
     #[ORM\Id]
