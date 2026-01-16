@@ -26,25 +26,32 @@ class Person implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['person:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['person:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['person:read'])]
     private ?string $surname = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['person:read'])]
     #[Gedmo\Translatable]
     private ?string $department = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['person:read'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['person:read'])]
     private ?string $phone = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['person:read'])]
     private ?string $room = null;
 
     #[ORM\Column(nullable: true)]
@@ -55,14 +62,17 @@ class Person implements Translatable
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Gedmo\Translatable]
+    #[Groups(['person:read'])]
     private ?string $titleBefore = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Gedmo\Translatable]
+    #[Groups(['person:read'])]
     private ?string $titleAfter = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]
+    #[Groups(['person:read'])]
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: Parameter::class)]
@@ -73,9 +83,11 @@ class Person implements Translatable
 
     #[ORM\Column(length: 255)]
     #[Gedmo\Translatable]
+    #[Groups(['person:read'])]
     private ?string $slug = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['person:read'])]
     private ?bool $isActive = null;
 
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: ProductPerson::class)]
@@ -89,6 +101,9 @@ class Person implements Translatable
     #[Gedmo\Translatable]
     private ?string $html = null;
 
+    #[Groups(['person:read'])]
+    private string $fullName = "";
+
     #[Gedmo\Locale]
     private $locale;
     public function __construct()
@@ -96,11 +111,19 @@ class Person implements Translatable
         $this->category = new ArrayCollection();
         $this->personUploadGroups = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
+
+        $this->setFullName();
     }
 
     public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
+    }
+
+    #[ORM\PostLoad]
+    public function onPostLoad(): void
+    {
+        $this->setFullName();
     }
 
     public function getId(): ?int
@@ -395,4 +418,16 @@ class Person implements Translatable
 
         return $this;
     }
+
+    public function getFullName(): string
+    {
+        return $this->fullName;
+    }
+
+    private function setFullName(): void
+    {
+        $parts = array_filter([$this->titleBefore, $this->name, $this->surname, $this->titleAfter]);
+        $this->fullName = implode(' ', $parts);
+    }
+
 }
