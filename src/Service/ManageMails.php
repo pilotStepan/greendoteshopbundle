@@ -34,6 +34,17 @@ readonly class ManageMails
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
     }
 
+    public function getBaseTemplate(): TemplatedEmail
+    {
+        return (new TemplatedEmail())
+            ->from($this->fromAddress);
+    }
+
+    public function sendTemplate(TemplatedEmail $templatedEmail): void
+    {
+        $this->mailer->send($templatedEmail);
+    }
+
     public function sendFreeSampleMailToInfo($formData, Product $product): void
     {
         $email = new TemplatedEmail();

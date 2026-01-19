@@ -26,26 +26,15 @@ class GreendotEshopBundle extends AbstractBundle
                         ->booleanNode('has_landing')->defaultValue(true)->end()
                     ->end()
                 ->end()
-//                ->arrayNode('transportation')
-//                    ->children()
-//                        ->arrayNode('dpd')
-//                            ->addDefaultsIfNotSet()
-//                            ->children()
-//                                ->integerNode('sender_address_id')->defaultValue(0)->end()
-//                                ->integerNode('zip_code')->defaultValue(0)->end()
-//                                ->stringNode('street')->defaultValue('street')->end()
-//                                ->stringNode('name')->defaultValue('name')->end()
-//                                ->stringNode('country_code')->defaultValue('CZ')->end()
-//                                ->integerNode('contact_phone')->defaultValue(132456789)->end()
-//                                ->stringNode('contact_phone_prefix')->defaultValue('+420')->end()
-//                                ->stringNode('contact_name')->defaultValue('name')->end()
-//                                ->stringNode('contact_email')->defaultValue('podpora@greendot.cz')->end()
-//                                ->stringNode('company_name')->defaultValue('company')->end()
-//                                ->stringNode('city')->defaultValue('Praha')->end()
-//                            ->end()
-//                        ->end()
-//                    ->end()
-//                ->end()
+                ->arrayNode('mail')
+                    ->children()
+                        ->arrayNode('order')
+                            ->children()
+                                ->booleanNode('send_proforma')->defaultValue(true)->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
     }
 
@@ -109,6 +98,13 @@ class GreendotEshopBundle extends AbstractBundle
             'greendot_eshop.blog.slug',
             $config['blog']['slug']
         );
+
+        $sendProforma = $config['mail']['order']['send_proforma'] ?? true;
+        $builder->setParameter(
+          'greendot_eshop.mail.order.send_proforma',
+            $sendProforma
+        );
+
 //        $builder->setParameter(
 //            'greendot_eshop.transportation.dpd.sender_data',
 //            $config['transportation']['dpd'] ?? []

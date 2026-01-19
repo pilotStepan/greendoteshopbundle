@@ -28,21 +28,35 @@ class ProductVariantEventListener
         $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
 
         // if doesnt have upload try to substitue it
+        
         if (!$productVariant->getUpload()) {
-            foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
-                if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                    continue;
+            if (
+                $productVariant->getProduct()->getUpload() === null
+                || $productVariant->getProduct()->getUpload()?->isDynamicallySet()
+            ) 
+            {
+                foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
+                    if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
+                        continue;
+                    }
+                    foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
+                    {
+                        $upload->setIsDynamicallySet(true);
+                        $productVariant->setUpload($upload);
+                        break 2;
+                    }
                 }
-                foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
-                {
-                    $productVariant->setUpload($upload);
-                    break;
-                }
+            }
+            else
+            {
+                $upload = $productVariant->getProduct()->getUpload();
+                $upload->setIsDynamicallySet(true);
+                $productVariant->setUpload($upload);
             }
         }
     }
 
-      public function supports() : bool
+    public function supports() : bool
     {
         return !$this->listenerManager->isDisabled(self::class);
     }

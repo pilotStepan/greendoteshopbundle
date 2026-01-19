@@ -36,6 +36,7 @@ class ProductEventListener
 
         // if it doesn't have main upload, it tries to substitute it
         if ($product->getUpload() === null) {
+
             $productUploads = [];
             foreach($product->getProductUploadGroups() as $productUploadGroup) {
                 if ($productUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
@@ -64,6 +65,7 @@ class ProductEventListener
                 usort($productUploads, function($a, $b) {
                     return $a->getSequence() <=> $b->getSequence();
                 });
+                $productUploads[0]->setIsDynamicallySet(true);
                 $product->setUpload($productUploads[0]);
             }
         

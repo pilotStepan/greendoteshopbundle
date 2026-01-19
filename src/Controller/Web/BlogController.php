@@ -59,7 +59,7 @@ class BlogController extends AbstractController
     {
         $blogLandingPage = $categoryRepository->find(2);
         if ($slug == null) {
-            $blogArticles = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['id' => 'DESC']);
+            $blogArticles = $categoryRepository->findBy(['categoryType' => 6, 'isActive' => 1], ['published_at' => 'DESC', 'id' => 'DESC']);
             $title        = "Všechny články";
         } else {
             $selectedLabel = $labelRepository->findOneBy(['slug' => $slug]);
@@ -67,7 +67,7 @@ class BlogController extends AbstractController
             $title         = $selectedLabel->getName();
         }
 
-        $blogLabels = $labelRepository->findBy(['labelType' => 3]);
+        $blogLabels = $labelRepository->findBy(['labelType' => 3], ['sequence' => 'DESC']);
 
         if ($page == null) {
             $page = 1;

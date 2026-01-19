@@ -14,6 +14,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Greendot\EshopBundle\Invoice\Data\InvoiceData;
 use Greendot\EshopBundle\Invoice\Factory\InvoiceDataFactory;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class InvoiceMaker
 {
@@ -21,20 +22,38 @@ class InvoiceMaker
     private const EXCEL_OUTPUT_DIR = 'receipts/';
     private const VAT_RATES = [10, 15, 21];
 
+    private bool $sendProforma;
     public function __construct(
         private readonly Environment             $twig,
         private readonly ContainerInterface      $container,
         private readonly SettingsRepository      $settingsRepository,
         private readonly ValueAddedTaxCalculator $valueAddedTaxCalculator,
         private readonly InvoiceDataFactory      $invoiceDataFactory,
-    ) {}
+        ParameterBagInterface   $parameterBag
+    ) {
+        $this->sendProforma = $parameterBag->get('greendot_eshop.mail.order.send_proforma') ?? true;
+    }
 
     public function createInvoiceOrProforma(Purchase $purchase): ?string
     {
         $invoiceData = $this->invoiceDataFactory->create($purchase);
+        if ($invoiceData === null) {
+            throw new \RuntimeException('Invoice data factory returned null');
+        }
+        
+        if(!$invoiceData->isInvoice && !$this->sendProforma) return null;
+        
         $html = $this->renderHtml($invoiceData);
+        if ($html === null) {
+            throw new \RuntimeException('HTML rendering returned null');
+        }
+
         $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
-//        $this->generateExcel($invoiceData); FIXME: not ready yet
+        if ($pdfFilePath === null) {
+            throw new \RuntimeException('PDF generation returned null');
+        }
+
+        // $this->generateExcel($invoiceData); FIXME: not ready yet
 
         return $pdfFilePath;
     }
