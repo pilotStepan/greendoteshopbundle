@@ -19,7 +19,7 @@ class InquiryToFileType extends AbstractType
     {
         $builder
             ->add('company', null, [
-                'label' => $this->translator->trans('Uveďte název oragnizace, ve které pracujete'),
+                'label' => $this->translator->trans('Uveďte název organizace, ve které pracujete'),
                 'required' => true,
             ])
             ->add('notify_email', EmailType::class, [
