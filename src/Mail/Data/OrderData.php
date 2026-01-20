@@ -20,7 +20,7 @@ class OrderData
         public array                   $items,
         /** @var 'czk'|'eur' */
         public string                  $primaryCurrency,
-        public bool                    $paid,
+        public bool                    $orderPaid,
         public string                  $totalPriceCzk,
         public string                  $totalPriceEur,
         public string                  $clientSectionUrl,
