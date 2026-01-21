@@ -160,6 +160,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ]);
     }
 
+    /* @deprecated PaymentGateway is used instead
     #[Route('/zakaznik/platba-kartou/{purchaseID}', name: 'client_section_card_payment')]
     public function cardPayment(
         int                    $purchaseID,
@@ -196,11 +197,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $entityManager->persist($payment);
         $entityManager->flush();
 
-        // TODO: discuss usage
         $paymentUrl = $GPWebpay->getPayLink($purchase, $payment->getId(), $totalPrice);
 
         return new RedirectResponse($paymentUrl);
-    }
+    }*/
 
     #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/objednavky', name: 'client_section_orders', options: ['expose' => true])]
