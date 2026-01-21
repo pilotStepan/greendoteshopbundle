@@ -111,7 +111,7 @@ class Transportation implements Translatable
     private ?string $secretKey = null;
 
     #[Groups(['transportation:read', 'transportation_group:read'])]
-    private $freeFromPrice;
+    private ?float $freeFromPrice;
 
     /* Calculated in TransportationEventListener */
     #[Groups(['transportation:read'])]
@@ -518,12 +518,12 @@ class Transportation implements Translatable
     /**
      * @return float
      */
-    public function getFreeFromPrice(): float
+    public function getFreeFromPrice(): ?float
     {
         return $this->freeFromPrice;
     }
 
-    public function setFreeFromPrice(float $free_from_price): static
+    public function setFreeFromPrice(?float $free_from_price): static
     {
         $this->freeFromPrice = $free_from_price;
 
