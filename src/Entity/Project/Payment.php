@@ -19,7 +19,7 @@ class Payment
     private $id;
 
     #[ORM\Column(type: 'string', length: 255, nullable: false)]
-    private $externalId;
+    private string $externalId = '';
 
     #[ORM\Column(type: 'datetime')]
     private $date;
@@ -42,7 +42,7 @@ class Payment
         return $this->externalId;
     }
 
-    public function setExternalId(int $externalId): self
+    public function setExternalId(string $externalId): self
     {
         $this->externalId = $externalId;
 

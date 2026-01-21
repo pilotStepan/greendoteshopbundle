@@ -2,14 +2,12 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
-use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Entity\Project\{Client, Purchase};
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
+use Doctrine\ORM\{QueryBuilder, NoResultException, NonUniqueResultException};
 
 /**
  * @method Purchase|null find($id, $lockMode = null, $lockVersion = null)
@@ -34,7 +32,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->orderBy("p.date_issue", "DESC")
             ->andWhere("p.state = :inquiry")->setParameter('inquiry', 'inquiry')
             ->andWhere("p.Client = :client")->setParameter("client", $client)
-            ->getQuery()->getOneOrNullResult();
+            ->getQuery()->getOneOrNullResult()
+        ;
     }
 
     public function lastPurchaseOfUser($client)
@@ -45,7 +44,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->andWhere("p.state NOT IN (:excludedStates)")
             ->setParameter('excludedStates', ['inquiry', 'draft', 'wishlist'])
             ->andWhere("p.client = :client")->setParameter("client", $client)
-            ->getQuery()->getOneOrNullResult();
+            ->getQuery()->getOneOrNullResult()
+        ;
     }
 
     public function getClientPurchases(Client $client)
@@ -55,7 +55,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->andWhere("p.state NOT IN (:excludedStates)")
             ->setParameter('excludedStates', ['inquiry', 'draft', 'wishlist'])
             ->andWhere('p.client = :client')->setParameter('client', $client)
-            ->getQuery()->getResult();
+            ->getQuery()->getResult()
+        ;
     }
 
     public function getClientDrafts(Client $client)
@@ -64,7 +65,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->andWhere('p.client = :client')->setParameter('client', $client)
             ->andWhere('p.state = :state')->setParameter('state', 'draft')
             ->orderBy('p.date_issue', 'desc')
-            ->getQuery()->getResult();
+            ->getQuery()->getResult()
+        ;
     }
 
     public function findNextInvoiceNumber(): ?string
@@ -95,7 +97,8 @@ class PurchaseRepository extends ServiceEntityRepository
 
         return $queryBuilder
             ->andWhere(sprintf('%s.id = :purchaseId', $alias))
-            ->setParameter('purchaseId', $purchaseId);
+            ->setParameter('purchaseId', $purchaseId)
+        ;
     }
 
     public function findOneBySession(): ?Purchase
@@ -111,7 +114,8 @@ class PurchaseRepository extends ServiceEntityRepository
         if ($session?->has('purchase')) {
             $purchaseId = $session->get('purchase');
             $qb->andWhere('p.id = :purchaseId')
-                ->setParameter('purchaseId', $purchaseId);
+                ->setParameter('purchaseId', $purchaseId)
+            ;
             return $qb->getQuery()->getOneOrNullResult();
         } else {
             return null;
@@ -125,7 +129,8 @@ class PurchaseRepository extends ServiceEntityRepository
         if ($session->has('wishlist')) {
             $purchaseId = $session->get('wishlist');
             $qb->andWhere('p.id = :purchaseId')
-                ->setParameter('purchaseId', $purchaseId);
+                ->setParameter('purchaseId', $purchaseId)
+            ;
             return $qb->getQuery()->getOneOrNullResult();
         } else {
             return null;
@@ -144,7 +149,8 @@ class PurchaseRepository extends ServiceEntityRepository
             ->orderBy('p.date_issue', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getOneOrNullResult()
+        ;
     }
 
     public function findWishlistForClient(?Client $client): ?Purchase
@@ -159,6 +165,20 @@ class PurchaseRepository extends ServiceEntityRepository
             ->orderBy('p.date_issue', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getOneOrNullResult()
+        ;
+    }
+
+    /**
+     * @throws NonUniqueResultException|NoResultException
+     */
+    public function findByPaymentId(string $paymentId): Purchase
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.paymentId = :paymentId')
+            ->setParameter('paymentId', $paymentId)
+            ->getQuery()
+            ->getSingleResult()
+        ;
     }
 }

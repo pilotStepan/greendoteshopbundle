@@ -5,8 +5,6 @@ namespace Greendot\EshopBundle\Controller\Shop;
 use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Service\CurrencyManager;
-use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Form\ClientFormType;
@@ -15,8 +13,8 @@ use Greendot\EshopBundle\Service\ManageMails;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -26,22 +24,23 @@ use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Symfony\Component\Serializer\SerializerInterface;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PurchaseController extends AbstractController
 {
-    
+
     #[CustomApiEndpoint]
     #[Route('/api/client/submit', name: 'api_client_submit', options: ['deprecation_message' => 'This endpoint is deprecated and will be removed in a future release.'], methods: ['POST'])]
     public function submitClientForm(
@@ -64,7 +63,7 @@ class PurchaseController extends AbstractController
         } else {
 
             $form = $this->createForm(ClientFormType::class, null, [
-                'csrf_protection' => false
+                'csrf_protection' => false,
             ]);
 
             $form->submit($data);
@@ -93,7 +92,7 @@ class PurchaseController extends AbstractController
         $addressFields = [
             'street', 'city', 'zip', 'country', 'ic', 'dic',
             'ship_company', 'ship_name', 'ship_surname', 'ship_street',
-            'ship_city', 'ship_zip', 'ship_country'
+            'ship_city', 'ship_zip', 'ship_country',
         ];
 
         foreach ($addressFields as $field) {
@@ -139,14 +138,14 @@ class PurchaseController extends AbstractController
             VatCalculationType::WithVAT,
             DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
-            true
+            true,
         );
 
         if ($purchaseFlow->can($newPurchase, 'receive')) {
             dump("can");
             $purchaseFlow->apply($newPurchase, 'receive');
             $entityManager->flush();
-        }else{
+        } else {
             dump($purchaseFlow->buildTransitionBlockerList($newPurchase, 'receive'));
             dump("cant");
         }
@@ -155,86 +154,103 @@ class PurchaseController extends AbstractController
             $paymentUrl = $GPWebpay->getPayLink($newPurchase, $totalPrice);
 
             return new JsonResponse([
-                'success'  => true,
-                'redirect' => $paymentUrl
+                'success' => true,
+                'redirect' => $paymentUrl,
             ]);
         } else {
             return new JsonResponse([
-                'success'  => true,
-                'redirect' => $this->generateUrl('thank_you', ['id' => $newPurchase->getId()])
+                'success' => true,
+                'redirect' => $this->generateUrl('thank_you', ['id' => $newPurchase->getId()]),
             ]);
         }
     }
 
     #[Route('/order/verify', name: 'shop_order_verify', methods: ['GET'])]
     public function verifyOrder(
+        Request                $request,
         GPWebpay               $gpWebpay,
         EntityManagerInterface $entityManager,
-        Registry               $workflow,
+        Registry               $workflowRegistry,
         PurchaseUrlGenerator   $urlGenerator,
         LoggerInterface        $logger,
     ): Response
     {
+        $purchase = null;
+        $paymentId = (string)$request->query->get('ORDERNUMBER', '');
+
         try {
-            $response = $gpWebpay->verifyLink();
-            $paymentId = $response->getORDERNUMBER();
-
-            $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
-            if (!$payment) throw $this->createNotFoundException('No payment found');
-
-            $purchase = $payment->getPurchase();
-            if (!$purchase) throw $this->createNotFoundException('Purchase not found');
-
-            $flow = $workflow->get($purchase);
-            $transition = $response->getPRCODE() === 0 && $response->getSRCODE() === 0
-                ? 'payment'
-                : 'payment_issue';
-
-            if ($flow->can($purchase, $transition)) {
-                $flow->apply($purchase, $transition);
-                $entityManager->flush();
+            if ($paymentId === '') {
+                throw $this->createNotFoundException('ORDERNUMBER not found');
             }
 
-            return $this->redirectToRoute(
-                $urlGenerator->buildOrderEndscreenUrl($purchase),
-            );
-        }
-        catch (Throwable $e) {
-            // TODO: Redirect to error page and transition to payment_issue state
+            $purchase = $entityManager->getRepository(Purchase::class)->findByPaymentId($paymentId);
+
+            // Verify via gateway
+            $gatewayResponse = $gpWebpay->verifyLink();
+            $isOk = ($gatewayResponse->getPRCODE() === 0) && ($gatewayResponse->getSRCODE() === 0);
+
+            // Update workflow state
+            $workflow = $workflowRegistry->get($purchase);
+            $transition = $isOk ? 'payment' : 'payment_issue';
+            $workflow->apply($purchase, $transition);
+            $entityManager->flush();
+
+            return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
+        } catch (Throwable $e) {
+//            dd($e);
+
             $logger->error('Error during order verification', [
+                'purchaseId' => $purchase?->getId(),
+                'paymentId' => $paymentId,
+                'exception' => $e::class,
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
             ]);
-            dd($e);
-            return $this->redirectToRoute('web_homepage');
+
+            if ($purchase) {
+                try {
+                    $workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
+                    $entityManager->flush();
+                } catch (Throwable $inner) {
+                    $logger->error('Failed to apply payment_issue transition after verification error', [
+                        'purchaseId' => $purchase->getId(),
+                        'paymentId' => $paymentId,
+                        'exception' => $inner::class,
+                        'message' => $inner->getMessage(),
+                    ]);
+                }
+                // TODO?: Create endscreen for failed payment
+                return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
+            } else {
+                // TODO?: Create endscreen for failed payment
+                return $this->redirectToRoute('web_homepage');
+            }
         }
     }
 
-    
-    #[Route('/order/cancel', name: 'order_cancel',  methods: ['GET'])]
+
+    #[Route('/order/cancel', name: 'order_cancel', methods: ['GET'])]
     public function cancelOrder(
-        Request                 $request,
-        RequestStack            $requestStack,
-        PurchaseRepository      $purchaseRepository,
-        Registry                $workflow,
-        EntityManagerInterface  $entityManager,
-    ) : Response
+        Request                $request,
+        RequestStack           $requestStack,
+        PurchaseRepository     $purchaseRepository,
+        Registry               $workflow,
+        EntityManagerInterface $entityManager,
+    ): Response
     {
         $id = $request->query->get('id');
         $redirectRoute = $request->query->get('redirect', 'web_homepage');
         $purchase = $purchaseRepository->find($id);
 
         $this->denyAccessUnlessGranted('view', $purchase);
-        
+
         $flow = $workflow->get($purchase);
-        if($purchase->getState() == 'draft')
-        {
+        if ($purchase->getState() == 'draft') {
             $flow->apply($purchase, 'create');
         }
         if ($flow->can($purchase, 'cancellation')) {
             $flow->apply($purchase, 'cancellation');
             $entityManager->flush();
-            
+
         }
 
         $session = $requestStack->getSession();
@@ -245,7 +261,7 @@ class PurchaseController extends AbstractController
             }
         }
 
-        return $this->redirectToRoute($redirectRoute);   
+        return $this->redirectToRoute($redirectRoute);
     }
 
 
@@ -282,7 +298,7 @@ class PurchaseController extends AbstractController
     public function createParcel(
         Purchase               $purchase,
         ParcelServiceProvider  $provider,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
     ): JsonResponse
     {
         $parcelService = $provider->getByPurchase($purchase);
@@ -297,7 +313,7 @@ class PurchaseController extends AbstractController
 
         return new JsonResponse([
             'message' => 'Parcel created successfully',
-            'parcelId' => $parcelId
+            'parcelId' => $parcelId,
         ]);
     }
 
@@ -305,7 +321,7 @@ class PurchaseController extends AbstractController
     #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
     public function getParcelStatus(
         Purchase              $purchase,
-        ParcelServiceProvider $provider
+        ParcelServiceProvider $provider,
     ): JsonResponse
     {
         $parcelService = $provider->getByPurchase($purchase);
@@ -328,7 +344,7 @@ class PurchaseController extends AbstractController
     #[Route('/api/client/form', name: 'api_client_form', methods: ['GET'])]
     public function getClientForm(SerializerInterface $serializer): Response|JsonResponse
     {
-        $form     = $this->createForm(ClientFormType::class, new Client());
+        $form = $this->createForm(ClientFormType::class, new Client());
         $formView = $form->createView();
 
         $formData = $serializer->serialize($formView, 'json');
@@ -341,20 +357,21 @@ class PurchaseController extends AbstractController
     public function shopApiSessionCurrency(Currency $currency)
     {
         return new JsonResponse([
-            'symbol'          => $currency->getSymbol(),
-            'name'            => $currency->getName(),
-            'rounding'        => $currency->getRounding(),
-            'conversion_rate' => $currency->getConversionRate()
+            'symbol' => $currency->getSymbol(),
+            'name' => $currency->getName(),
+            'rounding' => $currency->getRounding(),
+            'conversion_rate' => $currency->getConversionRate(),
         ], 200);
     }
 
     #[Route('/api/purchase/{id}/continue', name: 'purchase_continue')]
     public function setDraftAsCart(
-        Purchase $purchase,
+        Purchase         $purchase,
         SessionInterface $session,
-        Request $request,
-        ManagePurchase $managePurchase,
-    ): RedirectResponse {
+        Request          $request,
+        ManagePurchase   $managePurchase,
+    ): RedirectResponse
+    {
         // Check user login and ownership
         $user = $this->getUser();
         $returnTo = $request->query->get('returnTo', '/');
@@ -370,7 +387,7 @@ class PurchaseController extends AbstractController
 
 
         // Check if purchase is valid
-        if (!$managePurchase->isPurchaseValid($purchase)){
+        if (!$managePurchase->isPurchaseValid($purchase)) {
             $this->addFlash('error', 'Produkty v objednávce jsou již nedostupné.');
             return $this->redirect($returnTo);
         }
@@ -384,12 +401,13 @@ class PurchaseController extends AbstractController
 
     #[Route('/api/purchase/{id}/repeat', name: 'purchase_repeat')]
     public function putPurchaseProductsToCart(
-        Purchase $purchase,
-        SessionInterface $session,
-        Request $request,
-        ManagePurchase $managePurchase,
+        Purchase               $purchase,
+        SessionInterface       $session,
+        Request                $request,
+        ManagePurchase         $managePurchase,
         EntityManagerInterface $entityManager,
-    ): RedirectResponse {
+    ): RedirectResponse
+    {
         // Check user login and ownership
         $user = $this->getUser();
         $returnTo = $request->query->get('returnTo', '/');
@@ -399,7 +417,7 @@ class PurchaseController extends AbstractController
         }
 
         // Check if purchase is valid
-        if (!$managePurchase->isPurchaseValid($purchase)){
+        if (!$managePurchase->isPurchaseValid($purchase)) {
             $this->addFlash('error', 'Produkty v objednávce jsou již nedostupné.');
             return $this->redirect($returnTo);
         }
@@ -411,7 +429,7 @@ class PurchaseController extends AbstractController
 
         // Put product variants to cart
         $purchaseProductVariants = $purchase->getProductVariants();
-        foreach ($purchaseProductVariants as $purchaseProductVariant){
+        foreach ($purchaseProductVariants as $purchaseProductVariant) {
             $productVariant = $purchaseProductVariant->getProductVariant();
             $amount = $purchaseProductVariant->getAmount();
             $managePurchase->addProductVariantToPurchase($cartPurchase, $productVariant, $amount);
@@ -474,13 +492,12 @@ class PurchaseController extends AbstractController
             $wishlist = $wishlistService->getFromUrlToken($token);
             $manageMails->sendWishlistEmail($email, $wishlist);
             return new JsonResponse(['message' => 'Seznam přání byl úspěšně odeslán'], 200);
-        } catch (\UnexpectedValueException | \OutOfBoundsException $e) {
+        } catch (\UnexpectedValueException|\OutOfBoundsException $e) {
             return new JsonResponse(['error' => 'Seznam přání nebyl nalezen'], 400);
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             $logger->error('Error sending wishlist email', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return new JsonResponse(['error' => 'E-mail se nepodařilo odeslat. Prosím zkuste to znovu.'], 500);
         }

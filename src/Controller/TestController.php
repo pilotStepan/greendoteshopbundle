@@ -58,16 +58,41 @@ class TestController extends AbstractController
         return new JsonResponse(['status' => 'SMS sent'], 200);
     }
 
-    #[Route('/mails/purchases/{purchase}/transitions/{transition}/{raw}', name: 'mails_purchases_transitions')]
+    #[Route('/mails/purchases/{purchase}/transitions/{transition}/{mod}', name: 'mails_purchases_transitions')]
     public function mailsReceive(
-        Purchase            $purchase,
-        string              $transition,
-        OrderDataFactory    $dataFactory,
-        string              $raw = null,
+        Purchase         $purchase,
+        string           $transition,
+        OrderDataFactory $dataFactory,
+        string           $mod = null,
     ): Response
     {
         $data = $dataFactory->create($purchase);
-        if ($raw === '1') dd($data);
+
+        $mods = [];
+        if ($mod !== null && trim($mod) !== '') {
+            $mods = array_values(array_filter(array_map(
+                static fn(string $m): string => strtolower(trim($m)),
+                explode(',', $mod),
+            ), static fn(string $m): bool => $m !== ''));
+        }
+
+        foreach ($mods as $m) {
+            switch ($m) {
+                case '$':
+                    $data->orderPaid = true;
+                    break;
+
+                case 'vat':
+                    $data->vatExempted = true;
+                    break;
+
+                case 'dd':
+                    dd($data);
+
+                default:
+                    break;
+            }
+        }
 
         $html = $this->renderView("email/order/$transition.html.twig", ['data' => $data]);
 
