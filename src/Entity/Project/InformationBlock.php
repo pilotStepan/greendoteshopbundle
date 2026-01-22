@@ -3,6 +3,8 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -15,7 +17,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     normalizationContext: ['groups' => ['informationBlock:read']],
     denormalizationContext: ['groups' => ['InformationBlock:write']],
 )]
-class InformationBlock
+class InformationBlock implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -24,14 +26,17 @@ class InformationBlock
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Gedmo\Translatable]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['product_item:read', 'informationBlock:read'])]
+    #[Gedmo\Translatable]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['product_item:read', 'informationBlock:read'])]
+    #[Gedmo\Translatable]
     private ?string $text = null;
 
     #[ORM\Column]
@@ -58,6 +63,9 @@ class InformationBlock
 
     #[ORM\Column(options: ["default" => 0])]
     private ?bool $isReusable = null;
+
+    #[Gedmo\Locale]
+    private $locale;
 
     public function __construct()
     {
@@ -274,5 +282,10 @@ class InformationBlock
         $this->isReusable = $isReusable;
 
         return $this;
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 }
