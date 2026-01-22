@@ -320,7 +320,11 @@ class AppExtension extends AbstractExtension
             $extension = $path_parts['extension'];
 
             $new_filename = $filename . $sizeString . '.' . $extension;
-            $new_path = $dirname . '/' . $new_filename;
+            if ($dirname and $dirname !== '.'){
+                $new_path = $dirname . '/' . $new_filename;
+            }else{
+                $new_path = $new_filename;
+            }
 
             return trim($new_path);
         } else {
