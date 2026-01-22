@@ -7,10 +7,14 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Twig\Environment;
 use Greendot\EshopBundle\Entity\Project\Voucher;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 readonly class CertificateMaker
 {
-    public function __construct(private Environment $twig) {}
+    public function __construct(
+        private Environment $twig,
+        private ParameterBagInterface $parameterBag,
+    ) {}
 
     public function createCertificate(Voucher $voucher): string
     {
@@ -41,13 +45,19 @@ readonly class CertificateMaker
 
     private function generatePdf(string $html): string
     {
+        $publicDir = $this->parameterBag->get('kernel.project_dir') . '/public';
+
         $pdfOptions = new Options();
         $pdfOptions->set('isRemoteEnabled', true);
         $pdfOptions->set('isHtml5ParserEnabled', true);
-        $pdfOptions->setChroot(realpath('build'));
+        $pdfOptions->set('chroot', realpath($publicDir));
+        $pdfOptions->set('fontDir', $publicDir . '/build/fonts');
+        $pdfOptions->set('fontCache', $publicDir . '/build/fonts');
+
         $dompdf = new Dompdf($pdfOptions);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->setBasePath($publicDir);
         $dompdf->render();
 
         return $dompdf->output();
