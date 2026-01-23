@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Message\ProductVariant;
+namespace Greendot\EshopBundle\Message\Watchdog\VariantAvailable;
 
 class NotifyVariantAvailable
 {
