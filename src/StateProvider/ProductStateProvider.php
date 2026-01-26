@@ -20,7 +20,9 @@ readonly class ProductStateProvider implements ProviderInterface
     {
         $filters = json_decode($context['filters']['parameters']);
 
-        $qb = $this->productRepository->createQueryBuilder('p');
+        $qb = $this->productRepository->createQueryBuilder('p')
+                ->andWhere('p.isVisible = :visible')
+                ->setParameter('visible', true);  
         if ($filters->categoryId > 0) {
             $this->productRepository->findProductsInCategory($qb, $filters->categoryId);
         }
