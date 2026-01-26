@@ -7,6 +7,7 @@ use Greendot\EshopBundle\Entity\Project\Producer;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 
 /**
  * @method Producer|null find($id, $lockMode = null, $lockVersion = null)
@@ -14,7 +15,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Producer[]    findAll()
  * @method Producer[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ProducerRepository extends ServiceEntityRepository
+class ProducerRepository extends HintedRepositoryBase
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -52,8 +53,8 @@ class ProducerRepository extends ServiceEntityRepository
         if ($onlyActive) {
             $qb = $qb->andWhere('prod.isActive = true');
         }
-
-        return $qb->getQuery()->getResult();
+        $query = $qb->getQuery();
+        return $this->hintQuery($query)->getResult();
 
     }
 }

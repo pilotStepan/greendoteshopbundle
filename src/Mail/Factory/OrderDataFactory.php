@@ -74,7 +74,7 @@ class OrderDataFactory
             addresses: $addresses,
             items: $items,
             primaryCurrency: 'czk', // FIXME
-            paid: $this->isPaid($purchase),
+            orderPaid: $this->isPaid($purchase),
             totalPriceCzk: $totalPriceCzk,
             totalPriceEur: $totalPriceEur,
             clientSectionUrl: $clientSectionUrl,
@@ -247,7 +247,7 @@ class OrderDataFactory
 
     private function isPaid(Purchase $purchase): bool
     {
-        // Considering purchase is paid if it has invoice number set
+        /* FIXME: having invoice number is not indication of paid purchase */
         return $purchase->getInvoiceNumber() !== null && $purchase->getInvoiceNumber() !== '';
     }
 

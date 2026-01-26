@@ -2,8 +2,12 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use DateTime;
+use Exception;
+use Doctrine\ORM\NoResultException;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
+use Greendot\EshopBundle\Entity\Project\InformationBlock;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
@@ -12,6 +16,7 @@ use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
+use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
@@ -46,27 +51,28 @@ use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 class AppExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly ProductRepository       $productRepository,
-        private readonly PriceCalculator         $priceCalculator,
-        private readonly ProductInfoGetter       $productInfoGetter,
-        private readonly CurrencyRepository      $currencyRepository,
-        private readonly ParameterRepository     $parameterRepository,
-        private readonly PriceRepository         $priceRepository,
-        private readonly ValueAddedTaxCalculator $addedTaxCalculator,
-        private readonly CategoryInfoGetter      $categoryInfoGetter,
-        private readonly ManageWorkflows         $manageWorkflows,
-        private readonly MessageRepository       $messageRepository,
-        private readonly GoogleAnalytics         $googleAnalytics,
-        private readonly CategoryRepository      $categoryRepository,
-        private readonly RequestStack            $requestStack,
-        private readonly RouterInterface         $router,
-        private readonly InformationBlockService $informationBlockService,
-        private readonly ProducerRepository      $producerRepository,
-        private readonly UploadRepository        $uploadRepository,
-        private readonly CountryRepository       $countryRepository,
-        private readonly ParameterBagInterface   $parameterBag,
-        private readonly RouteTranslator         $routeTranslator,
-        private readonly CurrencyManager         $currencyManager,
+        private readonly ProductRepository          $productRepository,
+        private readonly PriceCalculator            $priceCalculator,
+        private readonly ProductInfoGetter          $productInfoGetter,
+        private readonly CurrencyRepository         $currencyRepository,
+        private readonly ParameterRepository        $parameterRepository,
+        private readonly PriceRepository            $priceRepository,
+        private readonly ValueAddedTaxCalculator    $addedTaxCalculator,
+        private readonly CategoryInfoGetter         $categoryInfoGetter,
+        private readonly ManageWorkflows            $manageWorkflows,
+        private readonly MessageRepository          $messageRepository,
+        private readonly GoogleAnalytics            $googleAnalytics,
+        private readonly CategoryRepository         $categoryRepository,
+        private readonly RequestStack               $requestStack,
+        private readonly RouterInterface            $router,
+        private readonly InformationBlockService    $informationBlockService,
+        private readonly InformationBlockRepository $blockRepository,
+        private readonly ProducerRepository         $producerRepository,
+        private readonly UploadRepository           $uploadRepository,
+        private readonly CountryRepository          $countryRepository,
+        private readonly ParameterBagInterface      $parameterBag,
+        private readonly RouteTranslator            $routeTranslator,
+        private readonly CurrencyManager            $currencyManager,
     ) {}
 
     public function getFunctions(): array
@@ -124,6 +130,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_categories', [$this, 'getCategoriesForEntity']),
 
             new TwigFunction('get_information_blocks', [$this, 'getInformationBlocksForEntity']),
+            new TwigFunction('get_information_block_by', [$this, 'getInformationBlockBy']),
 
             new TwigFunction('format_color_hex', [$this, 'formatColorHex']),
 
@@ -313,7 +320,11 @@ class AppExtension extends AbstractExtension
             $extension = $path_parts['extension'];
 
             $new_filename = $filename . $sizeString . '.' . $extension;
-            $new_path = $dirname . '/' . $new_filename;
+            if ($dirname and $dirname !== '.'){
+                $new_path = $dirname . '/' . $new_filename;
+            }else{
+                $new_path = $new_filename;
+            }
 
             return trim($new_path);
         } else {
@@ -324,7 +335,7 @@ class AppExtension extends AbstractExtension
     public function priceTableArray(ProductVariant $productVariant, Currency $currency, string $vatCalculationType, $singleItemPrice = null, $do_rounding = true): array
     {
         $vatCalculationType = VatCalculationType::from($vatCalculationType);
-        $prices = $this->priceRepository->findPricesByDateAndProductVariantNotGrouped($productVariant, new \DateTime("now"), null);
+        $prices = $this->priceRepository->findPricesByDateAndProductVariantNotGrouped($productVariant, new DateTime("now"), null);
         //$prices = $this->priceRepository->findBy(['productVariant' => $productVariant]);
         $tableArray = [];
         foreach ($prices as $price) {
@@ -517,7 +528,7 @@ class AppExtension extends AbstractExtension
         try {
             $date = $this->parameterRepository->getSingleParameterByParameterGroupForCategory('Datum vydání', $category);
             return $date?->getData();
-        } catch (\Doctrine\ORM\NoResultException $e) {
+        } catch (NoResultException $e) {
             return null;
         }
     }
@@ -543,6 +554,11 @@ class AppExtension extends AbstractExtension
     public function getInformationBlocksForEntity($entity, $onlyActive = true, $informationBlockTypeID = null): array
     {
         return $this->informationBlockService->getInformationBlocksForEntity($entity, $onlyActive, $informationBlockTypeID);
+    }
+
+    public function getInformationBlockBy(array $criteria): ?InformationBlock
+    {
+        return $this->blockRepository->findOneBy($criteria);
     }
 
 

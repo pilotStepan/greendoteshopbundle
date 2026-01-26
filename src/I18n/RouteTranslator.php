@@ -126,7 +126,7 @@ readonly class RouteTranslator
                 return $repo->findPropertyInLocale($entity, $translatablePropertyName, $targetLocale);
             }
         }
-        return null;
+        return $currentPropertyValue;
     }
 
     /**
