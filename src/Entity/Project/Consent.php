@@ -9,14 +9,18 @@ use Greendot\EshopBundle\Repository\Project\ConsentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Entity\Interface\SoftDeletedInterface;
+use Greendot\EshopBundle\Entity\Trait\SoftDeletedTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
     normalizationContext: ['groups' => ['consent:read']],
 )]
 #[ORM\Entity(repositoryClass: ConsentRepository::class)]
-class Consent implements Translatable
+class Consent implements Translatable, SoftDeletedInterface
 {
+    use SoftDeletedTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -33,7 +37,7 @@ class Consent implements Translatable
     #[Gedmo\Translatable]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column] 
     #[Groups(['consent:read'])]
     private ?bool $is_required = null;
 
@@ -116,8 +120,4 @@ class Consent implements Translatable
         return $this;
     }
 
-    public function setTranslatableLocale($locale): void
-    {
-        $this->locale = $locale;
-    }
 }

@@ -7,6 +7,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Entity\Interface\SoftDeletedInterface;
+use Greendot\EshopBundle\Entity\Trait\SoftDeletedTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CurrencyRepository::class)]
@@ -15,8 +17,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['currency:write'],
     paginationEnabled: false
 )]
-class Currency
+class Currency implements SoftDeletedInterface
 {
+    use SoftDeletedTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -39,7 +43,7 @@ class Currency
 
     #[ORM\Column]
     private ?string $defaultLocale = null;
-
+    
     #[ORM\Column(options: ["default" => false])]
     private ?bool $is_symbol_left = true;
 

@@ -345,7 +345,7 @@ class ProductRepository extends HintedRepositoryBase
         $this->safeJoin($qb, $alias, 'categoryProducts', 'cp'); 
         $this->safeJoin($qb, 'cp', 'category', 'ca'); 
         $this->safeJoin($qb, 'ca', 'categorySubCategories', 'cc'); 
-        $qb->where('cp.category = :categoryId OR cc.category_super = :categoryId');
+        $qb->andWhere('cp.category = :categoryId OR cc.category_super = :categoryId');
         $qb->setParameter('categoryId', $categoryId);
 
         return $qb;
