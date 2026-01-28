@@ -10,7 +10,6 @@ CREATE TABLE `watchdog`
     `completed_at`       DATETIME     NULL DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
     `meta`               JSON         NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE,
-    UNIQUE INDEX `watchdog_dedupe_uniq` (`type`, `product_variant_id`, `email`) USING BTREE,
     INDEX `IDX_20A87D78A80EF684` (`product_variant_id`) USING BTREE,
     INDEX `watchdog_variant_lookup` (`type`, `state`, `product_variant_id`) USING BTREE,
     INDEX `watchdog_email_idx` (`email`) USING BTREE,
