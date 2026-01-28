@@ -25,7 +25,7 @@ class Label implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['label:read', 'label:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
+    #[Groups(['label:read', 'label:write', 'product_item:read', 'product_list:read', 'product_info:write','category:read', 'category:write'])]
     private $id;
 
     #[ORM\Column(type: 'string', length: 150)]
@@ -47,7 +47,7 @@ class Label implements Translatable
     #[Groups(['label:read', 'label:write', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]
     private ?LabelType $labelType = null;
 
-    
+
     #[ORM\Column(length: 255, nullable: true)]
     #[Gedmo\Translatable]
     #[Groups(['label:read','category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_info:write'])]

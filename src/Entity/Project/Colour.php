@@ -30,12 +30,12 @@ class Colour
     #[Groups(['product_item:read', 'product_list:read', 'product_variant:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
     private $sequence;
 
-    #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'colour')]
-    private $productVariants;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $externalId = null;
+
 
     public function __construct()
     {
-        $this->productVariants = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -79,33 +79,16 @@ class Colour
         return $this;
     }
 
-    /**
-     * @return Collection<int, ProductVariant>
-     */
-    public function getProductVariants(): Collection
+    public function getExternalId(): ?string
     {
-        return $this->productVariants;
+        return $this->externalId;
     }
 
-    public function addProductVariant(ProductVariant $productVariant): self
+    public function setExternalId(?string $externalId): static
     {
-        if (!$this->productVariants->contains($productVariant)) {
-            $this->productVariants[] = $productVariant;
-            $productVariant->setColour($this);
-        }
+        $this->externalId = $externalId;
 
         return $this;
     }
 
-    public function removeProductVariant(ProductVariant $productVariant): self
-    {
-        if ($this->productVariants->removeElement($productVariant)) {
-            // set the owning side to null (unless already changed)
-            if ($productVariant->getColour() === $this) {
-                $productVariant->setColour(null);
-            }
-        }
-
-        return $this;
-    }
 }

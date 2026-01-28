@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
@@ -42,6 +43,7 @@ use Symfony\Component\Validator\Constraints\Existence;
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact','categorySubCategories.category_super' => 'exact', 'isActive'  => 'exact', 'name' => 'partial', 'categoryProducts.product' => 'exact', 'categoryType.id' => 'exact'])]
 //#[ApiFilter(TranslationAwareSearchFilter::class)]
 #[ApiFilter(ExistsFilter::class, properties: ['comments'])]
+#[ApiFilter(OrderFilter::class, strategy: OrderFilter::NULLS_ALWAYS_LAST, properties: ['published_at'])]
 class Category implements Translatable
 {
     #[ORM\Id]
