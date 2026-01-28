@@ -4,8 +4,8 @@ namespace Greendot\EshopBundle\Repository\Project;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Watchdog;
-use Greendot\EshopBundle\Enum\Watchdog\WatchdogType;
 use Greendot\EshopBundle\Enum\Watchdog\WatchdogState;
+use Greendot\EshopBundle\Enum\Watchdog\WatchdogType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
@@ -33,5 +33,29 @@ class WatchdogRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult()
         ;
+    }
+
+    /* Used by UniqueEntity constraint */
+    public function isActiveUnique(array $fields): ?Watchdog
+    {
+        $qb = $this->createQueryBuilder('w')
+            ->andWhere('w.type = :type')
+            ->andWhere('w.productVariant = :variant')
+            ->andWhere('w.email = :email')
+            ->andWhere('w.state = :state')
+            ->setParameter('type', $fields['type'])
+            ->setParameter('variant', $fields['productVariant'])
+            ->setParameter('email', $fields['email'])
+            ->setParameter('state', WatchdogState::Active)
+            ->setMaxResults(1)
+        ;
+
+        if (($fields['id'] ?? null) !== null) {
+            $qb
+                ->andWhere('w.id != :id')
+                ->setParameter('id', $fields['id']);
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 }

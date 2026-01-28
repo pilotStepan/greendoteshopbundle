@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Simple;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,8 +16,11 @@ use Greendot\EshopBundle\Message\Watchdog\VariantAvailable\NotifyVariantAvailabl
 class SimpleProductVariantController extends AbstractController
 {
     #[Route('/notify-watchdog', name: 'notify_watchdog', methods: ['POST'])]
-    public function notifyWatchdog(Request $request, MessageBusInterface $messageBus, ProductVariantRepository $variantRepository): Response
+    public function notifyWatchdog(Request $request, MessageBusInterface $messageBus, ProductVariantRepository $variantRepository, LoggerInterface $logger): Response
     {
+        $logger->info('Received notify-watchdog request.', [
+            'content' => $request->getContent(),
+        ]);
         $data = json_decode($request->getContent(), true);
 
         $watchdogType = WatchdogType::tryFrom($data['watchdog_type']);
@@ -32,6 +36,9 @@ class SimpleProductVariantController extends AbstractController
 
         switch ($watchdogType) {
             case WatchdogType::VariantAvailable:
+                $logger->info('Received notify-watchdog request for VariantAvailable.', [
+                    'product_variant_id' => $data['product_variant_id'],
+                ]);
                 $messageBus->dispatch(new NotifyVariantAvailable($data['product_variant_id']));
                 break;
             default:

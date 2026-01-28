@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\MessageHandler\Watchdog\VariantAvailable;
 
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -12,6 +13,7 @@ use Greendot\EshopBundle\Message\Watchdog\VariantAvailable\VariantAvailableEmail
 use Greendot\EshopBundle\Message\Watchdog\VariantAvailable\NotifyVariantAvailable;
 
 #[AsMessageHandler]
+#[WithMonologChannel('watchdog.available')]
 final readonly class NotifyVariantAvailableHandler
 {
     public function __construct(
@@ -23,6 +25,10 @@ final readonly class NotifyVariantAvailableHandler
 
     public function __invoke(NotifyVariantAvailable $message): void
     {
+        $this->logger->debug('Processing NotifyVariantAvailable message.', [
+            'productVariantId' => $message->productVariantId,
+        ]);
+
         /** @var ProductVariant|null $variant */
         $variant = $this->em->find(ProductVariant::class, $message->productVariantId);
         if ($variant === null) {
@@ -32,44 +38,43 @@ final readonly class NotifyVariantAvailableHandler
             return;
         }
 
-        // Defensive: endpoint should only be called when availability switches to available.
-        if ($variant->getAvailability()?->getIsPurchasable() !== true || $variant->getAvailability()?->getId() !== 1) {
+        if (!self::shouldNotifyAvailable($variant)) {
+            $this->logger->info('Product variant is not available => should not notify.', [
+                'id' => $variant->getId(),
+            ]);
             return;
         }
 
-        $eventKey = sprintf('variant:%d:availability:%d', $variant->getId(), $variant->getAvailability()?->getId() ?? 0);
-
         $watchdogs = $this->watchdogRepository->findActiveVariantAvailableByVariantId($variant->getId());
+        $changed = false;
+
         foreach ($watchdogs as $watchdog) {
-            if (!$watchdog->shouldQueueEvent($eventKey)) {
+            if ($watchdog->getQueuedAt() !== null || $watchdog->isCompleted()) {
                 continue;
             }
 
-            try {
-                $this->messageBus->dispatch(new VariantAvailableEmail(
-                    watchdogId: (int)$watchdog->getId(),
-                    productVariantId: (int)$variant->getId(),
-                    email: $watchdog->getEmail(),
-                    eventKey: $eventKey,
-                ));
+            $this->messageBus->dispatch(new VariantAvailableEmail(
+                watchdogId: (int)$watchdog->getId(),
+                productVariantId: (int)$variant->getId(),
+                email: $watchdog->getEmail(),
+            ));
 
-                $watchdog->markQueued($eventKey);
+            $watchdog->markQueued();
+            $changed = true;
 
-                $this->logger->info('Variant available watchdog notification dispatched.', [
-                    'watchdogId' => $watchdog->getId(),
-                    'variantId' => $variant->getId(),
-                ]);
-            } catch (\Throwable $e) {
-                $watchdog->markFailed($eventKey, $e->getMessage());
+            $this->logger->info('Variant available watchdog notification dispatched.', [
+                'watchdogId' => $watchdog->getId(),
+                'variantId' => $variant->getId(),
+            ]);
+        }
 
-                $this->logger->error('Variant available watchdog notification dispatch failed.', [
-                    'watchdogId' => $watchdog->getId(),
-                    'variantId' => $variant->getId(),
-                    'exception' => $e,
-                ]);
-            }
-
+        if ($changed) {
             $this->em->flush();
         }
+    }
+
+    public static function shouldNotifyAvailable(ProductVariant $variant): bool
+    {
+        return $variant->getAvailability()?->getIsPurchasable() === true && $variant->getAvailability()?->getId() === 1;
     }
 }

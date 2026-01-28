@@ -7,24 +7,37 @@ use Doctrine\DBAL\Types\Types;
 use ApiPlatform\Metadata\Post;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Dto\WatchdogSubscribeDto;
+use ApiPlatform\Metadata\ApiProperty;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Greendot\EshopBundle\Enum\Watchdog\WatchdogType;
 use Greendot\EshopBundle\Enum\Watchdog\WatchdogState;
+use Symfony\Component\Validator\Constraints as Assert;
 use Greendot\EshopBundle\Repository\Project\WatchdogRepository;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Karser\Recaptcha3Bundle\Validator\Constraints as RecaptchaAssert;
 
 
 #[ORM\Entity(repositoryClass: WatchdogRepository::class)]
 #[ORM\Table(name: 'watchdog')]
 #[ORM\Index(name: 'watchdog_variant_lookup', columns: ['type', 'state', 'product_variant_id'])]
 #[ORM\Index(name: 'watchdog_email_idx', columns: ['email'])]
-#[ORM\UniqueConstraint(name: 'watchdog_dedupe_uniq', columns: ['type', 'product_variant_id', 'email'])]
+#[UniqueEntity(
+    fields: ['type', 'productVariant', 'email'],
+    message: 'Na tento produkt už upozornění pro tento e-mail existuje.',
+    repositoryMethod: 'isActiveUnique',
+    errorPath: 'email',
+    groups: ['watchdog:subscribe'],
+)]
 #[ApiResource(
     operations: [
         new Post(
             uriTemplate: '/watchdogs/subscribe',
             status: 204,
-            input: WatchdogSubscribeDto::class,
-        )
+            denormalizationContext: ['groups' => ['watchdog:subscribe']],
+            validationContext: ['groups' => ['watchdog:subscribe']],
+            output: false,
+            read: false,
+        ),
     ]
 )]
 class Watchdog
@@ -34,45 +47,34 @@ class Watchdog
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(enumType: WatchdogType::class)]
+    #[ORM\Column(nullable: false, enumType: WatchdogType::class)]
+    #[Groups(['watchdog:subscribe'])]
     private WatchdogType $type = WatchdogType::VariantAvailable;
 
-    #[ORM\Column(enumType: WatchdogState::class)]
+    #[ORM\Column(nullable: false, enumType: WatchdogState::class)]
     private WatchdogState $state = WatchdogState::Active;
 
     #[ORM\ManyToOne(targetEntity: ProductVariant::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Groups(['watchdog:subscribe'])]
+    #[Assert\NotNull(groups: ['watchdog:subscribe'])]
     private ?ProductVariant $productVariant;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
-    private string $email;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: false)]
+    #[Groups(['watchdog:subscribe'])]
+    #[Assert\NotBlank(groups: ['watchdog:subscribe'])]
+    #[Assert\Email(groups: ['watchdog:subscribe'])]
+    private ?string $email;
 
-    /**
-     * Idempotency key for the last queued event.
-     *
-     * This prevents dispatching the same async notification repeatedly when IS calls
-     * /notify-variant-available multiple times.
-     */
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    private ?string $lastQueuedEventKey = null;
-
-    /**
-     * Idempotency key for the last successfully SENT event.
-     */
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    private ?string $lastSentEventKey = null;
+    /* API-only attribute */
+    #[ApiProperty(writable: true)]
+    #[Groups(['watchdog:subscribe'])]
+    #[Assert\NotBlank(groups: ['watchdog:subscribe'])]
+    #[RecaptchaAssert\Recaptcha3(groups: ['watchdog:subscribe'])]
+    private string $captcha = '';
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?DateTimeImmutable $lastQueuedAt = null;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    private ?DateTimeImmutable $lastNotifiedAt = null;
-
-    #[ORM\Column(type: Types::INTEGER)]
-    private int $attemptCount = 0;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $lastError = null;
+    private ?DateTimeImmutable $queuedAt = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $createdAt;
@@ -86,10 +88,8 @@ class Watchdog
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $meta = null;
 
-    public function __construct(ProductVariant $productVariant, string $email)
+    public function __construct()
     {
-        $this->productVariant = $productVariant;
-        $this->email = mb_strtolower(trim($email));
         $this->createdAt = new DateTimeImmutable();
     }
 
@@ -103,9 +103,51 @@ class Watchdog
         return $this->type;
     }
 
+    public function setType(WatchdogType $type): self
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
     public function getState(): WatchdogState
     {
         return $this->state;
+    }
+
+    public function setState(WatchdogState $state): self
+    {
+        $this->state = $state;
+
+        return $this;
+    }
+
+    public function setProductVariant(?ProductVariant $productVariant): Watchdog
+    {
+        $this->productVariant = $productVariant;
+        return $this;
+    }
+
+    public function setEmail(string $email): Watchdog
+    {
+        $this->email = mb_strtolower(trim($email));
+        return $this;
+    }
+
+    public function getCaptcha(): string
+    {
+        return $this->captcha;
+    }
+
+    public function setCaptcha(string $captcha): self
+    {
+        $this->captcha = $captcha;
+        return $this;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->state === WatchdogState::Completed || $this->completedAt !== null;
     }
 
     public function getProductVariant(): ?ProductVariant
@@ -118,60 +160,36 @@ class Watchdog
         return $this->email;
     }
 
-    public function getLastQueuedEventKey(): ?string
+    public function getQueuedAt(): ?DateTimeImmutable
     {
-        return $this->lastQueuedEventKey;
+        return $this->queuedAt;
     }
 
-    public function getLastSentEventKey(): ?string
+    public function markQueued(?DateTimeImmutable $when = null): self
     {
-        return $this->lastSentEventKey;
-    }
-
-    public function shouldQueueEvent(string $eventKey): bool
-    {
-        return $this->lastQueuedEventKey !== $eventKey;
-    }
-
-    public function markQueued(string $eventKey, ?DateTimeImmutable $when = null): self
-    {
-        $this->lastQueuedEventKey = $eventKey;
-        $this->lastQueuedAt = $when ?? new DateTimeImmutable();
+        $this->queuedAt = $this->queuedAt ?? ($when ?? new DateTimeImmutable());
 
         return $this;
     }
 
-    public function markSent(string $eventKey, ?DateTimeImmutable $when = null): self
+    public function getCreatedAt(): DateTimeImmutable
     {
-        $this->attemptCount++;
-        $this->lastSentEventKey = $eventKey;
-        $this->lastNotifiedAt = $when ?? new DateTimeImmutable();
+        return $this->createdAt;
+    }
 
+    public function getCompletedAt(): ?DateTimeImmutable
+    {
+        return $this->completedAt;
+    }
+
+    public function markCompleted(?DateTimeImmutable $when = null): self
+    {
         $this->state = WatchdogState::Completed;
-        $this->completedAt = $this->lastNotifiedAt;
-        $this->lastError = null;
+        $this->completedAt = $when ?? new DateTimeImmutable();
 
         return $this;
     }
 
-    public function markFailed(string $eventKey, string $error): self
-    {
-        $this->attemptCount++;
-        $this->lastError = $error;
-        $this->lastQueuedEventKey = $eventKey;
-
-        return $this;
-    }
-
-    public function getAttemptCount(): int
-    {
-        return $this->attemptCount;
-    }
-
-    public function getLastError(): ?string
-    {
-        return $this->lastError;
-    }
 
     /** @return array<string, mixed>|null */
     public function getMeta(): ?array

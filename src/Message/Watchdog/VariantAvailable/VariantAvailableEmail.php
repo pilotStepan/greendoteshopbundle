@@ -8,6 +8,5 @@ class VariantAvailableEmail
         public int    $watchdogId,
         public int    $productVariantId,
         public string $email,
-        public string $eventKey,
     ) {}
 }
