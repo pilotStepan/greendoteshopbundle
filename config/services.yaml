@@ -10,3 +10,9 @@ services:
   Greendot\EshopBundle\Controller\:
     resource: '../src/Controller'
     tags: ['controller.service_arguments']
+
+  Greendot\EshopBundle\OpenApi\ShortCodeOpenApiFactory:
+    decorates: 'api_platform.openapi.factory'
+    arguments:
+      $decorated: '@Greendot\EshopBundle\OpenApi\ShortCodeOpenApiFactory.inner'
+    autoconfigure: false
