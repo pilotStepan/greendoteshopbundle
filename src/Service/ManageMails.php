@@ -2,17 +2,20 @@
 
 namespace Greendot\EshopBundle\Service;
 
-use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
 use Symfony\Component\Mime\Address;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
+use Greendot\EshopBundle\Message\Notification\IssuedVoucherEmail;
 
 readonly class ManageMails
 {
@@ -28,7 +31,7 @@ readonly class ManageMails
         private string               $fromEmail,
         private string               $fromName,
         private PurchaseUrlGenerator $purchaseUrlGenerator,
-        private LoggerInterface      $logger,
+        private MessageBusInterface  $messageBus,
     )
     {
         $this->fromAddress = new Address($this->fromEmail, $this->fromName);
@@ -36,8 +39,7 @@ readonly class ManageMails
 
     public function getBaseTemplate(): TemplatedEmail
     {
-        return (new TemplatedEmail())
-            ->from($this->fromAddress);
+        return (new TemplatedEmail())->from($this->fromAddress);
     }
 
     public function sendTemplate(TemplatedEmail $templatedEmail): void
@@ -77,7 +79,7 @@ readonly class ManageMails
             'prepare_for_pickup' => $this->buildPrepareForPickupEmail($purchase, $orderData),
             'send'               => $this->buildSendEmail($purchase, $orderData),
             'pick_up'            => $this->buildPickUpEmail($purchase, $orderData),
-            default              => throw new \InvalidArgumentException('Unknown transition: ' . $transition),
+            default              => throw new InvalidArgumentException('Unknown transition: ' . $transition),
         };
 
         $this->mailer->send($email);
@@ -168,21 +170,31 @@ readonly class ManageMails
             ->context(['data' => $orderData])
         ;
 
-        // Attach vouchers if any
+        // Dispatch voucher emails
         foreach ($purchase->getVouchersIssued() as $voucher) {
-            try {
-                $certificatePath = $this->certificateMaker->createCertificate($voucher);
-                $email->attachFromPath(
-                    $certificatePath,
-                    'voucher_' . $voucher->getId() . '.pdf',
-                    'application/pdf',
-                );
-            } catch (\Throwable $e) {
-                $this->logger->error('Cannot attach voucher to mail, skipping...', ['e' => $e->getMessage()]);
-            }
+            $this->messageBus->dispatch(new IssuedVoucherEmail($voucher->getId()));
         }
 
         return $email;
+    }
+
+    public function sendIssuedVoucherEmail(Voucher $voucher): void
+    {
+        $recipientEmail = $voucher->getPurchaseIssued()?->getClient()?->getMail();
+        $email = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($recipientEmail)
+            ->subject($this->translator->trans('email.subject.purchase_voucher', [], 'emails'))
+            ->htmlTemplate('email/voucher/voucher.html.twig')
+        ;
+
+        $pdfContent = $this->certificateMaker->createCertificate($voucher);
+        $email->attach(
+            $pdfContent,
+            'voucher_' . $voucher->getId() . '.pdf',
+            'application/pdf',
+        );
+        $this->mailer->send($email);
     }
 
     private function buildPaymentIssueEmail(Purchase $purchase, $orderData): TemplatedEmail
