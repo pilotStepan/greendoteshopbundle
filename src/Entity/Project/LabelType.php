@@ -19,15 +19,15 @@ class LabelType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_item:read', 'product_list:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write'])]
+    #[Groups(['product_item:read', 'product_list:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write','category:read', 'category:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['labelType:read', 'labelType:write', 'label:read', 'label:write'])]
+    #[Groups(['labelType:read', 'labelType:write', 'label:read', 'label:write', 'category:read', 'category:write'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_item:read', 'product_list:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write'])]
+    #[Groups(['product_item:read', 'product_list:read', 'labelType:read', 'labelType:write', 'label:read', 'label:write', 'category:read', 'category:write',])]
     private ?string $color = null;
 
     /**

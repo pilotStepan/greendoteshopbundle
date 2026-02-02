@@ -35,46 +35,53 @@ abstract class ShortCodeBase
 
     /**
      * $object ex. Greendot\EshopBundle\Entity\Project\Product
+     * $field ex. html, description
      *
      * if given shortcode supports this object returns true
      *
-     * @param string $object
+     * @param string $objectName
+     * @param ?string $field
      * @return bool
      */
-    final public function supports(string $objectName) :bool
+    final public function supports(string $objectName, ?string $field = null) :bool
     {
-        return in_array($objectName, array_keys($this->supportedFields()));
+        //for all fields
+        if (is_null($field)) return in_array($objectName, array_keys($this->supportedFields()));
+
+        //for specific field
+        if (in_array($objectName, array_keys($this->supportedFields()))){
+            return in_array($field, $this->supportedFields()[$objectName]);
+        }
+        return false;
     }
 
-    /**
-     * @return void
-     * finds regex in content and gets json data
-     */
-    final function getShortCodeData(){
+    final function replaceField(object $object, string $field): object
+    {
+        $getter = 'get' . ucfirst($field);
+        $setter = 'set' . ucfirst($field);
+        $content = $object->$getter();
 
+        preg_match_all($this->regex(), $content, $matches);
+        if (!isset($matches)) return $object;
+
+        foreach ($matches[0] as $key => $shortCode) {
+            $data = null;
+            if (isset($matches[1][$key])){
+                $data = $matches[1][$key];
+                $data = json_decode($data);
+                if (!is_null($data)) $data = (array) $data;
+            }
+            $replacedContent = $this->replaceableContent($object, $data);
+            $content = str_replace($shortCode, $replacedContent, $content);
+        }
+        $object->$setter($content);
+        return $object;
     }
 
-    final function replace(object $object): object
+    final function replaceAll(object $object): object
     {
         foreach ($this->getFields(get_class($object)) as $field) {
-            $getter = 'get' . ucfirst($field);
-            $setter = 'set' . ucfirst($field);
-            $content = $object->$getter();
-
-            preg_match_all($this->regex(), $content, $matches);
-            if (!isset($matches)) continue;
-
-            foreach ($matches[0] as $key => $shortCode) {
-                $data = null;
-                if (isset($matches[1][$key])){
-                    $data = $matches[1][$key];
-                    $data = json_decode($data);
-                    if (!is_null($data)) $data = (array) $data;
-                }
-                $replacedContent = $this->replaceableContent($object, $data);
-                $content = str_replace($shortCode, $replacedContent, $content);
-            }
-            $object->$setter($content);
+            $this->replaceField($object, $field);
         }
         return $object;
     }

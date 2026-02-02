@@ -26,4 +26,14 @@ readonly class ShortCodeProvider
             if ($shortCodeService->supports($class)) yield $shortCodeService;
         }
     }
+
+    /**
+     * @return ShortCodeInterface[]
+     */
+    public function getSupportedByField(string $class, string $field): iterable
+    {
+        foreach ($this->shortCodeServices as $shortCodeService) {
+            if ($shortCodeService->supports($class, $field)) yield $shortCodeService;
+        }
+    }
 }

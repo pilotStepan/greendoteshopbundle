@@ -10,6 +10,8 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
 use Greendot\EshopBundle\ApiResource\ParameterSupplierFilter;
 use Greendot\EshopBundle\ApiResource\ParameterDiscountFilter;
@@ -41,7 +43,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 // #[ApiFilter(ParameterCategoryFilter::class)]
 // #[ApiFilter(ParameterSupplierFilter::class)]
 // #[ApiFilter(ParameterDiscountFilter::class)]
-class Parameter
+class Parameter implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -51,6 +53,7 @@ class Parameter
 
     #[ORM\Column(type: 'text')]
     #[Groups(['parameter_filtered:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
+    #[Gedmo\Translatable]
     private $data;
 
     #[ORM\ManyToOne(targetEntity: ParameterGroup::class, inversedBy: 'parameter')]
@@ -74,6 +77,10 @@ class Parameter
     #[ApiProperty]
     #[Groups(['parameter_filtered:read', 'product_item:read', 'product_list:read', 'parameter:read', 'purchase:read', 'purchase:wishlist'])]
     private ?string $colorName = null;
+
+    #[Gedmo\Locale]
+    private $locale;
+
 
     public function getId(): ?int
     {
@@ -164,4 +171,8 @@ class Parameter
         return $this;
     }
 
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
+    }
 }

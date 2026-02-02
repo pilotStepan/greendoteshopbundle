@@ -163,6 +163,11 @@ class CategoryRepository extends HintedRepositoryBase
     public function findSubMenuCategories(Category $category, SubMenuType $menuType, array $allowedCategoryTypes = [], array $excludedCategoryTypes = [])
     {
         $qb = $this->createQueryBuilder('c')
+
+            //initializes uploads to prevent individual queries
+            ->leftJoin('c.upload', 'upload')
+            ->addSelect('upload')
+
             ->leftJoin('c.subMenuType', 'mt')
             ->leftJoin('c.categorySubCategories', 'a')
             ->andWhere('c.isActive = :is_active')
