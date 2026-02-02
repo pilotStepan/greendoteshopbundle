@@ -143,7 +143,7 @@ class PriceCalculator
         VatCalculationType                    $vatCalculationType,
         DiscountCalculationType               $discountCalculationType,
         bool|null                             $singleItemPrice = null,
-        bool                                  $do_rounding,
+        bool                                  $do_rounding = false,
     ): ?float
     {
         $amount = null;
