@@ -29,7 +29,7 @@ readonly class PurchaseWishlistStateProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): Purchase
     {
         $client = $this->security->getUser();
-        if (!$client instanceof Client && in_array("ROLE_USER", $client->getRoles())) {
+        if (!$client instanceof Client || in_array("ROLE_USER", $client->getRoles())) {
             throw new HttpException(Response::HTTP_NO_CONTENT);
         }
 
