@@ -2,55 +2,49 @@
 
 namespace Greendot\EshopBundle\Service;
 
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
-use Greendot\EshopBundle\Entity\Project\Purchase;
+use LogicException;
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Enum\DiscountType;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 
-class ManageClientDiscount
+readonly class ManageClientDiscount
 {
-    // Returns true if the discount is not used and within the valid date range
-    public function isValid(ClientDiscount $clientDiscount) : bool
+    public function __construct(private EntityManagerInterface $em) {}
+
+    /**
+     * @throws LogicException
+     */
+    public function guardUse(ClientDiscount $clientDiscount, Purchase $purchase): void
     {
-        if ($clientDiscount->isIsUsed()) {
-            return false;
+        if ($clientDiscount->isValid() === false) {
+            throw new LogicException('Slevový kupón není platný');
         }
 
-        $dateStart = $clientDiscount->getDateStart();
-        $dateEnd = $clientDiscount->getDateEnd();
-        $now = new \DateTime();
-
-        // Return true if current time is within the discount period
-        if ($dateStart !== null && $dateEnd !== null) {
-            return $dateStart <= $now && $now <= $dateEnd;
+        if ($purchase->getClientDiscount() !== null && $purchase->getClientDiscount() !== $clientDiscount) {
+            throw new LogicException('Objednávka již má uplatněný slevový kupón');
         }
 
-        return true;
-    }
-
-    // Returns true if the discount is valid and applicable to the purchase's client
-    public function isAvailable(Purchase $purchase, ?ClientDiscount $clientDiscount) : bool
-    {
-        if (!$clientDiscount) return false;
-        if (!$this->isValid($clientDiscount)) return false;
-
-        // Check if discount is client-specific
         $isClientSpecific = in_array($clientDiscount->getType(), [DiscountType::SingleClient, DiscountType::SingleUseClient], true);
-
-        // For client-specific discounts, ensure the client matches
-        return !$isClientSpecific || $clientDiscount->getClient() === $purchase->getClient();
+        $belongsToDifferentClient = $isClientSpecific && $clientDiscount->getClient() !== $purchase->getClient();
+        if ($belongsToDifferentClient) {
+            throw new LogicException('Slevový kupón je určen pro jiného klienta.');
+        }
     }
 
-    // Applies the discount (marks as used) if available; returns true if successful
-    public  function use(Purchase $purchase, ?ClientDiscount $clientDiscount) : bool
+    /**
+     * Apply a client discount to a purchase
+     * @throws LogicException if the discount cannot be used for the purchase
+     */
+    public function use(ClientDiscount $clientDiscount, Purchase $purchase): void
     {
-        if (!$clientDiscount) return false;
-        if (!$this->isAvailable($purchase, $clientDiscount)) return false;
+        $this->guardUse($clientDiscount, $purchase);
 
-        // Mark discount as used for single-use discount types
-        if (in_array($clientDiscount->getType(), [DiscountType::SingleUse, DiscountType::SingleUseClient], true)) {
-            $clientDiscount->setIsUsed(true);
-        }
-
-        return true;
+        $this->em->wrapInTransaction(function () use ($clientDiscount, $purchase): void {
+            $purchase->setClientDiscount($clientDiscount);
+            if (DiscountType::isSingleUse($clientDiscount->getType())) {
+                $clientDiscount->setIsUsed(true);
+            }
+        });
     }
 }

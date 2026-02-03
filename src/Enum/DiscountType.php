@@ -8,4 +8,12 @@ enum DiscountType: string
     case MultiUse = "MULTI_USE"; // pro více použítí
     case SingleUseClient = "SINGLE_USE_CLIENT"; // pro jenoho clienta, jedno použití
     case SingleClient = "SINGLE_CLIENT"; // pro jednoho clienta, více použití
+
+    public static function isSingleUse(self $type): bool
+    {
+        return match ($type) {
+            self::SingleUse, self::SingleUseClient => true,
+            default                                => false,
+        };
+    }
 }
