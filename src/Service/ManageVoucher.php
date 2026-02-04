@@ -11,6 +11,7 @@ use Greendot\EshopBundle\Entity\Project\Voucher;
 use Doctrine\Common\Collections\ArrayCollection;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 
 class ManageVoucher
 {
@@ -19,6 +20,7 @@ class ManageVoucher
     public function __construct(
         private readonly Registry               $workflowRegistry,
         private readonly EntityManagerInterface $em,
+        private readonly VoucherRepository      $voucherRepository,
     ) {}
 
     public function initiateVouchers(Purchase $purchase): Collection
@@ -77,18 +79,12 @@ class ManageVoucher
 
     private function initiateVoucher(ProductVariant $productVariant, Purchase $purchase): Voucher
     {
-        $voucher = new Voucher();
-        $voucher->setHash($this->generateHash(uniqid()));
-
-        foreach ($productVariant->getParameters() as $parameter) {
-            if ($parameter->getParameterGroup()->getName() === 'certificateValue') {
-                $voucher->setAmount($parameter->getData());
-                break;
-            }
-        }
-
-        $voucher->setPurchaseIssued($purchase);
-        $voucher->setType(self::GIFT_VOUCHER);
+        $voucher = (new Voucher())
+            ->setHash($this->generateHash())
+            ->setAmount($this->findCertificateValue($productVariant))
+            ->setPurchaseIssued($purchase)
+            ->setType(self::GIFT_VOUCHER)
+        ;
 
         $this->em->persist($voucher);
         $this->em->flush();
@@ -96,8 +92,22 @@ class ManageVoucher
         return $voucher;
     }
 
-    private function generateHash(string $voucherCode): string
+    private function generateHash(): string
     {
-        return substr(hash('sha256', $voucherCode), 0, 6);
+        do {
+            $hash = substr(bin2hex(random_bytes(3)), 0, 6);
+        } while ($this->voucherRepository->findOneBy(['hash' => $hash]) !== null);
+
+        return $hash;
+    }
+
+    private function findCertificateValue(ProductVariant $productVariant): ?float
+    {
+        foreach ($productVariant->getParameters() as $parameter) {
+            if ($parameter->getParameterGroup()->getName() === 'certificateValue') {
+                return $parameter->getData();
+            }
+        }
+        return null;
     }
 }
