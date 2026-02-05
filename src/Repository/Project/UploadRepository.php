@@ -4,7 +4,9 @@ namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Upload;
+use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -151,5 +153,55 @@ class UploadRepository extends ServiceEntityRepository
             ->setParameter('productId', $productId);
 
         return $qb;
+    }
+
+    public function findFirstImageUploadForProduct(Product $product, UploadGroupTypeEnum $type): ?Upload
+    {
+        return $this->createQueryBuilder('u')
+            ->innerJoin('u.uploadGroup', 'ug')
+            ->innerJoin('ug.productUploadGroup', 'pug')
+            ->innerJoin('pug.Product', 'p')
+            ->andWhere('p = :product')
+            ->andWhere('ug.type = :type')
+            ->setParameter('product', $product)
+            ->setParameter('type', $type)
+            ->orderBy('u.sequence', 'ASC')
+            ->addOrderBy('u.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findFirstImageUploadForProductVariants(Product $product, UploadGroupTypeEnum $type): ?Upload
+    {
+        return $this->createQueryBuilder('u')
+            ->innerJoin('u.uploadGroup', 'ug')
+            ->innerJoin('ug.productVariantUploadGroups', 'pvug')
+            ->innerJoin('pvug.ProductVariant', 'pv')
+            ->andWhere('pv.product = :product')
+            ->andWhere('ug.type = :type')
+            ->setParameter('product', $product)
+            ->setParameter('type', $type)
+            ->orderBy('u.sequence', 'ASC')
+            ->addOrderBy('u.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findFirstImageUploadForVariant(ProductVariant $variant, UploadGroupTypeEnum $type): ?Upload
+    {
+        return $this->createQueryBuilder('u')
+            ->innerJoin('u.uploadGroup', 'ug')
+            ->innerJoin('ug.productVariantUploadGroups', 'pvug')
+            ->andWhere('pvug.ProductVariant = :variant')
+            ->andWhere('ug.type = :type')
+            ->setParameter('variant', $variant)
+            ->setParameter('type', $type)
+            ->orderBy('u.sequence', 'ASC')
+            ->addOrderBy('u.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }
