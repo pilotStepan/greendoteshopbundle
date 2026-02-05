@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
+use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
@@ -73,6 +74,7 @@ class AppExtension extends AbstractExtension
         private readonly ParameterBagInterface      $parameterBag,
         private readonly RouteTranslator            $routeTranslator,
         private readonly CurrencyManager            $currencyManager,
+        private readonly CalculatedPricesService    $calculatedPricesService,
     ) {}
 
     public function getFunctions(): array
@@ -630,5 +632,11 @@ class AppExtension extends AbstractExtension
     {
         $parts = array_filter([$person->getTitleBefore(), $person->getName(), $person->getSurname(), $person->getTitleAfter()]);
         return implode(' ', $parts);
+    }
+
+    public function getPriceFrom(Product $product): float
+    {
+        //hotfix
+        return $this->calculatedPricesService->makeCalculatedPricesForProduct($product)['priceNoVat'];
     }
 }
