@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
@@ -170,9 +171,11 @@ readonly class ManageMails
             ->context(['data' => $orderData])
         ;
 
-        // Dispatch voucher emails
-        foreach ($purchase->getVouchersIssued() as $voucher) {
-            $this->messageBus->dispatch(new IssuedVoucherEmail($voucher->getId()));
+        // Dispatch voucher emails only for non-COD payments
+        if ($purchase->getPaymentType()->getActionGroup() !== PaymentTypeActionGroup::ON_DELIVERY->value) {
+            foreach ($purchase->getVouchersIssued() as $voucher) {
+                $this->messageBus->dispatch(new IssuedVoucherEmail($voucher->getId()));
+            }
         }
 
         return $email;
