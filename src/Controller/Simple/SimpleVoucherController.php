@@ -25,9 +25,11 @@ class SimpleVoucherController extends AbstractController
         $places = $pFlow->getDefinition()->getPlaces();
         $placesMetaData = [];
         foreach ($places as $place) {
-            $placesMetaData[$place]['desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['description'];
-            $placesMetaData[$place]['short_desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['short_description'];
-            $placesMetaData[$place]['class'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['class'];
+            $metadataArray = $pFlow->getMetadataStore()->getPlaceMetadata($place);
+            $placesMetaData[$place]['desc'] = $metadataArray['description'];
+            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'];
+            $placesMetaData[$place]['class'] = $metadataArray['class'];
+            $placesMetaData[$place]['simple_color'] = $metadataArray['simple_color'] ?? '#999999';
             $placesMetaData[$place]['name'] = $place;
         }
         return $this->json($placesMetaData, 200);
