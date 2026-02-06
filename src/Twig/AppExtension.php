@@ -6,6 +6,7 @@ use DateTime;
 use Exception;
 use Doctrine\ORM\NoResultException;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Entity\Project\Availability;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Entity\Project\InformationBlock;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
@@ -151,6 +152,8 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('get_full_name_person', [$this, 'getFullNamePerson']),
 
+            new TwigFunction('get_price_from', $this->getPriceFrom(...)),
+            new TwigFunction('find_product_availability', $this->findProductAvailability(...)),
         ];
     }
 
@@ -636,7 +639,11 @@ class AppExtension extends AbstractExtension
 
     public function getPriceFrom(Product $product): float
     {
-        //hotfix
-        return $this->calculatedPricesService->makeCalculatedPricesForProduct($product)['priceNoVat'];
+        return $this->calculatedPricesService->makeCalculatedPricesForProduct($product)->getCalculatedPrices()['priceNoVat'];
+    }
+
+    public function findProductAvailability(Product $product): ?Availability
+    {
+        return $this->productRepository->findAvailabilityByProduct($product);
     }
 }
