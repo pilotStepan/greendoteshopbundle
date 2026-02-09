@@ -15,7 +15,7 @@ use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 #[AsEntityListener(event: Events::postLoad, priority: 10, method: 'postLoad', entity: Product::class)]
 class ProductEventListener
 {
- 
+
     public function __construct(
         private ProductRepository       $productRepository,
         private CalculatedPricesService $calculatedPricesService,
@@ -68,7 +68,7 @@ class ProductEventListener
                 $productUploads[0]->setIsDynamicallySet(true);
                 $product->setUpload($productUploads[0]);
             }
-        
+
         }
 
 
@@ -82,7 +82,7 @@ class ProductEventListener
         {
             $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
         }
-       
+
         $product->setCurrencySymbol($currencySymbol);
         $product->setAvailability($availability);
         $product->setParameters($parameters);

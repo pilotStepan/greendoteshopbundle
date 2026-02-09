@@ -19,7 +19,7 @@ class ProductVariantEventListener
     ) {}
 
     public function postLoad(ProductVariant $productVariant, PostLoadEventArgs $event): void
-    { 
+    {
         if (!$this->supports())
         {
             return;
@@ -28,12 +28,12 @@ class ProductVariantEventListener
         $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
 
         // if doesnt have upload try to substitue it
-        
+
         if (!$productVariant->getUpload()) {
             if (
                 $productVariant->getProduct()->getUpload() === null
                 || $productVariant->getProduct()->getUpload()?->isDynamicallySet()
-            ) 
+            )
             {
                 foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
                     if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){

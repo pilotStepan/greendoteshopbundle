@@ -3,16 +3,16 @@
 namespace Greendot\EshopBundle\Controller\Simple;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\Voucher;
-use Greendot\EshopBundle\Service\InvoiceMaker;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Workflow\Registry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Workflow\Registry;
+use Greendot\EshopBundle\Entity\Project\Voucher;
+use Greendot\EshopBundle\Service\CertificateMaker;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 #[Route('/simple/api/vouchers', name: 'simple_api_vouchers_')]
 class SimpleVoucherController extends AbstractController
@@ -25,13 +25,16 @@ class SimpleVoucherController extends AbstractController
         $places = $pFlow->getDefinition()->getPlaces();
         $placesMetaData = [];
         foreach ($places as $place) {
-            $placesMetaData[$place]['desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['description'];
-            $placesMetaData[$place]['short_desc'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['short_description'];
-            $placesMetaData[$place]['class'] = $pFlow->getMetadataStore()->getPlaceMetadata($place)['class'];
+            $metadataArray = $pFlow->getMetadataStore()->getPlaceMetadata($place);
+            $placesMetaData[$place]['desc'] = $metadataArray['description'];
+            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'];
+            $placesMetaData[$place]['class'] = $metadataArray['class'];
+            $placesMetaData[$place]['simple_color'] = $metadataArray['simple_color'] ?? '#999999';
             $placesMetaData[$place]['name'] = $place;
         }
         return $this->json($placesMetaData, 200);
     }
+
     #[Route(path: '/workflow-transitions', name: 'workflow_transitions')]
     public function getVoucherWorkflowTransitions(Registry $registry, Request $request): JsonResponse
     {
@@ -70,30 +73,14 @@ class SimpleVoucherController extends AbstractController
         return $this->json(['state' => $voucher->getState()]);
     }
 
-/* Not needed yet, not remade for voucher
-
-    #[Route('/{purchase}/invoice/pdf', name: 'invoice_download_pdf', methods: ['GET'])]
-    public function downloadInvoicePdf(Purchase $purchase, InvoiceMaker $invoiceMaker): Response
+    #[Route('/{voucher}/download', name: 'download', methods: ['GET'])]
+    public function downloadVoucher(Voucher $voucher, CertificateMaker $certificateMaker): Response
     {
-        $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
+        $pdfContent = $certificateMaker->createCertificate($voucher);
 
-        if (!file_exists($pdfFilePath) || !is_readable($pdfFilePath)) {
-            throw $this->createNotFoundException('Invoice not found or unreadable');
-        }
-
-        return new Response($pdfFilePath, 200, ['Content-Type' => 'text/plain']);
+        return new Response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => ResponseHeaderBag::DISPOSITION_ATTACHMENT . '; filename="darkovy_certifikat_' . $voucher->getId() . '.pdf"',
+        ]);
     }
-
-    #[Route('/{purchase}/invoice/xls', name: 'invoice_download_xls', methods: ['GET'])]
-    public function downloadInvoiceXls(Purchase $purchase): JsonResponse
-    {
-        return $this->json(['message' => 'To be implemented']);
-    }
-
-    #[Route('/{purchase}/invoice/print', name: 'invoice_download_print', methods: ['GET'])]
-    public function downloadInvoicePrint(Purchase $purchase): JsonResponse
-    {
-        return $this->json(['message' => 'To be implemented']);
-    }
-*/
 }

@@ -6,6 +6,7 @@ use DateTime;
 use Exception;
 use Doctrine\ORM\NoResultException;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Entity\Project\Availability;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Entity\Project\InformationBlock;
 use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
@@ -16,6 +17,7 @@ use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
+use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
@@ -72,6 +74,7 @@ class AppExtension extends AbstractExtension
         private readonly ParameterBagInterface      $parameterBag,
         private readonly RouteTranslator            $routeTranslator,
         private readonly CurrencyManager            $currencyManager,
+        private readonly CalculatedPricesService    $calculatedPricesService,
     ) {}
 
     public function getFunctions(): array
@@ -147,6 +150,8 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('get_full_name_person', [$this, 'getFullNamePerson']),
 
+            new TwigFunction('get_price_from', $this->getPriceFrom(...)),
+            new TwigFunction('find_product_availability', $this->findProductAvailability(...)),
         ];
     }
 
@@ -623,5 +628,15 @@ class AppExtension extends AbstractExtension
     {
         $parts = array_filter([$person->getTitleBefore(), $person->getName(), $person->getSurname(), $person->getTitleAfter()]);
         return implode(' ', $parts);
+    }
+
+    public function getPriceFrom(Product $product): float
+    {
+        return $this->calculatedPricesService->makeCalculatedPricesForProduct($product)->getCalculatedPrices()['priceNoVat'];
+    }
+
+    public function findProductAvailability(Product $product): ?Availability
+    {
+        return $this->productRepository->findAvailabilityByProduct($product);
     }
 }

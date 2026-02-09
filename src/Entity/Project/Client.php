@@ -75,7 +75,7 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[Assert\NotBlank]
     #[Assert\Email]
-    #[ClientMailUnique(groups: ['client:create'])]
+    #[ClientMailUnique(groups: ['client:create', 'client:write'])]
     #[ORM\Column(type: 'string', length: 55, nullable: true)]
     #[Groups(['client:read', 'client:write', 'order:read', 'order:write', 'purchase:read', 'purchase:write'])]
     private $mail;

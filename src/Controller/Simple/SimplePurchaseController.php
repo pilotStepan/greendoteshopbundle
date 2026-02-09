@@ -3,18 +3,25 @@
 namespace Greendot\EshopBundle\Controller\Simple;
 
 use JsonException;
+use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\Registry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Greendot\EshopBundle\Service\InvoiceMaker;
 use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Service\ManageVoucher;
+use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Greendot\EshopBundle\Dto\ApplyVoucherOrDiscountRequest;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Greendot\EshopBundle\Message\Notification\PurchaseDiscussionEmail;
@@ -155,5 +162,55 @@ class SimplePurchaseController extends AbstractController
     public function downloadInvoicePrint(Purchase $purchase): JsonResponse
     {
         return $this->json(['message' => 'To be implemented']);
+    }
+
+    #[Route('/{purchase}/apply-voucher', name: 'apply_voucher', methods: ['POST'])]
+    public function applyVoucherToPurchase(
+        Purchase                                           $purchase,
+        #[MapRequestPayload] ApplyVoucherOrDiscountRequest $payload,
+        EntityManagerInterface                             $em,
+        ManageVoucher                                      $manageVoucher,
+    ): JsonResponse
+    {
+        $voucher = $em->getRepository(Voucher::class)->findOneBy(['hash' => $payload->hash]);
+        if (!$voucher) {
+            return $this->json(['success' => false, 'message' => 'Voucher nenalezen'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            $manageVoucher->use($voucher, $purchase);
+        } catch (LogicException $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse([
+            'success' => true,
+            'purchaseId' => $purchase->getId(),
+            'hash' => $voucher->getHash(),
+            'voucherState' => $voucher->getState(),
+        ], Response::HTTP_OK);
+    }
+
+    #[Route('/{purchase}/apply-client-discount', name: 'apply_client_discount', methods: ['POST'])]
+    public function applyClientDiscountToPurchase(
+        Purchase                                           $purchase,
+        #[MapRequestPayload] ApplyVoucherOrDiscountRequest $payload,
+        EntityManagerInterface                             $em,
+        ManageClientDiscount                               $manageClientDiscount,
+    ): JsonResponse
+    {
+        $clientDiscount = $em->getRepository(ClientDiscount::class)->findOneBy(['hash' => $payload->hash]);
+
+        try {
+            $manageClientDiscount->use($clientDiscount, $purchase);
+        } catch (LogicException $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse([
+            'success' => true,
+            'purchaseId' => $purchase->getId(),
+            'hash' => $clientDiscount->getHash(),
+        ], Response::HTTP_OK);
     }
 }

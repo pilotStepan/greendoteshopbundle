@@ -51,6 +51,7 @@ class GoogleAuthenticator extends OAuth2Authenticator
 
                 $user = new Client();
                 $user->setMail($email);
+                $user->setIsAnonymous(false);
                 $user->setName($googleUser->getFirstName());
                 $user->setSurname($googleUser->getLastName());
 

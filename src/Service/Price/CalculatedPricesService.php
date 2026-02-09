@@ -28,22 +28,21 @@ class CalculatedPricesService
             return $variant;
         }
 
-        
-        // get unique minimalAmounts from productVariant.prices
-        $uniqueMinimalAmounts = []; 
-        $variantPrices = $this->entityManager->getRepository(Price::class)->findBy(['productVariant'=>$variant->getId()]);
-        foreach($variantPrices as $price){
-            // check valid
-            if ($price->getValidFrom() > $date || ($price->getValidUntil() !== null && $date > $price->getValidUntil())) {
-                continue;
-            }
-            
-            // if not in array add
-            if(!in_array($price->getMinimalAmount(), $uniqueMinimalAmounts)) {
-                $uniqueMinimalAmounts[] = $price->getMinimalAmount();
-            }
-        }
-        sort($uniqueMinimalAmounts);
+
+        $qb = $this->entityManager->getRepository(Price::class)->createQueryBuilder('p');
+        $uniqueMinimalAmounts = $qb
+            ->select('DISTINCT p.minimalAmount')
+            ->andWhere('p.productVariant = :variant')
+            ->andWhere('p.validFrom <= :date')
+            ->andWhere($qb->expr()->orX('p.validUntil IS NULL', 'p.validUntil >= :date'))
+            ->setParameter('variant', $variant)
+            ->setParameter('date', $date)
+            ->orderBy('p.minimalAmount', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult()
+        ;
+
+        $uniqueMinimalAmounts = array_map('intval', $uniqueMinimalAmounts);
         
         
         // for each minimalAmount, make calculated prices object and add them to list

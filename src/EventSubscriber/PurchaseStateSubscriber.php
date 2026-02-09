@@ -3,30 +3,29 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Exception;
+use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\Event\Event;
+use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Message\Affiliate\CreateAffiliateEntry;
 use Greendot\EshopBundle\Service\AffiliateService;
-use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
     public function __construct
     (
-        private EntityManagerInterface  $entityManager,
-        private ManageVoucher           $manageVoucher,
-        private ManagePurchase          $managePurchase,
-        private ManageClientDiscount    $manageClientDiscount,
-        private AffiliateService        $affiliateService,
-        private DateService             $dateService,
+        private EntityManagerInterface $entityManager,
+        private ManageVoucher          $manageVoucher,
+        private ManagePurchase         $managePurchase,
+        private ManageClientDiscount   $manageClientDiscount,
+        private AffiliateService       $affiliateService,
+        private DateService            $dateService,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -90,16 +89,20 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $invalidVoucher = $this->manageVoucher->validateUsedVouchers($purchase, 'use');
-        if ($invalidVoucher) {
-            $event->setBlocked(true, "Nelze uplatnit neplatný voucher: " . $invalidVoucher->getHash());
+        try {
+            $this->manageVoucher->validateVouchersTransition($purchase->getVouchersUsed(), 'use');
+        } catch (LogicException $e) {
+            $event->setBlocked(true, $e->getMessage());
             return;
         }
 
         $discount = $purchase->getClientDiscount();
-        if ($discount && !$this->manageClientDiscount->isAvailable($purchase, $discount)) {
-            $event->setBlocked(true, "Objednávka má neplatnou klientskou slevu");
-            return;
+        if ($discount) {
+            try {
+                $this->manageClientDiscount->guardUse($discount, $purchase);
+            } catch (LogicException $e) {
+                $event->setBlocked(true, $e->getMessage());
+            }
         }
 
         try {
@@ -114,8 +117,16 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        $this->manageVoucher->handleUsedVouchers($purchase, 'use');
-        $this->manageClientDiscount->use($purchase, $purchase->getClientDiscount());
+
+        foreach ($purchase->getVouchersUsed() as $voucher) {
+            $this->manageVoucher->use($voucher, $purchase);
+        }
+
+        $clientDiscount = $purchase->getClientDiscount();
+        if ($clientDiscount !== null) {
+            $this->manageClientDiscount->use($clientDiscount, $purchase);
+        }
+
         $this->manageVoucher->initiateVouchers($purchase);
         $this->managePurchase->generateTransportData($purchase);
         $this->dateService->calculatePurchaseDeliveryDate($purchase);
@@ -125,11 +136,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        if(!$purchase instanceof Purchase){
+        if (!$purchase instanceof Purchase) {
             return;
         }
 
-        $this->manageVoucher->handleIssuedVouchers($purchase, 'payment');
+        $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment');
         $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
 
         //? We don't want automatic invoice issue on payment
@@ -140,11 +151,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        if(!$purchase instanceof Purchase){
+        if (!$purchase instanceof Purchase) {
             return;
         }
 
-        $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
+        $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
         $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
     }
 
@@ -152,11 +163,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        if(!$purchase instanceof Purchase){
+        if (!$purchase instanceof Purchase) {
             return;
         }
 
-        $this->manageVoucher->handleIssuedVouchers($purchase, 'payment_issue');
+        $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
         $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
     }
 
@@ -170,7 +181,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        if(!$purchase instanceof Purchase){
+        if (!$purchase instanceof Purchase) {
             return;
         }
 
@@ -181,7 +192,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
-        if(!$purchase instanceof Purchase){
+        if (!$purchase instanceof Purchase) {
             return;
         }
 

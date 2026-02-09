@@ -199,4 +199,21 @@ class ClientDiscount
 
         return $this;
     }
+
+    public function isValid(): bool
+    {
+        if ($this->isIsUsed()) {
+            return false;
+        }
+
+        $dateStart = $this->getDateStart();
+        $dateEnd = $this->getDateEnd();
+        $now = new \DateTime();
+
+        if ($dateStart !== null && $dateEnd !== null) {
+            return $dateStart <= $now && $now <= $dateEnd;
+        }
+
+        return true;
+    }
 }
