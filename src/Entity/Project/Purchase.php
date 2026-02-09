@@ -157,7 +157,7 @@ class Purchase
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
-    private Client $client;
+    private ?Client $client;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     /**
