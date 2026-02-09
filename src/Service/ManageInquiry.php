@@ -3,7 +3,6 @@
 namespace Greendot\EshopBundle\Service;
 
 use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -208,50 +207,6 @@ class ManageInquiry
         ));
         unlink($tempFilePath);
         return $response;
-    }
-
-    function saveInquiry(Purchase $order, $client, $note = null, $notifyMail = null)
-    {
-        //$order = new Purchase();
-        $order->setClient($client);
-        $order->setDateIssue(new \DateTime());
-        $order->setInvoiceNumber(0);
-
-        $transportation = $order->getTransportation();
-        $payment = $order->getPaymentType();
-
-        $transportation = $this->transportationRepository->find($transportation->getId());
-        $payment = $this->paymentRepository->find($payment->getId());
-        $order->setPaymentType($payment);
-        $order->setTransportation($transportation);
-
-
-        $this->managerRegistry->getManager()->persist($order);
-        $this->managerRegistry->getManager()->flush();
-
-        $order->setInvoiceNumber($order->getId());
-        $this->managerRegistry->getManager()->persist($order);
-        $this->managerRegistry->getManager()->flush();
-
-        if ($note) {
-            $newNote = new Note();
-            $newNote->setPurchase($order);
-            $newNote->setType('Poznámka');
-            $newNote->setContent($note);
-            $this->managerRegistry->getManager()->persist($newNote);
-            $this->managerRegistry->getManager()->flush();
-        }
-
-        if ($notifyMail) {
-            $newNote = new Note();
-            $newNote->setPurchase($order);
-            $newNote->setType('E-mail pro notifikace');
-            $newNote->setContent($notifyMail);
-            $this->managerRegistry->getManager()->persist($newNote);
-            $this->managerRegistry->getManager()->flush();
-        }
-
-        return $order;
     }
 
     function saveClient($clientData): Client

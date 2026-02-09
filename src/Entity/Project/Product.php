@@ -163,7 +163,7 @@ class Product implements Translatable
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
     #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
-    private Collection $productUploadGroup;
+    private Collection $productUploadGroups;
 
     #[Gedmo\Locale]
     private $locale;
@@ -256,7 +256,7 @@ class Product implements Translatable
         $this->productVariants = new ArrayCollection();
         $this->reviews = new ArrayCollection();
         $this->categoryProducts = new ArrayCollection();
-        $this->productUploadGroup = new ArrayCollection();
+        $this->productUploadGroups = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
         $this->labels = new ArrayCollection();
         $this->productParameterGroups = new ArrayCollection();
@@ -546,13 +546,13 @@ class Product implements Translatable
      */
     public function getProductUploadGroups(): Collection
     {
-        return $this->productUploadGroup;
+        return $this->productUploadGroups;
     }
 
     public function addProductUploadGroup(ProductUploadGroup $productUploadGroup): self
     {
-        if (!$this->productUploadGroup->contains($productUploadGroup)) {
-            $this->productUploadGroup->add($productUploadGroup);
+        if (!$this->productUploadGroups->contains($productUploadGroup)) {
+            $this->productUploadGroups->add($productUploadGroup);
             $productUploadGroup->setProductVariant($this);
         }
 
@@ -561,7 +561,7 @@ class Product implements Translatable
 
     public function removeProductVariantUploadGroup(ProductUploadGroup $productUploadGroup): self
     {
-        if ($this->productUploadGroup->removeElement($productUploadGroup)) {
+        if ($this->productUploadGroups->removeElement($productUploadGroup)) {
             if ($productUploadGroup->getProductVariant() === $this) {
                 $productUploadGroup->setProductVariant(null);
             }

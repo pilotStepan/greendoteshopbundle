@@ -3,7 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Enum\DiscountType;
-use Greendot\EshopBundle\Enum\ProductProductType;
+use Greendot\EshopBundle\Entity\Project\ProductProductType;
 use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -33,8 +33,8 @@ class ProductProduct
      * Type for the purpose of the relation from ENUM.
      */
     #[Groups(['product_item:read'])]
-    #[ORM\Column(type: "string", enumType: ProductProductType::class)]
-    private ProductProductType $type;
+    #[ORM\ManyToOne(inversedBy: 'productProducts')]
+    private ?ProductProductType $productProductType;
 
     #[ORM\Column]
     private ?int $sequence = null;
@@ -71,14 +71,14 @@ class ProductProduct
         return $this;
     }
 
-    public function getType(): ProductProductType
+    public function getProductProductType(): ProductProductType
     {
-        return $this->type;
+        return $this->productProductType;
     }
 
-    public function setType(int $type): static
+    public function setProductProductType(?productProductType $productProductType): static
     {
-        $this->type = $type;
+        $this->productProductType = $productProductType;
 
         return $this;
     }
@@ -106,4 +106,6 @@ class ProductProduct
 
         return $this;
     }
+
+    
 }

@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\Tests\Service;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
