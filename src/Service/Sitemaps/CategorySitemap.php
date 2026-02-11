@@ -33,7 +33,7 @@ class CategorySitemap implements SitemapProviderInterface
 
     public function addToSitemapIndex(\SimpleXMLElement $xmlUrlSet): void
     {
-        $this->addToIndex($xmlUrlSet, $this->urlGenerator->generate('sitemap_category', [], UrlGeneratorInterface::ABSOLUTE_URL));
+        $this->addToIndex($xmlUrlSet, $this->urlGenerator->generate('sitemap_default', ['type' => $this->name()], UrlGeneratorInterface::ABSOLUTE_URL));
     }
 
     public function generateSiteMap(array $options = []): Response

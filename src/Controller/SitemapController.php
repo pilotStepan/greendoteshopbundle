@@ -28,10 +28,11 @@ class SitemapController extends AbstractController
         return $this->generateXmlResponse($xml);
     }
 
-    #[Route('/sitemap-category.xml', name: 'category')]
-    public function category(): Response
+    #[Route('/sitemap-{type}.xml', name: 'default')]
+    public function default(string $type): Response
     {
-        $provider = $this->sitemapProvider->get('category');
+        $provider = $this->sitemapProvider->get($type);
+        if (!$provider) return new Response('Unknown sitemap type', 404);
         return $provider->generateSiteMap();
     }
 
