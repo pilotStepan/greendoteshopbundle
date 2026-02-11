@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
         new ORM\Index(name: 'idx_level_datetime', columns: ['level', 'datetime']),
     ]
 )]
-final class LogRecord
+class LogRecord
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
