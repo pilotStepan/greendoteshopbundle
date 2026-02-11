@@ -91,11 +91,11 @@ class InvoiceMaker
 
     private function renderHtml(InvoiceData $data): string
     {
-        $type = $data->isInvoice ? 'invoice' : 'proforma';
-        $vatExempt = $data->isVatExempted ? '-vat-exempted' : '';
-        $template = sprintf('pdf/%s%s.html.twig', $type, $vatExempt);
+        // $type = $data->isInvoice ? 'invoice' : 'proforma';
+        // $vatExempt = $data->isVatExempted ? '-vat-exempted' : '';
+        // $template = sprintf('pdfinvoice.html.twig', $type, $vatExempt);
 //        $template = 'pdf/test.html.twig';
-        // $template = 'pdf/invoice-new.html.twig';
+        $template = 'pdf/invoice.html.twig';
 
         return $this->twig->render($template, (array) $data);
     }

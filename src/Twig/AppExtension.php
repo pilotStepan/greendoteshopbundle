@@ -22,7 +22,6 @@ use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
-use Greendot\EshopBundle\Entity\Project\Note;
 use Symfony\Component\Routing\RouterInterface;
 use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Entity\Project\Product;
@@ -108,7 +107,6 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('get_all_sub_categories', [$this, 'getAllSubCategories']),
 
-            new TwigFunction('get_note', [$this, 'getNote']),
             new TwigFunction('convert_price_to_currency', [$this, 'convertPriceToCurrency']),
 
             new TwigFunction('get_google_analytics_array', [$this, 'getGoogleAnalyticsArray']),
@@ -302,11 +300,6 @@ class AppExtension extends AbstractExtension
     public function getAllSubCategories(Category $category)
     {
         return $this->categoryInfoGetter->getAllSubCategories($category);
-    }
-
-    public function getNote(Purchase $purchase, string $type): Note
-    {
-        return $this->messageRepository->findOneBy(['purchase' => $purchase->getId(), 'type' => $type]);
     }
 
     public function getSizedImage(Upload|string $upload, string|null $sizeString = null): string

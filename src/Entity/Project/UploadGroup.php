@@ -41,10 +41,13 @@ class UploadGroup
     private Collection $productVariantUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: ProductUploadGroup::class)]
-    private Collection $productUploadGroup;
+    private Collection $productUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: EventUploadGroup::class)]
     private Collection $eventUploadGroups;
+    
+    #[ORM\OneToMany(mappedBy: 'uploadGroup', targetEntity: ProducerUploadGroup::class)]
+    private Collection $producerUploadGroups;
 
     public function __construct()
     {
@@ -52,8 +55,9 @@ class UploadGroup
         $this->categoryUploadGroups = new ArrayCollection();
         $this->personUploadGroups = new ArrayCollection();
         $this->productVariantUploadGroups = new ArrayCollection();
-        $this->productUploadGroup = new ArrayCollection();
+        $this->productUploadGroups = new ArrayCollection();
         $this->eventUploadGroups = new ArrayCollection();
+        $this->producerUploadGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -168,12 +172,12 @@ class UploadGroup
      */
     public function getProductUploadGroups(): Collection
     {
-        return $this->productUploadGroup;
+        return $this->productUploadGroups;
     }
 
     public function addProductUploadGroup(ProductUploadGroup $productVariantUploadGroups): self
     {
-        if (!$this->productUploadGroup->contains($productVariantUploadGroups)) {
+        if (!$this->productUploadGroups->contains($productVariantUploadGroups)) {
             $this->productVariantUploadGroups->add($productVariantUploadGroups);
             $productVariantUploadGroups->setUploadGroup($this);
         }
@@ -183,7 +187,7 @@ class UploadGroup
 
     public function removeProductUploadGroup(ProductUploadGroup $productVariantUploadGroups): self
     {
-        if ($this->productUploadGroup->removeElement($productVariantUploadGroups)) {
+        if ($this->productUploadGroups->removeElement($productVariantUploadGroups)) {
             // set the owning side to null (unless already changed)
             if ($productVariantUploadGroups->getUploadGroup() === $this) {
                 $productVariantUploadGroups->setUploadGroup(null);
@@ -247,6 +251,37 @@ class UploadGroup
             // set the owning side to null (unless already changed)
             if ($eventUploadGroup->getUploadGroup() === $this) {
                 $eventUploadGroup->setUploadGroup(null);
+            }
+        }
+
+        return $this;
+    }
+
+    
+    /**
+     * @return Collection<int, ProducerUploadGroup>
+     */
+    public function getProducerUploadGroups(): Collection
+    {
+        return $this->producerUploadGroups;
+    }
+
+    public function addProducerUploadGroup(ProducerUploadGroup $producerUploadGroup): self
+    {
+        if (!$this->producerUploadGroups->contains($producerUploadGroup)) {
+            $this->producerUploadGroups->add($producerUploadGroup);
+            $producerUploadGroup->setUploadGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProducerUploadGroup(ProducerUploadGroup $producerUploadGroup): self
+    {
+        if ($this->producerUploadGroups->removeElement($producerUploadGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($producerUploadGroup->getUploadGroup() === $this) {
+                $producerUploadGroup->setUploadGroup(null);
             }
         }
 

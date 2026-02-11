@@ -206,8 +206,8 @@ class PurchasePrice
                 $price += $productVariantPrice->getPrice(true);
             }
         }
-        return $this->priceUtils->convertCurrency($price, $this->conversionRate);
-//        return $price;
+//        return $this->priceUtils->convertCurrency($price, $this->conversionRate);
+        return $price;
     }
 
     private function loadPrice(): void

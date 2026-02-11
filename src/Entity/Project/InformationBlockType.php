@@ -24,7 +24,7 @@ class InformationBlockType
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $template = null;
 
-    #[ORM\OneToMany(mappedBy: 'InformationBlockType', targetEntity: InformationBlock::class)]
+    #[ORM\OneToMany(mappedBy: 'informationBlockType', targetEntity: InformationBlock::class)]
     private Collection $informationBlocks;
 
     public function __construct()

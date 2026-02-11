@@ -6,7 +6,6 @@ use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\Registry;
-use Greendot\EshopBundle\Entity\Project\Note;
 use Greendot\EshopBundle\Form\ClientFormType;
 use Symfony\Component\HttpFoundation\Request;
 use Greendot\EshopBundle\Service\ManageMails;
@@ -40,130 +39,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PurchaseController extends AbstractController
 {
-
-    #[CustomApiEndpoint]
-    #[Route('/api/client/submit', name: 'api_client_submit', options: ['deprecation_message' => 'This endpoint is deprecated and will be removed in a future release.'], methods: ['POST'])]
-    public function submitClientForm(
-        Request                $request,
-        GPWebpay               $GPWebpay,
-        EntityManagerInterface $entityManager,
-        SessionInterface       $session,
-        Registry               $workFlow,
-        PriceCalculator        $priceCalculator,
-        CurrencyManager        $currencyManager,
-    ): Response|JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-
-        /* @var Client $loggedInUser */
-        $loggedInUser = $this->getUser();
-
-        if ($loggedInUser) {
-            $client = $loggedInUser;
-        } else {
-
-            $form = $this->createForm(ClientFormType::class, null, [
-                'csrf_protection' => false,
-            ]);
-
-            $form->submit($data);
-
-            if (!$form->isValid()) {
-                $errorMessages = [];
-                foreach ($form->getErrors(true) as $error) {
-                    $errorMessages[] = $error->getMessage();
-                }
-                return new JsonResponse(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
-            }
-
-            $client = $form->getData();
-            $entityManager->persist($client);
-        }
-
-        $clientAddresses = $client->getClientAddresses();
-        if ($clientAddresses->isEmpty()) {
-            $clientAddress = new ClientAddress();
-            $clientAddress->setClient($client);
-            $client->addClientAddress($clientAddress);
-        } else {
-            $clientAddress = $clientAddresses->first();
-        }
-
-        $addressFields = [
-            'street', 'city', 'zip', 'country', 'ic', 'dic',
-            'ship_company', 'ship_name', 'ship_surname', 'ship_street',
-            'ship_city', 'ship_zip', 'ship_country',
-        ];
-
-        foreach ($addressFields as $field) {
-            $setter = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
-            if (method_exists($clientAddress, $setter) && isset($data[$field])) {
-                $clientAddress->$setter($data[$field]);
-            }
-        }
-
-        $entityManager->persist($clientAddress);
-        $entityManager->flush();
-
-        $newPurchase = $session->get('purchase');
-
-        if (!$newPurchase) {
-            return new Response('No order in session', 404);
-        }
-
-        $newPurchase->setClient($client);
-
-        $purchaseFlow = $workFlow->get($newPurchase);
-
-        $entityManager->persist($newPurchase);
-        $entityManager->flush();
-
-        if (!empty($data['order_note'])) {
-            $note = new Note();
-            $note->setContent($data['order_note']);
-            $note->setType('order');
-            $note->setPurchase($newPurchase);
-
-            $entityManager->persist($note);
-            $entityManager->flush();
-        }
-
-        $currency = $currencyManager->get();
-
-        $totalPrice = $priceCalculator->calculatePurchasePrice(
-            $newPurchase,
-            $currency,
-            1,
-            true,
-            VatCalculationType::WithVAT,
-            DiscountCalculationType::WithDiscount,
-            VoucherCalculationType::WithoutVoucher,
-            true,
-        );
-
-        if ($purchaseFlow->can($newPurchase, 'receive')) {
-            dump("can");
-            $purchaseFlow->apply($newPurchase, 'receive');
-            $entityManager->flush();
-        } else {
-            dump($purchaseFlow->buildTransitionBlockerList($newPurchase, 'receive'));
-            dump("cant");
-        }
-
-        if ($newPurchase->getPaymentType()->getId() === 2) {
-            $paymentUrl = $GPWebpay->getPayLink($newPurchase, $totalPrice);
-
-            return new JsonResponse([
-                'success' => true,
-                'redirect' => $paymentUrl,
-            ]);
-        } else {
-            return new JsonResponse([
-                'success' => true,
-                'redirect' => $this->generateUrl('thank_you', ['id' => $newPurchase->getId()]),
-            ]);
-        }
-    }
 
     #[Route('/order/verify', name: 'shop_order_verify', methods: ['GET'])]
     public function verifyOrder(
