@@ -52,7 +52,7 @@ class UploadRepository extends ServiceEntityRepository
 
         $qb
             ->innerJoin($alias . '.uploadGroup', 'ug')
-            ->leftJoin('ug.productUploadGroup', 'pug')
+            ->leftJoin('ug.productUploadGroups', 'pug')
             ->leftJoin('pug.Product', 'p')
             // ->leftJoin('ug.productVariantUploadGroups', 'pvug')
             // ->leftJoin('pvug.ProductVariant', 'pv')
@@ -144,7 +144,7 @@ class UploadRepository extends ServiceEntityRepository
         $alias = $qb->getRootAliases()[0];
 
         $qb ->innerJoin($alias . '.uploadGroup', 'ug')
-            ->leftJoin('ug.productUploadGroup', 'pug')
+            ->leftJoin('ug.productUploadGroups', 'pug')
             ->leftJoin('pug.Product', 'p')
             ->leftJoin('ug.productVariantUploadGroups', 'pvug')
             ->leftJoin('pvug.ProductVariant', 'pv')
@@ -159,7 +159,7 @@ class UploadRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('u')
             ->innerJoin('u.uploadGroup', 'ug')
-            ->innerJoin('ug.productUploadGroup', 'pug')
+            ->innerJoin('ug.productUploadGroups', 'pug')
             ->innerJoin('pug.Product', 'p')
             ->andWhere('p = :product')
             ->andWhere('ug.type = :type')

@@ -45,7 +45,7 @@ class UploadGroupRepository extends ServiceEntityRepository
     public function getAllUploadGroupsForProduct(Product $product, bool $accountVariants = true, ?int $type = null): array
     {
         $productUploadGroups = $this->createQueryBuilder('ug')
-            ->leftJoin('ug.productUploadGroup', 'pug')
+            ->leftJoin('ug.productUploadGroups', 'pug')
             ->andWhere('pug.Product = :product')
             ->setParameter('product', $product);
         if ($type !== null){
