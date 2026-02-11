@@ -10,6 +10,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 
 /**
  *  Defines the parameter details like unit (eq kg) and name (eq vaha)
@@ -21,7 +23,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationEnabled: false
 )]
 #[ApiFilter(ParameterGroupValues::class)]
-class ParameterGroup
+class ParameterGroup implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -29,6 +31,7 @@ class ParameterGroup
     #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'category_parameter_group:read','purchase:read'])]
     private $id;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read', 'purchase:wishlist','purchase:read'])]
     private $name;
@@ -90,10 +93,13 @@ class ParameterGroup
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
     #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
     private ?ParameterGroupFormat $parameterGroupFormat = null;
+    #[Gedmo\Locale]
+    private $locale;
+
     public function __construct()
     {
         $this->parameter = new ArrayCollection();
-        $this->paramGroupCategories = new ArrayCollection();
+        $this->parameterGroupCategories = new ArrayCollection();
         $this->productParameterGroups = new ArrayCollection();
     }
 
@@ -277,5 +283,10 @@ class ParameterGroup
         $this->parameterGroupFormat = $parameterGroupFormat;
 
         return $this;
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 }

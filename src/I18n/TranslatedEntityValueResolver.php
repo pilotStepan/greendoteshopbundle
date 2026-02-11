@@ -25,8 +25,13 @@ readonly class TranslatedEntityValueResolver implements ValueResolverInterface
             return [];
         }
 
-        $slug = $request->attributes->get('slug');
-        if (!$slug) {
+        $paramName = $argument->getName();
+        $identifier = $request->attributes->get($paramName);
+        if (!$identifier && $paramName !== 'slug') {
+            $identifier = $request->attributes->get('slug');
+        }
+
+        if (!$identifier || !is_string($identifier)) {
             return [];
         }
 
@@ -40,10 +45,10 @@ readonly class TranslatedEntityValueResolver implements ValueResolverInterface
             return [];
         }
 
-        $entity = $repository->findOneByHinted(['slug' => $slug]);
+        $entity = $repository->findOneByHinted(['slug' => $identifier]);
         if (!$entity) {
             if (!$argument->isNullable()) {
-                throw new NotFoundHttpException(sprintf('"%s" object not found by slug "%s".', $className, $slug));
+                throw new NotFoundHttpException(sprintf('"%s" object not found by slug "%s" (param "%s").', $className, $identifier, $paramName));
             }
             return [null];
         }

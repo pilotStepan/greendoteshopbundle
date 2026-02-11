@@ -26,33 +26,6 @@ readonly class RouteTranslator
     }
 
     /**
-     * Finds controller used to make request.
-     * Checks if it has TranslatableRoute attribute and if it has, returns translated uri based on current request value.
-     *
-     * @param Request $request
-     * @param string $desiredLocale
-     * @return string|null
-     */
-    public function getByRequest(Request $request, string $desiredLocale = 'en'): ?string
-    {
-        if (!in_array($desiredLocale, $this->availableLocales)) return null;
-
-        $controller = $request->attributes->get('_controller') ?? null;
-        if (!$controller) return null;
-
-        $attributes = $this->parseAttribute($controller);
-        if (!$attributes or !isset($attributes['class']) or !isset($attributes['property'])) return $this->buildUri($request, $desiredLocale);
-        $class = $attributes['class'];
-        $property = $attributes['property'];
-
-        $currentPropertyValue = $this->getArgumentFromRequest($property, $request); //aka slug
-        if (!$currentPropertyValue) return null;
-
-        $translatedUri = $this->resolveTranslatableAttributeForClass($class, $currentPropertyValue, $property, $desiredLocale);
-        return $this->buildUri($request, $desiredLocale, [$property => $translatedUri]);
-    }
-
-    /**
      * Tries to find translation for request in request stack (use in case of nested requests e.g: function called from within template rendered via different controller then the main request)
      *
      * @param string $desiredLocale
@@ -71,12 +44,63 @@ readonly class RouteTranslator
     }
 
     /**
-     * returns class and property in array, taken from the TranslatableRoute attribute on route
+     * Finds controller used to make request.
+     * Checks if it has TranslatableRoute attribute and if it has, returns translated uri based on current request value.
      *
-     * @param string $controllerClass
-     * @return array|null
+     * @param Request $request
+     * @param string $desiredLocale
+     * @return string|null
      */
-    #[ArrayShape(['class' => 'string', 'property' => 'string'])]
+    public function getByRequest(Request $request, string $desiredLocale = 'en'): ?string
+    {
+        if (!in_array($desiredLocale, $this->availableLocales)) return null;
+
+        $controller = $request->attributes->get('_controller') ?? null;
+        if (!$controller) return null;
+
+        $attributeConfig = $this->parseAttribute($controller);
+
+        if (!$attributeConfig || !isset($attributeConfig['params']) || count($attributeConfig['params']) === 0) {
+            return $this->buildUri($request, $desiredLocale);
+        }
+
+        $modifiedAttributes = [];
+        foreach ($attributeConfig['params'] as $spec) {
+            $param = $spec['param'] ?? null;
+            $class = $spec['class'] ?? null;
+            $property = $spec['property'] ?? 'slug';
+
+            if (!$param || !$class) {
+                continue;
+            }
+
+            $currentValue = $this->getArgumentFromRequest($param, $request);
+            if (!$currentValue) {
+                continue;
+            }
+
+            $translatedValue = $this->resolveTranslatableAttributeForClass(
+                $class,
+                $currentValue,
+                $property,
+                $desiredLocale
+            );
+
+            if ($translatedValue) {
+                $modifiedAttributes[$param] = $translatedValue;
+            }
+        }
+
+        return $this->buildUri($request, $desiredLocale, $modifiedAttributes);
+    }
+
+    /**
+     * returns normalized configuration for param translations, taken from the TranslatableRoute attribute on route.
+     *
+     * Normalized shape:
+     *  ['params' => [ ['param' => string, 'class' => string, 'property' => string], ... ]]
+     */
+    #[ArrayShape(['params' => 'array'])]
     private function parseAttribute(string $controllerClass): ?array
     {
         [$controllerClass, $method] = explode('::', $controllerClass);
@@ -90,10 +114,48 @@ readonly class RouteTranslator
         if (count($attributes) !== 1) return null;
 
         $attribute = $attributes[0];
-        if (!$attribute instanceof \ReflectionAttribute or $attribute->getName() !== TranslatableRoute::class) {
+        if (!$attribute instanceof \ReflectionAttribute || $attribute->getName() !== TranslatableRoute::class) {
             return null;
         }
-        return $attribute->getArguments() ?? null;
+
+        $args = $attribute->getArguments() ?? null;
+        if (!$args) return null;
+
+        $normalized = ['params' => []];
+
+        if (isset($args['params']) && is_array($args['params'])) {
+            foreach ($args['params'] as $item) {
+                if (is_array($item) && (isset($item['param']) || isset($item['class']))) {
+                    $param = $item['param'] ?? null;
+                    $class = $item['class'] ?? null;
+                    $property = $item['property'] ?? 'slug';
+
+                    if ($param && $class) {
+                        $normalized['params'][] = ['param' => $param, 'class' => $class, 'property' => $property];
+                    }
+                    continue;
+                }
+
+                if (is_array($item)) {
+                    foreach ($item as $param => $class) {
+                        if (is_string($param) && is_string($class) && $param !== '' && $class !== '') {
+                            $normalized['params'][] = ['param' => $param, 'class' => $class, 'property' => 'slug'];
+                        }
+                    }
+                }
+            }
+        }
+
+        if (count($normalized['params']) === 0 && isset($args['class'])) {
+            $class = $args['class'] ?? null;
+            $property = $args['property'] ?? 'slug';
+
+            if ($class) {
+                $normalized['params'][] = ['param' => $property, 'class' => $class, 'property' => $property];
+            }
+        }
+
+        return $normalized;
     }
 
     private function getArgumentFromRequest(string $key, Request $request): ?string
