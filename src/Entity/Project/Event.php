@@ -50,9 +50,9 @@ class Event
     #[Groups(['event:read', 'event:write'])]
     private ?string $html = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\OneToMany(mappedBy: "event", targetEntity: Price::class)]
     #[Groups(['event:read', 'event:write'])]
-    private ?float $price = null;
+    private ?Price $price = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $state = null;
@@ -75,10 +75,14 @@ class Event
     #[ORM\Column(options: ["default" => 0])]
     private ?bool $isDeleted = null;
 
+    #[ORM\OneToMany(mappedBy: "Event", targetEntity: EventUploadGroup::class)]
+    private Collection $eventUploadGroups;
+
     public function __construct()
     {
         $this->categories = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
+        $this->eventUploadGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -158,12 +162,12 @@ class Event
         return $this;
     }
 
-    public function getPrice(): ?float
+    public function getPrice(): ?Price
     {
         return $this->price;
     }
 
-    public function setPrice(?float $price): self
+    public function setPrice(?Price $price): self
     {
         $this->price = $price;
 
@@ -286,6 +290,25 @@ class Event
     public function setIsDeleted(bool $isDeleted): self
     {
         $this->isDeleted = $isDeleted;
+
+        return $this;
+    }
+
+    
+    /**
+     * @return Collection<int, EventUploadGroup>
+     */
+    public function getEventUploadGroups(): Collection
+    {
+        return $this->eventUploadGroups;
+    }
+
+    public function addEventUploadGroup(EventUploadGroup $eventUploadGroup): self
+    {
+        if (!$this->eventUploadGroups->contains($eventUploadGroup)) {
+            $this->eventUploadGroups->add($eventUploadGroup);
+            $eventUploadGroup->setEvent($this);
+        }
 
         return $this;
     }

@@ -28,11 +28,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ClientAddress extends Address
 {
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'clientAddresses')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Assert\NotBlank(groups: ['client_address:write'])]
     private ?Client $client = null;
 
-    #[ORM\Column(nullable: false, options: ['default' => false])]
+    #[ORM\Column(nullable: true, options: ['default' => false])]
     #[Groups(['client:read', 'client:write', 'client_address:write'])]
     private ?bool $is_primary = false;
 

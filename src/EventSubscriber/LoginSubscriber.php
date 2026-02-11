@@ -41,7 +41,7 @@ readonly class LoginSubscriber implements EventSubscriberInterface
 
         // Case 1: Session cart has items - use it as active, existing client cart remains untouched
         if ($sessionCart && !$sessionCart->getProductVariants()->isEmpty()) {
-            $user->addOrder($sessionCart);
+            $user->addPurchase($sessionCart);
             $sessionCart->setClient($user);
             $this->entityManager->flush();
             return;
