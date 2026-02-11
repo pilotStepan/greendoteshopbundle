@@ -11,21 +11,24 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ProductProductTypeRepository::class)]
-#[ApiResource()]
+#[ApiResource(
+    normalizationContext: ['groups' => ['product_product_type:read']],
+    denormalizationContext: ['groups' => ['product_product_type:write']],
+)]
 class ProductProductType
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_item:read', 'purchase:read'])]
+    #[Groups(['product_item:read', 'purchase:read', 'product_product_type:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_item:read', 'purchase:read'])]
+    #[Groups(['product_item:read', 'purchase:read', 'product_product_type:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_item:read', 'purchase:read'])]
+    #[Groups(['product_item:read', 'purchase:read', 'product_product_type:read'])]
     private ?string $description = null;
 
     /**
