@@ -2,9 +2,9 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Greendot\EshopBundle\Entity\Project\Label;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\Label;
+use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 
 /**
  * @method Label|null find($id, $lockMode = null, $lockVersion = null)
@@ -12,7 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Label[]    findAll()
  * @method Label[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class LabelRepository extends ServiceEntityRepository
+class LabelRepository extends HintedRepositoryBase
 {
     public function __construct(ManagerRegistry $registry)
     {
