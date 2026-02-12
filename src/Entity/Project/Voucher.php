@@ -79,6 +79,9 @@ class Voucher
     #[Groups(['voucher:read', 'voucher:write'])]
     private ?string $note = null;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $extra = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -206,4 +209,3 @@ class Voucher
         return $this;
     }
 }
-
