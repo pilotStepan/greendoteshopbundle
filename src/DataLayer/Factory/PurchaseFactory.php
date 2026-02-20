@@ -59,7 +59,7 @@ class PurchaseFactory
 
         return new PurchaseItem(
             item_id: $purchaseProductVariant->getProductVariant()->getId(),
-            item_name: $purchaseProductVariant->getProductVariant()->getName(),
+            item_name: $purchaseProductVariant->getProductVariant()->getProduct()->getName(),
             priceVat: $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVat'),
             priceNoVat: $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceNoVat'),
             quantity: $purchaseProductVariant->getAmount(),
@@ -67,7 +67,7 @@ class PurchaseFactory
         );
     }
 
-    private function getCustomerType(\Greendot\EshopBundle\Entity\Project\Purchase $purchase): string
+    protected function getCustomerType(\Greendot\EshopBundle\Entity\Project\Purchase $purchase): string
     {
         $client = $purchase?->getClient();
         if ($client && $client->isVerified() && !$client->isIsAnonymous()){

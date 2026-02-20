@@ -8,12 +8,12 @@ class PurchaseItem implements \JsonSerializable
 {
     use DataParseTrait;
     public function __construct(
-        private readonly string $item_id,
-        private readonly string $item_name,
-        private readonly float $priceVat,
-        private readonly float $priceNoVat,
-        private readonly int $quantity,
-        private readonly array $categories,
+        public string $item_id,
+        public string $item_name,
+        public float $priceVat,
+        public float $priceNoVat,
+        public int $quantity,
+        public array $categories,
     ){}
 
     public function jsonSerialize(): mixed

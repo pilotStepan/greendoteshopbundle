@@ -38,7 +38,7 @@ class CartFactory
 
         return new CartItem(
             item_id: $purchaseProductVariant->getProductVariant()->getId(),
-            item_name: $purchaseProductVariant->getProductVariant()->getName(),
+            item_name: $purchaseProductVariant->getProductVariant()->getProduct()->getName(),
             quantity: $quantity !== null ? $quantity : $purchaseProductVariant->getAmount(),
             price: $productVariantPrice->getPrice(),
             item_brand: $purchaseProductVariant?->getProductVariant()?->getProduct()?->getProducer()?->getName() ?? 'Unknown',

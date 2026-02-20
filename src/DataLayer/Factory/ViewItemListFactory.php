@@ -70,7 +70,7 @@ class ViewItemListFactory
      * @param array|null $productIds
      * @return Product[]
      */
-    private function getProducts(?string $productsUri, ?array $productIds = null): array
+    protected function getProducts(?string $productsUri, ?array $productIds = null): array
     {
         if ($productsUri) {
             $productIds = $this->doSubRequest($productsUri);
@@ -84,7 +84,7 @@ class ViewItemListFactory
 
     }
 
-    private function doSubRequest(string $productsUri): array
+    protected function doSubRequest(string $productsUri): array
     {
         $mainRequest = $this->requestStack->getMainRequest();
 

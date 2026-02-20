@@ -7,7 +7,6 @@ use Greendot\EshopBundle\DataLayer\Data\ViewItem\ViewItemItem;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
-use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 
 class ViewItemFactory
@@ -15,23 +14,18 @@ class ViewItemFactory
     use FactoryUtilsTrait;
 
     public function __construct(
-        private readonly ProductVariantRepository $productVariantRepository,
         private readonly CurrencyManager          $currencyManager,
         private readonly ParameterRepository      $parameterRepository
     )
     {
     }
 
-    private array $sharedData = [];
+    protected array $sharedData = [];
 
     public function create(Product $product, ?array $selectedVariants = null): ViewItem
     {
         $currency = $this->currencyManager->get();
 
-//        $categories = [];
-//        foreach ($product->getCategoryProducts() as $categoryProduct) {
-//            $categories[] = $this->getCategoryNameTreeUp($categoryProduct->getCategory());
-//        }
         $categories = [];
         $productCategory = $product?->getCategoryProducts()?->first()?->getCategory();
         if ($productCategory) {
@@ -81,7 +75,7 @@ class ViewItemFactory
         );
     }
 
-    private function getFormatedParameters(ProductVariant $productVariant): array
+    protected function getFormatedParameters(ProductVariant $productVariant): array
     {
         $parameters = $this->parameterRepository->getFormattedParameters($productVariant, null, ['excludeIsVariant' => true]);
         $formatedParameters = [];
@@ -97,7 +91,7 @@ class ViewItemFactory
         return $formatedParameters;
     }
 
-    private function getVariantNameSafe(ProductVariant $productVariant): string
+    protected function getVariantNameSafe(ProductVariant $productVariant): string
     {
         $queryBuilder = $this->parameterRepository->createQueryBuilder('parameter');
         $queryBuilder->select("CASE WHEN format.name = 'color' THEN color.name ELSE parameter.data END as data");

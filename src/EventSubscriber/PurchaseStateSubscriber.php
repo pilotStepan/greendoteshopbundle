@@ -3,8 +3,10 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Exception;
+use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Workflow\Event\Event;
 use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageVoucher;
@@ -20,13 +22,16 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
     public function __construct
     (
-        private EntityManagerInterface $entityManager,
-        private ManageVoucher          $manageVoucher,
-        private ManagePurchase         $managePurchase,
-        private ManageClientDiscount   $manageClientDiscount,
-        private AffiliateService       $affiliateService,
-        private DateService            $dateService,
-    ) {}
+        private EntityManagerInterface   $entityManager,
+        private ManageVoucher            $manageVoucher,
+        private ManagePurchase           $managePurchase,
+        private ManageClientDiscount     $manageClientDiscount,
+        private AffiliateService         $affiliateService,
+        private DateService              $dateService,
+        private EventDispatcherInterface $eventDispatcher,
+    )
+    {
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -117,6 +122,13 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
+
+
+        try {
+            $this->eventDispatcher->dispatch(new PurchaseEvent($purchase));
+        }catch (Exception $exception){
+            //maybe add logg
+        }
 
         foreach ($purchase->getVouchersUsed() as $voucher) {
             $this->manageVoucher->use($voucher, $purchase);

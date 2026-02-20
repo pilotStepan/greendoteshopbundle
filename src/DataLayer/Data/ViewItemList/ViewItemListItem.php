@@ -9,14 +9,14 @@ class ViewItemListItem implements JsonSerializable
 {
     use DataParseTrait;
     public function __construct(
-        private readonly string $item_id,
-        private readonly string $item_name,
-        private readonly int $index,
-        private readonly float $priceVat,
-        private readonly float $priceNoVat,
-        private readonly int    $quantity,
-        private readonly string $item_brand,
-        private readonly array  $categories,
+        public string $item_id,
+        public string $item_name,
+        public int $index,
+        public float $priceVat,
+        public float $priceNoVat,
+        public int    $quantity,
+        public string $item_brand,
+        public array  $categories,
     )
     {
     }
