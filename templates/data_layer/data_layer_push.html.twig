@@ -1,0 +1,15 @@
+<script>
+    window.dataLayer = window.dataLayer || [];
+    {% for event in gtm_get_events() %}
+        window.dataLayer.push({{ event|json_encode|raw }});
+    {% endfor %}
+
+    document.addEventListener('_gtm_trigger', async (e) => {
+        const response = await fetch('/gtm/read/all');
+        if (!response.ok) console.error(response);
+        const json = await response.json();
+        json.forEach((event) => {
+            window.dataLayer.push(event);
+        })
+    })
+</script>

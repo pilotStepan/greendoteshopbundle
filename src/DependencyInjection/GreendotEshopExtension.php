@@ -2,20 +2,27 @@
 
 namespace Greendot\EshopBundle\DependencyInjection;
 
-use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 
-class GreendotEshopExtension extends Extension
+class GreendotEshopExtension extends Extension implements PrependExtensionInterface
 {
 
-    /**
-     * @inheritDoc
-     */
+
     public function load(array $configs, ContainerBuilder $container)
     {
-        //$loader = new YamlFileLoader($container,new FileLocator(__DIR__.'/../../config'));
-        //$loader->load('doctrine.yaml');
+
+    }
+
+    public function prepend(ContainerBuilder $container)
+    {
+        $bundleTemplatesDir = dirname(__DIR__, 2).'/templates';
+
+        $container->prependExtensionConfig('twig', [
+            'paths' => [
+                $bundleTemplatesDir => 'GreendotEshopBundle'
+            ]
+        ]);
     }
 }

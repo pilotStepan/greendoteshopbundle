@@ -13,12 +13,9 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
-use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
@@ -28,22 +25,17 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\Routing\Annotation\Route;
-// use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class ProductController extends AbstractController
 {
-    private ProductRepository $productRepository;
-    private ProductVariantRepository $productVariantRepository;
-
-    public function __construct(ProductRepository $productRepository, ProductVariantRepository $productVariantRepository)
-    {
-        $this->productRepository        = $productRepository;
-        $this->productVariantRepository = $productVariantRepository;
-    }
+    public function __construct(
+        private readonly ProductVariantRepository $productVariantRepository
+    )
+    {}
 
     #[CustomApiEndpoint]
     #[Route('/api/store-last-viewed-product', name: 'store_last_viewed_product', methods: ['POST'])]
@@ -87,7 +79,7 @@ class ProductController extends AbstractController
         ]);
     }
     #[TranslatableRoute(class: Product::class, property: 'slug')]
-    #[Route('/{slug}-p/add', name: 'add_product', priority: 2, requirements: ['slug' => '[A-Za-z0-9\-]+'])]
+    #[Route('/{slug}-p/add', name: 'add_product', requirements: ['slug' => '[A-Za-z0-9\-]+'], priority: 2)]
     public function add(
         Product $product,
         Session $session
@@ -116,11 +108,7 @@ class ProductController extends AbstractController
         $variant_id,
         $amount,
         RequestStack $requestStack,
-        ClientRepository $clientRepository,
-        ProductVariantRepository $productVariantRepository,
         PurchaseProductVariantRepository $purchaseProductVariantRepository,
-        TransportationRepository $transportationRepository,
-        PaymentTypeRepository $paymentTypeRepository,
         ManagePurchase $manageOrder,
         PurchaseRepository $purchaseRepository,
         EntityManagerInterface $entityManager,
@@ -133,7 +121,7 @@ class ProductController extends AbstractController
         if ($session->has('purchase')) {
             $purchase = $purchaseRepository->find($session->get('purchase'));
 
-            $productVariant = $productVariantRepository->find($variant_id);
+            $productVariant = $this->productVariantRepository->find($variant_id);
             $purchaseProductVariant = $purchaseProductVariantRepository->findOneBy(['ProductVariant' => $productVariant, 'purchase' => $purchase]);
             if ($purchaseProductVariant) {
                 $purchase->removeProductVariant($purchaseProductVariant);
@@ -146,7 +134,7 @@ class ProductController extends AbstractController
             $entityManager->persist($purchase);
             $entityManager->flush();
         } else {
-            $productVariant = $productVariantRepository->find($variant_id);
+            $productVariant = $this->productVariantRepository->find($variant_id);
 
             $purchase = $this->createCart($this->getUser());
             $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
@@ -162,20 +150,19 @@ class ProductController extends AbstractController
             'productVariant' => $productVariant
         ];
         $context = [AbstractNormalizer::GROUPS => ['product_variant:read']];
-
         return new JsonResponse($serializer->serialize($response, 'json', $context), Response::HTTP_OK, [], true);
     }
 
     #[CustomApiEndpoint]
     #[Route('/shop/api/cart/add_modal', name: 'cart_add_modal')]
-    public function cart_add_modal(RequestStack $requestStack, ProductVariantRepository $productVariantRepository): Response
+    public function cart_add_modal(RequestStack $requestStack): Response
     {
         $session         = $requestStack->getSession();
         $purchase        = $session->get('purchase');
         $productVariants = [];
         foreach ($purchase->getProductVariants() as $orderProductVariant) {
             $productVariant = $orderProductVariant->getProductVariant()->getId();
-            $productVariant = $productVariantRepository->find($productVariant);
+            $productVariant = $this->productVariantRepository->find($productVariant);
             array_push($productVariants, $productVariant);
         }
         return $this->json(
@@ -194,7 +181,6 @@ class ProductController extends AbstractController
         $variant_id,
         $amount,
         RequestStack $requestStack,
-        ProductVariantRepository $productVariantRepository,
         PurchaseProductVariantRepository $purchaseProductVariantRepository,
         ManagePurchase $manageOrder,
         PurchaseRepository $purchaseRepository,
@@ -208,7 +194,7 @@ class ProductController extends AbstractController
         }
 
         $wishlist = $purchaseRepository->find($session->get('wishlist'));
-        $productVariant = $productVariantRepository->find($variant_id);
+        $productVariant = $this->productVariantRepository->find($variant_id);
         $purchaseProductVariant = $purchaseProductVariantRepository->findOneBy(['ProductVariant' => $productVariant, 'purchase' => $wishlist]);
         if ($purchaseProductVariant) {
             $wishlist->removeProductVariant($purchaseProductVariant);
@@ -232,7 +218,6 @@ class ProductController extends AbstractController
         $amount,
         RequestStack $requestStack,
         ClientRepository $clientRepository,
-        ProductVariantRepository $productVariantRepository,
         ManagePurchase $manageOrder,
         GoogleAnalytics $googleAnalytics
     )
@@ -241,12 +226,12 @@ class ProductController extends AbstractController
         if ($session->has('inquiry')) {
             $purchase = $session->get('inquiry');
 
-            $productVariant = $productVariantRepository->find($variant_id);
+            $productVariant = $this->productVariantRepository->find($variant_id);
             $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
 
             $session->set('inquiry', $purchase);
         } else {
-            $productVariant = $productVariantRepository->find($variant_id);
+            $productVariant = $this->productVariantRepository->find($variant_id);
 
             $purchase = new Purchase();
             $purchase->setState('inquiry');

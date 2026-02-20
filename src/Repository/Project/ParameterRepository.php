@@ -85,6 +85,30 @@ class ParameterRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function findProductParameterGroupsParametersQB(ProductVariant $productVariant, QueryBuilder $queryBuilder = null): QueryBuilder
+    {
+        if (!$queryBuilder){
+            $queryBuilder = $this->createQueryBuilder('parameter');
+        }
+        $alias = $queryBuilder->getAllAliases()[0];
+        $queryBuilder
+            ->leftJoin("$alias.parameterGroup", 'parameterGroup')
+            ->leftJoin('parameterGroup.productParameterGroups', 'productParameterGroup')
+
+            ->leftJoin('parameterGroup.parameterGroupFormat', 'format') // Get the type (e.g., 'color')
+            ->leftJoin('Greendot\EshopBundle\Entity\Project\Colour', 'color', 'WITH', "format.name = 'color' AND color.hex = $alias.data")
+
+            ->andWhere('productParameterGroup.isVariant = 1')
+            ->andWhere('productParameterGroup.product = :product')
+            ->setParameter('product', $productVariant->getProduct()->getId())
+            ->andWhere("$alias.productVariant = :productVariant")
+            ->setParameter('productVariant', $productVariant->getId())
+        ;
+
+        return $queryBuilder;
+
+    }
+
     public function add(Parameter $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);
