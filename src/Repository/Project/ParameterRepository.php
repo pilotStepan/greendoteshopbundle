@@ -205,13 +205,15 @@ class ParameterRepository extends ServiceEntityRepository
         // dd($allCategoryIds);
 
         $alias = $queryBuilder->getRootAliases()[0];
+
+        $this->safeJoin($queryBuilder, $alias, "productVariant", 'pv', 'inner');
+        $this->safeJoin($queryBuilder, 'pv', 'product', 'pr', 'inner');
+        $this->safeJoin($queryBuilder, 'pr', "categoryProducts", 'cp', 'inner');
+        $this->safeJoin($queryBuilder, 'cp', "category", 'ca', 'inner');
+        $this->safeJoin($queryBuilder, 'ca', "categorySubCategories", 'cc', 'left');
+        $this->safeJoin($queryBuilder, $alias, 'parameterGroup', 'pg', 'inner');
+
         return $queryBuilder
-            ->join($alias.'.productVariant', 'pv')
-            ->join('pv.product', 'pr')
-            ->join('pr.categoryProducts', 'cp')
-            ->join('cp.category', 'ca')
-            ->leftJoin('ca.categorySubCategories', 'cc')
-            ->join($alias.'.parameterGroup', 'pg')
             ->andWhere('ca.id IN (:categoryIds)')
             ->andWhere('pg.isFilter=1')
             ->setParameter('categoryIds', $allCategoryIds)
@@ -220,26 +222,29 @@ class ParameterRepository extends ServiceEntityRepository
 
     public function getProductParametersByProducer(QueryBuilder $queryBuilder, int $producerId) : QueryBuilder
     {
-        // HACK: there is redundant join on pv,pr and pg. Merge with the "getProductParametersByTopCategory" function?
         $alias = $queryBuilder->getRootAliases()[0];
+
+        $this->safeJoin($queryBuilder, $alias, "productVariant", 'pv', 'inner');
+        $this->safeJoin($queryBuilder, 'pv', 'product', 'pr', 'inner');
+        $this->safeJoin($queryBuilder, 'pr', "producer", 'pc', 'inner');
+        $this->safeJoin($queryBuilder, $alias, 'parameterGroup', 'pg', 'inner');
+
         return $queryBuilder
-            ->join($alias.'.productVariant', 'pv2')
-            ->join('pv2.product', 'pr2')
-            ->join('pr2.producer', 'pc')
-            ->join($alias.'.parameterGroup', 'pg2')
             ->orWhere('pc.id = :producerId')
-            ->andWhere('pg2.isFilter=1')
+            ->andWhere('pg.isFilter=1')
             ->setParameter('producerId', $producerId)
             ->groupBy($alias.'.data');
 
     }
 
-     public function getProductParametersByDiscount(QueryBuilder $queryBuilder, DateTime $date = new \DateTime): QueryBuilder
+    public function getProductParametersByDiscount(QueryBuilder $queryBuilder, DateTime $date = new \DateTime): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
+
+        $this->safeJoin($queryBuilder, $alias, "productVariant", 'pv', 'inner');
+        $this->safeJoin($queryBuilder, 'pv', 'price', 'price', 'left');
+
         return $queryBuilder
-            ->join($alias.'.productVariant', 'pv')
-            ->leftJoin('pv.price', 'price')
             ->andWhere('price.validFrom <= :date')
             ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
             ->andWhere('price.discount IS NOT NULL AND price.discount > 0')
@@ -472,6 +477,47 @@ class ParameterRepository extends ServiceEntityRepository
         }
 
         return $result;
+    }
+
+    
+    /**
+     * Adds a join to the Doctrine QueryBuilder only if it hasn't already been added.
+     *
+     * This prevents duplicate alias errors in modular code where multiple functions
+     * may request the same join.
+     *
+     * @param QueryBuilder $qb        The Doctrine QueryBuilder instance to modify.
+     * @param string       $rootAlias The alias of the root entity (e.g., 'e' for 'FROM Entity e').
+     * @param string       $path      The relation path from the root entity (e.g., 'joinedEntity').
+     * @param string       $alias     The alias to assign to the joined entity (e.g., 'j').
+     * @param string       $joinType  The type of join to perform: 'left' (default) or 'inner'.
+     *
+     * @throws InvalidArgumentException If an unsupported join type is provided.
+     *
+     * @example
+     * safeJoin($qb, 'e', 'category', 'c');
+    */
+    function safeJoin(QueryBuilder $qb, string $rootAlias, string $path, string $alias, string $joinType = 'left')
+    {
+
+        $joinDqlParts = $qb->getDQLParts()['join'];
+        foreach ($joinDqlParts as $joins) {
+            foreach ($joins as $join) {
+                if ($join->getAlias() === $alias) {
+                    return;
+                }
+            }
+        }
+
+
+
+        if ($joinType === 'left') {
+            $qb->leftJoin("$rootAlias.$path", $alias);
+        } elseif ($joinType === 'inner') {
+            $qb->innerJoin("$rootAlias.$path", $alias);
+        } else {
+            throw new \InvalidArgumentException("Unsupported join type: $joinType");
+        }
     }
 
 }

@@ -31,6 +31,7 @@ readonly class ProductStateProvider implements ProviderInterface
         $filters->orderBy = is_object($filters->orderBy ?? null) ? $filters->orderBy : (object)[];
         $filters->orderBy->id = (string)($filters->orderBy->id ?? '');
         $filters->orderBy->direction = strtoupper((string)($filters->orderBy->direction ?? 'DESC'));
+        
         if (!in_array($filters->orderBy->direction, ['ASC', 'DESC'], true)) {
             $filters->orderBy->direction = 'DESC';
         }

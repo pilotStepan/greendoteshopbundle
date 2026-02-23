@@ -291,10 +291,13 @@ class ProductRepository extends HintedRepositoryBase
     {
         $alias = $qb->getRootAliases()[0];
 
-        $qb
-            ->innerJoin($alias . '.productVariants', 'pv')
-            ->innerJoin('pv.price', 'p')
-            ->andWhere('p.discount IS NOT NULL')
+
+        
+        $this->safeJoin($qb, $alias, 'productVariants', 'pv', 'inner');
+        $this->safeJoin($qb, 'pv', 'price', 'price', 'inner');
+
+
+        $qb ->andWhere('p.discount IS NOT NULL')
             ->andWhere('p.discount > 0');
 
         return $qb;
@@ -458,25 +461,27 @@ class ProductRepository extends HintedRepositoryBase
     public function findProductsWithDiscountForAPI($queryBuilder, DateTime $date, int $minimalAmount = 1, int|null $vat = null)
     {
         $alias = $queryBuilder->getAllAliases()[0];
+
+        $this->safeJoin($queryBuilder, $alias, 'productVariants', 'pv', 'left');
+        $this->safeJoin($queryBuilder, 'pv', 'price', 'price', 'left');
+
         $queryBuilder
-            ->leftJoin($alias . '.productVariants', 'pv')
-            ->leftJoin('pv.price', 'p')
-            ->andWhere('p.validFrom <= :date')
+            ->andWhere('price.validFrom <= :date')
             ->setParameter('date', $date)
             ->andWhere(
                 $queryBuilder->expr()->orX(
-                    'p.validUntil >= :date',
-                    'p.validUntil IS NULL'
+                    'price.validUntil >= :date',
+                    'price.validUntil IS NULL'
                 )
             )
-            ->andWhere('p.minimalAmount <= :minAmount')
+            ->andWhere('price.minimalAmount <= :minAmount')
             ->setParameter('minAmount', $minimalAmount)
-            ->andWhere('p.discount > 0')
-            ->orderBy('p.discount', 'DESC')
-            ->addOrderBy('p.price', 'ASC')
-            ->groupBy('p.productVariant');
+            ->andWhere('price.discount > 0')
+            ->orderBy('price.discount', 'DESC')
+            ->addOrderBy('price.price', 'ASC')
+            ->groupBy('price.productVariant');
         if ($vat) {
-            $queryBuilder->andWhere('p.vat = :vat')->setParameter('vat', $vat);
+            $queryBuilder->andWhere('price.vat = :vat')->setParameter('vat', $vat);
         }
         return $queryBuilder;
     }
@@ -484,7 +489,9 @@ class ProductRepository extends HintedRepositoryBase
 
     public function sortProductsByPrice(QueryBuilder $qb, DateTime $date, string $direction) : QueryBuilder
     {
-        $this->safeJoin($qb, 'pv', 'price', 'price');
+        $alias = $qb->getRootAliases()[0];
+        $this->safeJoin($qb, $alias, "productVariants", 'pv', 'left');
+        $this->safeJoin($qb, 'pv', 'price', 'price', 'left');
 
         $qb ->andWhere('price.validFrom <= :date')
             ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
