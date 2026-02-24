@@ -66,7 +66,6 @@ class PurchaseController extends AbstractController
 
             return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
         } catch (Throwable $e) {
-//            dd($e);
 
             $logger->error('Error during order verification', [
                 'purchaseId' => $purchase?->getId(),
