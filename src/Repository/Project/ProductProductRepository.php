@@ -2,9 +2,11 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductProduct;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 
 /**
  * @extends ServiceEntityRepository<ProductProduct>
@@ -16,33 +18,38 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ProductProductRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(private readonly ManagerRegistry $registry)
     {
         parent::__construct($registry, ProductProduct::class);
     }
 
-    //    /**
-    //     * @return ProductProduct[] Returns an array of ProductProduct objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function getForPurchaseProductVariant(PurchaseProductVariant $purchaseProductVariant): ?ProductProduct
+    {
+        //get all products in purchase
+        $productRepository = $this->registry->getRepository(Product::class);
+        assert($productRepository instanceof ProductRepository);
+        $productsInPurchase = $productRepository->findProductsByPurchaseQB($purchaseProductVariant->getPurchase());
+        $productsInPurchase = $productsInPurchase
+            ->select('product.id as id')
+            ->distinct()
+            ->getQuery()->getResult();
+        //format to array of ids
+        $productsInPurchase = array_column($productsInPurchase, 'id');
 
-    //    public function findOneBySomeField($value): ?ProductProduct
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        //filter out current product
+        $productsInPurchase = array_filter($productsInPurchase, fn($id) => $id !== $purchaseProductVariant->getProductVariant()->getProduct()->getId());
+
+        if (!$productsInPurchase or empty($productsInPurchase)) return null;
+
+
+        return $this->createQueryBuilder('productProduct')
+            ->andWhere('productProduct.childrenProduct = :productVariant')
+            ->setParameter('productVariant', $purchaseProductVariant->getProductVariant()->getProduct()->getId())
+            ->andWhere('productProduct.parentProduct in (:productInPurchase)')
+            ->setParameter('productInPurchase', $productsInPurchase)
+            ->orderBy('productProduct.discount', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

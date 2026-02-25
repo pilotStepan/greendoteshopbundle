@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -23,7 +24,8 @@ readonly class ProductVariantPriceFactory
         private PriceRepository    $priceRepository,
         private DiscountService    $discountService,
         private PriceUtils         $priceUtils,
-        private SettingsRepository $settingsRepository
+        private SettingsRepository $settingsRepository,
+        private ProductProductRepository $productProductRepository
     )
     {
         $this->afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
@@ -61,7 +63,8 @@ readonly class ProductVariantPriceFactory
             $this->security,
             $this->priceRepository,
             $this->discountService,
-            $this->priceUtils
+            $this->priceUtils,
+            $this->productProductRepository
         );
     }
 
@@ -75,7 +78,7 @@ readonly class ProductVariantPriceFactory
         $amount = $price->getMinimalAmount();
         $conversionRate = $currencyOrConversionRate;
         if ($currencyOrConversionRate instanceof Currency){
-            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
+            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate);
         }
 
         return new ProductVariantPrice(
@@ -89,6 +92,7 @@ readonly class ProductVariantPriceFactory
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
+            $this->productProductRepository,
             $price
         );
     }
