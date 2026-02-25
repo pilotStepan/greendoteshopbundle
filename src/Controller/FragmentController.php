@@ -20,7 +20,14 @@ class FragmentController extends AbstractController
     #[CustomApiEndpoint]
     #[Route('/_fragment/breadCrumbs/category-{category}/json-{json}', name: 'fragment_category_breadCrumbs', options: ['expose' => true], defaults: ['product' => null, 'json' => false])]
     #[Route('/_fragment/breadCrumbs/product-{product}/json-{json}', name: 'fragment_product_breadCrumbs', options: ['expose' => true], defaults: ['category' => null, 'json' => false])]
-    public function fragmentBreadCrumbs(?Category $category, ?Product $product, $json, CategoryInfoGetter $categoryInfoGetter, ProductInfoGetter $productInfoGetter, Request $request):Response
+    public function fragmentBreadCrumbs(
+        #[MapEntity(mapping: ['category' => 'id'])] ?Category $category,
+        #[MapEntity(mapping: ['product' => 'id'])] ?Product $product, 
+        $json, 
+        CategoryInfoGetter $categoryInfoGetter, 
+        ProductInfoGetter $productInfoGetter, 
+        Request $request
+    ):Response
     {
         if ($category) {
             $breadCrumbs = $categoryInfoGetter->getCategoryBreadCrumbsArray($category);
