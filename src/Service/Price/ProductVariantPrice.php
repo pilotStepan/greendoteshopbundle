@@ -6,6 +6,9 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Price;
+use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\ProductProduct;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Symfony\Component\Security\Core\User\InMemoryUser;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
@@ -42,6 +45,9 @@ class ProductVariantPrice
     private ?\DateTime $discountValidUntil = null;
     private ?\DateTime $priceValidUntil = null;
 
+    private ?ProductProduct $parentProductRelation = null;
+    private ?float $parentProductDiscountPercentage = null;
+
     private VatCalculationType $vatCalculationType;
     private DiscountCalculationType $discountCalculationType;
 
@@ -59,6 +65,7 @@ class ProductVariantPrice
         private readonly PriceRepository      $priceRepository,
         private readonly DiscountService      $discountService,
         private readonly PriceUtils           $priceUtils,
+        private readonly ProductProductRepository $productProductRepository,
         private readonly ?Price                $priceEntity = null
     )
     {
@@ -117,11 +124,13 @@ class ProductVariantPrice
             case DiscountCalculationType::WithDiscount:
             case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
                 $clientDiscount = $this->clientDiscount ?? $this->afterRegistrationBonus;
-                return $this->discountPercentage + $clientDiscount;
+                return $this->discountPercentage + $this->parentProductDiscountPercentage + $clientDiscount;
             case DiscountCalculationType::WithoutDiscount:
                 return null;
             case DiscountCalculationType::OnlyProductDiscount:
                 return $this->discountPercentage;
+            case DiscountCalculationType::OnlyComplementDiscount:
+                return $this->parentProductDiscountPercentage;
             case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
                 return $this->clientDiscount ?? $this->afterRegistrationBonus;
         }
@@ -141,6 +150,39 @@ class ProductVariantPrice
     public function getPriceValidUntil(): ?\DateTime
     {
         return $this->priceValidUntil;
+    }
+
+    public function setParentProduct(Product|ProductProduct $parentProduct): self
+    {
+        $productProduct = null;
+        if ($parentProduct instanceof ProductProduct){
+            if ($parentProduct->getChildrenProduct()->getId() !== $this->productVariant->getProduct()->getId()){
+                throw new \Exception("Invalid ProductProduct given. Child doesn't match loaded productVariant.product");
+            }
+            $productProduct = $parentProduct;
+        }else{
+            $productProduct = $this->productProductRepository->findOneBy([
+                'parentProduct' => $parentProduct->getId(),
+                'childrenProduct' => $this->productVariant->getProduct()->getId()
+            ]);
+        }
+
+        if (!$productProduct or !$productProduct->getDiscount()) return $this;
+
+        $this->parentProductRelation = $productProduct;
+        $this->parentProductDiscountPercentage = $productProduct->getDiscount();
+
+        $this->recalculateNoQuery();
+        return $this;
+    }
+
+    public function emptyParentProduct(): self
+    {
+        $this->parentProductRelation = null;
+        $this->parentProductDiscountPercentage = null;
+        $this->recalculateNoQuery();
+
+        return $this;
     }
 
 
@@ -195,13 +237,16 @@ class ProductVariantPrice
             case DiscountCalculationType::WithoutDiscount:
                 break;
             case DiscountCalculationType::WithDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage + $this->clientDiscount;
+                $totalDiscountedPercentage = $this->discountPercentage + $this->clientDiscount + $this->parentProductDiscountPercentage;
                 break;
             case DiscountCalculationType::OnlyProductDiscount:
                 $totalDiscountedPercentage = $this->discountPercentage;
                 break;
+            case DiscountCalculationType::OnlyComplementDiscount:
+                $totalDiscountedPercentage = $this->parentProductDiscountPercentage;
+                break;
             case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage;
+                $totalDiscountedPercentage = $this->discountPercentage + $this->parentProductDiscountPercentage;
                 if (!$this->clientDiscount) {
                     $totalDiscountedPercentage += $this->afterRegistrationBonus;
                 }
@@ -282,6 +327,13 @@ class ProductVariantPrice
         if ($this->productVariant?->getPurchase()?->getClientDiscount()?->getDiscount()) {
             $this->clientDiscount = $this->productVariant->getPurchase()->getClientDiscount()->getDiscount();
         }
+
+        $productProduct = $this->productProductRepository->getForPurchaseProductVariant($this->productVariant);
+        if (!$productProduct) return;
+
+        $this->parentProductRelation = $productProduct;
+        $this->parentProductDiscountPercentage = $productProduct->getDiscount();
+
     }
 
 

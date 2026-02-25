@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Tests\Service\Price;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Settings;
 use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -47,6 +48,8 @@ abstract class PriceCalculationTestCase extends TestCase
     protected $parameterBag;
 
     protected $conversionRateRepository;
+
+    protected $productProductRepository;
     protected function setUp(): void
     {
         $this->conversionRateRepository = $this->createMock(ConversionRateRepository::class);
@@ -62,6 +65,7 @@ abstract class PriceCalculationTestCase extends TestCase
                        throw new \Exception('Invalid currency name');
                }
             });
+        $this->productProductRepository = $this->createMock(ProductProductRepository::class);
         $this->priceUtils = new PriceUtils($this->conversionRateRepository);
         $this->priceRepository = $this->createMock(PriceRepository::class);
         $this->security = $this->createMock(Security::class);
@@ -87,6 +91,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->discountService,
             $this->priceUtils,
             $this->settingsRepository,
+            $this->productProductRepository
         );
         $this->parameterBag = $this->createMock(ParameterBagInterface::class);
         $this->parameterBag->method('get')->willReturn(false);
@@ -129,6 +134,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
+            $this->productProductRepository
         );
     }
 
