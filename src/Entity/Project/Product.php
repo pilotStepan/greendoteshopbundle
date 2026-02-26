@@ -91,9 +91,9 @@ class Product implements Translatable
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
-    #[ORM\Column(type: 'text')]
+    #[ORM\Column(type: 'text', nullable:true)]
     #[Groups(['searchable', 'product_item:read', 'product_list:read', 'comment:read'])]
-    private $description;
+    private ?string $description;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
@@ -300,7 +300,7 @@ class Product implements Translatable
         return $this->description;
     }
 
-    public function setDescription(string $description): self
+    public function setDescription(?string $description): self
     {
         $this->description = $description;
 
