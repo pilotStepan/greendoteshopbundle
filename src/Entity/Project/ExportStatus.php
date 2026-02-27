@@ -9,6 +9,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ExportStatusRepository::class)]
 class ExportStatus
 {
+    const CREATED = "created";
+    const PROCESSING = "processing";
+    const FINISHED = "finished";
+    const FAILED = "failed";
+
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
