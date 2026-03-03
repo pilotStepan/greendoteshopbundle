@@ -316,6 +316,9 @@ class AppExtension extends AbstractExtension
             $dirname = $path_parts['dirname'];
             $filename = $path_parts['filename'];
             $extension = $path_parts['extension'];
+            if ($extension === 'svg'){
+                $sizeString = null;
+            }
 
             $new_filename = $filename . $sizeString . '.' . $extension;
             if ($dirname and $dirname !== '.'){
