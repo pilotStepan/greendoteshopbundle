@@ -125,7 +125,7 @@ class ProductInfoGetter
             }
         }
 
-        return $returnArrays[0];
+        return $returnArrays[0] ?? [];
 
     }
 
