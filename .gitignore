@@ -2,3 +2,5 @@ composer.lock
 vendor/
 var/
 .idea/
+CLAUDE.md
+.claude

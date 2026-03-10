@@ -25,9 +25,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
       operations: [
         new Get(normalizationContext: ['groups' => ['parameter:read']]),
         new GetCollection(normalizationContext: ['groups' => ['parameter:read']]),
-        new Post(denormalizationContext: ['groups' => ['parameter:write']]),
-        new Patch(denormalizationContext: ['groups' => ['parameter:write']]),
-        new Delete(),
+        new Post(security: "is_granted('ROLE_ADMIN')", denormalizationContext: ['groups' => ['parameter:write']]),
+        new Patch(security: "is_granted('ROLE_ADMIN')", denormalizationContext: ['groups' => ['parameter:write']]),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
 
         new GetCollection(
             uriTemplate: '/parametersFiltered',
