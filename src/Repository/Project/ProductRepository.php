@@ -393,15 +393,32 @@ class ProductRepository extends HintedRepositoryBase
                     ->andWhere("price.minimalAmount = 1")
                     ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
-                    ->having("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
+                    ->andHaving("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
                     ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
                     ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
                     ->setParameter('date', new \DateTime());
 
-            }else {
-                $queryBuilder->innerJoin('pv.parameters', 'pa'.$i);
-                $queryBuilder->andWhere('pa'.$i.'.data in (?'.$i.')');
-                $queryBuilder->setParameter($i++, $parameter->selectedParameters);
+            }
+            else{
+                $queryBuilder
+                    ->innerJoin('pv.parameters', 'pa'.$i)
+                    ->innerJoin('pa'.$i.'.parameterGroup', 'pg'.$i)
+                    ->andWhere("pg$i.id = :pg".$i."id")
+                    ->setParameter("pg".$i."id", $parameter->parameterGroup->id);
+
+                if ($parameter->parameterGroup->parameterGroupFilterType->name == "range") {
+                    $alias = "pa".$i;
+                    $floatData = "CAST(REPLACE($alias.data, ',', '.') AS DOUBLE)";
+                    $queryBuilder
+                        ->andWhere("$floatData BETWEEN :minVal$i AND :maxVal$i")
+                        ->setParameter("minVal$i", (float)$parameter->selectedParameters[0])
+                        ->setParameter("maxVal$i", (float)$parameter->selectedParameters[1]);
+                } else {
+                    // andWhere uses ?1, ?2 etc. matching your $i
+                    $queryBuilder->andWhere("pa$i.data IN (?$i)")
+                                ->setParameter($i, $parameter->selectedParameters);
+                }
+                $i++;
             }
         }
 
