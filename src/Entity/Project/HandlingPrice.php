@@ -3,6 +3,12 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
@@ -11,6 +17,14 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: HandlingPriceRepository::class)]
 #[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Put(security: "is_granted('ROLE_ADMIN')"),
+        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
+    ],
     normalizationContext: ['groups' => ['handling_price:read']],
     denormalizationContext: ['groups' => ['handling_price:write']],
 )]

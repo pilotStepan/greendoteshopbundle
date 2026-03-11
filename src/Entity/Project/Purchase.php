@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use JetBrains\PhpStorm\ArrayShape;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -69,9 +68,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
             provider: PurchaseStateProvider::class,
             processor: CartStateProcessor::class,
         ),
-        new Patch(),
-        new Put(),
-        new Delete(),
+        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        new Put(security: "is_granted('ROLE_ADMIN')"),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['purchase:read']],
     denormalizationContext: ['groups' => ['purchase:write']],

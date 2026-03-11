@@ -4,6 +4,12 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\ParameterGroupValues;
 use Greendot\EshopBundle\Repository\Project\ParameterGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -18,6 +24,14 @@ use Gedmo\Translatable\Translatable;
  */
 #[ORM\Entity(repositoryClass: ParameterGroupRepository::class)]
 #[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Put(security: "is_granted('ROLE_ADMIN')"),
+        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
+    ],
     normalizationContext: ['groups' => ['parameter_group:read']],
     denormalizationContext: ['groups' => ['parameter_group:write']],
     paginationEnabled: false
