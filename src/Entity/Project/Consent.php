@@ -44,7 +44,8 @@ class Consent implements Translatable, SoftDeletedInterface
     /**
      * @var Collection<int, Purchase>
      */
-    #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'Consents')]
+    #[ORM\ManyToMany(targetEntity: Purchase::class, inversedBy: 'Consents', fetch: 'EXTRA_LAZY')]
+
     private Collection $purchases;
 
     #[Gedmo\Locale]
