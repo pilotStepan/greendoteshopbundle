@@ -3,10 +3,13 @@
 namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Upload;
+use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Repository\Utils\SafeJoin;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use DateTime;
@@ -35,6 +38,31 @@ class ProductRepository extends HintedRepositoryBase
         parent::__construct($registry, Product::class);
     }
 
+    public function findProductUploadSubstitute(Product $product): ?Upload
+    {
+        $qb = $this->getEntityManager()->getRepository(Upload::class)->createQueryBuilder('u');
+
+
+        $qb
+            ->leftJoin('u.uploadGroup', 'ug')
+            ->leftJoin('ug.productUploadGroups', 'pug')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->leftJoin('pvug.ProductVariant', 'pv')
+            ->where(
+                $qb->expr()->orX(
+                    'pug.Product = :product',
+                    'pv.product = :product'
+                )
+            )
+            ->andWhere('ug.type = :type')
+            ->orderBy('u.sequence', 'ASC')
+            ->setParameter('product', $product)
+            ->setParameter('type', UploadGroupTypeEnum::IMAGE)
+            ->setMaxResults(1);
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
+
     public function findByArrayOfIdsQB(QueryBuilder $queryBuilder, array $ids): QueryBuilder
     {
         $alias = $queryBuilder->getAllAliases()[0];
@@ -45,18 +73,15 @@ class ProductRepository extends HintedRepositoryBase
 
     public function calculateParameters(Product $product): array
     {
-        $parameters = [];
+        $parameterRepository = $this->getEntityManager()->getRepository(Parameter::class);
 
-        foreach ($product->getProductVariants() as $variant) {
-            foreach ($variant->getParameters() as $parameter) {
-                $parameters[] = [
-                    'name' => $parameter->getParameterGroup()->getName(),
-                    'value' => $parameter->getData(),
-                ];
-            }
-        }
+        $parametersQB = $parameterRepository->getParametersForProductQB($product->getId());
+        $parametersQB
+            ->leftJoin('parameter.parameterGroup', 'parameterGroup')
+            ->select('parameter.data, parameterGroup.name')
+        ;
 
-        return $parameters;
+        return $parametersQB->getQuery()->getArrayResult();
     }
 
     public function findProductsByProducer(int $producerId): array
@@ -567,6 +592,109 @@ class ProductRepository extends HintedRepositoryBase
             ->where('purchaseProductVariant.purchase = :purchase')
             ->setParameter('purchase', $purchase);
 
+    }
+
+
+    public function mainProductsFilter(array $filters): QueryBuilder
+    {
+        if (!isset($filters['categoryId'])) $filters['categoryId'] = 0;
+
+        if (!isset($filters['supplierIds'])) $filters['supplierIds'] = [];
+        if (!isset($filters['productViewTypes'])) $filters['productViewTypes'] = [];
+        if (!isset($filters['selectedParameters'])) $filters['selectedParameters'] = [];
+
+        if (!isset($filters['discounts'])) $filters['discounts'] = false;
+        if (!isset($filters['isStockOnly'])) $filters['isStockOnly'] = false;
+
+
+        $availableOrderByIds = ['name', 'price', 'rating', 'default'];
+
+        if (!isset($filters['orderBy'])){
+            $filters['orderBy'] = ['id' => '', 'direction' => 'DESC'];
+        }else{
+            $orderBy = $filters['orderBy'];
+            $cleanOrderBy = [];
+            if (!isset($orderBy['id']) or !in_array($orderBy['id'], $availableOrderByIds)){
+                $cleanOrderBy['id'] = 'default';
+            }
+            if (!isset($orderBy['direction']) or !in_array($orderBy['direction'], ['ASC', 'DESC']) ){
+                $cleanOrderBy['direction'] = 'DESC';
+            }
+            $filters['orderBy'] = $cleanOrderBy;
+        }
+
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.isVisible = :visible')
+            ->setParameter('visible', true)
+        ;
+
+        if ($filters['categoryId'] > 0) {
+            $this->findProductsInCategory($qb, $filters['categoryId']);
+        }
+
+        if (count($filters['supplierIds']) > 0) {
+            $this->findProductsForProducers($qb, $filters['supplierIds']);
+        }
+
+        if (count($filters['productViewTypes']) > 0) {
+            $qb->andWhere('p.productViewType in (:productViewTypes)')
+                ->setParameter('productViewTypes', $filters['productViewTypes'])
+            ;
+        }
+
+        if ($filters['discounts']) {
+            $this->findDiscountedProducts($qb);
+        }
+
+        if (count($filters['selectedParameters']) > 0) {
+            $this->productsByParameters($qb, $filters['selectedParameters']);
+        }
+
+        if ($filters['isStockOnly']) {
+            $this->sortProductsByAvailability($qb);
+        }
+
+        $direction = $filters['orderBy']['direction'];
+        switch ($filters['orderBy']['id']) {
+            case 'name':
+                $qb->orderBy('p.name', $direction);
+                break;
+            case 'price':
+                $this->sortProductsByPrice($qb, new \DateTime(), $direction);
+                break;
+            case 'rating':
+                $this->sortProductsByReviews($qb, $direction);
+                break;
+            default:
+                if ($filters['categoryId'] > 0) {
+                    $qb->addOrderBy('cp.sequence', 'ASC');
+                    break;
+                }
+                $this->sortProductsBySequence($qb, 'DESC');
+                break;
+        }
+
+        $qb->addOrderBy('p.id', 'DESC');
+
+        $limit = isset($filters['itemsPerPage']) ? (int)$filters['itemsPerPage'] : 30;
+        if ($limit <= 0) {
+            $limit = 30;
+        }
+        if ($limit > 200) {
+            $limit = 200;
+        }
+
+        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+        if ($page <= 0) {
+            $page = 1;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $qb->setMaxResults($limit);
+        $qb->setFirstResult($offset);
+
+
+        return $qb;
     }
 
 }

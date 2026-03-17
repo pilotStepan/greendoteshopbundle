@@ -36,39 +36,11 @@ class ProductEventListener
 
         // if it doesn't have main upload, it tries to substitute it
         if ($product->getUpload() === null) {
-
-            $productUploads = [];
-            foreach($product->getProductUploadGroups() as $productUploadGroup) {
-                if ($productUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                    continue;
-                }
-                foreach($productUploadGroup->getUploadGroup()->getUpload() as $upload)
-                {
-                    $productUploads[] = $upload;
-                }
+            $upload = $this->productRepository->findProductUploadSubstitute($product);
+            if ($upload) {
+                $upload->setIsDynamicallySet(true);
+                $product->setUpload($upload);
             }
-            if(count($productUploads) === 0)
-            {
-                foreach ($product->getProductVariants() as $productVariant) {
-                    foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
-                        if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                            continue;
-                        }
-                        foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
-                        {
-                            $productUploads[] = $upload;
-                        }
-                    }
-                }
-            }
-            if (count($productUploads) > 0) {
-                usort($productUploads, function($a, $b) {
-                    return $a->getSequence() <=> $b->getSequence();
-                });
-                $productUploads[0]->setIsDynamicallySet(true);
-                $product->setUpload($productUploads[0]);
-            }
-
         }
 
 
