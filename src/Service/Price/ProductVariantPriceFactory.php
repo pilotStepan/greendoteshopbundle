@@ -5,6 +5,8 @@ namespace Greendot\EshopBundle\Service\Price;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Price;
+use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\ProductProduct;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -36,7 +38,8 @@ readonly class ProductVariantPriceFactory
         Currency|ConversionRate               $currencyOrConversionRate,
         ?int                                  $amount = null,
         VatCalculationType                    $vatCalculationType = VatCalculationType::WithoutVAT,
-        DiscountCalculationType               $discountCalculationType = DiscountCalculationType::WithDiscount
+        DiscountCalculationType               $discountCalculationType = DiscountCalculationType::WithDiscount,
+        Product|ProductProduct|null           $parentProduct = null
     ): ProductVariantPrice
     {
         $purchase = null;
@@ -53,7 +56,7 @@ readonly class ProductVariantPriceFactory
             $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
         }
 
-        return new ProductVariantPrice(
+        $productVariantPrice =  new ProductVariantPrice(
             $pv,
             $amount,
             $conversionRate,
@@ -66,6 +69,10 @@ readonly class ProductVariantPriceFactory
             $this->priceUtils,
             $this->productProductRepository
         );
+        if ($parentProduct){
+            $productVariantPrice->setParentProduct($parentProduct);
+        }
+        return $productVariantPrice;
     }
 
     public function entityLoad(
