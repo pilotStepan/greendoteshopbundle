@@ -216,7 +216,7 @@ class CalculatedPricesService
         foreach($amounts as $minimalAmount){
             $productVariantPrice->setAmount($minimalAmount);
             $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($productVariantPrice);
-            $calculatedPricesCollection[$minimalAmount] = $calculatedPricesMatrix;
+            $calculatedPricesCollection[$minimalAmount] = (array)$calculatedPricesMatrix;
         }
         return $calculatedPricesCollection;
     }
