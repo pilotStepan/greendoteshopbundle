@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Price;
@@ -102,5 +103,40 @@ readonly class ProductVariantPriceFactory
             $this->productProductRepository,
             $price
         );
+    }
+
+    public function createFromContext(
+        ProductVariant|PurchaseProductVariant   $pv, 
+        ProductVariantPriceContext              $context
+    )
+    {
+        return $this->create(
+            pv: $pv,
+            currencyOrConversionRate: $context->currencyOrConversionRate,
+            amount: $context->amount,
+            vatCalculationType: $context->vatCalculationType,
+            discountCalculationType: $context->discountCalculationType,
+            parentProduct: $context->parentProduct,
+        );
+    }
+
+    public function updateFromContext(
+        ProductVariantPrice         $productVariantPrice, 
+        ProductVariantPriceContext  $context
+    )
+    {
+        $productVariantPrice->setDiscountCalculationType($context->discountCalculationType);
+        $productVariantPrice->setVatCalculationType($context->vatCalculationType);
+        $productVariantPrice->setCurrency($context->currencyOrConversionRate);
+        
+        if($context->amount){
+            $productVariantPrice->setAmount($context->amount);
+        }
+
+        if ($context->parentProduct) {
+            $productVariantPrice->setParentProduct($context->parentProduct);
+        } else {
+            $productVariantPrice->emptyParentProduct();
+        }
     }
 }

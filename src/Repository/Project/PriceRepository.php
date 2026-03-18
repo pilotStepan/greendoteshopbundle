@@ -178,4 +178,20 @@ class PriceRepository extends ServiceEntityRepository
             return 0;
         }
     }
+
+    public function getUniqueMinimalAmounts(ProductVariant $productVariant, \DateTime $date = new \DateTime("now")): array
+    {
+        $qb = $this->createQueryBuilder('p');
+        $uniqueMinimalAmounts = $qb
+            ->select('DISTINCT p.minimalAmount')
+            ->andWhere('p.productVariant = :variant')
+            ->andWhere('p.validFrom <= :date')
+            ->andWhere($qb->expr()->orX('p.validUntil IS NULL', 'p.validUntil >= :date'))
+            ->setParameter('variant', $productVariant)
+            ->setParameter('date', $date)
+            ->orderBy('p.minimalAmount', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+        return array_map('intval', $uniqueMinimalAmounts);
+    }
 }
