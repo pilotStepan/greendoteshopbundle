@@ -5,9 +5,7 @@ namespace Greendot\EshopBundle\StateProvider;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
-use ApiPlatform\Doctrine\Orm\Paginator as ApiPlatformPaginator;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
 readonly class ProductStateProvider implements ProviderInterface
@@ -29,8 +27,8 @@ readonly class ProductStateProvider implements ProviderInterface
 
         $products = new \ArrayIterator($products);
 
-        foreach ($products as $products) {
-            $this->calculatedPricesService->makeCalculatedPricesForProduct($products);
+        foreach ($products as $product) {
+            $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
         }
 
         return new TraversablePaginator(
