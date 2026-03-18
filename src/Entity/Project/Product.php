@@ -29,6 +29,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Greendot\EshopBundle\StateProvider\ProductItemStateProvider;
 use Greendot\EshopBundle\StateProvider\ProductStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -44,7 +45,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
             normalizationContext: ['groups'=>['product_list:read']],
             provider: ProductStateProvider::class,
         ),
-        new Get(normalizationContext: ['groups'=>['product_item:read']]),
+        new Get(
+            normalizationContext: ['groups'=>['product_item:read']],
+            provider: ProductItemStateProvider::class,
+        ),
         new Post(
             uriTemplate: '/products/filterPost',
             provider: ProductStateProvider::class,

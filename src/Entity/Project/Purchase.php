@@ -19,6 +19,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProcessor\PurchaseCheckoutProcessor;
+use Greendot\EshopBundle\StateProvider\PurchaseItemStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
@@ -29,7 +30,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
     operations: [
-        new Get(),
+        new Get(
+            provider: PurchaseItemStateProvider::class,
+        ),
         new GetCollection(),
         new GetCollection(
             uriTemplate: '/purchases/session',
