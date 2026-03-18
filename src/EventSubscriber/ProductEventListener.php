@@ -12,13 +12,13 @@ use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
+// TODO: move calculatedPrices creation to provider
 #[AsEntityListener(event: Events::postLoad, priority: 10, method: 'postLoad', entity: Product::class)]
 class ProductEventListener
 {
 
     public function __construct(
         private ProductRepository       $productRepository,
-        private CalculatedPricesService $calculatedPricesService,
         private CurrencyManager         $currencyManager,
         private ListenerManager         $listenerManager,
     ) {}
@@ -41,18 +41,6 @@ class ProductEventListener
                 $upload->setIsDynamicallySet(true);
                 $product->setUpload($upload);
             }
-        }
-
-
-
-        $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
-        if (!isset($product->getCalculatedPrices()['priceNoVat'])) {
-            // dd($product);
-            $product->setPriceFrom(0);
-        }
-        else
-        {
-            $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
         }
 
         $product->setCurrencySymbol($currencySymbol);

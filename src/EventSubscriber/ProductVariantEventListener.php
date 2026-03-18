@@ -18,6 +18,7 @@ class ProductVariantEventListener
         private ListenerManager         $listenerManager,
     ) {}
 
+    // TODO: move calculatedPrices creation to provider
     public function postLoad(ProductVariant $productVariant, PostLoadEventArgs $event): void
     {
         if (!$this->supports())
@@ -25,10 +26,8 @@ class ProductVariantEventListener
             return;
         }
 
-        $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
-
         // if doesnt have upload try to substitue it
-
+        // TODO: move this to repository and make it SQL.
         if (!$productVariant->getUpload()) {
             if (
                 $productVariant->getProduct()->getUpload() === null

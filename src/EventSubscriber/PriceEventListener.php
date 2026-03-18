@@ -11,6 +11,8 @@ use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Events;
 use Greendot\EshopBundle\Service\ListenerManager;
 
+
+// TODO: remove: does nothing, Price->calculatedPrices is deprecated
 #[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: Price::class)]
 class PriceEventListener
 {
@@ -28,28 +30,26 @@ class PriceEventListener
         }
 
 
-        $vat = $entity->getVat();
-        $discount = $entity->getDiscount();
+        // $vat = $entity->getVat();
+        // $discount = $entity->getDiscount();
 
+        // // basePrice
+        // $priceNoVatNoDiscount = $entity->getPrice();
+        // // basePrice + vat
+        // $priceVatNoDiscount = $this->priceCalculator->applyVat($priceNoVatNoDiscount, $vat, VatCalculationType::WithVAT);
+        // // basePrice + discount
+        // $priceNoVat = $this->priceCalculator->applyDiscount($discount, $priceNoVatNoDiscount);
+        // // basePrice + discount + vat
+        // $priceVat = $this->priceCalculator->applyVat($priceNoVat, $vat, VatCalculationType::WithVAT);;
 
-        // TODO: use calculated prices service instaed
-        // basePrice
-        $priceNoVatNoDiscount = $entity->getPrice();
-        // basePrice + vat
-        $priceVatNoDiscount = $this->priceCalculator->applyVat($priceNoVatNoDiscount, $vat, VatCalculationType::WithVAT);
-        // basePrice + discount
-        $priceNoVat = $this->priceCalculator->applyDiscount($discount, $priceNoVatNoDiscount);
-        // basePrice + discount + vat
-        $priceVat = $this->priceCalculator->applyVat($priceNoVat, $vat, VatCalculationType::WithVAT);;
+        // $prices = [
+        //     'priceNoVat' => $priceNoVat,
+        //     'priceVat' => $priceVat,
+        //     'priceNoVatNoDiscount' => $priceNoVatNoDiscount,
+        //     'priceVatNoDiscount' => $priceVatNoDiscount
+        // ];
 
-        $prices = [
-            'priceNoVat' => $priceNoVat,
-            'priceVat' => $priceVat,
-            'priceNoVatNoDiscount' => $priceNoVatNoDiscount,
-            'priceVatNoDiscount' => $priceVatNoDiscount
-        ];
-
-        $entity->setCalculatedPrices($prices);
+        // $entity->setCalculatedPrices($prices);
     
     }
 
