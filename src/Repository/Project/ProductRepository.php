@@ -401,13 +401,13 @@ class ProductRepository extends HintedRepositoryBase
         
         $i = 1;
         foreach ($parameters as $parameter) {
-            if($parameter->parameterGroup->id === 'price'){
+            if($parameter['parameterGroup']['id'] === 'price'){
                 // Join prices for price filtering
                 $this->safeJoin($queryBuilder, 'pv', 'price', 'price');
 
                 // TODO: maybe based on something different?
                 // now it works as a property of price parameterGroup that is set in vue (productBase/category)
-                $minPriceCalculation = ($parameter->parameterGroup->withVat ?? false) ?
+                $minPriceCalculation = ($parameter['parameterGroup']['withVat'] ?? false) ?
                     'price.price * (1 + COALESCE(price.vat, 0) / 100) * (1 - COALESCE(price.discount, 0) / 100 )' :
                     'price.price';
 
@@ -419,8 +419,8 @@ class ProductRepository extends HintedRepositoryBase
                     ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
                     ->andHaving("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
-                    ->setParameter('minPrice', (float)$parameter->selectedParameters[0]-1) // expected: [min, max], correction for rounding error
-                    ->setParameter('maxPrice', (float)$parameter->selectedParameters[1]+1)
+                    ->setParameter('minPrice', (float)$parameter['selectedParameters'][0]-1) // expected: [min, max], correction for rounding error
+                    ->setParameter('maxPrice', (float)$parameter['selectedParameters'][1]+1)
                     ->setParameter('date', new \DateTime());
 
             }
@@ -429,19 +429,19 @@ class ProductRepository extends HintedRepositoryBase
                     ->innerJoin('pv.parameters', 'pa'.$i)
                     ->innerJoin('pa'.$i.'.parameterGroup', 'pg'.$i)
                     ->andWhere("pg$i.id = :pg".$i."id")
-                    ->setParameter("pg".$i."id", $parameter->parameterGroup->id);
+                    ->setParameter("pg".$i."id", $parameter['parameterGroup']['id']);
 
-                if ($parameter->parameterGroup->parameterGroupFilterType->name == "range") {
+                if ($parameter['parameterGroup']['parameterGroupFilterType']['name'] == "range") {
                     $alias = "pa".$i;
                     $floatData = "CAST(REPLACE($alias.data, ',', '.') AS DOUBLE)";
                     $queryBuilder
                         ->andWhere("$floatData BETWEEN :minVal$i AND :maxVal$i")
-                        ->setParameter("minVal$i", (float)$parameter->selectedParameters[0])
-                        ->setParameter("maxVal$i", (float)$parameter->selectedParameters[1]);
+                        ->setParameter("minVal$i", (float)$parameter['selectedParameters'][0])
+                        ->setParameter("maxVal$i", (float)$parameter['selectedParameters'][1]);
                 } else {
                     // andWhere uses ?1, ?2 etc. matching your $i
                     $queryBuilder->andWhere("pa$i.data IN (?$i)")
-                                ->setParameter($i, $parameter->selectedParameters);
+                                ->setParameter($i, $parameter['selectedParameters']);
                 }
                 $i++;
             }
@@ -616,9 +616,13 @@ class ProductRepository extends HintedRepositoryBase
             $cleanOrderBy = [];
             if (!isset($orderBy['id']) or !in_array($orderBy['id'], $availableOrderByIds)){
                 $cleanOrderBy['id'] = 'default';
+            } else {
+                $cleanOrderBy['id'] = $orderBy['id'];
             }
             if (!isset($orderBy['direction']) or !in_array($orderBy['direction'], ['ASC', 'DESC']) ){
                 $cleanOrderBy['direction'] = 'DESC';
+            } else {
+                $cleanOrderBy['direction'] = $orderBy['direction'];
             }
             $filters['orderBy'] = $cleanOrderBy;
         }
