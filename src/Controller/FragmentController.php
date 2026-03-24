@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Controller;
 
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\PersonRepository;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
@@ -17,6 +18,12 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class FragmentController extends AbstractController
 {
+    public function __construct(
+        private readonly PersonRepository $personRepository
+    )
+    {
+    }
+
     #[CustomApiEndpoint]
     #[Route('/_fragment/breadCrumbs/category-{category}/json-{json}', name: 'fragment_category_breadCrumbs', options: ['expose' => true], defaults: ['product' => null, 'json' => false])]
     #[Route('/_fragment/breadCrumbs/product-{product}/json-{json}', name: 'fragment_product_breadCrumbs', options: ['expose' => true], defaults: ['category' => null, 'json' => false])]
@@ -49,7 +56,6 @@ class FragmentController extends AbstractController
     public function fragmentAssistantBox(
         #[MapEntity(mapping: ['category' => 'id'])]
         Category $category,
-        PersonRepository $personRepository
     ): Response
     {
         $person = null;
@@ -57,14 +63,32 @@ class FragmentController extends AbstractController
             $person = $category->getPersons()->first()->getPerson();
         }
 
-        if($person) {
-            $person = $personRepository->findOneBy(['id' => $person->getId(), 'isActive' => 1]);
+        return $this->renderAssistantBox($person);
+    }
+
+    #[Route('/_assistant-box/product-{product}', name:'fragment_assistant_box_product', options:['expose' => true], priority: 50)]
+    public function fragmentAssistantBoxProduct(
+        #[MapEntity(mapping: ['product' => 'id'])]
+        Product $product,
+    ): Response
+    {
+        $person = null;
+        if ($product->getProductPeople()->count() > 0){
+            $person = $product->getProductPeople()->first()->getPerson();
         }
 
+        return $this->renderAssistantBox($person);
+    }
+
+    private function renderAssistantBox(?Person $person): Response
+    {
+        if($person) {
+            $person = $this->personRepository->findOneBy(['id' => $person->getId(), 'isActive' => 1]);
+        }
 
         return $this->render('web/_assets/_assistant-box.html.twig', [
-            'category' => $category,
             'person' => $person
         ]);
     }
+
 }
