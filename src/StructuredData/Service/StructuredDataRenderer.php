@@ -13,7 +13,7 @@ class StructuredDataRenderer
      * Renders a list of models as JSON-LD script tags.
      *
      * @param AbstractSchemaType[] $models
-     * @param bool $pretty
+     * @param bool                 $pretty
      * @return string
      */
     public function render(array $models, bool $pretty = true): string
@@ -27,25 +27,17 @@ class StructuredDataRenderer
             $options |= JSON_PRETTY_PRINT;
         }
 
-        $output = '';
+
+        $graph = [
+            '@context' => 'https://schema.org',
+            '@graph' => [],
+        ];
 
         foreach ($models as $model) {
-            $json = json_encode($model, $options);
-            $output .= sprintf('<script type="application/ld+json">%s</script>', $json);
+            $serialized = $model->jsonSerialize();
+            $graph['@graph'][] = $serialized;
         }
 
-        return $output;
-    }
-
-    /**
-     * Renders a single model as a JSON-LD script tag.
-     *
-     * @param AbstractSchemaType $model
-     * @param bool $pretty
-     * @return string
-     */
-    public function renderSingle(AbstractSchemaType $model, bool $pretty = true): string
-    {
-        return $this->render([$model], $pretty);
+        return sprintf('<script type="application/ld+json">%s</script>', json_encode($graph, $options));
     }
 }

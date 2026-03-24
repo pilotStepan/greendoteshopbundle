@@ -21,7 +21,6 @@ class StructuredDataManager
         #[TaggedIterator('greendot.structured_data_provider')]
         iterable $providers = [])
     {
-        // In a real Symfony app, this would be injected via tagged_iterator
         $this->providers = $providers;
     }
 
@@ -40,16 +39,18 @@ class StructuredDataManager
     /**
      * Collects structured data from all supporting providers for a given object/context.
      *
-     * @param object|null $object
+     * @param mixed $object
      */
-    public function collect(?object $object = null): void
+    public function collect(mixed $object = null): void
     {
-        // Sort providers by priority if they are in an array
-        if (is_array($this->providers)) {
-            usort($this->providers, fn(StructuredDataProviderInterface $a, StructuredDataProviderInterface $b) => $b->getPriority() <=> $a->getPriority());
+        $providers = [];
+        foreach ($this->providers as $provider) {
+            $providers[] = $provider;
         }
 
-        foreach ($this->providers as $provider) {
+        usort($providers, fn(StructuredDataProviderInterface $a, StructuredDataProviderInterface $b) => $b->getPriority() <=> $a->getPriority());
+
+        foreach ($providers as $provider) {
             if ($provider->supports($object)) {
                 $provided = $provider->provide($object);
                 if ($provided === null) {

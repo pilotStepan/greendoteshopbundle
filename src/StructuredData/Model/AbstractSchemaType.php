@@ -12,8 +12,8 @@ abstract class AbstractSchemaType implements JsonSerializable
     /** @var string|null */
     protected ?string $id = null;
 
-    /** @var string|null */
-    protected ?string $context = 'https://schema.org';
+    /** @var array */
+    protected array $customProperties = [];
 
     /**
      * @return string
@@ -21,38 +21,23 @@ abstract class AbstractSchemaType implements JsonSerializable
     abstract public function getType(): string;
 
     /**
-     * @return string|null
-     */
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
-
-    /**
-     * @param string|null $id
+     * Sets a custom property not explicitly defined in the class.
+     *
+     * @param string $name
+     * @param mixed  $value
      * @return $this
      */
-    public function setId(?string $id): self
+    public function setProperty(string $name, mixed $value): self
     {
-        $this->id = $id;
+        $this->customProperties[$name] = $value;
         return $this;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getContext(): ?string
-    {
-        return $this->context;
-    }
+    public function getId(): ?string { return $this->id; }
 
-    /**
-     * @param string|null $context
-     * @return $this
-     */
-    public function setContext(?string $context): self
+    public function setId(?string $id): self
     {
-        $this->context = $context;
+        $this->id = $id;
         return $this;
     }
 
@@ -65,21 +50,17 @@ abstract class AbstractSchemaType implements JsonSerializable
     {
         $data = [];
 
-        if ($this->context !== null) {
-            $data['@context'] = $this->context;
-        }
-
         $data['@type'] = $this->getType();
 
         if ($this->id !== null) {
             $data['@id'] = $this->id;
         }
 
-        // Get all public/protected properties through reflection or getters
+        // Get all public/protected properties
         $reflection = new \ReflectionClass($this);
         foreach ($reflection->getProperties() as $property) {
             $name = $property->getName();
-            if (in_array($name, ['id', 'context'])) {
+            if (in_array($name, ['id', 'customProperties'])) {
                 continue;
             }
 
@@ -87,7 +68,6 @@ abstract class AbstractSchemaType implements JsonSerializable
             if (method_exists($this, $getter)) {
                 $value = $this->$getter();
             } else {
-                $property->setAccessible(true);
                 $value = $property->getValue($this);
             }
 
@@ -96,6 +76,7 @@ abstract class AbstractSchemaType implements JsonSerializable
             }
         }
 
-        return $data;
+        // Merge custom properties
+        return array_merge($data, $this->customProperties);
     }
 }

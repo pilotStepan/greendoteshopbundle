@@ -14,18 +14,18 @@ interface StructuredDataProviderInterface
     /**
      * Checks if this provider can provide data for the given object.
      *
-     * @param object|null $object The domain entity or context.
+     * @param mixed $object The domain entity or context.
      * @return bool
      */
-    public function supports(?object $object): bool;
+    public function supports(mixed $object): bool;
 
     /**
      * Provides structured data (a Schema.org model or array) for the given object.
      *
-     * @param object|null $object The domain entity or context.
+     * @param mixed $object The domain entity or context.
      * @return object|array|null
      */
-    public function provide(?object $object): object|array|null;
+    public function provide(mixed $object): object|array|null;
 
     /**
      * Priority for the provider. Higher priority providers are called first.

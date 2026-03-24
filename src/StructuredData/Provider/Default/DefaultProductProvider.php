@@ -2,73 +2,118 @@
 
 namespace Greendot\EshopBundle\StructuredData\Provider\Default;
 
-use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\StructuredData\Contract\StructuredDataProviderInterface;
 use Greendot\EshopBundle\StructuredData\Model\Brand;
 use Greendot\EshopBundle\StructuredData\Model\Offer;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\StructuredData\Model\Product as ProductModel;
+use Greendot\EshopBundle\StructuredData\Model\UnitPriceSpecification;
+use Greendot\EshopBundle\StructuredData\Model\ProductGroup as ProductGroupModel;
+use Greendot\EshopBundle\StructuredData\Contract\StructuredDataProviderInterface;
 
 /**
  * Default provider for Product entities.
  */
 class DefaultProductProvider implements StructuredDataProviderInterface
 {
-    public function supports(?object $object): bool
+    public function supports(mixed $object): bool
     {
         return $object instanceof ProductEntity;
     }
 
-    /**
-     * @param ProductEntity|null $object
-     * @return ProductModel|null
-     */
-    public function provide(?object $object): ?ProductModel
+    public function provide(mixed $object): object|array|null
     {
         if (!$object) {
             return null;
         }
 
-        $model = new ProductModel();
-        $model->setName($object->getName());
-        $model->setDescription($object->getDescription() ?? $object->getMetaDescription());
-        
-        if ($object->getProducer()) {
-            $brand = new Brand();
-            $brand->setName($object->getProducer()->getName());
-            $model->setBrand($brand);
-        }
-
-        if ($object->getUpload()) {
-            $model->setImage($object->getUpload()->getPath());
-        }
-
         $variants = $object->getProductVariants();
-        if ($variants && count($variants) > 0) {
-            $offers = [];
+        $isGroup = $variants && count($variants) > 1;
+
+        $model = $isGroup ? new ProductGroupModel() : new ProductModel();
+        $this->fillBasicData($model, $object);
+
+        if ($isGroup) {
+            /** @var ProductGroupModel $model */
+            $variantModels = [];
+            $varyingProps = [];
+
             foreach ($variants as $variant) {
-                /** @var ProductVariant $variant */
-                $offer = new Offer();
-                
-                // Use calculated prices if available
-                $prices = $variant->getCalculatedPrices();
-                if (!empty($prices) && isset($prices["1"])) {
-                    $offer->setPrice($prices["1"]['priceVat']);
+                $variantModel = new ProductModel();
+                $this->fillVariantData($variantModel, $variant);
+                $variantModels[] = $variantModel;
+
+                // Identify what varies
+                foreach ($variant->getParameters() as $parameter) {
+                    $varyingProps[$parameter->getParameterGroup()->getName()] = true;
                 }
-                
-                $offer->setAvailability($variant->getStock() > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock');
-                $offers[] = $offer;
             }
-            
-            if (count($offers) === 1) {
-                $model->setOffers($offers[0]);
-                $model->setSku($variants->first()->getExternalId());
-            } else {
-                $model->setOffers($offers);
-            }
+
+            $model->setHasVariant($variantModels);
+            $model->setVariesBy(array_keys($varyingProps));
+        } else if ($variants && count($variants) === 1) {
+            $this->fillVariantData($model, $variants->first());
         }
 
         return $model;
+    }
+
+    private function fillBasicData(ProductModel $model, ProductEntity $entity): void
+    {
+        $model->setName($entity->getName());
+        $model->setDescription($entity->getDescription() ?? $entity->getMetaDescription());
+
+        if ($entity->getProducer()) {
+            $brand = new Brand();
+            $brand->setName($entity->getProducer()->getName());
+            $model->setBrand($brand);
+        }
+
+        if ($entity->getUpload()) {
+            $model->setImage($entity->getUpload()->getPath());
+        }
+    }
+
+    private function fillVariantData(ProductModel $model, ProductVariant $variant): void
+    {
+        $model->setSku($variant->getExternalId());
+
+        $offer = new Offer();
+        $prices = $variant->getCalculatedPrices();
+
+        if (!empty($prices) && isset($prices["1"])) {
+            $priceData = $prices["1"];
+            $offer->setPrice($priceData['priceVat']);
+
+            // Handle Discount
+            if (isset($priceData['isDiscount']) && $priceData['isDiscount']) {
+                $spec = new UnitPriceSpecification();
+                $spec->setPrice($priceData['originalPriceVat']);
+                $spec->setPriceType('ListPrice');
+                $offer->setPriceSpecification($spec);
+
+                // Set validity if available (example logic)
+                if (isset($priceData['discountUntil'])) {
+                    $offer->setPriceValidUntil($priceData['discountUntil']);
+                }
+            }
+        }
+
+        $offer->setAvailability($variant->getStock() > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock');
+        $model->setOffers($offer);
+
+        // Fill additional properties from parameters
+        $props = [];
+        foreach ($variant->getParameters() as $parameter) {
+            $props[] = [
+                '@type' => 'PropertyValue',
+                'name' => $parameter->getParameterGroup()->getName(),
+                'value' => $parameter->getValue(),
+            ];
+        }
+        if (!empty($props)) {
+            $model->setAdditionalProperty($props);
+        }
     }
 
     public function getPriority(): int

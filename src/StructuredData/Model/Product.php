@@ -31,6 +31,12 @@ class Product extends AbstractSchemaType
     protected $width = null;
     /** @var mixed|null */
     protected $height = null;
+    /** @var Product|array|null */
+    protected $isRelatedTo = null;
+    /** @var Product|array|null */
+    protected $isSimilarTo = null;
+    /** @var mixed|null */
+    protected $mainEntityOfPage = null;
 
     public function getType(): string
     {
@@ -38,47 +44,146 @@ class Product extends AbstractSchemaType
     }
 
     public function getName(): ?string { return $this->name; }
-    public function setName(?string $name): self { $this->name = $name; return $this; }
+
+    public function setName(?string $name): self
+    {
+        $this->name = $name;
+        return $this;
+    }
 
     public function getDescription(): ?string { return $this->description; }
-    public function setDescription(?string $description): self { $this->description = $description; return $this; }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+        return $this;
+    }
 
     public function getSku(): ?string { return $this->sku; }
-    public function setSku(?string $sku): self { $this->sku = $sku; return $this; }
+
+    public function setSku(?string $sku): self
+    {
+        $this->sku = $sku;
+        return $this;
+    }
 
     public function getMpn(): ?string { return $this->mpn; }
-    public function setMpn(?string $mpn): self { $this->mpn = $mpn; return $this; }
+
+    public function setMpn(?string $mpn): self
+    {
+        $this->mpn = $mpn;
+        return $this;
+    }
 
     public function getUrl(): ?string { return $this->url; }
-    public function setUrl(?string $url): self { $this->url = $url; return $this; }
+
+    public function setUrl(?string $url): self
+    {
+        $this->url = $url;
+        return $this;
+    }
 
     public function getImage() { return $this->image; }
-    public function setImage($image): self { $this->image = $image; return $this; }
+
+    public function setImage($image): self
+    {
+        $this->image = $image;
+        return $this;
+    }
 
     public function getBrand() { return $this->brand; }
-    public function setBrand($brand): self { $this->brand = $brand; return $this; }
+
+    public function setBrand($brand): self
+    {
+        $this->brand = $brand;
+        return $this;
+    }
 
     public function getOffers() { return $this->offers; }
-    public function setOffers($offers): self { $this->offers = $offers; return $this; }
+
+    public function setOffers($offers): self
+    {
+        $this->offers = $offers;
+        return $this;
+    }
 
     public function getAggregateRating(): ?AggregateRating { return $this->aggregateRating; }
-    public function setAggregateRating(?AggregateRating $aggregateRating): self { $this->aggregateRating = $aggregateRating; return $this; }
+
+    public function setAggregateRating(?AggregateRating $aggregateRating): self
+    {
+        $this->aggregateRating = $aggregateRating;
+        return $this;
+    }
 
     public function getReview() { return $this->review; }
-    public function setReview($review): self { $this->review = $review; return $this; }
+
+    public function setReview($review): self
+    {
+        $this->review = $review;
+        return $this;
+    }
 
     public function getAdditionalProperty(): ?array { return $this->additionalProperty; }
-    public function setAdditionalProperty(?array $additionalProperty): self { $this->additionalProperty = $additionalProperty; return $this; }
+
+    public function setAdditionalProperty(?array $additionalProperty): self
+    {
+        $this->additionalProperty = $additionalProperty;
+        return $this;
+    }
 
     public function getColor(): ?string { return $this->color; }
-    public function setColor(?string $color): self { $this->color = $color; return $this; }
+
+    public function setColor(?string $color): self
+    {
+        $this->color = $color;
+        return $this;
+    }
 
     public function getMaterial(): ?string { return $this->material; }
-    public function setMaterial(?string $material): self { $this->material = $material; return $this; }
+
+    public function setMaterial(?string $material): self
+    {
+        $this->material = $material;
+        return $this;
+    }
 
     public function getWidth() { return $this->width; }
-    public function setWidth($width): self { $this->width = $width; return $this; }
+
+    public function setWidth($width): self
+    {
+        $this->width = $width;
+        return $this;
+    }
 
     public function getHeight() { return $this->height; }
-    public function setHeight($height): self { $this->height = $height; return $this; }
+
+    public function setHeight($height): self
+    {
+        $this->height = $height;
+        return $this;
+    }
+
+    public function getIsRelatedTo() { return $this->isRelatedTo; }
+
+    public function setIsRelatedTo($isRelatedTo): self
+    {
+        $this->isRelatedTo = $isRelatedTo;
+        return $this;
+    }
+
+    public function getIsSimilarTo() { return $this->isSimilarTo; }
+
+    public function setIsSimilarTo($isSimilarTo): self
+    {
+        $this->isSimilarTo = $isSimilarTo;
+        return $this;
+    }
+
+    public function getMainEntityOfPage() { return $this->mainEntityOfPage; }
+
+    public function setMainEntityOfPage($mainEntityOfPage): self
+    {
+        $this->mainEntityOfPage = $mainEntityOfPage;
+        return $this;
+    }
 }
