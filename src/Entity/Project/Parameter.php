@@ -48,16 +48,16 @@ class Parameter implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['parameter_filtered:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','parameter:read', 'searchable', "SearchProductResultApiModel"])]
+    #[Groups(['parameter_filtered:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read','parameter:read', 'searchable', "SearchProductResultApiModel"])]
     private $id;
 
     #[ORM\Column(type: 'text')]
-    #[Groups(['parameter_filtered:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['parameter_filtered:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
     #[Gedmo\Translatable]
     private $data;
 
     #[ORM\ManyToOne(targetEntity: ParameterGroup::class, inversedBy: 'parameter')]
-    #[Groups(['parameter_filtered:read', 'product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['parameter_filtered:read', 'product_variant:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
     private $parameterGroup;
 
     #[Groups(['parameter:read', 'parameter:write'])]
@@ -75,7 +75,7 @@ class Parameter implements Translatable
     private ?int $sequence = null;
 
     #[ApiProperty]
-    #[Groups(['parameter_filtered:read', 'product_item:read', 'product_list:read', 'parameter:read', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['parameter_filtered:read', 'product_item:read', 'product_list:read', 'product_product:read', 'parameter:read', 'purchase:read', 'purchase:wishlist'])]
     private ?string $colorName = null;
 
     #[Gedmo\Locale]

@@ -39,17 +39,17 @@ class ProductVariant implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
     private $id;
 
     #[Gedmo\Versioned]
     #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['product_item:read', 'product_list:read', 'comment:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel", 'purchase:wishlist'])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $name;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write' , 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', "SearchProductResultApiModel"])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write' , 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', "SearchProductResultApiModel"])]
     private $stock;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -70,15 +70,15 @@ class ProductVariant implements Translatable
     private $video;
 
     #[ORM\ManyToOne(targetEntity: Availability::class, inversedBy: 'productVariants')]
-    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $availability;
 
     #[ORM\OneToMany(targetEntity: Parameter::class, mappedBy: 'productVariant', cascade: ['persist'])]
-    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['searchable', "SearchProductResultApiModel", 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
     private Collection $parameters;
 
     #[ORM\OneToMany(targetEntity: Price::class, mappedBy: 'productVariant')]
-    #[Groups(['product_variant:read', 'product_list:read', 'product_item:read', 'comment:read', "SearchProductResultApiModel"])]
+    #[Groups(['product_variant:read', 'product_list:read', 'product_product:read', 'product_item:read', 'comment:read', "SearchProductResultApiModel"])]
     private Collection $price;
 
     #[ORM\Column(type: "integer", nullable: true)]
@@ -129,7 +129,7 @@ class ProductVariant implements Translatable
      * }>
      */
     #[ApiProperty]
-    #[Groups(['product_item:read', 'product_variant:read', 'product_list:read'])]
+    #[Groups(['product_item:read', 'product_variant:read', 'product_list:read', 'product_product:read'])]
     private array $calculatedPrices = [];
 
 
