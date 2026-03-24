@@ -20,11 +20,10 @@ use SebastianBergmann\RecursionContext\Context;
 class CalculatedPricesService
 {
     public function __construct(
-        private ProductVariantPriceFactory  $productVariantPriceFactory,
-        private PurchasePriceFactory        $purchasePriceFactory,
-        private CurrencyManager             $currencyManager,
-        private EntityManagerInterface      $entityManager,
-        private PriceRepository             $priceRepository,
+        private readonly ProductVariantPriceFactory  $productVariantPriceFactory,
+        private readonly PurchasePriceFactory        $purchasePriceFactory,
+        private readonly CurrencyManager             $currencyManager,
+        private readonly PriceRepository             $priceRepository,
     ) {}    
 
     /**
@@ -141,7 +140,7 @@ class CalculatedPricesService
         return $purchase;
     }
 
-    private function createVariantCalculatedPricesMatrix(ProductVariantPrice $productVariantPrice)
+    protected function createVariantCalculatedPricesMatrix(ProductVariantPrice $productVariantPrice)
     {
         $priceVat = $productVariantPrice
             ->setVatCalculationType(VatCalculationType::WithVAT)
@@ -172,7 +171,7 @@ class CalculatedPricesService
         );
     }
 
-    private function createPurchaseCalculatedPricesMatrix(
+    protected function createPurchaseCalculatedPricesMatrix(
         PurchasePrice $purchasePrice
     ) : PurchaseCalculatedPricesMatrix
     {
@@ -209,7 +208,7 @@ class CalculatedPricesService
         );
     }
 
-    private function createVariantCalculatedPricesCollection(ProductVariantPrice $productVariantPrice, array $amounts) : array 
+    protected function createVariantCalculatedPricesCollection(ProductVariantPrice $productVariantPrice, array $amounts) : array 
     {
         $calculatedPricesCollection = [];
 
@@ -221,14 +220,14 @@ class CalculatedPricesService
         return $calculatedPricesCollection;
     }
 
-    private function resolveVariantContext(?ProductVariantPriceContext $context) : ProductVariantPriceContext
+    protected function resolveVariantContext(?ProductVariantPriceContext $context) : ProductVariantPriceContext
     {
         return $context ?? new ProductVariantPriceContext( 
             currencyOrConversionRate: $this->currencyManager->get()
         );
     }
 
-    private function findCheapestVariantPriceForProduct(
+    protected function findCheapestVariantPriceForProduct(
         Product $product, 
         ?ProductVariantPriceContext $context = null
     )  : ProductVariantPrice

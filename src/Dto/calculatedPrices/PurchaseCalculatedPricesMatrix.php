@@ -6,14 +6,14 @@ namespace Greendot\EshopBundle\Dto\calculatedPrices;
 final class PurchaseCalculatedPricesMatrix
 {
     public function __construct(
-        public int $priceVat,
-        public int $priceNoVat,
-        public int $priceVatNoDiscount,
-        public int $priceNoVatNoDiscount,
-        public int $priceVatNoServices,
-        public int $priceNoVatNoServices,
-        public int $priceVatNoDiscountNoServices,
-        public int $priceNoVatNoDiscountNoServices,
+        public float $priceVat,
+        public float $priceNoVat,
+        public float $priceVatNoDiscount,
+        public float $priceNoVatNoDiscount,
+        public float $priceVatNoServices,
+        public float $priceNoVatNoServices,
+        public float $priceVatNoDiscountNoServices,
+        public float $priceNoVatNoDiscountNoServices,
     )
     { }
 }
