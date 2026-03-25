@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\StructuredData\Provider\Default;
 
+use App\Enum\ProductViewTypeEnum;
 use Greendot\EshopBundle\StructuredData\Model\Brand;
 use Greendot\EshopBundle\StructuredData\Model\Offer;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -11,22 +12,21 @@ use Greendot\EshopBundle\StructuredData\Model\UnitPriceSpecification;
 use Greendot\EshopBundle\StructuredData\Model\ProductGroup as ProductGroupModel;
 use Greendot\EshopBundle\StructuredData\Contract\StructuredDataProviderInterface;
 
-/**
- * Default provider for Product entities.
- */
-class DefaultProductProvider implements StructuredDataProviderInterface
+
+class CatalogProductProvider implements StructuredDataProviderInterface
 {
     public function supports(mixed $object): bool
     {
-        return $object instanceof ProductEntity;
+        return false;
+        return $object instanceof ProductEntity
+            && $object->getProductViewType()?->getId() === ProductViewTypeEnum::CATALOGUE->value;
     }
 
+    /**
+     * @param ProductEntity $object
+     */
     public function provide(mixed $object): object|array|null
     {
-        if (!$object) {
-            return null;
-        }
-
         $variants = $object->getProductVariants();
         $isGroup = $variants && count($variants) > 1;
 

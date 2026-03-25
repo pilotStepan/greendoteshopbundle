@@ -47,9 +47,8 @@ class StructuredDataManager
         foreach ($this->providers as $provider) {
             $providers[] = $provider;
         }
-
         usort($providers, fn(StructuredDataProviderInterface $a, StructuredDataProviderInterface $b) => $b->getPriority() <=> $a->getPriority());
-
+        
         foreach ($providers as $provider) {
             if ($provider->supports($object)) {
                 $provided = $provider->provide($object);
@@ -66,6 +65,8 @@ class StructuredDataManager
                         }
                     }
                 }
+
+                // break; to break or not to break?
             }
         }
     }
