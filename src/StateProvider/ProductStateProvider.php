@@ -20,12 +20,12 @@ readonly class ProductStateProvider implements ProviderInterface
         private CalculatedPricesService $calculatedPricesService,
         private CurrencyManager         $currencyManager,
         private PriceUtils              $priceUtils,
-        private ListenerManager         $listenerManager,
+        // private ListenerManager         $listenerManager,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
     {
-        $this->listenerManager->disableAll([ProductEventListener::class]);
+        // $this->listenerManager->disableAll([ProductEventListener::class]);
 
         $rawParameters = $context['filters']['parameters'] ?? null;
         $filters = is_string($rawParameters) ? json_decode($rawParameters, true) : null;
@@ -46,13 +46,13 @@ readonly class ProductStateProvider implements ProviderInterface
             $this->calculatedPricesService->makeCalculatedPricesForProduct($product, $context);
 
             // TODO: handle this in a more optimized way
-            $currencySymbol = $currency->getSymbol();
-            $availability = $this->productRepository->findAvailabilityByProduct($product);
-            $parameters = $this->productRepository->calculateParameters($product);
+            // $currencySymbol = $currency->getSymbol();
+            // $availability = $this->productRepository->findAvailabilityByProduct($product);
+            // $parameters = $this->productRepository->calculateParameters($product);
 
-            $product->setCurrencySymbol($currencySymbol);
-            $product->setAvailability($availability);
-            $product->setParameters($parameters);
+            // $product->setCurrencySymbol($currencySymbol);
+            // $product->setAvailability($availability);
+            // $product->setParameters($parameters);
         }
 
         return new TraversablePaginator(
