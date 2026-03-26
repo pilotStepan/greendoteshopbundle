@@ -20,7 +20,7 @@ readonly class ProductStateProvider implements ProviderInterface
         private CalculatedPricesService $calculatedPricesService,
         private CurrencyManager         $currencyManager,
         private PriceUtils              $priceUtils,
-        // private ListenerManager         $listenerManager,
+        private ListenerManager         $listenerManager,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
