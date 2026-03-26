@@ -234,24 +234,25 @@ class CalculatedPricesService
     {
         $context = $this->resolveVariantContext($context);
 
-        $cheapestVariantPrice = null;
-        $currentPiecePrice = null;
-        foreach ($product->getProductVariants() as $variant) {
+        // $cheapestVariantPrice = null;
+        // $currentPiecePrice = null;
+        // foreach ($product->getProductVariants() as $variant) {
        
-            $productVariantPrice = $this->productVariantPriceFactory->createFromContext(  
-                pv: $variant, 
-                context: $context
-            );
+        //     $productVariantPrice = $this->productVariantPriceFactory->createFromContext(  
+        //         pv: $variant, 
+        //         context: $context
+        //     );
 
-            $piecePrice = $productVariantPrice->getPiecePrice();
+        //     $piecePrice = $productVariantPrice->getPiecePrice();
 
-            if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
-            {
-                $currentPiecePrice = $piecePrice;
-                $cheapestVariantPrice = $productVariantPrice;
-            }
-        }
-
+        //     if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
+        //     {
+        //         $currentPiecePrice = $piecePrice;
+        //         $cheapestVariantPrice = $productVariantPrice;
+        //     }
+        // }
+        $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        $cheapestVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
         return $cheapestVariantPrice;
     }  
 }

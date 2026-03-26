@@ -46,13 +46,14 @@ class PriceRepository extends ServiceEntityRepository
     public function findCheapestPriceForProduct(Product $product): ?Price
     {
         return $this->createQueryBuilder('p')
+            ->select('p, (p.price * (1 - p.discount) * (1 + p.vat)) as HIDDEN calculatedPrice')
             ->join('p.productVariant', 'pv')
             ->where('pv.product = :product')
             ->andWhere('p.validFrom <= :now')
-            ->andWhere('p.validUntil IS NULL OR p.validUntil > :now')
+            ->andWhere('(p.validUntil IS NULL OR p.validUntil > :now)')
             ->setParameter('product', $product)
             ->setParameter('now', new \DateTime())
-            ->orderBy('p.price', 'ASC')
+            ->orderBy('calculatedPrice', 'ASC') 
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
