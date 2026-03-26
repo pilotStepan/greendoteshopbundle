@@ -1,28 +1,32 @@
 <?php
 
-namespace App\Schema;
+namespace Greendot\EshopBundle\Schema;
 
 use Spatie\SchemaOrg\BaseType;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
-class SchemaManager
+class SchemaRegistry
 {
     /** @var BaseType[] */
     private array $schemas = [];
+
     /** @var iterable<SchemaProviderInterface> */
     private iterable $providers;
 
     public function __construct(
         #[AutowireIterator('greendot.schema_provider')]
-        iterable $providers = [])
+        iterable $providers = [],
+    )
     {
-        usort($providers, fn(SchemaProviderInterface $a, SchemaProviderInterface $b) => $b->getPriority() <=> $a->getPriority());
-        $this->providers = $providers;
+        $providersArray = is_array($providers)
+            ? $providers
+            : iterator_to_array($providers);
+
+        usort($providersArray, fn(SchemaProviderInterface $a, SchemaProviderInterface $b) => $b->getPriority() <=> $a->getPriority());
+
+        $this->providers = $providersArray;
     }
 
-    /**
-     * Collects structured data from all supporting providers for a given object/context.
-     */
     public function collect(mixed $object = null): void
     {
         foreach ($this->providers as $provider) {
@@ -35,6 +39,13 @@ class SchemaManager
         }
     }
 
+    private function add(BaseType $schema): void
+    {
+        if (!in_array($schema, $this->schemas, true)) {
+            $this->schemas[] = $schema;
+        }
+    }
+
     public function render(): string
     {
         $output = array_map(
@@ -44,12 +55,4 @@ class SchemaManager
 
         return implode("\n", $output);
     }
-
-    private function add(BaseType $schema): void
-    {
-        if (!in_array($schema, $this->schemas, true)) {
-            $this->schemas[] = $schema;
-        }
-    }
 }
-

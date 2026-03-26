@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Schema\Dto;
+namespace Greendot\EshopBundle\Schema\Context;
 
-class BreadcrumbContext
+class BreadcrumbSchemaContext
 {
     /** @var array */
     private array $items;

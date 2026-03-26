@@ -1,33 +1,31 @@
 <?php
 
-namespace App\Schema\Provider;
+namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\ListItem;
-use App\Schema\ObjectNotSupported;
-use App\Schema\Dto\BreadcrumbContext;
+use Spatie\SchemaOrg\ItemList;
+use Greendot\EshopBundle\Schema\SchemaProviderInterface;
+use Greendot\EshopBundle\Context\BreadcrumbSchemaContext;
+use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 /**
  * Provides structured data for breadcrumbs.
  */
-class DefaultBreadcrumbProvider implements SchemaProviderInterface
+class DefaultBreadcrumbSchemaProvider implements SchemaProviderInterface
 {
     public function supports(mixed $object): bool
     {
-        if ($object instanceof BreadcrumbContext) {
-            return true;
-        }
-
-        return false;
+        return $object instanceof BreadcrumbSchemaContext;
     }
 
     /**
-     * @throws ObjectNotSupported
+     * @throws UnsupportedSchemaSubjectException
      */
-    public function provide(mixed $object): object|array|null
+    public function provide(mixed $object): ItemList
     {
-        if (!$object instanceof BreadcrumbContext) {
-            throw new ObjectNotSupported();
+        if (!$object instanceof BreadcrumbSchemaContext) {
+            throw new UnsupportedSchemaSubjectException();
         }
 
         $elements = array_map(
@@ -41,11 +39,6 @@ class DefaultBreadcrumbProvider implements SchemaProviderInterface
         ;
     }
 
-    public function getPriority(): int
-    {
-        return 0;
-    }
-
     private function mapToListItem(array $item, int $position): ListItem
     {
         return Schema::listItem()
@@ -53,5 +46,10 @@ class DefaultBreadcrumbProvider implements SchemaProviderInterface
             ->name(strip_tags($item['name'] ?? ''))
             ->item($item['url'])
         ;
+    }
+
+    public function getPriority(): int
+    {
+        return 0;
     }
 }

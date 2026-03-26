@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Schema\Provider;
+namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Schema;
-use Spatie\SchemaOrg\BaseType;
-use App\Schema\ObjectNotSupported;
-use App\Schema\SchemaProviderInterface;
+use Spatie\SchemaOrg\WebPage;
+use Greendot\EshopBundle\Schema\SchemaProviderInterface;
+use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\Entity\Project\Category as CategoryEntity;
 
-class WebPageProvider implements SchemaProviderInterface
+class WebPageSchemaProvider implements SchemaProviderInterface
 {
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -17,13 +18,14 @@ class WebPageProvider implements SchemaProviderInterface
 
     public function supports(mixed $object): bool
     {
-        return $object instanceof CategoryEntity;
+        return $object instanceof CategoryEntity
+            || $object instanceof ProductEntity;
     }
 
-    public function provide(mixed $object): BaseType
+    public function provide(mixed $object): WebPage
     {
-        if (!$object instanceof CategoryEntity) {
-            throw new ObjectNotSupported();
+        if (!$object instanceof CategoryEntity && !$object instanceof ProductEntity) {
+            throw new UnsupportedSchemaSubjectException();
         }
 
         $url = $this->urlGenerator->generate('app_master', ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL);

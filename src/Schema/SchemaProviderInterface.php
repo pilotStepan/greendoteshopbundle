@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Schema;
+namespace Greendot\EshopBundle\Schema;
 
 use Spatie\SchemaOrg\BaseType;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -17,11 +17,11 @@ interface SchemaProviderInterface
     public function supports(mixed $object): bool;
 
     /**
-     * Provides structured data (a Schema.org model or array) for the given object.
+     * Generates structured data (a Schema.org model or array) for the given object.
      *
      * @param mixed $object The domain entity or context.
      * @return BaseType
-     * @throws ObjectNotSupported if the provided object is not supported.
+     * @throws UnsupportedSchemaSubjectException if the provided object is not supported.
      */
     public function provide(mixed $object): BaseType;
 
