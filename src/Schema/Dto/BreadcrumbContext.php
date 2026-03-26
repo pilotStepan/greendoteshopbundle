@@ -1,10 +1,7 @@
 <?php
 
-namespace Greendot\EshopBundle\StructuredData\Model;
+namespace App\Schema\Dto;
 
-/**
- * A context object for breadcrumbs to be used with collect_structured_data.
- */
 class BreadcrumbContext
 {
     /** @var array */

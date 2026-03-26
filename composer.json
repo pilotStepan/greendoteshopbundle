@@ -60,7 +60,8 @@
     "ext-libxml": "*",
     "nzo/url-encryptor-bundle": "^6.4",
     "symfony/translation": "^7.3",
-    "karser/karser-recaptcha3-bundle": "^0.3.0"
+    "karser/karser-recaptcha3-bundle": "^0.3.0",
+    "spatie/schema-org": "^4.0"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

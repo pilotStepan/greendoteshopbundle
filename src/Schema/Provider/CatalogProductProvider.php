@@ -1,8 +1,9 @@
 <?php
 
-namespace Greendot\EshopBundle\StructuredData\Provider\Default;
+namespace App\Schema\Provider;
 
 use App\Enum\ProductViewTypeEnum;
+use App\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\StructuredData\Model\Brand;
 use Greendot\EshopBundle\StructuredData\Model\Offer;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -13,11 +14,10 @@ use Greendot\EshopBundle\StructuredData\Model\ProductGroup as ProductGroupModel;
 use Greendot\EshopBundle\StructuredData\Contract\StructuredDataProviderInterface;
 
 
-class CatalogProductProvider implements StructuredDataProviderInterface
+class CatalogProductProvider implements SchemaProviderInterface
 {
     public function supports(mixed $object): bool
     {
-        return false;
         return $object instanceof ProductEntity
             && $object->getProductViewType()?->getId() === ProductViewTypeEnum::CATALOGUE->value;
     }

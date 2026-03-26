@@ -1,15 +1,12 @@
 <?php
 
-namespace Greendot\EshopBundle\StructuredData\Contract;
+namespace App\Schema;
 
+use Spatie\SchemaOrg\BaseType;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-/**
- * Interface for providing structured data for specific entities.
- * Each project can implement this to map their domain entities to Schema.org models.
- */
-#[AutoconfigureTag('greendot.structured_data_provider')]
-interface StructuredDataProviderInterface
+#[AutoconfigureTag('greendot.schema_provider')]
+interface SchemaProviderInterface
 {
     /**
      * Checks if this provider can provide data for the given object.
@@ -23,9 +20,10 @@ interface StructuredDataProviderInterface
      * Provides structured data (a Schema.org model or array) for the given object.
      *
      * @param mixed $object The domain entity or context.
-     * @return object|array|null
+     * @return BaseType
+     * @throws ObjectNotSupported if the provided object is not supported.
      */
-    public function provide(mixed $object): object|array|null;
+    public function provide(mixed $object): BaseType;
 
     /**
      * Priority for the provider. Higher priority providers are called first.
