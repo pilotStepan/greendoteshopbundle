@@ -5,20 +5,18 @@ namespace Greendot\EshopBundle\Schema\Provider;
 use Spatie\SchemaOrg\Schema;
 use App\Enum\ProductViewTypeEnum;
 use Spatie\SchemaOrg\ProductGroup;
-use Greendot\EshopBundle\Builder\ProductSchemaBuilder;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
-use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
+use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 class EshopProductGroupSchemaProvider implements SchemaProviderInterface
 {
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly ProductRepository     $productRepository,
-        private readonly ProductSchemaBuilder  $productSchemaBuilder,
         private readonly ReviewRepository      $reviewRepository,
     ) {}
 
@@ -35,17 +33,15 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             throw new UnsupportedSchemaSubjectException();
         }
 
-        $url = $this->urlGenerator->generate(
-            'shop_product',
-            ['slug' => $object->getSlug()],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
-
         return Schema::productGroup()
-            ->identifier(sprintf('%s#group', $url))
+            ->identifier(sprintf('%s#group',
+                $this->urlGenerator->generate('shop_product', ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
+            ))
             ->name($object->getName())
             ->description($object->getDescription())
-            ->brand(Schema::brand()->name($object->getProducer()?->getName()))
+            ->brand(Schema::brand()
+                ->name($object->getProducer()?->getName()),
+            )
             ->variesBy(
                 array_map(
                     fn($paramGroup) => $paramGroup->getName(),
@@ -58,10 +54,9 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
                     $object->getProductVariants()->toArray(),
                 ),
             )
-            ->aggregateRating(
-                Schema::aggregateRating()
-                    ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($object))
-                    ->reviewCount($this->reviewRepository->getReviewCountForProduct($object)),
+            ->aggregateRating(Schema::aggregateRating()
+                ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($object))
+                ->reviewCount($this->reviewRepository->getReviewCountForProduct($object)),
             )
             ->reviews(
                 array_map(
@@ -79,7 +74,6 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
                     $this->productRepository->findApprovedReviews($object),
                 ),
             )
-//            ->isRelatedTo()
         ;
     }
 
