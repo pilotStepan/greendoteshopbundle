@@ -481,4 +481,13 @@ class ParameterRepository extends ServiceEntityRepository
 
         return $result;
     }
+
+    public function getParametersForProductQB(Product|int $product): QueryBuilder
+    {
+        if ($product instanceof Product) $product = $product->getId();
+        return $this->createQueryBuilder('parameter')
+            ->leftJoin('parameter.productVariant', 'productVariant')
+            ->andWhere('productVariant.product = :product')
+            ->setParameter('product', $product);
+    }
 }

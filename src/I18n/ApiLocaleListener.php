@@ -28,6 +28,10 @@ readonly class ApiLocaleListener
 
     public function onKernelRequest(RequestEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
         $request = $event->getRequest();
 
         if (!ApiRequestMatcher::isApiRequest($request)) {
@@ -48,6 +52,11 @@ readonly class ApiLocaleListener
 
         try {
             $path = parse_url($referer, PHP_URL_PATH);
+
+            if (!is_string($path) || $path === '') {
+                return $this->defaultLocale;
+            }
+
             $parameters = $this->router->match($path);
 
             return $parameters['_locale'] ?? $this->defaultLocale;

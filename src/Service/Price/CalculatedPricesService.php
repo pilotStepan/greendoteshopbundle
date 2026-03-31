@@ -3,7 +3,9 @@
 namespace Greendot\EshopBundle\Service\Price;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Entity\Project\Price;
+use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedPricesMatrix;
+use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedPricesMatrix;
+use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -11,103 +13,85 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use SebastianBergmann\RecursionContext\Context;
 
 //DO NOT MAKE FINAL!!!!
 class CalculatedPricesService
 {
     public function __construct(
-        private ProductVariantPriceFactory  $productVariantPriceFactory,
-        private PurchasePriceFactory        $purchasePriceFactory,
-        private CurrencyManager             $currencyManager,
-        private EntityManagerInterface      $entityManager,
-    ) {}
+        private readonly ProductVariantPriceFactory  $productVariantPriceFactory,
+        private readonly PurchasePriceFactory        $purchasePriceFactory,
+        private readonly CurrencyManager             $currencyManager,
+        private readonly PriceRepository             $priceRepository,
+    ) {}    
 
-    public function makeCalculatedPricesForProductVariant(ProductVariant $variant, $date = new \DateTime()) : ProductVariant
+    /**
+     * Sets the calculated prices collection for variant for all unique minimal amounts
+     */
+    public function makeCalculatedPricesForProductVariant(
+        ProductVariant              $variant, 
+        ?ProductVariantPriceContext  $context = null,
+    ) : ProductVariant
     {
         if (!empty($variant->getCalculatedPrices())){
             return $variant;
-        }
+        }        
 
+        $context = $this->resolveVariantContext($context);
 
-        $qb = $this->entityManager->getRepository(Price::class)->createQueryBuilder('p');
-        $uniqueMinimalAmounts = $qb
-            ->select('DISTINCT p.minimalAmount')
-            ->andWhere('p.productVariant = :variant')
-            ->andWhere('p.validFrom <= :date')
-            ->andWhere($qb->expr()->orX('p.validUntil IS NULL', 'p.validUntil >= :date'))
-            ->setParameter('variant', $variant)
-            ->setParameter('date', $date)
-            ->orderBy('p.minimalAmount', 'ASC')
-            ->getQuery()
-            ->getSingleColumnResult()
-        ;
+        $productVariantPrice = $this->productVariantPriceFactory->createFromContext(  
+            pv: $variant, 
+            context: $context
+        );
+        $amounts = $this->priceRepository->getUniqueMinimalAmounts($variant);
 
-        $uniqueMinimalAmounts = array_map('intval', $uniqueMinimalAmounts);
+        $calculatedPricesCollection = $this->createVariantCalculatedPricesCollection($productVariantPrice, $amounts);
         
-        
-        // for each minimalAmount, make calculated prices object and add them to list
-        $variantPrice = $this->productVariantPriceFactory->create($variant, $this->currencyManager->get()); // price calculator object
-        $calculatedPricesList = [];
-        foreach($uniqueMinimalAmounts as $minimalAmount){
-            $variantPrice->setAmount($minimalAmount);
-            $calculatedPricesObject = [];
-
-            $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
-            $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
-            $calculatedPricesObject['priceVat'] = $variantPrice->getPiecePrice();
-
-            $variantPrice->setVatCalculationType(vatCalculationType::WithoutVAT);
-            $calculatedPricesObject['priceNoVat'] = $variantPrice->getPiecePrice();
-
-            $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
-            $calculatedPricesObject['priceNoVatNoDiscount'] = $variantPrice->getPiecePrice();
-
-            $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
-            $calculatedPricesObject['priceVatNoDiscount'] = $variantPrice->getPiecePrice();
-
-            $calculatedPricesList[$minimalAmount] = $calculatedPricesObject;
-        }
-
-        // set variant calculated prices to be the list
-        $variant->setCalculatedPrices($calculatedPricesList);
+        $variant->setCalculatedPrices($calculatedPricesCollection);
         return $variant;
     }
 
-    public function makeCalculatedPricesForProduct(Product $product) : Product
+
+    /**
+     * Sets the calculated prices matrix for product from the cheapest variant.
+     */
+    public function makeCalculatedPricesForProduct(
+        Product $product,
+        ?ProductVariantPriceContext $context = null
+    ) : Product
     {
         if (!empty($product->getCalculatedPrices())){
             return $product;
         }
+        $context = $this->resolveVariantContext($context);
 
+        $productVariantPrice = $this->findCheapestVariantPriceForProduct($product, $context);
+        $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($productVariantPrice);
 
-        // get the lowest price from among product.productVariants and set the calculatedPrices object to product
-        $minimalPrice = 0;
-        foreach ($product->getProductVariants() as $variant) {
-            $this->makeCalculatedPricesForProductVariant($variant);
-
-            $variantCalculatedPrices = $variant->getCalculatedPrices();
-
-            // debug
-            if (empty($variantCalculatedPrices))
-            {
-                $product->setCalculatedPrices([]);
-                return $product;
-//                dump($variant);
-//                dd($product);
-            }
-
-            // get the 1st (with the lowest minimalAmount) calculated prices object from variant
-            $variantCalculatedPricesMin = $variantCalculatedPrices[array_key_first($variantCalculatedPrices)];
-
-            if ($minimalPrice === 0 || $minimalPrice > $variantCalculatedPricesMin['priceNoVat'])
-            {
-                $minimalPrice = $variantCalculatedPricesMin['priceNoVat'];
-                $product->setCalculatedPrices($variantCalculatedPricesMin);
-            }
-        }
+        $product->setCalculatedPrices((array)$calculatedPricesMatrix);
         return $product;
-        
     }
+
+    /** 
+     * Calls makeCalculatedPrices functions on product and its variants.
+     */
+    public function makeCalculatedPricesForProductWithVariants(
+        Product                     $product, 
+        ?ProductVariantPriceContext  $context = null,
+    ) : Product
+    {
+        $context = $this->resolveVariantContext($context);
+
+        $this->makeCalculatedPricesForProduct($product, $context);
+        foreach($product->getProductVariants() as $variant){
+            $this->makeCalculatedPricesForProductVariant($variant, $context);
+        }
+
+        return $product;
+    }
+
+
     public function makeCalculatedPricesForPurchase(Purchase $purchase) : Purchase
     {
         if (!empty($purchase->getCalculatedPrices())) {
@@ -117,67 +101,157 @@ class CalculatedPricesService
         // Make calculated prices for purchase
         $purchasePrice = $this->purchasePriceFactory->create($purchase, $this->currencyManager->get());
 
-        $calculatedPricesObject = [];
+        $calculatedPricesMatrix = $this->createPurchaseCalculatedPricesMatrix($purchasePrice);
+      
+        $purchase->setCalculatedPrices((array)$calculatedPricesMatrix);
 
-        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
-                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
-        $calculatedPricesObject['priceVat'] = $purchasePrice->getPrice(true);
-        $calculatedPricesObject['priceVatNoServices'] = $purchasePrice->getPrice(false);
+        return $purchase;
+    }
 
+    public function makeCalculatedPricesForPurchaseProductVariant(
+        PurchaseProductVariant      $purchaseProductVariant, 
+        ?ProductVariantPriceContext $context = null
+    ) : PurchaseProductVariant
+    {
+        if (!empty($purchaseProductVariant->getCalculatedPrices())){
+            return $purchaseProductVariant;
+        }
+        $context = $this->resolveVariantContext($context);
 
-        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
-                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
-        $calculatedPricesObject['priceNoVat'] = $purchasePrice->getPrice(true);
-        $calculatedPricesObject['priceNoVatNoServices'] = $purchasePrice->getPrice(false);
-
-
-        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
-                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);        
-        $calculatedPricesObject['priceVatNoDiscount'] = $purchasePrice->getPrice(true);
-        $calculatedPricesObject['priceVatNoDiscountNoServices'] = $purchasePrice->getPrice(false);
-
-        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
-                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);        
-        $calculatedPricesObject['priceNoVatNoDiscount'] = $purchasePrice->getPrice(true);
-        $calculatedPricesObject['priceNoVatNoDiscountNoServices'] = $purchasePrice->getPrice(false);
+        $variantPrice = $this->productVariantPriceFactory->createFromContext($purchaseProductVariant, $context);
+        $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($variantPrice);
         
-        $purchase->setCalculatedPrices($calculatedPricesObject);
+        $purchaseProductVariant->setCalculatedPrices((array)$calculatedPricesMatrix);
+        return $purchaseProductVariant;
+    }
 
-        // Make calculated prices for all purchaseVariants
+    public function makeCalculatedPricesForPurchaseWithVariants(
+        Purchase                    $purchase, 
+        ?ProductVariantPriceContext $context = null
+    ) : Purchase
+    {
+        $context = $this->resolveVariantContext($context);
+
+        $this->makeCalculatedPricesForPurchase($purchase);
         foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
-            $this->makeCalculatedPricesForPurchaseProductVariant($purchaseProductVariant);
+            $this->makeCalculatedPricesForPurchaseProductVariant($purchaseProductVariant, $context);
         }
 
         return $purchase;
     }
 
-    public function makeCalculatedPricesForPurchaseProductVariant(PurchaseProductVariant $purchaseProductVariant) : PurchaseProductVariant
+    protected function createVariantCalculatedPricesMatrix(ProductVariantPrice $productVariantPrice)
     {
-        if (!empty($purchaseProductVariant->getCalculatedPrices())){
-            return $purchaseProductVariant;
-        }
+        $priceVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getPiecePrice();
 
-        $calculatedPricesObject = [];
+        $priceNoVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getPiecePrice();
 
-        $variantPrice = $this->productVariantPriceFactory->create($purchaseProductVariant, $this->currencyManager->get()); // price calculator object
+         $priceVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getPiecePrice();
 
-        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
-        $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
-        $calculatedPricesObject['priceVat'] = $variantPrice->getPiecePrice();
+        $priceNoVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getPiecePrice();
 
-        $variantPrice->setVatCalculationType(vatCalculationType::WithoutVAT);
-        $calculatedPricesObject['priceNoVat'] = $variantPrice->getPiecePrice();
+        return new VariantCalculatedPricesMatrix(
+            priceVat: $priceVat,
+            priceNoVat: $priceNoVat,
+            priceVatNoDiscount: $priceVatNoDiscount,
+            priceNoVatNoDiscount: $priceNoVatNoDiscount,
 
-        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
-        $calculatedPricesObject['priceNoVatNoDiscount'] = $variantPrice->getPiecePrice();
-
-        $variantPrice->setVatCalculationType(VatCalculationType::WithVAT);
-        $calculatedPricesObject['priceVatNoDiscount'] = $variantPrice->getPiecePrice();
-
-        $purchaseProductVariant->setCalculatedPrices($calculatedPricesObject);
-            
-        return $purchaseProductVariant;
+        );
     }
 
+    protected function createPurchaseCalculatedPricesMatrix(
+        PurchasePrice $purchasePrice
+    ) : PurchaseCalculatedPricesMatrix
+    {
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $priceVat = $purchasePrice->getPrice(true);
+        $priceVatNoServices = $purchasePrice->getPrice(false);
 
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $priceNoVat = $purchasePrice->getPrice(true);
+        $priceNoVatNoServices = $purchasePrice->getPrice(false);
+
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);        
+        $priceVatNoDiscount = $purchasePrice->getPrice(true);
+        $priceVatNoDiscountNoServices = $purchasePrice->getPrice(false);
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);        
+        $priceNoVatNoDiscount = $purchasePrice->getPrice(true);
+        $priceNoVatNoDiscountNoServices = $purchasePrice->getPrice(false);
+
+        return new PurchaseCalculatedPricesMatrix(
+            priceVat:                       $priceVat,
+            priceNoVat:                     $priceNoVat,
+            priceVatNoDiscount:             $priceVatNoDiscount,
+            priceNoVatNoDiscount:           $priceNoVatNoDiscount,
+            priceVatNoServices:             $priceVatNoServices,
+            priceNoVatNoServices:           $priceNoVatNoServices,
+            priceVatNoDiscountNoServices:   $priceVatNoDiscountNoServices,
+            priceNoVatNoDiscountNoServices: $priceNoVatNoDiscountNoServices
+        );
+    }
+
+    protected function createVariantCalculatedPricesCollection(ProductVariantPrice $productVariantPrice, array $amounts) : array 
+    {
+        $calculatedPricesCollection = [];
+
+        foreach($amounts as $minimalAmount){
+            $productVariantPrice->setAmount($minimalAmount);
+            $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($productVariantPrice);
+            $calculatedPricesCollection[$minimalAmount] = (array)$calculatedPricesMatrix;
+        }
+        return $calculatedPricesCollection;
+    }
+
+    protected function resolveVariantContext(?ProductVariantPriceContext $context) : ProductVariantPriceContext
+    {
+        return $context ?? new ProductVariantPriceContext( 
+            currencyOrConversionRate: $this->currencyManager->get()
+        );
+    }
+
+    protected function findCheapestVariantPriceForProduct(
+        Product $product, 
+        ?ProductVariantPriceContext $context = null
+    )  : ProductVariantPrice
+    {
+        $context = $this->resolveVariantContext($context);
+
+        $cheapestVariantPrice = null;
+        $currentPiecePrice = null;
+        foreach ($product->getProductVariants() as $variant) {
+       
+            $productVariantPrice = $this->productVariantPriceFactory->createFromContext(  
+                pv: $variant, 
+                context: $context
+            );
+
+            $piecePrice = $productVariantPrice->getPiecePrice();
+
+            if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
+            {
+                $currentPiecePrice = $piecePrice;
+                $cheapestVariantPrice = $productVariantPrice;
+            }
+        }
+
+        return $cheapestVariantPrice;
+    }  
 }

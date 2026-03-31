@@ -18,6 +18,7 @@ use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\GoogleAnalytics;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,7 +34,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 class ProductController extends AbstractController
 {
     public function __construct(
-        private readonly ProductVariantRepository $productVariantRepository
+        private readonly ProductVariantRepository   $productVariantRepository,
+        private readonly CalculatedPricesService    $calculatedPricesService,
     )
     {}
 
@@ -144,6 +146,8 @@ class ProductController extends AbstractController
 
             $session->set('purchase', $purchase->getId());
         }
+
+        $productVariant = $this->calculatedPricesService->makeCalculatedPricesForProductVariant($productVariant);
 
         $response = [
             'amount' => $amount,

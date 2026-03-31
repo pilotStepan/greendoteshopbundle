@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use JetBrains\PhpStorm\ArrayShape;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -20,6 +19,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProcessor\PurchaseCheckoutProcessor;
+use Greendot\EshopBundle\StateProvider\PurchaseItemStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
@@ -30,7 +30,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
     operations: [
-        new Get(),
+        new Get(
+            provider: PurchaseItemStateProvider::class,
+        ),
         new GetCollection(),
         new GetCollection(
             uriTemplate: '/purchases/session',
@@ -69,9 +71,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
             provider: PurchaseStateProvider::class,
             processor: CartStateProcessor::class,
         ),
-        new Patch(),
-        new Put(),
-        new Delete(),
+        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        new Put(security: "is_granted('ROLE_ADMIN')"),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['purchase:read']],
     denormalizationContext: ['groups' => ['purchase:write']],

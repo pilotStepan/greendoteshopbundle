@@ -4,6 +4,12 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\ParameterGroupValues;
 use Greendot\EshopBundle\Repository\Project\ParameterGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -18,6 +24,14 @@ use Gedmo\Translatable\Translatable;
  */
 #[ORM\Entity(repositoryClass: ParameterGroupRepository::class)]
 #[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Put(security: "is_granted('ROLE_ADMIN')"),
+        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
+    ],
     normalizationContext: ['groups' => ['parameter_group:read']],
     denormalizationContext: ['groups' => ['parameter_group:write']],
     paginationEnabled: false
@@ -28,12 +42,12 @@ class ParameterGroup implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'category_parameter_group:read','purchase:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read', 'category_parameter_group:read','purchase:read'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read', 'purchase:wishlist','purchase:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read', 'purchase:wishlist','purchase:read'])]
     private $name;
 
     /**
@@ -41,7 +55,7 @@ class ParameterGroup implements Translatable
      * Defines the unit that should be displayed with the parameter value.     *
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'category_parameter_group:read','purchase:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'category_parameter_group:read','purchase:read'])]
     private $unit;
 
     /**
@@ -49,7 +63,7 @@ class ParameterGroup implements Translatable
      * Defines the class to specify for example icon.     *
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'category_parameter_group:read'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'category_parameter_group:read'])]
     private $class;
 
     #[ORM\OneToMany(mappedBy: 'parameterGroup', targetEntity: Parameter::class)]
@@ -80,7 +94,7 @@ class ParameterGroup implements Translatable
      */
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
     private ?ParameterGroupFilterType $parameterGroupFilterType = null;
 
     /**
@@ -91,7 +105,7 @@ class ParameterGroup implements Translatable
     private Collection $productParameterGroups;
 
     #[ORM\ManyToOne(inversedBy: 'parameterGroup')]
-    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category_parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'purchase:read', 'purchase:wishlist'])]
     private ?ParameterGroupFormat $parameterGroupFormat = null;
     #[Gedmo\Locale]
     private $locale;

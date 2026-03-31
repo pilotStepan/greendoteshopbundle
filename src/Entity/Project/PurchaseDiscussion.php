@@ -17,11 +17,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     operations: [
         new GetCollection(normalizationContext: ['groups' => ['purchase_discussion:read']]),
         new Get(normalizationContext: ['groups' => ['purchase_discussion:read']]),
-        // TODO: Add auth for POST operations.
-        // - Regular client -> isAdmin = false
-        // - ROLE_API -> isAdmin = true
         new Post(denormalizationContext: ['groups' => ['purchase_discussion:write']]),
-        new Patch(denormalizationContext: ['groups' => ['purchase_discussion:write']]),
+        new Patch(security: "is_granted('ROLE_ADMIN')", denormalizationContext: ['groups' => ['purchase_discussion:write']]),
     ]
 )]
 #[ApiFilter(SearchFilter::class, properties: ['purchase' => 'exact'])]

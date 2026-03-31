@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ApiResource(
     operations: [
-        new Patch()
+        new Patch(security: "is_granted('ROLE_USER') and object.getClient() == user")
     ],
     normalizationContext: [
         'groups' => ['client_address:read'],

@@ -9,6 +9,7 @@ use Doctrine\ORM\Events;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
+// TODO: remove: does nothing, move calculatedPrices creation to provider
 #[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: Purchase::class)]
 class PurchaseEventListener
 {
@@ -17,6 +18,7 @@ class PurchaseEventListener
         private ListenerManager         $listenerManager,
     ) {}
 
+    
     public function postLoad(Purchase $purchase, PostLoadEventArgs $event): void
     { 
         if (!$this->supports())
@@ -24,7 +26,7 @@ class PurchaseEventListener
             return;
         }
 
-        $this->calculatedPricesService->makeCalculatedPricesForPurchase($purchase);
+        // $this->calculatedPricesService->makeCalculatedPricesForPurchase($purchase);
     }
 
     public function supports() : bool

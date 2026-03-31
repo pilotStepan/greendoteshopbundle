@@ -12,13 +12,13 @@ use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
+// TODO: move calculatedPrices creation to provider
 #[AsEntityListener(event: Events::postLoad, priority: 10, method: 'postLoad', entity: Product::class)]
 class ProductEventListener
 {
 
     public function __construct(
         private ProductRepository       $productRepository,
-        private CalculatedPricesService $calculatedPricesService,
         private CurrencyManager         $currencyManager,
         private ListenerManager         $listenerManager,
     ) {}
@@ -36,51 +36,11 @@ class ProductEventListener
 
         // if it doesn't have main upload, it tries to substitute it
         if ($product->getUpload() === null) {
-
-            $productUploads = [];
-            foreach($product->getProductUploadGroups() as $productUploadGroup) {
-                if ($productUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                    continue;
-                }
-                foreach($productUploadGroup->getUploadGroup()->getUpload() as $upload)
-                {
-                    $productUploads[] = $upload;
-                }
+            $upload = $this->productRepository->findProductUploadSubstitute($product);
+            if ($upload) {
+                $upload->setIsDynamicallySet(true);
+                $product->setUpload($upload);
             }
-            if(count($productUploads) === 0)
-            {
-                foreach ($product->getProductVariants() as $productVariant) {
-                    foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
-                        if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                            continue;
-                        }
-                        foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
-                        {
-                            $productUploads[] = $upload;
-                        }
-                    }
-                }
-            }
-            if (count($productUploads) > 0) {
-                usort($productUploads, function($a, $b) {
-                    return $a->getSequence() <=> $b->getSequence();
-                });
-                $productUploads[0]->setIsDynamicallySet(true);
-                $product->setUpload($productUploads[0]);
-            }
-
-        }
-
-
-
-        $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
-        if (!isset($product->getCalculatedPrices()['priceNoVat'])) {
-            // dd($product);
-            $product->setPriceFrom(0);
-        }
-        else
-        {
-            $product->setPriceFrom($product->getCalculatedPrices()['priceNoVat']); // $lowestCalculatedPrices['priceNoVat']
         }
 
         $product->setCurrencySymbol($currencySymbol);

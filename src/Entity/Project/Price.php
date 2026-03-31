@@ -61,7 +61,8 @@ class Price
     #[Groups(["SearchProductResultApiModel"])]
     private ?float $minPrice = null;
 
-    /**
+    /** 
+     * @deprecated Use calculatedPrices property on Product, ProductVariant, Purchase or PurchaseProductVariant entities instead.
      * Precalculated price values.
      * @var array<string, float>
      *

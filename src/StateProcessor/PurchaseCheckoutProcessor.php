@@ -29,6 +29,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
+use Greendot\EshopBundle\EventSubscriber\PurchaseEventListener;
+use Greendot\EshopBundle\Service\ListenerManager;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use function count;
@@ -38,20 +40,23 @@ use function is_array;
 final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $em,
-        private Registry               $workflowRegistry,
-        private Security               $security,
-        private ValidatorInterface     $validator,
-        private LoggerInterface        $logger,
-        private RequestStack           $requestStack,
-        private PaymentGatewayProvider $gatewayProvider,
-        private PurchaseUrlGenerator   $urlGenerator,
-        private ManagePurchase         $managePurchase,
-        private AffiliateService       $affiliateService,
+        private EntityManagerInterface  $em,
+        private Registry                $workflowRegistry,
+        private Security                $security,
+        private ValidatorInterface      $validator,
+        private LoggerInterface         $logger,
+        private RequestStack            $requestStack,
+        private PaymentGatewayProvider  $gatewayProvider,
+        private PurchaseUrlGenerator    $urlGenerator,
+        private ManagePurchase          $managePurchase,
+        private AffiliateService        $affiliateService,
+        private ListenerManager         $listenerManager,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
     {
+        $this->listenerManager->disable(PurchaseEventListener::class);
+
         $user = $this->security->getUser();
         $isLoggedIn = $user instanceof Client;
 

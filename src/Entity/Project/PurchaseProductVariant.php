@@ -2,15 +2,16 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Query\Expr\Func;
+use ApiPlatform\Metadata\ApiResource;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 
 #[ORM\Entity(repositoryClass: PurchaseProductVariantRepository::class)]
 #[ApiResource(
+    operations: [
+    ],
     normalizationContext: ['groups' => ['order_product_variant:read']],
     denormalizationContext: ['groups' => ['order_product_variant:write']],
 )]
@@ -44,8 +45,8 @@ class PurchaseProductVariant
 
     #[Groups(['purchase:read', 'purchase:wishlist'])]
     /**
-     * @deprecated use calculatedPrices instead  
-    */ 
+     * @deprecated use calculatedPrices instead
+     */
     private $total_price;
 
     #[ORM\OneToOne(targetEntity: Price::class, inversedBy: 'purchaseProductVariant', cascade: ['persist', 'remove'])]
@@ -56,10 +57,7 @@ class PurchaseProductVariant
     #[Groups(['purchase:read', 'purchase:wishlist'])]
     private array $calculatedPrices = [];
 
-    public function __construct()
-    {
-
-    }
+    public function __construct() {}
 
     public function getId(): ?int
     {
@@ -184,14 +182,14 @@ class PurchaseProductVariant
         return $availability->getIsPurchasable() ?? true;
     }
 
-    public function setCalculatedPrices(array $calculatedPrices) : self
+    public function setCalculatedPrices(array $calculatedPrices): self
     {
         $this->calculatedPrices = $calculatedPrices;
 
         return $this;
     }
 
-    public function getCalculatedPrices() : array
+    public function getCalculatedPrices(): array
     {
         return $this->calculatedPrices;
     }
