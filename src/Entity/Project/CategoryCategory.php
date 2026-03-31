@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\Repository\Project\CategoryCategoryRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Entity\Trait\MainCategoryTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: 'p_category_category')]
@@ -28,6 +29,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['category_category:write']],
     paginationEnabled: true
 )]
+#[ORM\UniqueConstraint(
+    name: 'unique_main_category_per_product',
+    columns: ['product_id'],
+    options: ['where' => 'is_main_category = true']
+)]
 class CategoryCategory
 {
     #[ORM\Id]
@@ -35,6 +41,8 @@ class CategoryCategory
     #[ORM\Column(type: 'integer')]
     #[Groups(['category_category:read', 'category_category:write', 'category_with_parents:read'])]
     private $id;
+
+    use MainCategoryTrait;
 
     #[ORM\Column(type: 'integer')]
     #[Groups(['category_category:read', 'category_category:write'])]
