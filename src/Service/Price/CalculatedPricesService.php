@@ -44,6 +44,12 @@ class CalculatedPricesService
             pv: $variant, 
             context: $context
         );
+        
+        if(!$productVariantPrice)
+        {
+            return $variant;
+        }
+
         $amounts = $this->priceRepository->getUniqueMinimalAmounts($variant);
 
         $calculatedPricesCollection = $this->createVariantCalculatedPricesCollection($productVariantPrice, $amounts);
@@ -67,6 +73,11 @@ class CalculatedPricesService
         $context = $this->resolveVariantContext($context);
 
         $productVariantPrice = $this->findCheapestVariantPriceForProduct($product, $context);
+        if (!$productVariantPrice)
+        {
+            return $product;
+        }
+
         $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($productVariantPrice);
 
         $product->setCalculatedPrices((array)$calculatedPricesMatrix);
@@ -230,7 +241,7 @@ class CalculatedPricesService
     protected function findCheapestVariantPriceForProduct(
         Product $product, 
         ?ProductVariantPriceContext $context = null
-    )  : ProductVariantPrice
+    )  : ?ProductVariantPrice
     {
         $context = $this->resolveVariantContext($context);
 
