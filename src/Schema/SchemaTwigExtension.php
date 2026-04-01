@@ -4,11 +4,13 @@ namespace Greendot\EshopBundle\Schema;
 
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
-use Greendot\EshopBundle\Context\BreadcrumbSchemaContext;
+use Greendot\EshopBundle\Schema\Context\BreadcrumbSchemaContext;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(lazy: true)]
 class SchemaTwigExtension extends AbstractExtension
 {
     public function __construct(

@@ -3,8 +3,8 @@
 namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Product;
-use App\Enum\ProductViewTypeEnum;
-use Greendot\EshopBundle\Builder\ProductSchemaBuilder;
+use Greendot\EshopBundle\Enum\ProductViewTypeEnum;
+use Greendot\EshopBundle\Schema\Builder\ProductSchemaBuilder;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;

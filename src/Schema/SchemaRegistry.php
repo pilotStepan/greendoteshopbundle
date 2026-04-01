@@ -48,11 +48,23 @@ class SchemaRegistry
 
     public function render(): string
     {
-        $output = array_map(
-            static fn(BaseType $schema): string => $schema->toScript(),
+        if ($this->schemas === []) {
+            return '';
+        }
+
+        $payload = array_map(
+            static fn(BaseType $schema): array => $schema->toArray(),
             $this->schemas,
         );
 
-        return implode("\n", $output);
+        $json = json_encode(
+            count($payload) === 1 ? $payload[0] : $payload,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+        );
+
+        return sprintf(
+            "<script type=\"application/ld+json\">\n%s\n</script>",
+            $json,
+        );
     }
 }

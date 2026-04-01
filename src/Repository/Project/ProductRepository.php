@@ -601,11 +601,11 @@ class ProductRepository extends HintedRepositoryBase
      */
     public function findVariantParameterGroupsByProduct(Product $product): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->getEntityManager()->createQueryBuilder()
             ->select('DISTINCT pg')
-            ->innerJoin('p.productParameterGroups', 'ppg')
-            ->innerJoin('ppg.parameterGroup', 'pg')
-            ->andWhere('p = :product')
+            ->from(ParameterGroup::class, 'pg')
+            ->innerJoin('pg.productParameterGroups', 'ppg')
+            ->andWhere('ppg.product = :product')
             ->andWhere('ppg.isVariant = :isVariant')
             ->setParameter('product', $product)
             ->setParameter('isVariant', true)
@@ -620,10 +620,10 @@ class ProductRepository extends HintedRepositoryBase
      */
     public function findApprovedReviews(Product $product): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->getEntityManager()->createQueryBuilder()
             ->select('r')
-            ->innerJoin('p.reviews', 'r')
-            ->andWhere('p = :product')
+            ->from(Review::class, 'r')
+            ->andWhere('r.Product = :product')
             ->andWhere('r.is_approved = :isApproved')
             ->setParameter('product', $product)
             ->setParameter('isApproved', true)

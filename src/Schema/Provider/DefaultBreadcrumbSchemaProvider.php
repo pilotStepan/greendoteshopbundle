@@ -4,9 +4,9 @@ namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\ListItem;
-use Spatie\SchemaOrg\ItemList;
+use Spatie\SchemaOrg\BreadcrumbList;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
-use Greendot\EshopBundle\Context\BreadcrumbSchemaContext;
+use Greendot\EshopBundle\Schema\Context\BreadcrumbSchemaContext;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 /**
@@ -22,7 +22,7 @@ class DefaultBreadcrumbSchemaProvider implements SchemaProviderInterface
     /**
      * @throws UnsupportedSchemaSubjectException
      */
-    public function provide(mixed $object): ItemList
+    public function provide(mixed $object): BreadcrumbList
     {
         if (!$object instanceof BreadcrumbSchemaContext) {
             throw new UnsupportedSchemaSubjectException();
@@ -34,7 +34,7 @@ class DefaultBreadcrumbSchemaProvider implements SchemaProviderInterface
             array_keys($object->getItems()),
         );
 
-        return Schema::itemList()
+        return Schema::breadcrumbList()
             ->itemListElement($elements)
         ;
     }

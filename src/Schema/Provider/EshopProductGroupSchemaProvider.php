@@ -3,10 +3,11 @@
 namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Schema;
-use App\Enum\ProductViewTypeEnum;
 use Spatie\SchemaOrg\ProductGroup;
+use Greendot\EshopBundle\Enum\ProductViewTypeEnum;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
+use Greendot\EshopBundle\Schema\Builder\ProductSchemaBuilder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
@@ -18,6 +19,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly ProductRepository     $productRepository,
         private readonly ReviewRepository      $reviewRepository,
+        private readonly ProductSchemaBuilder  $builder,
     ) {}
 
     public function supports(mixed $object): bool
@@ -50,7 +52,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             )
             ->hasVariant(
                 array_map(
-                    fn($variant) => $this->productSchemaBuilder->forProductVariant($variant)->build(),
+                    fn($variant) => $this->builder->forProductVariant($variant)->build(),
                     $object->getProductVariants()->toArray(),
                 ),
             )

@@ -61,8 +61,25 @@ final class ProductSchemaBuilder
             throw new \LogicException('ProductVariant must be associated with a Product.');
         }
 
+        $clone->product ??= $variant->getProduct();
+
+        if ($clone->schema === null) {
+            $url = $this->urlGenerator->generate('shop_product', [
+                'slug' => $variant->getProduct()->getSlug(),
+            ], UrlGeneratorInterface::ABSOLUTE_URL,
+            );
+
+            $clone->schema = Schema::product()
+                ->identifier(sprintf('%s#variant-%d', $url, $variant->getId() ?? 0))
+                ->url($url)
+                ->brand(Schema::brand()
+                    ->name($variant->getProduct()->getProducer()?->getName()),
+                )
+            ;
+        }
+
         $clone->schema
-            ->name($variant->getName())
+            ->name($variant->getName() ?? $variant->getProduct()->getName())
             ->image($variant->getUpload()?->getPath() ? $this->absoluteUrl . $variant->getUpload()?->getPath() : null)
             ->offers(Schema::offer()
                 ->price(

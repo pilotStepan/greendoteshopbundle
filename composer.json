@@ -61,7 +61,7 @@
     "nzo/url-encryptor-bundle": "^6.4",
     "symfony/translation": "^7.3",
     "karser/karser-recaptcha3-bundle": "^0.3.0",
-    "spatie/schema-org": "^4.0"
+    "spatie/schema-org": "^4.0",
     "beberlei/doctrineextensions": "^1.5"
   },
   "require-dev": {

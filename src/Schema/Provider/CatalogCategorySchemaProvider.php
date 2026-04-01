@@ -2,7 +2,7 @@
 
 namespace Greendot\EshopBundle\Schema\Provider;
 
-use App\Enum\CategoryType;
+use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\ItemList;
 use Spatie\SchemaOrg\ListItem;
@@ -24,7 +24,7 @@ class CatalogCategorySchemaProvider implements SchemaProviderInterface
     public function supports(mixed $object): bool
     {
         return $object instanceof CategoryEntity
-            && $object->getCategoryType()->getId() === CategoryType::Catalog->value;
+            && $object->getCategoryType()->getId() === CategoryTypeEnum::CATEGORY->value;
     }
 
     public function provide(mixed $object): ItemList
