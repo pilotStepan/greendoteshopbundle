@@ -7,6 +7,7 @@ use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 
 readonly class ProductStateProvider implements ProviderInterface
 {
@@ -31,11 +32,15 @@ readonly class ProductStateProvider implements ProviderInterface
             $this->calculatedPricesService->makeCalculatedPricesForProduct($product);
         }
 
+
+        $doctrinePaginator = new DoctrinePaginator($productsQuery);
+        $totalItems = count($doctrinePaginator);
+
         return new TraversablePaginator(
             $products,
             currentPage: $productsQuery->getFirstResult(),
             itemsPerPage: $productsQuery->getMaxResults(),
-            totalItems: 400
+            totalItems: $totalItems
         );
     }
 }
