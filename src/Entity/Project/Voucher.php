@@ -24,7 +24,9 @@ use ApiPlatform\Metadata\ApiProperty;
         new Get(),
         new Post(security: "is_granted('ROLE_ADMIN')"),
         new Put(security: "is_granted('ROLE_ADMIN')"),
-        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        // FIXME: rework api call for adding vouchers to purchase on frontend,
+        // right now its done via voucher patch, should be purchase patch
+        new Patch(),
         new Delete(security: "is_granted('ROLE_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['voucher:read']],
