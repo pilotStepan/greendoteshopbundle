@@ -25,7 +25,17 @@ class CategoryCategoryRepository extends ServiceEntityRepository
             ->setParameter('id', $categorySuper)
             ->orderBy('cc.id', 'ASC')
             ->getQuery()
-            ->getResult()
+            ->getFirstResult()
+            ;
+    }
+
+    public function getMainCategoryForSubCategory($subCategory){
+        return $this->createQueryBuilder('cc')
+            ->andWhere("cc.isMainCategory = 1")
+            ->andWhere("cc.category_sub = :id")
+            ->setParameter("id", $subCategory)
+            ->getQuery()
+            ->getOneOrNullResult()
             ;
     }
 }

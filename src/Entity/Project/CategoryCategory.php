@@ -30,8 +30,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     paginationEnabled: true
 )]
 #[ORM\UniqueConstraint(
-    name: 'unique_main_category_per_product',
-    columns: ['product_id'],
+    name: 'unique_main_category_per_sub_category',
+    columns: ['category_sub_id'],
     options: ['where' => 'is_main_category = true']
 )]
 class CategoryCategory
