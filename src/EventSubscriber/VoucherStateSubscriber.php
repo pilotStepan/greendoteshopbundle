@@ -29,9 +29,9 @@ readonly class VoucherStateSubscriber implements EventSubscriberInterface
         $voucher = $event->getSubject();
 
         $this->entityManager->wrapInTransaction(function() use ($voucher) {
-            $dateNow = new \DateTime();
-            $voucher->setDateIssued($dateNow);
-            $voucher->setDateUntil(($dateNow)->modify('+6 months'));
+            $dateIssued = new \DateTime();
+            $voucher->setDateIssued($dateIssued);
+            $voucher->setDateUntil((clone $dateIssued)->modify('+6 months'));
         });
     }
 
