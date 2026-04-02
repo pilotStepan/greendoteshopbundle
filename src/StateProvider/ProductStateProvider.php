@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Service\Price\PriceUtils;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 
 readonly class ProductStateProvider implements ProviderInterface
 {
@@ -55,11 +56,19 @@ readonly class ProductStateProvider implements ProviderInterface
             // $product->setParameters($parameters);
         }
 
+
+        $doctrinePaginator = new DoctrinePaginator($productsQuery);
+        $totalItems = count($doctrinePaginator);
+
+
+        $doctrinePaginator = new DoctrinePaginator($productsQuery);
+        $totalItems = count($doctrinePaginator);
+
         return new TraversablePaginator(
             $products,
             currentPage: $productsQuery->getFirstResult(),
             itemsPerPage: $productsQuery->getMaxResults(),
-            totalItems: 400
+            totalItems: $totalItems
         );
     }
 }

@@ -91,4 +91,14 @@ class CategoryProductRepository extends ServiceEntityRepository
         $categories = $qb->getQuery()->getResult();
         return array_column($categories, 'id');
     }
+
+     public function getMainCategoryForProduct($product){
+        return $this->createQueryBuilder('cc')
+            ->andWhere("cc.isMainCategory = 1")
+            ->andWhere("cc.product = :id")
+            ->setParameter("id", $product)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
 }

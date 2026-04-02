@@ -27,13 +27,23 @@ class ManageVoucher
     {
         $vouchers = new ArrayCollection();
 
-        foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
-            $productVariant = $purchaseProductVariant->getProductVariant();
-            if ($productVariant->getProduct()?->getProductType()?->getId() === ProductTypeEnum::Voucher->value) {
-                $voucher = $this->initiateVoucher($productVariant, $purchase);
-                $vouchers->add($voucher);
-            }
+        if ($purchase->getVouchersIssued()->count() > 0) {
+            return $purchase->getVouchersIssued();
         }
+
+        $this->em->wrapInTransaction(function () use ($purchase, $vouchers): void {
+            foreach ($purchase->getProductVariants() as $purchaseProductVariant) {
+                $productVariant = $purchaseProductVariant->getProductVariant();
+                if ($productVariant->getProduct()?->getProductType()?->getId() === ProductTypeEnum::Voucher->value) {
+                    $amount = $purchaseProductVariant->getAmount() ?? 1;
+                    for ($i = 0; $i < $amount; $i++) {
+                        $voucher = $this->initiateVoucher($productVariant, $purchase);
+                        $vouchers->add($voucher);
+                    }
+                }
+            }
+        });
+
         return $vouchers;
     }
 
@@ -87,7 +97,6 @@ class ManageVoucher
         ;
 
         $this->em->persist($voucher);
-        $this->em->flush();
 
         return $voucher;
     }

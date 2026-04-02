@@ -2,58 +2,55 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
-use Greendot\EshopBundle\Service\CurrencyManager;
-use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
-use Greendot\EshopBundle\Entity\Project\Payment;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
-use Greendot\EshopBundle\Enum\VatCalculationType;
-use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Form\ClientAddressType;
-use Greendot\EshopBundle\Form\ClientChangePasswordFormType;
+use Psr\Log\LoggerInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Workflow\Registry;
+use Knp\Component\Pager\PaginatorInterface;
 use Greendot\EshopBundle\Form\ClientFormType;
-use Greendot\EshopBundle\Repository\Project\ClientRepository;
-use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Repository\Project\VoucherRepository;
-use Greendot\EshopBundle\Service\CertificateMaker;
+use Symfony\Component\HttpFoundation\Request;
 use Greendot\EshopBundle\Service\InvoiceMaker;
-use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Greendot\EshopBundle\Entity\Project\Voucher;
+use Greendot\EshopBundle\Form\ClientAddressType;
+use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Service\PriceCalculator;
 use Greendot\EshopBundle\Service\QRcodeGenerator;
-use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Service\CertificateMaker;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Greendot\EshopBundle\Attribute\DisableListeners;
-use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
-use Greendot\EshopBundle\Service\ManagePurchase;
-use Knp\Component\Pager\PaginatorInterface;
-use Psr\Log\LoggerInterface;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Entity\Project\ClientAddress;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Greendot\EshopBundle\Form\ClientChangePasswordFormType;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Repository\Project\ClientRepository;
+use Greendot\EshopBundle\Repository\Project\VoucherRepository;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Workflow\Registry;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController;
+use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
+use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
-use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class ClientSectionController extends AbstractController implements TurnOffIsActiveFilterController
 {
     private const ARES_ENDPOINT = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/";
 
     #[DisableListeners([
-        AnonymousClientLogoutListener::class
+        AnonymousClientLogoutListener::class,
     ])]
     #[Route('/client/download-invoice/{orderId}', name: 'client_download_invoice')]
     public function downloadInvoice(
@@ -64,10 +61,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     ): Response
     {
         $purchaseRepository = $entityManager->getRepository(Purchase::class);
-        $purchase           = $purchaseRepository->find($orderId);
+        $purchase = $purchaseRepository->find($orderId);
 
         $this->denyAccessUnlessGranted('view', $purchase);
-        
+
         try {
             $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
 
@@ -82,19 +79,19 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             $response = new BinaryFileResponse($pdfFilePath);
             $response->setContentDisposition(
                 ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                'faktura-' . $purchase->getId() . '.pdf'
+                'faktura-' . $purchase->getId() . '.pdf',
             );
 
             return $response;
         } catch (\Exception $e) {
             $logger->error('Invoice download failed', [
                 'orderId' => $orderId,
-                'error'   => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return $this->render('error/invoice-error.html.twig', [
-                'orderId'      => $orderId,
+                'orderId' => $orderId,
                 'errorMessage' => $e->getMessage(),
             ], new Response('', Response::HTTP_NOT_FOUND));
         }
@@ -104,7 +101,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     #[Route('/zakaznik', name: 'client_section_index', options: ['expose' => true], priority: 2)]
     public function index(
         ClientRepository   $clientRepository,
-        PurchaseRepository $purchaseRepository
+        PurchaseRepository $purchaseRepository,
     ): Response
     {
         $client = $clientRepository->find($this->getUser());
@@ -117,7 +114,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     }
 
     #[DisableListeners([
-        AnonymousClientLogoutListener::class
+        AnonymousClientLogoutListener::class,
     ])]
     #[Route('/zakaznik/platba/{purchaseID}', name: 'client_section_payment')]
     public function payment(
@@ -136,7 +133,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
-        
+
         $totalPrice = $priceCalculator->calculatePurchasePrice(
             $purchase,
             $currency,
@@ -145,72 +142,30 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             VatCalculationType::WithVAT,
             DiscountCalculationType::WithDiscount,
             VoucherCalculationType::WithoutVoucher,
-            true
+            true,
         );
-        
-        $dueDate    = $purchase->getDateIssue()->modify('+14 days');
+
+        $dueDate = $purchase->getDateIssue()->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
         return $this->render('client-section/payment.html.twig', [
-            'client'         => $client,
-            'purchase'       => $purchase,
-            'QRcode'         => $qrCodePath,
-            'totalPrice'     => $totalPrice,
+            'client' => $client,
+            'purchase' => $purchase,
+            'QRcode' => $qrCodePath,
+            'totalPrice' => $totalPrice,
             'currencySymbol' => $currency->getSymbol(),
         ]);
     }
 
-    /* @deprecated PaymentGateway is used instead
-    #[Route('/zakaznik/platba-kartou/{purchaseID}', name: 'client_section_card_payment')]
-    public function cardPayment(
-        int                    $purchaseID,
-        PurchaseRepository     $purchaseRepository,
-        EntityManagerInterface $entityManager,
-        PriceCalculator        $priceCalculator,
-        GPWebpay               $GPWebpay,
-        CurrencyManager        $currencyManager,
-    ): RedirectResponse
-    {
-        $purchase = $purchaseRepository->find($purchaseID);
-        $currency = $currencyManager->get();
-
-        $this->denyAccessUnlessGranted('view', $purchase);
-
-
-        $totalPrice = $priceCalculator->calculatePurchasePrice(
-            $purchase,
-            $currency,
-            1,
-            true,
-            VatCalculationType::WithVAT,
-            DiscountCalculationType::WithDiscount,
-            VoucherCalculationType::WithoutVoucher,
-            true
-        );
-
-        $payment = new Payment();
-        $payment->setDate(new \DateTime());
-        $payment->setPurchase($purchase);
-        $payment->setAction($purchase->getPaymentType()->getActionGroup());
-        $payment->setExternalId(1);
-
-        $entityManager->persist($payment);
-        $entityManager->flush();
-
-        $paymentUrl = $GPWebpay->getPayLink($purchase, $payment->getId(), $totalPrice);
-
-        return new RedirectResponse($paymentUrl);
-    }*/
-
     #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/objednavky', name: 'client_section_orders', options: ['expose' => true])]
     public function orders(
-        ClientRepository        $clientRepository,
-        PurchaseRepository      $orderRepository,
-        PaginatorInterface      $paginator,
-        Request                 $request,
-        ManagePurchase          $managePurchase,
-        ): Response
+        ClientRepository   $clientRepository,
+        PurchaseRepository $orderRepository,
+        PaginatorInterface $paginator,
+        Request            $request,
+        ManagePurchase     $managePurchase,
+    ): Response
     {
         $client = $clientRepository->find($this->getUser());
         $orders = $orderRepository->getClientPurchases($client);
@@ -218,19 +173,17 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
 
-        foreach($drafts as $draft)
-        {
+        foreach ($drafts as $draft) {
             $managePurchase->preparePrices($draft);
         }
 
         return $this->render('client-section/orders.html.twig', [
-            'client'     => $client,
-            'orders'     => $orders,
-            'drafts'     => $drafts,
-            'pagination' => $pagination
+            'client' => $client,
+            'orders' => $orders,
+            'drafts' => $drafts,
+            'pagination' => $pagination,
         ]);
     }
-
 
     #[DisableListeners([AnonymousClientLogoutListener::class])]
     #[Route('/zakaznik/objednavka/{id}', name: 'client_section_order_detail')]
@@ -258,8 +211,8 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency);
         $managePurchase->preparePrices($purchase);
-        
-        $dueDate    = (clone $purchase->getDateIssue())->modify('+14 days');
+
+        $dueDate = (clone $purchase->getDateIssue())->modify('+14 days');
         $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
 
         $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
@@ -269,19 +222,19 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $client = $clientRepository->find($this->getUser());
 
         return $this->render('client-section/order-detail.html.twig', [
-            'client'                    => $client,
-            'purchase'                  => $purchase,
-            'QRcode'                    => $qrCodePath,
-            'priceCalculator'           => $priceCalculator,
-            'productPriceCalculator'    => $productVariantPriceFactory,
-            'currency'                  => $currency,
-            'created'                   => $created,
-            'payLink'                   => $paylink,
-            'trackingUrl'               => $trackingUrl,
+            'client' => $client,
+            'purchase' => $purchase,
+            'QRcode' => $qrCodePath,
+            'priceCalculator' => $priceCalculator,
+            'productPriceCalculator' => $productVariantPriceFactory,
+            'currency' => $currency,
+            'created' => $created,
+            'payLink' => $paylink,
+            'trackingUrl' => $trackingUrl,
         ]);
     }
 
-/** @deprecated old route, merged with client_section_orders */
+    /** @deprecated old route, merged with client_section_orders */
     #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/nedokoncene-objednavky', name: 'client_section_draft_orders')]
     public function draftOrders(
@@ -299,9 +252,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $pagination->setTemplate('pagination/pagination.html.twig');
 
         return $this->render('client-section/draft-orders.html.twig', [
-            'client'     => $client,
-            'orders'     => $orders,
-            'pagination' => $pagination
+            'client' => $client,
+            'orders' => $orders,
+            'pagination' => $pagination,
         ]);
     }
 
@@ -310,7 +263,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     public function profileDataChange(
         Request                $request,
         ClientRepository       $clientRepository,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
     ): Response
     {
         if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
@@ -318,7 +271,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $lastAddress = $client->getClientAddresses()->last() ?: new ClientAddress();
 
-        $form        = $this->createForm(ClientFormType::class, $client);
+        $form = $this->createForm(ClientFormType::class, $client);
         $addressForm = $this->createForm(ClientAddressType::class, $lastAddress);
 
         $form->handleRequest($request);
@@ -341,10 +294,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         }
 
         return $this->render('client-section/personal.html.twig', [
-            'form'        => $form->createView(),
+            'form' => $form->createView(),
             'addressForm' => $addressForm->createView(),
-            'client'      => $client,
-            'address'     => $lastAddress,
+            'client' => $client,
+            'address' => $lastAddress,
         ]);
     }
 
@@ -380,7 +333,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         }
 
         return $this->render('client-section/settings.html.twig', [
-            'form'   => $form->createView(),
+            'form' => $form->createView(),
             'client' => $client,
         ]);
     }
@@ -423,9 +376,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         CurrencyManager          $currencyManager,
     ): JsonResponse
     {
-        $productVariant         = $repository->find($variantID);
+        $productVariant = $repository->find($variantID);
         $purchaseProductVariant = new PurchaseProductVariant();
-        $purchase               = new Purchase();
+        $purchase = new Purchase();
 
         $purchaseProductVariant->setProductVariant($productVariant);
         $purchaseProductVariant->setAmount($amount);
@@ -439,18 +392,18 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             VatCalculationType::WithVAT,
             DiscountCalculationType::WithDiscount,
             false,
-            true
+            true,
         );
 
         if ($currency->getId() === 1) {
-            $numericPrice        = str_replace(',', '.', $productVariantPrice);
+            $numericPrice = str_replace(',', '.', $productVariantPrice);
             $productVariantPrice = round((float)$numericPrice);
         }
 
         $productVariantPrice = (string)$productVariantPrice . ' ' . $currency->getSymbol();
 
         return new JsonResponse([
-            'variantPrice' => $productVariantPrice
+            'variantPrice' => $productVariantPrice,
         ], 200);
     }
 
@@ -483,11 +436,11 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         }
 
         $return = [
-            'city'    => $data["sidlo"]["nazevObce"],
-            'street'  => $street,
-            'zip'     => $data["sidlo"]["psc"],
+            'city' => $data["sidlo"]["nazevObce"],
+            'street' => $street,
+            'zip' => $data["sidlo"]["psc"],
             'company' => $data["obchodniJmeno"],
-            'dic'     => $data["dic"] ?? null
+            'dic' => $data["dic"] ?? null,
         ];
 
         return new JsonResponse($return);
@@ -496,10 +449,11 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     #[IsGranted('ROLE_USER')]
     #[Route('/zakaznik/certifikaty', name: 'client_section_certificates', options: ['expose' => true])]
     public function certificates(
-        ClientRepository $clientRepository,
+        ClientRepository  $clientRepository,
         VoucherRepository $voucherRepository,
-        Registry $workflowRegistry
-    ): Response {
+        Registry          $workflowRegistry,
+    ): Response
+    {
         if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
         if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
 
@@ -520,37 +474,39 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
                 'description' => $description,
                 'short_description' => $short_description,
                 'class' => $class,
+                'is_usable' => $workflow->can($voucher, 'use'),
             ];
         }
 
         return $this->render('client-section/certificates.html.twig', [
-            'client'            => $client,
-            'vouchers'          => $vouchers,
-            'voucherMetadata'   => $voucherMetadata
+            'client' => $client,
+            'vouchers' => $vouchers,
+            'voucherMetadata' => $voucherMetadata,
         ]);
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route('/voucher/download/{id}', name: 'voucher_download')]
+    #[Route('/voucher/download/{voucher}', name: 'voucher_download')]
     public function downloadVoucher(
-        int $id,
-        VoucherRepository  $voucherRepository,
-        CertificateMaker   $certificateMaker
+        Voucher          $voucher,
+        CertificateMaker $certificateMaker,
+        Registry         $workflowRegistry,
     ): Response
     {
-        $voucher = $voucherRepository->find($id);
+        if ($voucher->getPurchaseIssued()->getClient() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Nemáte oprávnění ke stažení tohoto dárkového certifikátu.');
+        }
 
-        // check user login
-        if ($voucher->getPurchaseIssued()->getClient() !== $this->getUser()) return $this->redirectToRoute('web_homepage');
-
+        $wf = $workflowRegistry->get($voucher);
+        if (!$wf->can($voucher, 'use')) {
+            throw $this->createAccessDeniedException('Tento dárkový certifikát není platný pro stažení.');
+        }
 
         $pdfContent = $certificateMaker->createCertificate($voucher);
 
         return new Response($pdfContent, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="voucher_' . $voucher->getId() . '.pdf"'
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="voucher_' . $voucher->getId() . '.pdf"',
         ]);
     }
-
-
 }

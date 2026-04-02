@@ -24,13 +24,20 @@ class CategoryInfoGetter
         $returnArray = [];
         do{
             $returnArray []= $iteratedCategory;
+
             if ($iteratedCategory->getCategorySubCategories()->count() > 0){
-                $iteratedCategory = $iteratedCategory->getCategorySubCategories()->first()->getCategorySuper();
+                $mainCategory = $this->categoryCategoryRepository->getMainCategoryForSubCategory($iteratedCategory->getId());
+                if ($mainCategory) {
+                    $iteratedCategory = $mainCategory->getCategorySuper();
+                }
+                else
+                {
+                    $iteratedCategory = $iteratedCategory->getCategorySubCategories()->first()->getCategorySuper();
+                }
             }else{
                 $while = false;
             }
         }while($while == true);
-
         return  array_reverse($returnArray);
     }
 
