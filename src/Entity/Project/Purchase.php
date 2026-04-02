@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use Doctrine\DBAL\Types\Types;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -106,9 +107,15 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $date_delivery;
 
+    /**
+     * @deprecated use marking field instead
+     */
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $state = "draft";
+
+    #[ORM\Column(type: Types::JSON)]
+    private array $marking;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -354,11 +361,18 @@ class Purchase
         return $this;
     }
 
+
+    /**
+     * @deprecated use marking field instead
+     */
     public function getState(): ?string
     {
         return $this->state;
     }
 
+    /**
+     * @deprecated use marking field instead
+     */
     public function setState(string $state): self
     {
         $this->state = $state;
@@ -982,5 +996,15 @@ class Purchase
     {
         $this->calculatedPrices = $calculatedPrices;
         return $this;
+    }
+
+    public function getMarking(): array
+    {
+        return $this->marking;
+    }
+
+    public function setMarking(array $marking): void
+    {
+        $this->marking = $marking;
     }
 }

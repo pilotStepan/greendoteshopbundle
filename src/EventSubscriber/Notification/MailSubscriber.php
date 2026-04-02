@@ -4,9 +4,9 @@ namespace Greendot\EshopBundle\EventSubscriber\Notification;
 
 use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\Event\CompletedEvent;
-use Greendot\EshopBundle\Event\PasswordResetRequestedEvent;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Event\PurchaseWorkflowContract as PWC;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Message\Notification\PurchaseTransitionEmail;
 
@@ -18,8 +18,11 @@ final readonly class MailSubscriber implements EventSubscriberInterface
     use NotificationGuardTrait;
 
     public function __construct(
-        /** @var array<string,bool> */
-        private array               $notificationMap, // config/packages/notifications.yaml:email_notifications
+        /**
+         * @var array<string,bool>
+         * @deprecated fallback for config/packages/notifications.yaml:email_notifications
+         */
+        private array               $notificationMap,
         private ManageMails         $manageMails,
         private MessageBusInterface $bus,
     ) {}
@@ -28,26 +31,18 @@ final readonly class MailSubscriber implements EventSubscriberInterface
     {
         return [
             // workflow events
-            'workflow.purchase_flow.completed' => 'onPurchaseTransition',
-
-            // custom events
-            PasswordResetRequestedEvent::class => 'onPasswordReset',
+            PWC::eventName('completed') => 'onPurchaseTransition',
         ];
     }
 
     public function onPurchaseTransition(CompletedEvent $event): void
     {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
+        if (!$this->shouldNotifyChannel($event, $this->notificationMap, 'mail')) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
         $transition = $event->getTransition()->getName();
 
         $this->bus->dispatch(new PurchaseTransitionEmail($purchase->getId(), $transition));
-    }
-
-    public function onPasswordReset(PasswordResetRequestedEvent $event): void
-    {
-        $this->manageMails->sendPasswordResetEmail($event->recipient, $event->token);
     }
 }

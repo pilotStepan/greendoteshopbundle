@@ -3,19 +3,19 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Exception;
-use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Workflow\Event\Event;
 use Greendot\EshopBundle\Service\DateService;
+use Greendot\EshopBundle\Event\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Service\AffiliateService;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
+use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
@@ -26,24 +26,18 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private ManageVoucher            $manageVoucher,
         private ManagePurchase           $managePurchase,
         private ManageClientDiscount     $manageClientDiscount,
-        private AffiliateService         $affiliateService,
         private DateService              $dateService,
         private EventDispatcherInterface $eventDispatcher,
-    )
-    {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
         return [
-            'workflow.purchase_flow.guard.receive' => ['onGuardReceive'],
-            'workflow.purchase_flow.transition.receive' => ['onReceive'],
-            'workflow.purchase_flow.transition.payment' => ['onPayment'],
-            'workflow.purchase_flow.transition.payment_issue' => ['onPaymentIssue'],
-            'workflow.purchase_flow.transition.cancellation' => ['onCancellation'],
-            'workflow.purchase_flow.transition.prepare_for_pickup' => ['onPrepareForPickup'],
-            'workflow.purchase_flow.transition.send' => ['onSend'],
-            'workflow.purchase_flow.transition.pick_up' => ['onPickUp'],
+            PWC::eventName('guard', PWC::T_CHECKOUT) => 'onGuardReceive',
+            PWC::eventName('transition', PWC::T_CHECKOUT) => 'onReceive',
+            PWC::eventName('transition', PWC::T_PAY_PAY) => 'onPayment',
+            PWC::eventName('transition', PWC::T_PAY_FAIL) => 'onPaymentIssue',
+            PWC::eventName('transition', PWC::T_CANCEL) => 'onCancellation',
         ];
     }
 
@@ -126,7 +120,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 
         try {
             $this->eventDispatcher->dispatch(new PurchaseEvent($purchase));
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             //maybe add logg
         }
 
@@ -153,7 +147,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment');
-        $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
 
         //? We don't want automatic invoice issue on payment
         // $this->managePurchase->issueInvoice($purchase); 
@@ -168,7 +161,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
-        $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
     }
 
     public function onCancellation(Event $event): void
@@ -180,34 +172,5 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
-        $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
-    }
-
-    public function onPrepareForPickup(Event $event): void
-    {
-        /** @var Purchase $purchase */
-        // $purchase = $event->getSubject();
-    }
-
-    public function onSend(Event $event): void
-    {
-        /** @var Purchase $purchase */
-        $purchase = $event->getSubject();
-        if (!$purchase instanceof Purchase) {
-            return;
-        }
-
-        $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
-    }
-
-    public function onPickUp(Event $event): void
-    {
-        /** @var Purchase $purchase */
-        $purchase = $event->getSubject();
-        if (!$purchase instanceof Purchase) {
-            return;
-        }
-
-        $this->affiliateService->dispatchCreateAffiliateEntryMessage($purchase);
     }
 }

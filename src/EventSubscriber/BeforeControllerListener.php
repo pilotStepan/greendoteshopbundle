@@ -5,8 +5,6 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Greendot\EshopBundle\Utils\ApiRequestMatcher;
-use Greendot\EshopBundle\Service\AffiliateService;
-use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController as ControllerTurnOffIsActiveFilterController;
@@ -15,7 +13,6 @@ readonly class BeforeControllerListener implements EventSubscriberInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private AffiliateService       $affiliateService,
     ) {}
 
     /**
@@ -40,14 +37,6 @@ readonly class BeforeControllerListener implements EventSubscriberInterface
         }
     }
 
-    public function onKernelResponse(ResponseEvent $event): void
-    {
-        if (!$event->isMainRequest() || ApiRequestMatcher::isApiRequest($event->getRequest())) {
-            return;
-        }
-        $this->affiliateService->setAffiliateCookiesFromRequest($event);
-    }
-
     /**
      * @return string[]
      */
@@ -55,7 +44,6 @@ readonly class BeforeControllerListener implements EventSubscriberInterface
     {
         return [
             KernelEvents::CONTROLLER => 'onKernelController',
-            KernelEvents::RESPONSE => 'onKernelResponse',
         ];
     }
 }

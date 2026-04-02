@@ -4,8 +4,9 @@ namespace Greendot\EshopBundle\EventSubscriber\Notification;
 
 use Greendot\EshopBundle\Sms\ManageSms;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Symfony\Component\Workflow\Event\CompletedEvent;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Workflow\Event\CompletedEvent;
+use Greendot\EshopBundle\Event\PurchaseWorkflowContract as PWC;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Message\Notification\PurchaseTransitionSms;
 
@@ -17,8 +18,11 @@ final readonly class SmsSubscriber implements EventSubscriberInterface
     use NotificationGuardTrait;
 
     public function __construct(
-        /** @var array<string,bool> */
-        private array               $notificationMap, // config/packages/notifications.yaml:sms_notifications
+        /**
+         * @var array<string,bool>
+         * @deprecated fallback for config/packages/notifications.yaml:sms_notifications
+         */
+        private array               $notificationMap,
         private ManageSms           $manageSms,
         private MessageBusInterface $bus,
     ) {}
@@ -27,13 +31,13 @@ final readonly class SmsSubscriber implements EventSubscriberInterface
     {
         return [
             // workflow events
-            'workflow.purchase_flow.completed' => 'onPurchaseTransition',
+            PWC::eventName('completed') => 'onPurchaseTransition',
         ];
     }
 
     public function onPurchaseTransition(CompletedEvent $event): void
     {
-        if (!$this->shouldNotify($event, $this->notificationMap)) return;
+        if (!$this->shouldNotifyChannel($event, $this->notificationMap, 'sms')) return;
 
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();

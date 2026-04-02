@@ -4,8 +4,8 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Throwable;
 use Psr\Log\LoggerInterface;
+use Greendot\EshopBundle\Event\PurchaseWorkflowContract;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Form\ClientFormType;
 use Symfony\Component\HttpFoundation\Request;
 use Greendot\EshopBundle\Service\ManageMails;
@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,7 @@ use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -39,7 +41,8 @@ class PurchaseController extends AbstractController
         Request                $request,
         GPWebpay               $gpWebpay,
         EntityManagerInterface $entityManager,
-        Registry               $workflowRegistry,
+        #[Target(PurchaseWorkflowContract::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
         PurchaseUrlGenerator   $urlGenerator,
         LoggerInterface        $logger,
     ): Response
@@ -59,14 +62,14 @@ class PurchaseController extends AbstractController
             $isOk = ($gatewayResponse->getPRCODE() === 0) && ($gatewayResponse->getSRCODE() === 0);
 
             // Update workflow state
-            $workflow = $workflowRegistry->get($purchase);
-            $transition = $isOk ? 'payment' : 'payment_issue';
-            $workflow->apply($purchase, $transition);
+            $transition = $isOk
+                ? PurchaseWorkflowContract::T_PAY_PAY->value
+                : PurchaseWorkflowContract::T_PAY_FAIL->value;
+            $purchaseWorkflow->apply($purchase, $transition);
             $entityManager->flush();
 
             return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
         } catch (Throwable $e) {
-
             $logger->error('Error during order verification', [
                 'purchaseId' => $purchase?->getId(),
                 'paymentId' => $paymentId,
@@ -76,7 +79,7 @@ class PurchaseController extends AbstractController
 
             if ($purchase) {
                 try {
-                    $workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
+                    $purchaseWorkflow->apply($purchase, PurchaseWorkflowContract::T_PAY_FAIL->value);
                     $entityManager->flush();
                 } catch (Throwable $inner) {
                     $logger->error('Failed to apply payment_issue transition after verification error', [
@@ -101,7 +104,8 @@ class PurchaseController extends AbstractController
         Request                $request,
         RequestStack           $requestStack,
         PurchaseRepository     $purchaseRepository,
-        Registry               $workflow,
+        #[Target(PurchaseWorkflowContract::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
         EntityManagerInterface $entityManager,
     ): Response
     {
@@ -111,15 +115,13 @@ class PurchaseController extends AbstractController
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
-        $flow = $workflow->get($purchase);
-        if ($purchase->getState() == 'draft') {
-            $flow->apply($purchase, 'create');
+        if (!$purchaseWorkflow->can($purchase, PurchaseWorkflowContract::T_CANCEL->value)) {
+            $this->addFlash('error', 'Nelze zrušit tuto objednávku.');
+            return $this->redirectToRoute($redirectRoute);
         }
-        if ($flow->can($purchase, 'cancellation')) {
-            $flow->apply($purchase, 'cancellation');
-            $entityManager->flush();
 
-        }
+        $purchaseWorkflow->apply($purchase, PurchaseWorkflowContract::T_CANCEL->value);
+        $entityManager->flush();
 
         $session = $requestStack->getSession();
         if ($session->has('purchase')) {

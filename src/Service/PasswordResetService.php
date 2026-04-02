@@ -3,9 +3,7 @@
 namespace Greendot\EshopBundle\Service;
 
 use RuntimeException;
-use Greendot\EshopBundle\Event\PasswordResetRequestedEvent;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
@@ -19,7 +17,7 @@ readonly class PasswordResetService
     public function __construct(
         private ClientRepository             $clientRepository,
         private ResetPasswordHelperInterface $resetPasswordHelper,
-        private EventDispatcherInterface     $dispatcher,
+        private ManageMails                  $manageMails,
     ) {}
 
     /**
@@ -35,7 +33,7 @@ readonly class PasswordResetService
 
         try {
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);
-            $this->dispatcher->dispatch(new PasswordResetRequestedEvent($user->getMail(), $resetToken));
+            $this->manageMails->sendPasswordResetEmail($user->getMail(), $resetToken);
         } catch (TooManyPasswordRequestsException $e) {
             $availableAt = $e->getAvailableAt();
             $now = new \DateTimeImmutable('now');
