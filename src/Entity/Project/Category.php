@@ -18,6 +18,7 @@ use Exception;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Greendot\EshopBundle\Enum\SpecialCategoryEnum;
 use Symfony\Component\Serializer\Annotation\MaxDepth;
 use Symfony\Component\Validator\Constraints\Existence;
 
@@ -195,6 +196,10 @@ class Category implements Translatable
     #[ORM\Column(nullable: true)]
     #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write'])]
     private ?\DateTimeImmutable $published_at = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true, enumType: SpecialCategoryEnum::class)]
+    #[Groups(['category_default', 'category:read'])]
+    private ?SpecialCategoryEnum $specialCategoryCode = null;
 
     public function __construct()
     {
@@ -791,6 +796,18 @@ class Category implements Translatable
     public function setPublishedAt(?\DateTimeImmutable $published_at): self
     {
         $this->published_at = $published_at;
+
+        return $this;
+    }
+
+    public function getSpecialCategoryCode() : ?SpecialCategoryEnum
+    {
+        return $this->specialCategoryCode;
+    }
+
+    public function setSpecialCategoryCode(?SpecialCategoryEnum $specialCategoryCode) : self
+    {
+        $this->specialCategoryCode = $specialCategoryCode;
 
         return $this;
     }
