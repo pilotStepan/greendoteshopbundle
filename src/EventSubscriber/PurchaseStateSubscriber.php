@@ -7,7 +7,7 @@ use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\Event\Event;
 use Greendot\EshopBundle\Service\DateService;
-use Greendot\EshopBundle\Event\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;

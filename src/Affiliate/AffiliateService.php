@@ -13,6 +13,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 readonly class AffiliateService
@@ -23,6 +24,7 @@ readonly class AffiliateService
         private CurrencyRepository   $currencyRepository,
         private MessageBusInterface  $messageBus,
         private LoggerInterface      $logger,
+        #[Autowire(service: 'doctrine.dbal.affiliate_connection')]
         private ?Connection          $affiliateDbConnection,
     ) {}
 
@@ -95,7 +97,7 @@ readonly class AffiliateService
     }
 
     // send request to affiliate db to cancel an entry for purchase
-    public function CancelAffiliateEntry(Purchase $purchase): void
+    public function cancelAffiliateEntry(Purchase $purchase): void
     {
         if (!$this->isAffiliate()) {
             return;

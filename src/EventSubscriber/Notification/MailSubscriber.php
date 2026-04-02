@@ -6,7 +6,7 @@ use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\Event\CompletedEvent;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Greendot\EshopBundle\Event\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Message\Notification\PurchaseTransitionEmail;
 

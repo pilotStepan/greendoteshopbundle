@@ -4,7 +4,7 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Throwable;
 use Psr\Log\LoggerInterface;
-use Greendot\EshopBundle\Event\PurchaseWorkflowContract;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Form\ClientFormType;
 use Symfony\Component\HttpFoundation\Request;

@@ -3,12 +3,12 @@
 namespace Greendot\EshopBundle\Affiliate;
 
 use Symfony\Component\Workflow\Event\Event;
-use Greendot\EshopBundle\Event\PurchaseWorkflowContract as PWC;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Utils\ApiRequestMatcher;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class AffiliateOrderEventSubscriber implements EventSubscriberInterface
 {
@@ -25,10 +25,10 @@ readonly class AffiliateOrderEventSubscriber implements EventSubscriberInterface
 
             PWC::eventName('transition', PWC::T_PAY_PAY) => 'createAffiliateEntry',
             PWC::eventName('transition', PWC::T_LOG_SEND) => 'createAffiliateEntry',
-            PWC::eventName('transition', PWC::T_LOG_PICK_UP) => 'createAffiliateEntry',
+            PWC::eventName('transition', PWC::T_COMPLETE) => 'createAffiliateEntry',
 
-            PWC::eventName('transition', PWC::T_CANCEL) => 'cancelAffiliateEntry',
             PWC::eventName('transition', PWC::T_PAY_FAIL) => 'cancelAffiliateEntry',
+            PWC::eventName('transition', PWC::T_CANCEL) => 'cancelAffiliateEntry',
         ];
     }
 

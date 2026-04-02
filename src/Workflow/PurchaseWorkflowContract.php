@@ -2,18 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Greendot\EshopBundle\Event;
+namespace Greendot\EshopBundle\Workflow;
 
 
 enum PurchaseWorkflowContract: string
 {
     case NAME = 'purchase_flow';
-    case T_CHECKOUT = 'receive';
+
+    // STATES
+    case S_WISHLIST = 'wishlist';
+    case S_CART = 'cart';
+
+    // TRANSITIONS
+    case T_INIT_WISHLIST = 'init_wishlist';
+    case T_INIT_CART = 'init_cart';
+    case T_CHECKOUT = 'checkout';
     case T_PAY_PAY = 'payment';
     case T_PAY_FAIL = 'payment_issue';
-    case T_LOG_PREPARE_FOR_PICKUP = 'prepare_for_pickup';
     case T_LOG_SEND = 'send';
-    case T_LOG_PICK_UP = 'pick_up';
     case T_CANCEL = 'cancellation';
     case T_COMPLETE = 'complete';
 

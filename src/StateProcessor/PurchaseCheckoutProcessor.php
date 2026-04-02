@@ -10,7 +10,7 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use ApiPlatform\Metadata\Operation;
-use Greendot\EshopBundle\Event\PurchaseWorkflowContract;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use ApiPlatform\State\ProcessorInterface;
