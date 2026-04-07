@@ -6,7 +6,7 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Events;
-use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
+use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
@@ -16,6 +16,7 @@ class ProductVariantEventListener
     public function __construct(
         private CalculatedPricesService $calculatedPricesService,
         private ListenerManager         $listenerManager,
+        private readonly ProductVariantRepository $productVariantRepository
     ) {}
 
     // TODO: move calculatedPrices creation to provider
@@ -27,28 +28,12 @@ class ProductVariantEventListener
         }
 
         // if doesnt have upload try to substitue it
-        // TODO: move this to repository and make it SQL.
         if (!$productVariant->getUpload()) {
-            if (
-                $productVariant->getProduct()->getUpload() === null
-                || $productVariant->getProduct()->getUpload()?->isDynamicallySet()
-            )
-            {
-                foreach($productVariant->getProductVariantUploadGroups() as $productVariantUploadGroup) {
-                    if ($productVariantUploadGroup->getUploadGroup()->getType() != UploadGroupTypeEnum::IMAGE){
-                        continue;
-                    }
-                    foreach($productVariantUploadGroup->getUploadGroup()->getUpload() as $upload)
-                    {
-                        $upload->setIsDynamicallySet(true);
-                        $productVariant->setUpload($upload);
-                        break 2;
-                    }
-                }
-            }
-            else
-            {
+            $upload = $this->productVariantRepository->findProductVariantUploadSubstitute($productVariant);
+            if (!$upload) {
                 $upload = $productVariant->getProduct()->getUpload();
+            }
+            if ($upload){
                 $upload->setIsDynamicallySet(true);
                 $productVariant->setUpload($upload);
             }

@@ -508,6 +508,64 @@ class CategoryRepository extends HintedRepositoryBase
         return $this->hintQuery($qb->getQuery())->getResult();
     }
 
+    public function findHighestParentCategory(Category $category): Category
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        $sql = <<<SQL
+            WITH RECURSIVE category_ancestors AS (
+                -- Anchor: Start with the given category
+                SELECT
+                    :startId AS id,
+                    (SELECT category_super_id FROM p_category_category WHERE category_sub_id = :startId) AS parent_id
+            
+                UNION ALL
+            
+                -- Recursive step: Find the parent of the current category
+                SELECT
+                    ca.parent_id,
+                    (SELECT category_super_id FROM p_category_category WHERE category_sub_id = ca.parent_id)
+                FROM
+                    category_ancestors ca
+                WHERE
+                    ca.parent_id IS NOT NULL
+            )
+            -- Select the ancestor that has no parent, which is the root
+            SELECT id FROM category_ancestors WHERE parent_id IS NULL LIMIT 1;
+    SQL;
 
+        $topParentId = $conn->fetchOne($sql, ['startId' => $category->getId()]);
+
+        if ($topParentId) {
+            $result = $this->find($topParentId);
+            if ($result) {
+                return $result;
+            }
+        }
+
+        // Fallback to the original category if the query fails or the ID is not found
+        return $category;
+    }
+
+
+    public function findAllChildCategoryIds(int $parentCategoryId): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "
+        WITH RECURSIVE category_tree AS (
+            -- Anchor member: start with the requested parent
+            SELECT :parentId AS id
+            UNION ALL
+            -- Recursive member: join the mapping table to the tree
+            SELECT cc.category_sub_id
+            FROM p_category_category cc
+            INNER JOIN category_tree ct ON cc.category_super_id = ct.id
+        )
+        SELECT id FROM category_tree
+        ";
+
+        $result = $conn->executeQuery($sql, ['parentId' => $parentCategoryId])->fetchFirstColumn();
+        return !empty($result) ? $result : [$parentCategoryId];
+    }
 
 }

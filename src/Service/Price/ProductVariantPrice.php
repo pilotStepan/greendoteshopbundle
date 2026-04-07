@@ -118,6 +118,11 @@ class ProductVariantPrice
         return $this->priceUtils->convertCurrency($this->vatValue, $this->conversionRate);
     }
 
+    public function getMinimalAmount(): int
+    {
+        return $this->minAmount;
+    }
+
     public function getDiscountPercentage(): ?float
     {
         switch ($this->discountCalculationType) {
@@ -323,6 +328,7 @@ class ProductVariantPrice
     private function constructForPurchaseProductVariant(): void
     {
         $this->amount = $this->productVariant->getAmount();
+        $this->minAmount = $this->priceRepository->getMinimalAmount($this->productVariant->getProductVariant(), new \DateTime("now"));
 
         if ($this->productVariant?->getPurchase()?->getClientDiscount()?->getDiscount()) {
             $this->clientDiscount = $this->productVariant->getPurchase()->getClientDiscount()->getDiscount();

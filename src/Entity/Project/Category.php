@@ -9,6 +9,8 @@ use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use Greendot\EshopBundle\ApiResource\CategoryHasProductsFilter;
+use Greendot\EshopBundle\ApiResource\CategorySuperFilter;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -34,6 +36,10 @@ use Symfony\Component\Validator\Constraints\Existence;
             normalizationContext: ['groups' => ['category_with_parents:read']],
             forceEager: false
         ),
+        new GetCollection(
+            uriTemplate: '/category/stripped',
+            normalizationContext: ['groups' => ['category:stripped:read']],
+        ),
         new Get(),
     ],
     normalizationContext: ['groups' => ['category:read']],
@@ -44,18 +50,20 @@ use Symfony\Component\Validator\Constraints\Existence;
 //#[ApiFilter(TranslationAwareSearchFilter::class)]
 #[ApiFilter(ExistsFilter::class, properties: ['comments'])]
 #[ApiFilter(OrderFilter::class, strategy: OrderFilter::NULLS_ALWAYS_LAST, properties: ['published_at'])]
+#[ApiFilter(CategorySuperFilter::class, properties: ['category_most_super'])]
+#[ApiFilter(CategoryHasProductsFilter::class, properties: ['has_products'])]
 class Category implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['category_with_parents:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'comment:read', 'searchable', 'category_category:read', 'category_category:write'])]
+    #[Groups(['category:stripped:read', 'category_with_parents:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'comment:read', 'searchable', 'category_category:read', 'category_category:write'])]
     private $id;
 
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150)]
-    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write', 'product_item:read', 'comment:read'])]
+    #[Groups(['category:stripped:read','category_with_parents:read','category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write', 'product_item:read', 'comment:read'])]
     private $name;
 
     #[Gedmo\Translatable]
@@ -109,14 +117,14 @@ class Category implements Translatable
     #[Gedmo\Translatable]
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
-    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write', 'product_item:read', 'comment:read'])]
+    #[Groups(['category:stripped:read','category_with_parents:read','category_default', 'category:read', 'category:write', 'product_item:read', 'comment:read'])]
     private $slug;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private $javascript;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(['category_with_parents:read','category_default', 'category:read', 'category:write'])]
+    #[Groups(['category:stripped:read','category_with_parents:read','category_default', 'category:read', 'category:write'])]
     private $sequence;
 
     #[ORM\Column(type: 'smallint', nullable: true, options: ['default' => 1])]
@@ -196,11 +204,15 @@ class Category implements Translatable
     #[Groups(['category_default', 'category:read', 'category:write', 'searchable', 'category_category:read', 'category_category:write'])]
     private ?\DateTimeImmutable $published_at = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?array $additionalData = null;
+
     public function __construct()
     {
         $this->labels = new ArrayCollection();
         $this->categoryFiles = new ArrayCollection();
         $this->categoryCategories = new ArrayCollection();
+        $this->categorySubCategories = new ArrayCollection();
         $this->parameters = new ArrayCollection();
         $this->categoryProducts = new ArrayCollection();
         $this->comments = new ArrayCollection();
@@ -339,14 +351,6 @@ class Category implements Translatable
         return $this->categoryCategories;
     }
 
-    /**
-     * @return Collection|CategoryCategory[]
-     */
-    public function getCategorySubCategories(): Collection
-    {
-        return $this->categorySubCategories;
-    }
-
     public function addCategoryCategory(CategoryCategory $categoryCategory): self
     {
         if (!$this->categoryCategories->contains($categoryCategory)) {
@@ -363,6 +367,36 @@ class Category implements Translatable
             // set the owning side to null (unless already changed)
             if ($categoryCategory->getCategorySuper() === $this) {
                 $categoryCategory->setCategorySuper(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CategoryCategory[]
+     */
+    public function getCategorySubCategories(): Collection
+    {
+        return $this->categorySubCategories;
+    }
+
+    public function addCategorySubCategory(CategoryCategory $categoryCategory): self
+    {
+        if (!$this->categoryCategories->contains($categoryCategory)) {
+            $this->categoryCategories[] = $categoryCategory;
+            $categoryCategory->setCategorySub($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCategorySubCategory(CategoryCategory $categoryCategory): self
+    {
+        if ($this->categoryCategories->removeElement($categoryCategory)) {
+            // set the owning side to null (unless already changed)
+            if ($categoryCategory->getCategorySub() === $this) {
+                $categoryCategory->setCategorySub(null);
             }
         }
 
@@ -791,6 +825,18 @@ class Category implements Translatable
     public function setPublishedAt(?\DateTimeImmutable $published_at): self
     {
         $this->published_at = $published_at;
+
+        return $this;
+    }
+
+    public function getAdditionalData(): ?array
+    {
+        return $this->additionalData;
+    }
+
+    public function setAdditionalData(?array $additionalData): static
+    {
+        $this->additionalData = $additionalData;
 
         return $this;
     }

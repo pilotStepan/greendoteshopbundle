@@ -96,17 +96,15 @@ class ProductRepository extends HintedRepositoryBase
             ->getResult();
     }
 
-
+    /**
+     * @deprecated Use function in AvailabilityRepository directly
+     *
+     * @param Product $product
+     * @return Availability|null
+     */
     public function findAvailabilityByProduct(Product $product): ?Availability
     {
-        $productAvailability = null;
-        foreach ($product->getProductVariants() as $variant) {
-            $variantAvailability = $variant->getAvailability();
-            if (!$productAvailability || $variantAvailability->getSequence() < $productAvailability->getSequence()){
-                $productAvailability = $variantAvailability;
-            }
-        }
-        return $productAvailability;
+        return $this->getEntityManager()->getRepository(Availability::class)->getAvailabilityForProduct($product->getId());
     }
 
     public function findTopSellingProducts(array $products, int $limit): array
@@ -374,11 +372,18 @@ class ProductRepository extends HintedRepositoryBase
     public function findProductsInCategory(QueryBuilder $qb, int $categoryId): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
-        $this->safeJoin($qb, $alias, 'categoryProducts', 'cp'); 
-        $this->safeJoin($qb, 'cp', 'category', 'ca'); 
-        $this->safeJoin($qb, 'ca', 'categorySubCategories', 'cc'); 
-        $qb->andWhere('cp.category = :categoryId OR cc.category_super = :categoryId');
-        $qb->setParameter('categoryId', $categoryId);
+
+        $categoryIds = $this->categoryRepository->findAllChildCategoryIds($categoryId);
+
+        $this->safeJoin($qb, $alias, 'categoryProducts', 'cp');
+        $qb->andWhere('cp.category IN (:categoryIds)')
+            ->setParameter('categoryIds', $categoryIds);
+
+        //$this->safeJoin($qb, $alias, 'categoryProducts', 'cp');
+        //$this->safeJoin($qb, 'cp', 'category', 'ca');
+        //$this->safeJoin($qb, 'ca', 'categorySubCategories', 'cc');
+        //$qb->andWhere('cp.category = :categoryId OR cc.category_super = :categoryId');
+        //$qb->setParameter('categoryId', $categoryId);
 
         return $qb;
     }
@@ -595,7 +600,7 @@ class ProductRepository extends HintedRepositoryBase
     }
 
 
-    public function mainProductsFilter(array $filters): QueryBuilder
+    public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
     {
         if (!isset($filters['categoryId'])) $filters['categoryId'] = 0;
 
@@ -631,6 +636,9 @@ class ProductRepository extends HintedRepositoryBase
             ->andWhere('p.isVisible = :visible')
             ->setParameter('visible', true)
         ;
+        if ($count){
+            $qb->select("COUNT(p.id)");
+        }
 
         if ($filters['categoryId'] > 0) {
             $this->findProductsInCategory($qb, $filters['categoryId']);
@@ -654,6 +662,11 @@ class ProductRepository extends HintedRepositoryBase
             $this->productsByParameters($qb, $filters['selectedParameters']);
         }
 
+        if ($count){
+            return $qb;
+        }
+
+        //this DOES NOT filter out only inStock product, but sorts them at the end
         if ($filters['isStockOnly']) {
             $this->sortProductsByAvailability($qb);
         }
@@ -677,6 +690,7 @@ class ProductRepository extends HintedRepositoryBase
                 $this->sortProductsBySequence($qb, 'DESC');
                 break;
         }
+
 
         $qb->addOrderBy('p.id', 'DESC');
 
