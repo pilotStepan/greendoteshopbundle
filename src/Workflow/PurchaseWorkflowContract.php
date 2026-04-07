@@ -19,6 +19,7 @@ enum PurchaseWorkflowContract: string
     case T_CHECKOUT = 'checkout';
     case T_PAY_PAY = 'payment';
     case T_PAY_FAIL = 'payment_issue';
+    case T_LOG_PREPARE_FOR_PICKUP = 'log_prepare_for_pickup';
     case T_LOG_SEND = 'send';
     case T_CANCEL = 'cancellation';
     case T_COMPLETE = 'complete';

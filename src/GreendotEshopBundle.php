@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
+use Greendot\EshopBundle\DependencyInjection\Compiler\PurchaseNotificationHandlerPass;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -52,6 +53,8 @@ class GreendotEshopBundle extends AbstractBundle
 
 
         parent::build($container);
+        $container->addCompilerPass(new PurchaseNotificationHandlerPass());
+
         $ormCompilerClass = 'Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass';
 
         if (class_exists($ormCompilerClass))

@@ -31,7 +31,6 @@ use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
  * This factory builds the data structure needed for order emails, including
  * items, transportation, payment details, and addresses.
  */
-//!!DONT MAKE FINALE!!
 class OrderDataFactory
 {
     private PurchasePrice $purchasePrice;
