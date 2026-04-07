@@ -1007,4 +1007,29 @@ class Purchase
     {
         $this->marking = $marking;
     }
+
+    public function hasPlace(string $place): bool
+    {
+        return isset($this->marking[$place]);
+    }
+
+    public function hasAnyPlace(string ...$places): bool
+    {
+        foreach ($places as $place) {
+            if (isset($this->marking[$place])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function hasAllPlaces(string ...$places): bool
+    {
+        foreach ($places as $place) {
+            if (!isset($this->marking[$place])) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

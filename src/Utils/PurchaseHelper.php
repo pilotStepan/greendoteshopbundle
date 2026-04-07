@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils;
+namespace Greendot\EshopBundle\Utils;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 

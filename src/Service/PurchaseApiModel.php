@@ -20,7 +20,7 @@ class PurchaseApiModel
     {
         $this->id         = $entity->getId();
         $this->date_issue = $entity->getDateIssue()->setTimezone(new DateTimeZone("UTC"))->format("Y-m-d\TH:i:s.v\Z");
-        $this->state      = $entity->getState();
+        $this->state      = $entity->getMarking();
 
         foreach ($entity->getProductVariants() as $productVariant) {
             $parameters = [];

@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 class PriceUtils
 {
@@ -53,7 +54,7 @@ class PriceUtils
         $date = new \DateTime("now");
 
         //TODO: This is not reusable way to do it.
-        if ($purchase && !in_array($purchase->getState(),['draft', 'wishlist', 'new'])){
+        if ($purchase && !$purchase->hasAnyPlace(PWC::S_DRAFT->value, PWC::S_CART->value)) {
             $date = $purchase->getDateIssue();
         }
 

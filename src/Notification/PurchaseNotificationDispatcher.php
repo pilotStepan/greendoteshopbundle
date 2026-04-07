@@ -17,24 +17,19 @@ final readonly class PurchaseNotificationDispatcher
         private LoggerInterface $logger,
     ) {}
 
-    /**
-     * @param string[] $aliases
-     */
-    public function dispatch(Purchase $purchase, string $transition, array $aliases): void
+    public function dispatch(Purchase $purchase, string $transition, string $alias): void
     {
-        foreach ($aliases as $alias) {
-            $handler = $this->handlers[$alias] ?? null;
+        $handler = $this->handlers[$alias] ?? null;
 
-            if ($handler === null) {
-                $this->logger->warning('No purchase notification handler found for alias', [
-                    'alias'      => $alias,
-                    'transition' => $transition,
-                    'purchase'   => $purchase->getId(),
-                ]);
-                continue;
-            }
-
-            $handler->handle($purchase, $transition);
+        if ($handler === null) {
+            $this->logger->warning('No purchase notification handler found for alias', [
+                'alias' => $alias,
+                'transition' => $transition,
+                'purchase' => $purchase->getId(),
+            ]);
+            return;
         }
+
+        $handler->handle($purchase, $transition);
     }
 }

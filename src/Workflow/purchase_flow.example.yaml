@@ -1,0 +1,163 @@
+framework:
+    workflows:
+        !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::NAME->value:
+            type: 'workflow'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'marking'
+            supports:
+                - Greendot\EshopBundle\Entity\Project\Purchase
+            initial_marking: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+            places:
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value:
+                    metadata:
+                        description: 'Otevřená objednávka'
+                        short_description: 'Otevřená'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#1f2bc2'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_WISHLIST->value:
+                    metadata:
+                        description: 'Seznam přání'
+                        short_description: 'Seznam přání'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#1f2bc2'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value:
+                    metadata:
+                        description: 'Košík'
+                        short_description: 'Košík'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#1f2bc2'
+                # Logistics Track
+                log_pending:
+                    metadata:
+                        description: 'Čeká na zpracování'
+                        short_description: 'Čeká na zpracování'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                log_ready_for_pickup:
+                    metadata:
+                        description: 'Připraveno k vyzvednutí'
+                        short_description: 'Připraveno k vyzvednutí'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                log_ready_to_ship:
+                    metadata:
+                        description: 'Připraveno k odeslání'
+                        short_description: 'Připraveno k odeslání'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                log_shipped:
+                    metadata:
+                        description: 'Expedováno'
+                        short_description: 'Expedováno'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                # Payment Track
+                pay_pending:
+                    metadata:
+                        description: 'Čeká na platbu'
+                        short_description: 'Čeká na platbu'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                pay_paid:
+                    metadata:
+                        description: 'Zaplaceno'
+                        short_description: 'Zaplaceno'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                pay_refunded:
+                    metadata:
+                        description: 'Peníze vráceny'
+                        short_description: 'Peníze vráceny'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                pay_failed:
+                    metadata:
+                        description: 'Neuhrazeno'
+                        short_description: 'Neuhrazeno'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                # Final states
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value:
+                    metadata:
+                        description: 'Zrušeno'
+                        short_description: 'Zrušeno'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value:
+                    metadata:
+                        description: 'Dokončeno'
+                        short_description: 'Dokončeno'
+                        class: 'yellow'
+                        icon: 'orderstatus5'
+                        simple_color: '#ee9647'
+            transitions:
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_INIT_WISHLIST->value:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_WISHLIST->value
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_INIT_CART->value:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CHECKOUT->value:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
+                    to: [ log_pending, pay_pending ]
+                    metadata:
+                        notifications: [ customer_email_with_proforma ]
+                create_shipment:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: [ log_ready_to_ship, pay_pending ]
+                create_pickup:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: [ log_ready_for_pickup, pay_pending ]
+                # --- Logistics ---
+                log_prepare_for_pickup:
+                    from: log_pending
+                    to: log_ready_for_pickup
+                    metadata:
+                        notifications: [ customer_email, customer_sms ]
+                log_prepare_to_ship:
+                    from: log_pending
+                    to: log_ready_to_ship
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_SEND->value:
+                    from: log_ready_to_ship
+                    to: log_shipped
+                    metadata:
+                        notifications: [ customer_email, customer_sms ]
+                # --- Payment ---
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_PAY->value:
+                    from: [ pay_pending, pay_failed ]
+                    to: pay_paid
+                    metadata:
+                        notifications: [ customer_email, payment_vouchers ]
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_FAIL->value:
+                    from: pay_pending
+                    to: pay_failed
+                pay_refund:
+                    from: pay_paid
+                    to: pay_refunded
+                pay_renew:
+                    from: pay_refunded
+                    to: pay_pending
+                # --- Final ---
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CANCEL->value:
+                    from: [ log_pending, log_ready_for_pickup, log_ready_to_ship, pay_pending, pay_failed, pay_refunded ]
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_COMPLETE->value:
+                    from: [ log_shipped, pay_paid, log_ready_for_pickup ]
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value
+                    metadata:
+                        notifications: [ customer_email ]

@@ -4,11 +4,13 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Attribute\TranslatableRoute;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
@@ -30,12 +32,15 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 class ProductController extends AbstractController
 {
     public function __construct(
-        private readonly ProductVariantRepository   $productVariantRepository,
-        private readonly CalculatedPricesService    $calculatedPricesService,
+        private readonly ProductVariantRepository $productVariantRepository,
+        private readonly CalculatedPricesService  $calculatedPricesService,
+        #[Target(PWC::NAME->value)]
+        private readonly WorkflowInterface        $purchaseFlow,
     )
     {}
 
@@ -223,7 +228,9 @@ class ProductController extends AbstractController
         RequestStack $requestStack,
         ClientRepository $clientRepository,
         ManagePurchase $manageOrder,
-        GoogleAnalytics $googleAnalytics
+        GoogleAnalytics $googleAnalytics,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface $purchaseFlow,
     )
     {
         $session = $requestStack->getSession();
@@ -238,7 +245,7 @@ class ProductController extends AbstractController
             $productVariant = $this->productVariantRepository->find($variant_id);
 
             $purchase = new Purchase();
-            $purchase->setState('inquiry');
+            $purchaseFlow->apply($purchase, 'inquiry');
             if ($this->getUser()) {
                 $client = $this->getUser();
                 $client = $clientRepository->find($client);
@@ -372,11 +379,11 @@ class ProductController extends AbstractController
 
     private function createCart(?Client $client): Purchase
     {
-        $cart = new Purchase();
-        $cart->setState('draft')
+        $cart = (new Purchase())
             ->setDateIssue(new \DateTime())
-            ->setClient($client);
+            ->setClient($client)
+        ;
+        $this->purchaseFlow->apply($cart, PWC::T_INIT_CART->value);
         return $cart;
     }
-
 }

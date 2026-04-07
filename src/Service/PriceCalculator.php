@@ -275,7 +275,7 @@ class PriceCalculator
         if ($purchaseOrTransportation instanceof Purchase) {
 
             //todo: mua se pri poptavce nepridava zadný transportation
-            if ($purchaseOrTransportation->getState() === "inquiry"){
+            if ($purchaseOrTransportation->hasPlace('inquiry')){
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph
@@ -336,7 +336,7 @@ class PriceCalculator
         // object is Purchase
         if ($purchaseOrPayment instanceof Purchase) {
             //todo: mua se pri poptavce nepridava zadný payment
-            if ($purchaseOrPayment->getState() === "inquiry"){
+            if ($purchaseOrPayment->hasPlace('inquiry')){
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph

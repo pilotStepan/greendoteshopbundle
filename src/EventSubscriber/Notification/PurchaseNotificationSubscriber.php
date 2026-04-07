@@ -30,17 +30,19 @@ final readonly class PurchaseNotificationSubscriber implements EventSubscriberIn
 
         $aliases = $event->getMetadata('notifications', $event->getTransition());
 
-        if (empty($aliases)) {
+        if (empty($handlers)) {
             return;
         }
 
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
 
-        $this->bus->dispatch(new PurchaseTransitionNotification(
-            purchaseId:    $purchase->getId(),
-            transition:    $event->getTransition()->getName(),
-            handlerAliases: (array) $aliases,
-        ));
+        foreach ($aliases as $alias) {
+            $this->bus->dispatch(new PurchaseTransitionNotification(
+                purchaseId: $purchase->getId(),
+                transition: $event->getTransition()->getName(),
+                alias: $alias,
+            ));
+        }
     }
 }

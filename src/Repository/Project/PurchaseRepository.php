@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Entity\Project\{Client, Purchase};
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Doctrine\ORM\{QueryBuilder, NoResultException, NonUniqueResultException};
@@ -38,33 +39,34 @@ class PurchaseRepository extends ServiceEntityRepository
 
     public function lastPurchaseOfUser($client)
     {
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->setMaxResults(1)
             ->orderBy('p.date_issue', "DESC")
-            ->andWhere("p.state NOT IN (:excludedStates)")
-            ->setParameter('excludedStates', ['inquiry', 'draft', 'wishlist'])
             ->andWhere("p.client = :client")->setParameter("client", $client)
+        ;
+        return $this->excludePlaces($qb, 'p', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART)
             ->getQuery()->getOneOrNullResult()
         ;
     }
 
     public function getClientPurchases(Client $client)
     {
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->orderBy('p.date_issue', 'desc')
-            ->andWhere("p.state NOT IN (:excludedStates)")
-            ->setParameter('excludedStates', ['inquiry', 'draft', 'wishlist'])
             ->andWhere('p.client = :client')->setParameter('client', $client)
+        ;
+        return $this->excludePlaces($qb, 'p', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART)
             ->getQuery()->getResult()
         ;
     }
 
-    public function getClientDrafts(Client $client)
+    public function getClientCarts(Client $client)
     {
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')->setParameter('client', $client)
-            ->andWhere('p.state = :state')->setParameter('state', 'draft')
             ->orderBy('p.date_issue', 'desc')
+        ;
+        return $this->addPlaceFilter($qb, 'p', PWC::S_CART)
             ->getQuery()->getResult()
         ;
     }
@@ -141,13 +143,13 @@ class PurchaseRepository extends ServiceEntityRepository
     {
         if (!$client) return null;
 
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')
-            ->andWhere('p.state IN (:states)')
             ->setParameter('client', $client)
-            ->setParameter('states', ['draft'])
             ->orderBy('p.date_issue', 'DESC')
             ->setMaxResults(1)
+        ;
+        return $this->addPlaceFilter($qb, 'p', PWC::S_CART)
             ->getQuery()
             ->getOneOrNullResult()
         ;
@@ -157,16 +159,33 @@ class PurchaseRepository extends ServiceEntityRepository
     {
         if (!$client) return null;
 
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')
-            ->andWhere('p.state = :state')
             ->setParameter('client', $client)
-            ->setParameter('state', 'wishlist')
             ->orderBy('p.date_issue', 'DESC')
             ->setMaxResults(1)
+        ;
+        return $this->addPlaceFilter($qb, 'p', PWC::S_WISHLIST)
             ->getQuery()
             ->getOneOrNullResult()
         ;
+    }
+
+    private function addPlaceFilter(QueryBuilder $qb, string $alias, PWC $place): QueryBuilder
+    {
+        return $qb
+            ->andWhere(sprintf('%s.marking LIKE :place_%s', $alias, $place->name))
+            ->setParameter('place_' . $place->name, sprintf('%%"%s"%%', $place->value));
+    }
+
+    private function excludePlaces(QueryBuilder $qb, string $alias, PWC ...$places): QueryBuilder
+    {
+        foreach ($places as $place) {
+            $qb
+                ->andWhere(sprintf('%s.marking NOT LIKE :exclude_%s', $alias, $place->name))
+                ->setParameter('exclude_' . $place->name, sprintf('%%"%s"%%', $place->value));
+        }
+        return $qb;
     }
 
     /**

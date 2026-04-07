@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Greendot\EshopBundle\Attribute\AsPurchaseNotification;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
 
 #[AsPurchaseNotification('company_email')]
@@ -18,6 +19,7 @@ final readonly class CompanyEmailHandler implements PurchaseNotificationHandlerI
         private ManageMails         $manageMails,
         private OrderDataFactory    $orderDataFactory,
         private TranslatorInterface $translator,
+        #[Autowire(param: 'app.company_email')]
         private string              $companyEmail,
     ) {}
 

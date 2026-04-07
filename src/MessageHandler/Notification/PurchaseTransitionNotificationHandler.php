@@ -26,6 +26,6 @@ final readonly class PurchaseTransitionNotificationHandler
             throw new UnrecoverableMessageHandlingException('Purchase not found for ID: ' . $msg->purchaseId);
         }
 
-        $this->dispatcher->dispatch($purchase, $msg->transition, $msg->handlerAliases);
+        $this->dispatcher->dispatch($purchase, $msg->transition, $msg->alias);
     }
 }

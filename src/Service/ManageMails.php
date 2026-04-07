@@ -38,10 +38,15 @@ readonly class ManageMails
 
     public function sendPurchaseDiscussionEmail(Purchase $purchase): void
     {
+        $subject = sprintf('%s #%d',
+            $this->translator->trans('Nová odpověď v konverzaci k objednávce'),
+            $purchase->getId())
+        ;
+
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($purchase->getClient()->getMail())
-            ->subject($this->translator->trans('email.subject.purchase_discussion', ['%id%' => $purchase->getId()], 'emails'))
+            ->subject($subject)
             ->htmlTemplate('email/purchase-discussion/new_discussion.html.twig')
             ->context([
                 'purchase_id' => $purchase->getId(),
@@ -56,10 +61,15 @@ readonly class ManageMails
     public function sendWishlistEmail(string $recipientEmail, Purchase $wishlist): void
     {
         $clientName = $wishlist->getClient()->getName();
+        $subject = sprintf('%s %s',
+            $clientName,
+            $this->translator->trans('sdílí svůj seznam přání s Vámi'),
+        );
+
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($recipientEmail)
-            ->subject($this->translator->trans('email.subject.wishlist', ['%name%' => $clientName], 'emails'))
+            ->subject($subject)
             ->htmlTemplate('email/wishlist/wishlist.html.twig')
             ->context(['data' => [
                 'clientName' => $clientName,
@@ -72,11 +82,12 @@ readonly class ManageMails
 
     public function sendIssuedVoucherEmail(Voucher $voucher): void
     {
-        $recipientEmail = $voucher->getPurchaseIssued()?->getClient()?->getMail();
+        $recipientEmail = $voucher->getPurchaseIssued()->getClient()->getMail();
+
         $email = (new TemplatedEmail())
             ->from($this->fromAddress)
             ->to($recipientEmail)
-            ->subject($this->translator->trans('email.subject.purchase_voucher', [], 'emails'))
+            ->subject($this->translator->trans('Váš dárkový poukaz'))
             ->htmlTemplate('email/voucher/voucher.html.twig')
         ;
 

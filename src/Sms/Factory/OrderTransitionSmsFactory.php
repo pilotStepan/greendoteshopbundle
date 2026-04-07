@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Sms\Factory;
 use Exception;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
-use App\Utils\PurchaseHelper;
+use Greendot\EshopBundle\Utils\PurchaseHelper;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\SmsMessageDto;
 use Greendot\EshopBundle\Entity\Project\Purchase;

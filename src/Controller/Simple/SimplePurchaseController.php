@@ -96,7 +96,7 @@ class SimplePurchaseController extends AbstractController
             ]);
 
             // no need for persist(), purchase is already managed
-            return $purchase->getState();
+            return $purchase->getMarking();
         });
 
         return $this->json(['state' => $newState]);
