@@ -116,7 +116,7 @@ framework:
                 from: cart
                 to: [ log_pending, pay_pending ]
                 metadata:
-                    notifications: [ customer_email ]
+                    notifications: [ customer_email_with_proforma ]
             create_shipment:
                 from: draft
                 to: [ log_ready_to_ship, pay_pending ]
@@ -142,7 +142,7 @@ framework:
                 from: [ pay_pending, pay_failed ]
                 to: pay_paid
                 metadata:
-                    notifications: [ customer_email ]
+                    notifications: [ customer_email, payment_vouchers ]
             !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_FAIL->value:
                 from: pay_pending
                 to: pay_failed

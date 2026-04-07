@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service;
 
 use RuntimeException;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
@@ -18,6 +19,7 @@ readonly class PasswordResetService
         private ClientRepository             $clientRepository,
         private ResetPasswordHelperInterface $resetPasswordHelper,
         private ManageMails                  $manageMails,
+        private TranslatorInterface          $translator,
     ) {}
 
     /**
@@ -33,7 +35,13 @@ readonly class PasswordResetService
 
         try {
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);
-            $this->manageMails->sendPasswordResetEmail($user->getMail(), $resetToken);
+            $this->manageMails->sendTemplate(
+                $this->manageMails->getBaseTemplate()
+                    ->to($user->getMail())
+                    ->subject($this->translator->trans('Žádost o obnovu hesla'))
+                    ->htmlTemplate('email/auth/password_reset.html.twig')
+                    ->context(['resetToken' => $resetToken]),
+            );
         } catch (TooManyPasswordRequestsException $e) {
             $availableAt = $e->getAvailableAt();
             $now = new \DateTimeImmutable('now');

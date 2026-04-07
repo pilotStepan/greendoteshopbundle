@@ -10,6 +10,7 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\SmsMessageDto;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -37,8 +38,6 @@ readonly class OrderTransitionSmsFactory implements OrderTransitionSmsFactoryInt
         }
 
         $tracking = $purchase->getTransportNumber();
-        $amount = null;
-        /*$currency = ;
         $amount = $this->priceFactory
             ->create(
                 $purchase,
@@ -46,7 +45,7 @@ readonly class OrderTransitionSmsFactory implements OrderTransitionSmsFactoryInt
                 VatCalculationType::WithVAT,
             )
             ->getPrice(true)
-        ;*/
+        ;
 
         $key = 'sms.order.' . $transition;
 
