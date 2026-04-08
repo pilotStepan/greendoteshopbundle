@@ -9,10 +9,10 @@ use Greendot\EshopBundle\Service\InvoiceMaker;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
-use Greendot\EshopBundle\Attribute\AsPurchaseNotification;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
 
-#[AsPurchaseNotification('customer_email_with_proforma')]
+#[AsTaggedItem(index: 'purchase_notification.customer_email_with_proforma')]
 final readonly class CustomerEmailWithProformaHandler implements PurchaseNotificationHandlerInterface
 {
     public function __construct(

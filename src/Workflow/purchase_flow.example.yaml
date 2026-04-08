@@ -116,7 +116,9 @@ framework:
                     from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
                     to: [ log_pending, pay_pending ]
                     metadata:
-                        notifications: [ customer_email_with_proforma ]
+                        notifications: [
+                            purchase_notification.customer_email_with_proforma
+                        ]
                 create_shipment:
                     from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
                     to: [ log_ready_to_ship, pay_pending ]
@@ -128,7 +130,10 @@ framework:
                     from: log_pending
                     to: log_ready_for_pickup
                     metadata:
-                        notifications: [ customer_email, customer_sms ]
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.customer_sms
+                        ]
                 log_prepare_to_ship:
                     from: log_pending
                     to: log_ready_to_ship
@@ -136,16 +141,26 @@ framework:
                     from: log_ready_to_ship
                     to: log_shipped
                     metadata:
-                        notifications: [ customer_email, customer_sms ]
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.customer_sms
+                        ]
                 # --- Payment ---
                 !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_PAY->value:
                     from: [ pay_pending, pay_failed ]
                     to: pay_paid
                     metadata:
-                        notifications: [ customer_email, payment_vouchers ]
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.payment_vouchers
+                        ]
                 !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_FAIL->value:
                     from: pay_pending
                     to: pay_failed
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]
                 pay_refund:
                     from: pay_paid
                     to: pay_refunded
@@ -156,8 +171,14 @@ framework:
                 !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CANCEL->value:
                     from: [ log_pending, log_ready_for_pickup, log_ready_to_ship, pay_pending, pay_failed, pay_refunded ]
                     to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]
                 !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_COMPLETE->value:
                     from: [ log_shipped, pay_paid, log_ready_for_pickup ]
                     to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value
                     metadata:
-                        notifications: [ customer_email ]
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]

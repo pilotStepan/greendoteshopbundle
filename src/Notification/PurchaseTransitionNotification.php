@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Greendot\EshopBundle\Message\Notification;
+namespace Greendot\EshopBundle\Notification;
 
 use Symfony\Component\Messenger\Attribute\AsMessage;
 

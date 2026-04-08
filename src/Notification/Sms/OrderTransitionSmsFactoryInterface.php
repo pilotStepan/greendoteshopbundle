@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Sms\Factory;
+namespace Greendot\EshopBundle\Notification\Sms;
 
 use Throwable;
 use Greendot\EshopBundle\Dto\SmsMessageDto;

@@ -1,13 +1,13 @@
 <?php
 
-namespace Greendot\EshopBundle\Sms\Factory;
+namespace Greendot\EshopBundle\Notification\Sms;
 
 use Exception;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
-use Greendot\EshopBundle\Utils\PurchaseHelper;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\SmsMessageDto;
+use Greendot\EshopBundle\Utils\PurchaseHelper;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Enum\VatCalculationType;

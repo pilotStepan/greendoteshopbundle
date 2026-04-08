@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Notification\Handler;
 
-use Greendot\EshopBundle\Attribute\AsPurchaseNotification;
+use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
-use Greendot\EshopBundle\Message\Notification\IssuedVoucherEmail;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 
-#[AsPurchaseNotification('payment_vouchers')]
+#[AsTaggedItem(index: 'purchase_notification.payment_vouchers')]
 final readonly class PaymentVouchersHandler implements PurchaseNotificationHandlerInterface
 {
-    public function __construct(private MessageBusInterface $bus) {}
+    public function __construct(private ManageMails $manageMails) {}
 
     public function handle(Purchase $purchase, string $transition): void
     {
@@ -23,7 +22,7 @@ final readonly class PaymentVouchersHandler implements PurchaseNotificationHandl
         }
 
         foreach ($purchase->getVouchersIssued() as $voucher) {
-            $this->bus->dispatch(new IssuedVoucherEmail($voucher->getId()));
+            $this->manageMails->sendIssuedVoucherEmail($voucher);
         }
     }
 }

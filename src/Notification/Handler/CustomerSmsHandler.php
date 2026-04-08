@@ -8,11 +8,11 @@ use Psr\Log\LoggerInterface;
 use Neogate\SmsConnect\SmsConnect;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Attribute\AsPurchaseNotification;
-use Greendot\EshopBundle\Sms\Factory\OrderTransitionSmsFactoryInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
+use Greendot\EshopBundle\Notification\Sms\OrderTransitionSmsFactoryInterface;
 
-#[AsPurchaseNotification('customer_sms')]
+#[AsTaggedItem(index: 'purchase_notification.customer_sms')]
 #[WithMonologChannel('notification.sms')]
 final readonly class CustomerSmsHandler implements PurchaseNotificationHandlerInterface
 {

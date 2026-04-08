@@ -8,10 +8,10 @@ use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
-use Greendot\EshopBundle\Attribute\AsPurchaseNotification;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
 
-#[AsPurchaseNotification('customer_email')]
+#[AsTaggedItem(index: 'purchase_notification.customer_email')]
 final readonly class CustomerEmailHandler implements PurchaseNotificationHandlerInterface
 {
     public function __construct(

@@ -19,10 +19,10 @@ enum PurchaseWorkflowContract: string
     case T_INIT_WISHLIST = 'init_wishlist';
     case T_INIT_CART = 'init_cart';
     case T_CHECKOUT = 'checkout';
-    case T_LOG_SEND = 'send';
-    case T_PAY_PAY = 'payment';
-    case T_PAY_FAIL = 'payment_issue';
-    case T_CANCEL = 'cancellation';
+    case T_PAY_PAY = 'pay_pay';
+    case T_PAY_FAIL = 'pay_fail';
+    case T_LOG_SEND = 'log_send';
+    case T_CANCEL = 'cancel';
     case T_COMPLETE = 'complete';
 
     public static function eventName(string $event, self $transition = null): string

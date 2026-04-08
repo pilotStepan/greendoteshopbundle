@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Greendot\EshopBundle\EventSubscriber\Notification;
+namespace Greendot\EshopBundle\Notification;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Message\Notification\PurchaseTransitionNotification;
-use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+
 
 final readonly class PurchaseNotificationSubscriber implements EventSubscriberInterface
 {
@@ -18,11 +18,11 @@ final readonly class PurchaseNotificationSubscriber implements EventSubscriberIn
     public static function getSubscribedEvents(): array
     {
         return [
-            PWC::eventName('completed') => 'onTransitionCompleted',
+            PWC::eventName('completed') => 'dispatchNotifications',
         ];
     }
 
-    public function onTransitionCompleted(CompletedEvent $event): void
+    public function dispatchNotifications(CompletedEvent $event): void
     {
         if (($event->getContext()['silent'] ?? false) === true) {
             return;
@@ -30,7 +30,7 @@ final readonly class PurchaseNotificationSubscriber implements EventSubscriberIn
 
         $aliases = $event->getMetadata('notifications', $event->getTransition());
 
-        if (empty($handlers)) {
+        if (empty($aliases)) {
             return;
         }
 
