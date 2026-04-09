@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\AdditionalPurchaseCost;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -13,6 +14,7 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 
 class PurchasePrice
 {
@@ -24,6 +26,8 @@ class PurchasePrice
     private ?float $purchasePrice = null;
     private ?float $transportationPrice = null;
     private ?float $paymentPrice = null;
+
+    private ?float $additionalPurchasePriceCombined = null;
     private ConversionRate $defaultConversionRate;
 
     private float $vouchersValue = 0;
@@ -36,6 +40,11 @@ class PurchasePrice
 
     private bool $freeFromPriceIncludesVat = false;
 
+    private array $additionalPurchaseCostsCalculated = [];
+
+    private array $additionalPurchaseCosts = [];
+
+
 
     public function __construct(
         private Purchase                            $purchase,
@@ -47,6 +56,7 @@ class PurchasePrice
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
         private readonly PriceUtils                 $priceUtils,
         private readonly ServiceCalculationUtils    $serviceCalculationUtils,
+        private readonly AdditionalPurchaseCostProvider $additionalPurchaseCostProvider,
         SettingsRepository         $settingsRepository
     )
     {
@@ -58,7 +68,7 @@ class PurchasePrice
         $dConversionRate->setRate(1);
 
         $this->defaultConversionRate = $dConversionRate;
-        $doesFreeFromPriceIncludesVat = $settingsRepository->findOneBy(['value' => 'free_from_price_includes_vat']);
+        $doesFreeFromPriceIncludesVat = $settingsRepository->findOneBy(['name' => 'free_from_price_includes_vat']);
         if ($doesFreeFromPriceIncludesVat instanceof Settings){
             $doesFreeFromPriceIncludesVat = filter_var($doesFreeFromPriceIncludesVat->getValue(), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
         }else{
@@ -68,11 +78,12 @@ class PurchasePrice
         if (is_bool($doesFreeFromPriceIncludesVat) && $doesFreeFromPriceIncludesVat){
             $this->freeFromPriceIncludesVat = true;
         }
+
         $this->loadVariants();
         $this->calculateVouchersValue();
     }
 
-    public function getPrice(bool $includeServices = false, ?float $vat = null): ?float
+    public function getPrice(bool $includeServices = false, ?float $vat = null, bool $includeAdditionalPurchaseCosts = true): ?float
     {
         $price = $this->purchasePrice;
         if ($vat) {
@@ -83,6 +94,10 @@ class PurchasePrice
             $price += $this->paymentPrice;
         }
         $price = $this->applyVoucher($price);
+        if ($includeAdditionalPurchaseCosts){
+            $price += $this->additionalPurchasePriceCombined;
+        }
+
         return $this->priceUtils->convertCurrency($price, $this->conversionRate);
     }
 
@@ -108,6 +123,22 @@ class PurchasePrice
             return null;
         }
         return $this->priceUtils->convertCurrency($this->paymentPrice, $this->conversionRate);
+    }
+
+    public function getAdditionalCostsPrice(): ?float
+    {
+        if ($this->additionalPurchasePriceCombined > 0){
+            return $this->priceUtils->convertCurrency($this->additionalPurchasePriceCombined, $this->conversionRate);
+        }
+        return null;
+    }
+
+    /**
+     * @return AdditionalPurchaseCostCalculatedPrice[]
+     */
+    public function getAdditionalCosts(): array
+    {
+        return $this->additionalPurchaseCostsCalculated;
     }
 
     /**
@@ -239,6 +270,17 @@ class PurchasePrice
             $purchasePrice += $clonedProductVariantPrice->getPrice(true);
         }
 
+        /**
+         * On checkout - relationship between purchase & additionalPurchaseCosts is created
+         * While state of purchase is not readonly it is calculated dynamically
+         */
+
+        if (false){ // TODO: add if readonly
+            $this->additionalPurchaseCosts = $this->purchase->getAdditionalPurchaseCosts()->toArray();
+        }else{
+            $this->additionalPurchaseCosts = iterator_to_array($this->additionalPurchaseCostProvider->getAdditionalPurchaseCosts($this->purchase));
+        }
+
         if ($this->purchase->getTransportation()) {
             $this->setTransportationPrice($purchasePrice, $this->purchase->getTransportation());
         }
@@ -247,6 +289,30 @@ class PurchasePrice
             $this->setPaymentPrice($purchasePrice, $this->purchase->getPaymentType());
         }
 
+        $this->setAdditionalPurchaseCostPrice($purchasePrice);
+
+    }
+
+    private function setAdditionalPurchaseCostPrice(float $purchasePrice): void
+    {
+        $this->additionalPurchasePriceCombined = null;
+        $this->additionalPurchaseCostsCalculated = [];
+        foreach ($this->additionalPurchaseCosts as $additionalPurchaseCost){
+            $price =  $this->serviceCalculationUtils->calculateServicePrice(
+                $additionalPurchaseCost,
+                $this->conversionRate,
+                $this->vatCalculationType,
+                $purchasePrice,
+                true
+            );
+
+            $this->additionalPurchaseCostsCalculated [] = new AdditionalPurchaseCostCalculatedPrice(
+                $additionalPurchaseCost,
+                $this->priceUtils->convertCurrency($price, $this->conversionRate)
+            );
+
+            $this->additionalPurchasePriceCombined += $price;
+        }
     }
 
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
@@ -302,4 +368,17 @@ class PurchasePrice
         $this->discountPercentage = $discountPercentageCount > 0 ? $discountPercentageSum / $discountPercentageCount : 0;
     }
 
+}
+
+class AdditionalPurchaseCostCalculatedPrice
+{
+    public int $id;
+
+    public function __construct(
+        public AdditionalPurchaseCost $additionalPurchaseCost,
+        public ?float $price = null
+    )
+    {
+        $this->id = $additionalPurchaseCost->getId();
+    }
 }

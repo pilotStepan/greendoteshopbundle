@@ -8,6 +8,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 
 readonly class PurchasePriceFactory
 {
@@ -15,7 +16,8 @@ readonly class PurchasePriceFactory
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private PriceUtils                 $priceUtils,
         private ServiceCalculationUtils    $serviceCalculationUtils,
-        private SettingsRepository         $settingsRepository
+        private SettingsRepository         $settingsRepository,
+        private AdditionalPurchaseCostProvider $additionalPurchaseCostProvider
     ) {}
 
     public function create(
@@ -44,6 +46,7 @@ readonly class PurchasePriceFactory
             $this->productVariantPriceFactory,
             $this->priceUtils,
             $this->serviceCalculationUtils,
+            $this->additionalPurchaseCostProvider,
             $this->settingsRepository,
         );
     }

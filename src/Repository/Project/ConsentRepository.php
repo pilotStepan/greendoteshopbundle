@@ -6,6 +6,7 @@ use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 
 /**
  * @extends ServiceEntityRepository<Consent>
@@ -30,28 +31,18 @@ class ConsentRepository extends ServiceEntityRepository
         return null;
     }
 
-    //    /**
-    //     * @return Consent[] Returns an array of Consent objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * @param Purchase $purchase
+     * @return int[]
+     */
+    public function getIdsForPurchase(Purchase $purchase): array
+    {
+        $ids = $this->createQueryBuilder('consent')
+            ->select('consent.id')
+            ->andWhere('consent.purchase = :purchase')
+            ->setParameter('purchase', $purchase->getId())
+            ->getQuery()->getArrayResult();
 
-    //    public function findOneBySomeField($value): ?Consent
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        return array_column($ids, 'id');
+    }
 }

@@ -14,6 +14,7 @@ final class PurchaseCalculatedPricesMatrix
         public float $priceNoVatNoServices,
         public float $priceVatNoDiscountNoServices,
         public float $priceNoVatNoDiscountNoServices,
+        public array $additionalPurchaseCosts,
     )
     { }
 }

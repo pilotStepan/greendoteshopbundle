@@ -82,11 +82,11 @@ class ProductVariant implements Translatable
     private Collection $price;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    #[Groups(["SearchProductResultApiModel"])]
+    #[Groups(["SearchProductResultApiModel", "purchase:read"])]
     private ?int $AvgRestockDays = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(["product_item:read"])]
+    #[Groups(["product_item:read", "purchase:read"])]
     private ?\DateTime $expectedRestockDate = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariants')]

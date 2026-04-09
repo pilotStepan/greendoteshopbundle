@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Greendot\EshopBundle\Entity\Project\AdditionalPurchaseCost;
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -22,7 +23,7 @@ readonly class ServiceCalculationUtils
      * Calculate handling (service) price
      */
     public function calculateServicePrice(
-        Transportation|PaymentType $service,
+        Transportation|PaymentType|AdditionalPurchaseCost $service,
         Currency|ConversionRate    $currencyOrConversionRate,
         VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
         float                      $theoreticalAmount = 0.0,

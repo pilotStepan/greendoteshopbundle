@@ -270,6 +270,9 @@ class Purchase
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $adId = null;
 
+    #[ORM\ManyToMany(targetEntity: AdditionalPurchaseCost::class, inversedBy: 'purchases')]
+    private Collection $additionalPurchaseCosts;
+
     public function __construct()
     {
         $this->date_issue = new \DateTime();
@@ -282,6 +285,7 @@ class Purchase
         $this->payments = new ArrayCollection();
         $this->purchaseDiscussions = new ArrayCollection();
         $this->transportationEvents = new ArrayCollection();
+        $this->additionalPurchaseCosts = new ArrayCollection();
     }
 
     public function getProducts(): Collection
@@ -981,6 +985,30 @@ class Purchase
     public function setCalculatedPrices(array $calculatedPrices): Purchase
     {
         $this->calculatedPrices = $calculatedPrices;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AdditionalPurchaseCost>
+     */
+    public function getAdditionalPurchaseCosts(): Collection
+    {
+        return $this->additionalPurchaseCosts;
+    }
+
+    public function addAdditionalPurchaseCost(AdditionalPurchaseCost $additionalPurchaseCost): static
+    {
+        if (!$this->additionalPurchaseCosts->contains($additionalPurchaseCost)) {
+            $this->additionalPurchaseCosts->add($additionalPurchaseCost);
+        }
+
+        return $this;
+    }
+
+    public function removeAdditionalPurchaseCost(AdditionalPurchaseCost $additionalPurchaseCost): static
+    {
+        $this->additionalPurchaseCosts->removeElement($additionalPurchaseCost);
+
         return $this;
     }
 }

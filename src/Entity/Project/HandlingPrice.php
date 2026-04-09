@@ -72,6 +72,9 @@ class HandlingPrice
     #[Groups(['handling_price:read'])]
     private ?PaymentType $paymentType = null;
 
+    #[ORM\ManyToOne(inversedBy: 'handlingPrices')]
+    private ?AdditionalPurchaseCost $additionalPurchaseCost = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -185,5 +188,17 @@ class HandlingPrice
     public function getVat() : ?int
     {
         return $this->vat;
+    }
+
+    public function getAdditionalPurchaseCost(): ?AdditionalPurchaseCost
+    {
+        return $this->additionalPurchaseCost;
+    }
+
+    public function setAdditionalPurchaseCost(?AdditionalPurchaseCost $additionalPurchaseCost): static
+    {
+        $this->additionalPurchaseCost = $additionalPurchaseCost;
+
+        return $this;
     }
 }

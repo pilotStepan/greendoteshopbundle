@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\AdditionalPurchaseCost;
 use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
@@ -20,15 +21,17 @@ class HandlingPriceRepository extends ServiceEntityRepository
     }
 
     // get handling price from a specific transportation or paymentType that is valid by a date
-    public function GetByDate(Transportation|PaymentType $transportOrPayment, ?DateTime $dateTime = null) : ?HandlingPrice
+    public function GetByDate(Transportation|PaymentType|AdditionalPurchaseCost $entity, ?DateTime $dateTime = null) : ?HandlingPrice
     {
         // If date is null, make it today
         if ($dateTime === null) {
             $dateTime = new \DateTime();
         }
-
-        // Determine type
-        $type = $transportOrPayment instanceof Transportation ? 'transportation' : 'paymentType';
+        $type = match (get_class($entity)){
+            AdditionalPurchaseCost::class => 'additionalPurchaseCost',
+            Transportation::class => 'transportation',
+            PaymentType::class => 'paymentType',
+        };
 
         // Start building the query
         $qb = $this->createQueryBuilder('h');
@@ -36,7 +39,7 @@ class HandlingPriceRepository extends ServiceEntityRepository
         // Bind transportation/paymentType id
         $result = $qb
             ->andWhere('h.' . $type . ' = :val')
-            ->setParameter('val', $transportOrPayment->getId())
+            ->setParameter('val', $entity->getId())
             // Bind date
             ->andWhere('h.validFrom <= :dateTime')
             ->andWhere(
@@ -54,28 +57,4 @@ class HandlingPriceRepository extends ServiceEntityRepository
         return $result[0] ?? null;
     }
 
-    //    /**
-    //     * @return HandlingPrice[] Returns an array of HandlingPrice objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('h')
-    //            ->andWhere('h.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('h.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?HandlingPrice
-    //    {
-    //        return $this->createQueryBuilder('h')
-    //            ->andWhere('h.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }
