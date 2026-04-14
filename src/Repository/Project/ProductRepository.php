@@ -18,6 +18,7 @@ use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Availability;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -33,9 +34,10 @@ class ProductRepository extends HintedRepositoryBase
         ManagerRegistry                     $registry,
         private readonly CategoryRepository $categoryRepository,
         private readonly CategoryInfoGetter $categoryInfoGetter,
+        RequestStack $requestStack
     )
     {
-        parent::__construct($registry, Product::class);
+        parent::__construct($registry, Product::class, $requestStack);
     }
 
     public function findProductUploadSubstitute(Product $product): ?Upload

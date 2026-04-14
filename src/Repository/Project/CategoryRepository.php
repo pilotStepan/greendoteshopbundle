@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Greendot\EshopBundle\Entity\Project\SubMenuType;
 use Greendot\EshopBundle\Entity\Project\CategoryProduct;
 use Greendot\EshopBundle\Entity\Project\CategoryCategory;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @method Category|null find($id, $lockMode = null, $lockVersion = null)
@@ -27,9 +28,9 @@ class CategoryRepository extends HintedRepositoryBase
 {
     private $entityManager;
 
-    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager)
+    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager, RequestStack $requestStack)
     {
-        parent::__construct($registry, Category::class);
+        parent::__construct($registry, Category::class, $requestStack);
         $this->entityManager = $entityManager;
     }
 

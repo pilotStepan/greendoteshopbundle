@@ -36,7 +36,7 @@ class PurchaseDiscussion extends Message
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'purchaseDiscussions')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(["purchase_discussion:read", "purchase_discussion:write"])]
-    private Purchase $purchase;
+    private ?Purchase $purchase = null;
 
     public function getIsAdmin(): bool
     {
@@ -61,7 +61,7 @@ class PurchaseDiscussion extends Message
         return $this;
     }
 
-    public function getPurchase(): Purchase
+    public function getPurchase(): ?Purchase
     {
         return $this->purchase;
     }
