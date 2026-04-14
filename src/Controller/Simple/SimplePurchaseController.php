@@ -43,9 +43,12 @@ class SimplePurchaseController extends AbstractController
         $placesMetaData = [];
         foreach ($places as $place) {
             $metadataArray = $pFlow->getMetadataStore()->getPlaceMetadata($place);
-            $placesMetaData[$place]['desc'] = $metadataArray['description'];
-            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'];
-            $placesMetaData[$place]['icon'] = $metadataArray['icon'];
+            if ($metadataArray['internal'] ?? false) {
+                continue;
+            }
+            $placesMetaData[$place]['desc'] = $metadataArray['description'] ?? null;
+            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'] ?? null;
+            $placesMetaData[$place]['icon'] = $metadataArray['icon'] ?? null;
             $placesMetaData[$place]['simple_color'] = $metadataArray['simple_color'] ?? '#999999';
             $placesMetaData[$place]['name'] = $place;
         }
@@ -58,7 +61,17 @@ class SimplePurchaseController extends AbstractController
         $purchase = new Purchase();
         $pFlow = $registry->get($purchase);
         $transitions = $pFlow->getDefinition()->getTransitions();
-        return $this->json($transitions, 200);
+        $result = [];
+        foreach ($transitions as $transition) {
+            $meta = $pFlow->getMetadataStore()->getTransitionMetadata($transition);
+            $result[] = [
+                'name'  => $transition->getName(),
+                'label' => $meta['label'] ?? $transition->getName(),
+                'froms' => $transition->getFroms(),
+                'tos'   => $transition->getTos(),
+            ];
+        }
+        return $this->json($result, 200);
     }
 
     #[Route('/{purchase}/make-transition', name: 'make_transition', methods: ['POST'])]

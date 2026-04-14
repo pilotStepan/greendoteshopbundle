@@ -29,22 +29,52 @@ class ManageWorkflows
     }
 
 
-    public function getStateMetadata(mixed $entity):?array
+    public function getStateMetadata(mixed $entity): ?array
     {
-        if ($this->registry->has($entity)){
-            $workflow = $this->registry->get($entity);
-            $metadataStore = $workflow->getMetadataStore();
-            $currentPlace = $workflow->getMarking($entity)->getPlaces();
-            $currentPlace = array_keys($currentPlace);
-            if (count($currentPlace) === 1){
-                $currentPlace = $currentPlace[0];
-            }else{
-                return null;
-            }
-            $metadata = $metadataStore->getPlaceMetadata($currentPlace);
-            return $metadata;
-        }else{
+        // Use publicOnly to exclude internal funnel places (log_track_done, pay_track_done, etc.)
+        // which are always active alongside display places in the parallel marking.
+        $places = $this->getPlacesMetadata($entity, publicOnly: true);
+        if ($places === null || count($places) !== 1) {
             return null;
         }
+        return array_values($places)[0];
+    }
+
+    public function getPlacesMetadata(mixed $entity, bool $publicOnly = false): ?array
+    {
+        if (!$this->registry->has($entity)) {
+            return null;
+        }
+
+        $workflow = $this->registry->get($entity);
+        $metadataStore = $workflow->getMetadataStore();
+        $activePlaces = array_keys($workflow->getMarking($entity)->getPlaces());
+
+        $result = [];
+        foreach ($activePlaces as $placeName) {
+            $metadata = $metadataStore->getPlaceMetadata($placeName);
+            if ($publicOnly && !isset($metadata['customer_label'])) {
+                continue;
+            }
+            $result[$placeName] = array_merge(['place' => $placeName], $metadata);
+        }
+
+        return $result;
+    }
+
+    public function getPlacesMetadataByTrack(mixed $entity, bool $publicOnly = false): ?array
+    {
+        $places = $this->getPlacesMetadata($entity, $publicOnly);
+        if ($places === null) {
+            return null;
+        }
+
+        $grouped = [];
+        foreach ($places as $metadata) {
+            $track = $metadata['track'] ?? '_default';
+            $grouped[$track] = $metadata;
+        }
+
+        return $grouped;
     }
 }

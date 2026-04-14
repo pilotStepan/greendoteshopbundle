@@ -36,8 +36,12 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             PWC::eventName('guard', PWC::T_CHECKOUT) => 'onGuardReceive',
             PWC::eventName('transition', PWC::T_CHECKOUT) => 'onReceive',
             PWC::eventName('transition', PWC::T_PAY_PAY) => 'onPayment',
+            PWC::eventName('transition', PWC::T_PAY_RETRY) => 'onPayment',
             PWC::eventName('transition', PWC::T_PAY_FAIL) => 'onPaymentIssue',
             PWC::eventName('transition', PWC::T_CANCEL) => 'onCancellation',
+            // Terminal cleanup: remove leftover parallel places after AND-join transitions fire
+            sprintf('workflow.%s.entered.%s', PWC::NAME->value, PWC::S_CANCELLED->value) => 'onEnterCancelled',
+            sprintf('workflow.%s.entered.%s', PWC::NAME->value, PWC::S_COMPLETED->value) => 'onEnterCompleted',
         ];
     }
 
@@ -172,5 +176,30 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
+    }
+
+    public function onEnterCancelled(Event $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+        if (!$purchase instanceof Purchase) {
+            return;
+        }
+        // Clean up leftover parallel track places after the AND-join cancel transition.
+        // T_CANCEL only consumes log_track_cancellable + pay_track_cancellable; track-specific
+        // places (log_pending, pay_failed, etc.) remain in marking and must be cleared.
+        $purchase->setMarking([PWC::S_CANCELLED->value => 1]);
+    }
+
+    public function onEnterCompleted(Event $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+        if (!$purchase instanceof Purchase) {
+            return;
+        }
+        // Same cleanup for T_COMPLETE: consumes log_track_done + pay_track_done but leaves
+        // informational places like log_shipped and pay_paid in marking.
+        $purchase->setMarking([PWC::S_COMPLETED->value => 1]);
     }
 }

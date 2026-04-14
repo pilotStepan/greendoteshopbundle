@@ -115,6 +115,7 @@ class Purchase
     private $state = "draft";
 
     #[ORM\Column(type: Types::JSON)]
+    #[Groups(['purchase:read'])]
     private array $marking = ['draft' => 1];
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]

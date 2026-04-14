@@ -24,6 +24,7 @@ readonly class AffiliateOrderEventSubscriber implements EventSubscriberInterface
             PWC::eventName('transition', PWC::T_CHECKOUT) => 'assignAffiliateToPurchase',
 
             PWC::eventName('transition', PWC::T_PAY_PAY) => 'createAffiliateEntry',
+            PWC::eventName('transition', PWC::T_PAY_RETRY) => 'createAffiliateEntry',
             PWC::eventName('transition', PWC::T_LOG_SEND) => 'createAffiliateEntry',
             PWC::eventName('transition', PWC::T_COMPLETE) => 'createAffiliateEntry',
 

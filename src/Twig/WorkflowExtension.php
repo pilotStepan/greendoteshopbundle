@@ -19,11 +19,29 @@ class WorkflowExtension extends AbstractExtension
     {
         return [
             new TwigFunction('get_state_metadata', [$this, 'getStateMetadata']),
+            new TwigFunction('get_places_metadata', [$this, 'getPlacesMetadata']),
+            new TwigFunction('get_places_metadata_by_track', [$this, 'getPlacesMetadataByTrack']),
+            new TwigFunction('get_public_places_metadata_by_track', [$this, 'getPublicPlacesMetadataByTrack']),
         ];
     }
 
     public function getStateMetadata($object): ?array
     {
         return $this->manageWorkflows->getStateMetadata($object);
+    }
+
+    public function getPlacesMetadata($object): ?array
+    {
+        return $this->manageWorkflows->getPlacesMetadata($object);
+    }
+
+    public function getPlacesMetadataByTrack($object): ?array
+    {
+        return $this->manageWorkflows->getPlacesMetadataByTrack($object);
+    }
+
+    public function getPublicPlacesMetadataByTrack($object): ?array
+    {
+        return $this->manageWorkflows->getPlacesMetadataByTrack($object, publicOnly: true);
     }
 }
