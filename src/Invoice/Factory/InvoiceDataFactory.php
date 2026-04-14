@@ -219,6 +219,7 @@ final class InvoiceDataFactory
             priceSecondary:         $priceVatSecondary,
             priceNoVat:             $priceNoVatPrimary,
             priceNoVatSecondary:    $priceNoVatSecondary,
+            branchName:             $purchase->getBranch()?->getName(),
         );
     }
 
