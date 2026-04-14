@@ -613,6 +613,8 @@ class ProductRepository extends HintedRepositoryBase
         if (!isset($filters['discounts'])) $filters['discounts'] = false;
         if (!isset($filters['isStockOnly'])) $filters['isStockOnly'] = false;
 
+        if (!isset($filters['externalId'])) $filters['externalId'] = false;
+
 
         $availableOrderByIds = ['name', 'price', 'rating', 'default'];
 
@@ -658,6 +660,12 @@ class ProductRepository extends HintedRepositoryBase
 
         if ($filters['discounts']) {
             $this->findDiscountedProducts($qb);
+        }
+
+        if ($filters['externalId']) {
+            $qb->andWhere('p.externalId LIKE :externalId')
+                ->setParameter('externalId', $filters['externalId'] . '%')
+            ;
         }
 
         if (count($filters['selectedParameters']) > 0) {
