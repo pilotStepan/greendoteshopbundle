@@ -181,7 +181,7 @@ class Category implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'categories')]
-    #[Groups(['category_with_parents:read', 'category:read'])]
+    #[Groups(['category_with_parents:read', 'category:read', 'product_item:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: CategoryMenuType::class)]
