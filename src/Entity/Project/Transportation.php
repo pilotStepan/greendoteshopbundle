@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -110,6 +111,9 @@ class Transportation implements Translatable
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $secretKey = null;
 
+    #[ApiProperty]
+    #[Groups(['transportation:read', 'transportation_group:read', 'purchase:read'])]
+    private array $calculatedPrices = [];
     #[Groups(['transportation:read', 'transportation_group:read'])]
     private ?float $freeFromPrice;
 
@@ -538,6 +542,16 @@ class Transportation implements Translatable
     {
         $this->amountUntilFree = $amountUntilFree;
 
+        return $this;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
         return $this;
     }
 }

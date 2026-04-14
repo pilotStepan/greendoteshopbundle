@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @method Label|null find($id, $lockMode = null, $lockVersion = null)
@@ -14,8 +15,8 @@ use Greendot\EshopBundle\Repository\HintedRepositoryBase;
  */
 class LabelRepository extends HintedRepositoryBase
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, RequestStack $requestStack)
     {
-        parent::__construct($registry, Label::class);
+        parent::__construct($registry, Label::class, $requestStack);
     }
 }

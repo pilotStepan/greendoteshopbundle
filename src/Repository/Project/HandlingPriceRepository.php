@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\AdditionalPurchaseCost;
 use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -15,7 +16,10 @@ use Symfony\Component\Validator\Constraints\DateTime;
  */
 class HandlingPriceRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        ManagerRegistry $registry,
+        private readonly EntityManagerInterface $entityManager
+    )
     {
         parent::__construct($registry, HandlingPrice::class);
     }
@@ -27,7 +31,7 @@ class HandlingPriceRepository extends ServiceEntityRepository
         if ($dateTime === null) {
             $dateTime = new \DateTime();
         }
-        $type = match (get_class($entity)){
+        $type = match ($this->entityManager->getMetadataFactory()->getMetadataFor(get_class($entity))->getName()){
             AdditionalPurchaseCost::class => 'additionalPurchaseCost',
             Transportation::class => 'transportation',
             PaymentType::class => 'paymentType',

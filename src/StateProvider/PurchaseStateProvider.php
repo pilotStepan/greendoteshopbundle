@@ -28,7 +28,6 @@ readonly class PurchaseStateProvider implements ProviderInterface
 
         $this->managePurchase->preparePrices($purchase);
         $this->calculatedPricesService->makeCalculatedPricesForPurchaseWithVariants($purchase);
-
         return $purchase;
     }
 }

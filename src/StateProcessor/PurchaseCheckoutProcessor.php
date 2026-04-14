@@ -17,8 +17,6 @@ use ApiPlatform\State\ProcessorInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Symfony\Bundle\SecurityBundle\Security;
 use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\Consent;
-use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
@@ -26,15 +24,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
-use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
-use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\EventSubscriber\PurchaseEventListener;
+use Greendot\EshopBundle\Service\Cart\PurchaseUpdate;
 use Greendot\EshopBundle\Service\ListenerManager;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
-use function count;
-use function is_array;
 
 #[WithMonologChannel('purchase.checkout')]
 final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
@@ -51,6 +46,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         private ManagePurchase          $managePurchase,
         private AffiliateService        $affiliateService,
         private ListenerManager         $listenerManager,
+        private PurchaseUpdate          $purchaseUpdate,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
@@ -68,7 +64,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
         try {
             // 0. Validate input structure
-            $violations = $this->validator->validate($data);
+            $violations = $this->validator->validate($data, null, ['Default','post']);
             if ($violations->count()) {
                 $msg = (string)$violations;
 
@@ -92,71 +88,22 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 'currentState' => method_exists($purchase, 'getState') ? $purchase->getState() : null,
             ]);
 
-            // 2. Validate provided consents exist and store them
-            $consentIds = is_array($data->consents ?? null) ? $data->consents : [];
-            $providedConsents = array_map(
-                fn(int $id) => $this->findConsentOrFail($id),
-                $consentIds,
-            );
-
             $this->logger->info('Checkout DB transaction begin', [
                 'purchaseId' => $purchase->getId(),
             ]);
 
-            $this->em->wrapInTransaction(function () use ($data, $purchase, $providedConsents, $isLoggedIn) {
-                // 3. Handle client
-                $this->logger->debug('Checkout handling client', [
-                    'purchaseId' => $purchase->getId(),
-                    'isLoggedIn' => $isLoggedIn,
-                ]);
+            $this->em->wrapInTransaction(function () use ($data, $purchase) {
+                // 2. Apply client, address, consents, notes from input
+                $this->purchaseUpdate->applyFromInput($data, $purchase);
 
-                $client = $this->handleClient($data->client, $data->address);
-                $purchase->setClient($client);
-
-                $this->logger->debug('Checkout client assigned', [
-                    'purchaseId' => $purchase->getId(),
-                    'clientId' => $client->getId(),
-                    'is_anonymous' => $client->isIsAnonymous(),
-                ]);
-
-                // 4. Address
-                $address = $this->createPurchaseAddress($data->address);
-                $purchase->setPurchaseAddress($address);
-
-                $this->logger->debug('Checkout purchase address persisted', [
-                    'purchaseId' => $purchase->getId(),
-                    'purchaseAddressId' => $address->getId(),
-                ]);
-
-                // 5. Consents
-                foreach ($providedConsents as $consent) {
-                    $purchase->addConsent($consent);
-                }
-
-                $this->logger->debug('Checkout consents attached to purchase', [
-                    'purchaseId' => $purchase->getId(),
-                    'consentsCount' => count($providedConsents),
-                ]);
-
-                // 6. Notes
-                $notes = is_array($data->notes ?? null) ? $data->notes : [];
-                foreach ($notes as $noteText) {
-                    $purchase->addDiscussion($this->createDiscussion($noteText));
-                }
-
-                $this->logger->debug('Checkout notes attached to purchase', [
-                    'purchaseId' => $purchase->getId(),
-                    'notesCount' => count($notes),
-                ]);
-
-                // 7. Affiliate
+                // 3. Affiliate
                 $this->affiliateService->setAffiliateToPurchase($purchase);
 
                 $this->logger->debug('Checkout affiliate processed', [
                     'purchaseId' => $purchase->getId(),
                 ]);
 
-                // 8. Workflow transitions
+                // 4. Workflow transitions
                 $purchaseWorkflow = $this->workflowRegistry->get($purchase);
 
                 $this->logger->info('Checkout applying workflow transitions', [
@@ -164,7 +111,6 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                     'transitions' => ['create', 'receive'],
                 ]);
 
-                $this->logger->debug('Applying transitions... (create, receive)');
                 $this->applyTransition($purchaseWorkflow, $purchase, 'create');
                 $this->applyTransition($purchaseWorkflow, $purchase, 'receive');
             });
@@ -211,98 +157,6 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
             return new JsonResponse(['errors' => ['Došlo k neočekávané chybě']], 500);
         }
-    }
-
-    private function findConsentOrFail(int $id): Consent
-    {
-        $consent = $this->em->find(Consent::class, $id);
-
-        if (!$consent) {
-            $this->logger->warning('Checkout consent not found', [
-                'consentId' => $id,
-            ]);
-
-            throw new InvalidArgumentException(sprintf('Souhlas %d nebyl nalezen', $id));
-        }
-
-        return $consent;
-    }
-
-    private function handleClient(array $clientData, array $addressData): Client
-    {
-        $user = $this->security->getUser();
-
-        // If logged in, update info and address
-        if ($user instanceof Client) {
-            $this->logger->info('Checkout updating logged-in client', [
-                'clientId' => $user->getId(),
-                'hasPrimaryAddress' => (bool)$user->getPrimaryAddress(),
-            ]);
-
-            $user
-                ->setName($clientData['name'])
-                ->setSurname($clientData['surname'])
-                ->setPhone($clientData['phone'])
-            ;
-
-            $address = $user->getPrimaryAddress();
-            if (!$address) {
-                $address = ClientAddress::fromArray($addressData);
-                $address->setIsPrimary(true);
-                $address->setClient($user);
-                $this->em->persist($address);
-
-                $this->logger->debug('Checkout created new primary address for client', [
-                    'clientId' => $user->getId(),
-                ]);
-            } else {
-                $address->updateFromArray($addressData);
-
-                $this->logger->debug('Checkout updated existing primary address for client', [
-                    'clientId' => $user->getId(),
-                ]);
-            }
-
-            $this->em->flush();
-
-            return $user;
-        }
-
-        // If not, create anonymous client, without an address saved to client profile
-        $this->logger->info('Checkout creating anonymous client', [
-            'hasEmailProvided' => isset($clientData['mail']),
-        ]);
-
-        $client = (new Client())
-            ->setName($clientData['name'])
-            ->setSurname($clientData['surname'])
-            ->setPhone($clientData['phone'])
-            ->setMail($clientData['mail'])
-            ->setIsAnonymous(true)
-        ;
-
-        $this->em->persist($client);
-
-        return $client;
-    }
-
-    private function createPurchaseAddress(array $addressData): PurchaseAddress
-    {
-        $address = PurchaseAddress::fromArray($addressData);
-        $this->em->persist($address);
-        return $address;
-    }
-
-    private function createDiscussion(string $text): PurchaseDiscussion
-    {
-        $note = (new PurchaseDiscussion())
-            ->setContent($text)
-            ->setIsAdmin(false)
-        ;
-
-        $this->em->persist($note);
-
-        return $note;
     }
 
     private function applyTransition(WorkflowInterface $workflow, Purchase $purchase, string $transition): void

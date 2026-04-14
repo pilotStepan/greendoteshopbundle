@@ -9,7 +9,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 class PurchaseCheckoutInput
 {
     #[Groups(['purchase:checkout'])]
-    #[Assert\NotNull]
+    #[Assert\NotNull(groups: ['post'])]
     #[Assert\Type('array')]
     #[Assert\Collection(
         fields: [
@@ -26,12 +26,13 @@ class PurchaseCheckoutInput
                 new Assert\Length(max: 20),
             ]),
             'mail' => new Assert\Email(),
-        ]
+        ],
+        groups: ['Default', 'patch']
     )]
-    public array $client;
+    public ?array $client = null;
 
     #[Groups(['purchase:checkout'])]
-    #[Assert\NotNull]
+    #[Assert\NotNull(groups: ['post'])]
     #[Assert\Type('array')]
     #[Assert\Collection(
         fields: [
@@ -40,18 +41,19 @@ class PurchaseCheckoutInput
             'zip' => new Assert\Required([new Assert\NotBlank]),
             'country' => new Assert\Required([new Assert\NotBlank]),
         ],
-        allowExtraFields: true,
+        groups: ['Default', 'patch'],
+        allowExtraFields: true
     )]
     #[Assert\Callback([self::class, 'validateAddress'])]
-    public array $address;
+    public ?array $address = null;
 
     #[Groups(['purchase:checkout'])]
-    #[Assert\NotNull]
+    #[Assert\NotNull(groups: ['post'])]
     #[Assert\Type('array')]
     #[Assert\All([
         new Assert\Type('integer'),
     ])]
-    public array $consents = [];
+    public ?array $consents = null;
 
     #[Groups(['purchase:checkout'])]
     #[Assert\Type('array')]
@@ -59,11 +61,15 @@ class PurchaseCheckoutInput
         new Assert\Type('string'),
         new Assert\Length(max: 1000),
     ])]
-    public array $notes = [];
+    public ?array $notes = null;
 
 
-    public static function validateAddress(array $address, ExecutionContextInterface $context): void
+    public static function validateAddress(?array $address, ExecutionContextInterface $context): void
     {
+        if ($address === null) {
+            return;
+        }
+
         // Company fields validation
         $hasCompanyData = !empty($address['ic']) || !empty($address['dic']) || !empty($address['company']);
 

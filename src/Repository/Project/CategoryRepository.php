@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -27,9 +28,9 @@ class CategoryRepository extends HintedRepositoryBase
 {
     private $entityManager;
 
-    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager)
+    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager, RequestStack $requestStack)
     {
-        parent::__construct($registry, Category::class);
+        parent::__construct($registry, Category::class, $requestStack);
         $this->entityManager = $entityManager;
     }
 

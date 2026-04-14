@@ -19,6 +19,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProcessor\PurchaseCheckoutProcessor;
+use Greendot\EshopBundle\StateProcessor\PurchaseSessionUpdateProcessor;
 use Greendot\EshopBundle\StateProvider\PurchaseItemStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
@@ -63,6 +64,13 @@ use Symfony\Component\Serializer\Annotation\Groups;
             ],
             input: PurchaseCheckoutInput::class,
             processor: PurchaseCheckoutProcessor::class,
+        ),
+        new Patch(
+            uriTemplate: '/purchases/session/update',
+            denormalizationContext: ['groups' => ['purchase:checkout']],
+            input: PurchaseCheckoutInput::class,
+            read: false,
+            processor: PurchaseSessionUpdateProcessor::class,
         ),
         new Patch(
             uriTemplate: '/purchases/session',

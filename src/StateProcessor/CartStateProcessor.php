@@ -5,6 +5,8 @@ namespace Greendot\EshopBundle\StateProcessor;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -15,7 +17,9 @@ class CartStateProcessor implements ProcessorInterface
 {
     public function __construct(
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
-        private ProcessorInterface $inner,
+        private ProcessorInterface      $inner,
+        private ManagePurchase          $managePurchase,
+        private CalculatedPricesService $calculatedPricesService,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Purchase
@@ -35,6 +39,12 @@ class CartStateProcessor implements ProcessorInterface
             $data->setBranch(null);
         }
 
-        return $this->inner->process($data, $operation, $uriVariables, $context);
+        $purchase = $this->inner->process($data, $operation, $uriVariables, $context);
+
+        // Recalculate prices after persisting so the response reflects the updated Transportation/PaymentType.
+        $this->managePurchase->preparePrices($purchase);
+        $this->calculatedPricesService->makeCalculatedPricesForPurchaseWithVariants($purchase);
+
+        return $purchase;
     }
 }

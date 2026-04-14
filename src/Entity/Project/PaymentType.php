@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -120,6 +121,10 @@ class PaymentType implements Translatable
 
     #[ORM\Column(type: 'string', nullable: true, enumType: PaymentTechnicalAction::class)]
     private ?PaymentTechnicalAction $paymentTechnicalAction = null;
+
+    #[ApiProperty]
+    #[Groups(['payment:read', 'purchase:read'])]
+    private array $calculatedPrices = [];
 
     public function __construct()
     {
@@ -435,6 +440,17 @@ class PaymentType implements Translatable
     public function setPaymentTechnicalAction(?PaymentTechnicalAction $action): self
     {
         $this->paymentTechnicalAction = $action;
+        return $this;
+    }
+
+    public function getCalculatedPrices(): array
+    {
+        return $this->calculatedPrices;
+    }
+
+    public function setCalculatedPrices(array $calculatedPrices): self
+    {
+        $this->calculatedPrices = $calculatedPrices;
         return $this;
     }
 }

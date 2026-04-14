@@ -8,6 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @method Producer|null find($id, $lockMode = null, $lockVersion = null)
@@ -17,9 +18,9 @@ use Greendot\EshopBundle\Repository\HintedRepositoryBase;
  */
 class ProducerRepository extends HintedRepositoryBase
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, RequestStack $requestStack)
     {
-        parent::__construct($registry, Producer::class);
+        parent::__construct($registry, Producer::class, $requestStack);
     }
 
     public function findByCategory(QueryBuilder $queryBuilder, int|array $categories): QueryBuilder

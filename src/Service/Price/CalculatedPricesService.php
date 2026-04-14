@@ -2,11 +2,15 @@
 
 namespace Greendot\EshopBundle\Service\Price;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Dto\calculatedPrices\AdditionalPurchaseCostMatrix;
 use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedPricesMatrix;
+use Greendot\EshopBundle\Dto\calculatedPrices\ServiceCalculatedPrices;
 use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -23,7 +27,11 @@ class CalculatedPricesService
         private readonly PurchasePriceFactory       $purchasePriceFactory,
         private readonly CurrencyManager            $currencyManager,
         private readonly PriceRepository            $priceRepository,
-    ) {}    
+        private readonly ServiceCalculationUtils    $serviceCalculationUtils,
+        private readonly EntityManagerInterface     $entityManager
+    )
+    {
+    }
 
     /**
      * Sets the calculated prices collection for variant for all unique minimal amounts
@@ -44,8 +52,7 @@ class CalculatedPricesService
             context: $context
         );
 
-        if(!$productVariantPrice)
-        {
+        if (!$productVariantPrice) {
             return $variant;
         }
 
@@ -72,8 +79,7 @@ class CalculatedPricesService
         $context = $this->resolveVariantContext($context);
 
         $productVariantPrice = $this->findCheapestVariantPriceForProduct($product, $context);
-        if (!$productVariantPrice)
-        {
+        if (!$productVariantPrice) {
             return $product;
         }
 
@@ -113,6 +119,9 @@ class CalculatedPricesService
 
         $calculatedPricesMatrix = $this->createPurchaseCalculatedPricesMatrix($purchasePrice);
 
+        if ($purchase->getTransportation()) $this->makeCalculatedPricesService($purchase->getTransportation(), $purchasePrice);
+        if ($purchase->getPaymentType()) $this->makeCalculatedPricesService($purchase->getPaymentType(), $purchasePrice);
+
         $purchase->setCalculatedPrices((array)$calculatedPricesMatrix);
 
         return $purchase;
@@ -148,6 +157,15 @@ class CalculatedPricesService
         }
 
         return $purchase;
+    }
+
+    public function makeCalculatedPricesService(
+        PaymentType|Transportation  $service,
+        Purchase|PurchasePrice|null $purchase = null): PaymentType|Transportation
+    {
+        return $service->setCalculatedPrices(
+            (array)$this->createServiceCalculatedPricesMatrix($service, $purchase)
+        );
     }
 
     protected function createVariantCalculatedPricesMatrix(ProductVariantPrice $productVariantPrice)
@@ -189,7 +207,7 @@ class CalculatedPricesService
 
         $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
             ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
-        $additionalPurchaseCosts->addFromArray($purchasePrice->getAdditionalCosts(),'priceVat');
+        $additionalPurchaseCosts->addFromArray($purchasePrice->getAdditionalCosts(), 'priceVat');
         $priceVat = $purchasePrice->getPrice(true);
         $priceVatNoServices = $purchasePrice->getPrice(false);
 
@@ -262,13 +280,41 @@ class CalculatedPricesService
 
             $piecePrice = $productVariantPrice->getPiecePrice();
 
-            if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
-            {
+            if (!$currentPiecePrice || $piecePrice < $currentPiecePrice) {
                 $currentPiecePrice = $piecePrice;
                 $cheapestVariantPrice = $productVariantPrice;
             }
         }
 
         return $cheapestVariantPrice;
+    }
+
+    protected function createServiceCalculatedPricesMatrix(
+        PaymentType|Transportation  $service,
+        PurchasePrice|null $purchase = null
+    ): ServiceCalculatedPrices
+    {
+        $serviceCalculatedPrices = new ServiceCalculatedPrices();
+        if (!$purchase) {
+            $currency = $this->currencyManager->get();
+            $serviceCalculatedPrices->priceNoVat = $this->serviceCalculationUtils->calculateServicePrice($service, $currency, VatCalculationType::WithoutVAT);
+            $serviceCalculatedPrices->priceVat = $this->serviceCalculationUtils->calculateServicePrice($service, $currency, VatCalculationType::WithVAT);
+            return $serviceCalculatedPrices;
+        }
+
+        if ($purchase instanceof Purchase) {
+            $purchase = $this->purchasePriceFactory->create($purchase, $this->currencyManager->get());
+        }
+        $fn = match ($this->entityManager->getMetadataFactory()->getMetadataFor(get_class($service))->getName()) {
+            Transportation::class => 'getTransportationPrice',
+            PaymentType::class => 'getPaymentPrice',
+        };
+        $purchase->setVatCalculationType(VatCalculationType::WithoutVAT);
+        $serviceCalculatedPrices->priceNoVat = $purchase->$fn();
+
+        $purchase->setVatCalculationType(VatCalculationType::WithVAT);
+        $serviceCalculatedPrices->priceVat = $purchase->$fn();
+
+        return $serviceCalculatedPrices;
     }
 }

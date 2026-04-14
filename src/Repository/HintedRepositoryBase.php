@@ -3,16 +3,21 @@
 namespace Greendot\EshopBundle\Repository;
 
 use Gedmo\Translatable\Entity\Translation as GedmoTranslation;
+use Gedmo\Translatable\TranslatableListener;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 abstract class HintedRepositoryBase extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry, $entityClass)
+    private RequestStack $requestStack;
+
+    public function __construct(ManagerRegistry $registry, $entityClass, RequestStack $requestStack)
     {
         parent::__construct($registry, $entityClass);
+        $this->requestStack = $requestStack;
     }
 
     final public function findHinted(int $id): ?object
@@ -100,9 +105,17 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
 
     final public function hintQuery(Query $query): Query
     {
-        return $query->setHint(
+        $locale = $this->requestStack->getCurrentRequest()?->getLocale();
+
+        $query->setHint(
             Query::HINT_CUSTOM_OUTPUT_WALKER,
             'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
         );
+
+        if ($locale) {
+            $query->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $locale);
+        }
+
+        return $query;
     }
 }
