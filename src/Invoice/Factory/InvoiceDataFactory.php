@@ -300,7 +300,11 @@ final class InvoiceDataFactory
         $clientName = $client->getName();
         $clientSurname = $client->getSurname();
         $country = $this->countryRepository->findByCode($purchaseAddress->getCountry())?->getDescription() ?? $purchaseAddress->getCountry();
-        $shipCountry = $this->countryRepository->findByCode($purchaseAddress->getShipCountry())?->getDescription() ?? $purchaseAddress->getShipCountry();
+        if ($purchaseAddress->getShipCountry()) {
+            $shipCountry = $this->countryRepository->findByCode($purchaseAddress->getShipCountry())?->getDescription() ?? $purchaseAddress->getShipCountry();
+        } else {
+            $shipCountry = null;
+        }
 
         return new InvoicePersonData(
             $purchaseAddress->getCompany(),
