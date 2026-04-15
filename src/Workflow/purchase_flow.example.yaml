@@ -278,7 +278,7 @@ framework:
                     metadata:
                         label: 'Refundovat'
                         icon: 'paid'
-                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_RENEW->value:
+                pay_renew:
                     # No customer notification: this is an internal admin correction (refund reversal).
                     # If a customer email is ever needed here, add purchase_notification.customer_email.
                     from: [ pay_refunded, pay_track_cancellable ]

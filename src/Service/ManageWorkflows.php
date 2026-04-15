@@ -53,7 +53,7 @@ class ManageWorkflows
         $result = [];
         foreach ($activePlaces as $placeName) {
             $metadata = $metadataStore->getPlaceMetadata($placeName);
-            if ($publicOnly && !isset($metadata['customer_label'])) {
+            if ($publicOnly && (isset($metadata['internal']) && $metadata['internal'] === true) && !isset($metadata['customer_label'])) {
                 continue;
             }
             $result[$placeName] = array_merge(['place' => $placeName], $metadata);

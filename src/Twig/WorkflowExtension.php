@@ -32,12 +32,12 @@ class WorkflowExtension extends AbstractExtension
 
     public function getPlacesMetadata($object): ?array
     {
-        return $this->manageWorkflows->getPlacesMetadata($object);
+        return $this->manageWorkflows->getPlacesMetadata($object, publicOnly: true);
     }
 
     public function getPlacesMetadataByTrack($object): ?array
     {
-        return $this->manageWorkflows->getPlacesMetadataByTrack($object);
+        return $this->manageWorkflows->getPlacesMetadataByTrack($object, publicOnly: true);
     }
 
     public function getPublicPlacesMetadataByTrack($object): ?array
