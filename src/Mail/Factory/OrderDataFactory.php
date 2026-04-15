@@ -73,7 +73,7 @@ class OrderDataFactory
             addresses: $addresses,
             items: $items,
             primaryCurrency: 'czk', // FIXME
-            orderPaid: $this->isPaid($purchase),
+            orderPaid: $purchase->isPaid(),
             totalPriceCzk: $totalPriceCzk,
             totalPriceEur: $totalPriceEur,
             clientSectionUrl: $clientSectionUrl,
@@ -96,7 +96,7 @@ class OrderDataFactory
     private function buildQrCode(Purchase $purchase): ?string
     {
         // Don't build if cant be paid or already paid
-        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) {
+        if (!$this->canBePaid($purchase) || $purchase->isPaid()) {
             return null;
         }
 
@@ -111,7 +111,7 @@ class OrderDataFactory
     private function buildPayLink(Purchase $purchase): ?string
     {
         // Don't build if cant be paid or already paid
-        if (!$this->canBePaid($purchase) || $this->isPaid($purchase)) {
+        if (!$this->canBePaid($purchase) || $purchase->isPaid()) {
             return null;
         }
 
@@ -244,15 +244,9 @@ class OrderDataFactory
         return $totals;
     }
 
-    private function isPaid(Purchase $purchase): bool
-    {
-        /* FIXME: having invoice number is not indication of paid purchase */
-        return $purchase->getInvoiceNumber() !== null && $purchase->getInvoiceNumber() !== '';
-    }
-
     private function canBePaid(Purchase $purchase): bool
     {
-        if ($this->isPaid($purchase)) {
+        if ($purchase->isPaid()) {
             return false;
         }
 

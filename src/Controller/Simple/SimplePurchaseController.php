@@ -51,6 +51,7 @@ class SimplePurchaseController extends AbstractController
             $placesMetaData[$place]['icon'] = $metadataArray['icon'] ?? null;
             $placesMetaData[$place]['simple_color'] = $metadataArray['simple_color'] ?? '#999999';
             $placesMetaData[$place]['name'] = $place;
+            $placesMetaData[$place]['track'] = $metadataArray['track'] ?? 'default';
         }
         return $this->json($placesMetaData, 200);
     }
@@ -67,6 +68,7 @@ class SimplePurchaseController extends AbstractController
             $result[] = [
                 'name'  => $transition->getName(),
                 'label' => $meta['label'] ?? $transition->getName(),
+                'icon'  => $meta['icon'] ?? null,
                 'froms' => $transition->getFroms(),
                 'tos'   => $transition->getTos(),
             ];

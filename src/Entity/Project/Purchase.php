@@ -25,6 +25,7 @@ use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
@@ -117,6 +118,10 @@ class Purchase
     #[ORM\Column(type: Types::JSON)]
     #[Groups(['purchase:read'])]
     private array $marking = ['draft' => 1];
+
+    #[ORM\Column(type: Types::JSON, options: ['default' => '{}'])]
+    #[Groups(['purchase:read'])]
+    private array $workflowFlags = [];
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -1032,5 +1037,30 @@ class Purchase
             }
         }
         return true;
+    }
+
+    public function getWorkflowFlags(): array
+    {
+        return $this->workflowFlags;
+    }
+
+    public function setWorkflowFlags(array $workflowFlags): void
+    {
+        $this->workflowFlags = $workflowFlags;
+    }
+
+    public function getWorkflowFlag(string $key): bool
+    {
+        return (bool) ($this->workflowFlags[$key] ?? false);
+    }
+
+    public function setWorkflowFlag(string $key, bool $value): void
+    {
+        $this->workflowFlags[$key] = $value;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->getWorkflowFlag(PurchaseWorkflowContract::F_IS_PAID->value);
     }
 }

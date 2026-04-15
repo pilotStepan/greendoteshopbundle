@@ -20,13 +20,17 @@ enum PurchaseWorkflowContract: string
     case T_INIT_CART = 'init_cart';
     case T_CHECKOUT = 'checkout';
     case T_PAY_PAY = 'pay_pay';
-    case T_PAY_RETRY = 'pay_retry';     // Retry payment from pay_failed state
+    case T_PAY_RETRY = 'pay_retry';
     case T_PAY_FAIL = 'pay_fail';
     case T_LOG_SEND = 'log_send';
-    case T_LOG_TO_DONE = 'log_to_done';         // Auto: log_shipped → log_track_done funnel
-    case T_LOG_PICKUP_DONE = 'log_pickup_done'; // Manual: customer picked up → log_track_done funnel
+    case T_LOG_DELIVER = 'log_deliver';
+    case T_LOG_PICKUP_DONE = 'log_pickup_done';
     case T_CANCEL = 'cancel';
     case T_COMPLETE = 'complete';
+    case T_PAY_REFUND = 'pay_refund';
+
+    // PURCHASE FLAGS
+    case F_IS_PAID = 'is_paid';
 
     public static function eventName(string $event, self $transition = null): string
     {

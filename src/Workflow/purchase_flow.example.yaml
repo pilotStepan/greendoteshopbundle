@@ -1,260 +1,312 @@
 framework:
     workflows:
-    !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::NAME->value:
-        type: 'workflow'
-        audit_trail:
-            enabled: true
-        marking_store:
-            type: 'method'
-            property: 'marking'
-        supports:
-            - Greendot\EshopBundle\Entity\Project\Purchase
-        initial_marking: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
-        places:
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value:
-                metadata:
-                    customer_label: 'Otevřená objednávka'
-                    description: 'Otevřená objednávka'
-                    short_description: 'Otevřená'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#1f2bc2'
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_WISHLIST->value:
-                metadata:
-                    customer_label: 'Seznam přání'
-                    description: 'Seznam přání'
-                    short_description: 'Seznam přání'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#1f2bc2'
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value:
-                metadata:
-                    customer_label: 'Košík'
-                    description: 'Košík'
-                    short_description: 'Košík'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#1f2bc2'
-            # Logistics Track
-            log_pending:
-                metadata:
-                    track: 'logistics'
-                    customer_label: 'Objednávka přijata'   # interně čeká na zpracování, zákazník vidí neutrální stav
-                    description: 'Čeká na zpracování'
-                    short_description: 'Čeká na zpracování'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            log_ready_for_pickup:
-                metadata:
-                    track: 'logistics'
-                    customer_label: 'Připraveno k vyzvednutí'
-                    description: 'Připraveno k vyzvednutí'
-                    short_description: 'Připraveno k vyzvednutí'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            log_ready_to_ship:
-                metadata:
-                    track: 'logistics'
-                    # bez customer_label — interní stav, zákazník nevidí
-                    description: 'Připraveno k odeslání'
-                    short_description: 'Připraveno k odeslání'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            log_shipped:
-                metadata:
-                    track: 'logistics'
-                    customer_label: 'Expedováno'
-                    description: 'Expedováno'
-                    short_description: 'Expedováno'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            # Payment Track
-            pay_pending:
-                metadata:
-                    track: 'payment'
-                    customer_label: 'Čeká na platbu'
-                    description: 'Čeká na platbu'
-                    short_description: 'Čeká na platbu'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            pay_paid:
-                metadata:
-                    track: 'payment'
-                    # bez customer_label — zákazník ví, že zaplatil, logistika přebírá zobrazení
-                    description: 'Zaplaceno'
-                    short_description: 'Zaplaceno'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            pay_refunded:
-                metadata:
-                    track: 'payment'
-                    customer_label: 'Peníze vráceny'
-                    description: 'Peníze vráceny'
-                    short_description: 'Peníze vráceny'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            pay_failed:
-                metadata:
-                    track: 'payment'
-                    customer_label: 'Platba se nezdařila'
-                    description: 'Neuhrazeno'
-                    short_description: 'Neuhrazeno'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            # Internal funnel places — AND-join points for cancel and complete.
-            # These coexist with track-specific places in the marking. Never shown publicly.
-            log_track_cancellable:
-                metadata:
-                    internal: true
-                    description: 'Logistika zrušitelná (interní)'
-                    short_description: 'Log cancellable'
-                    icon: 'orderstatus5'
-                    simple_color: '#999999'
-            pay_track_cancellable:
-                metadata:
-                    internal: true
-                    description: 'Platba zrušitelná (interní)'
-                    short_description: 'Pay cancellable'
-                    icon: 'orderstatus5'
-                    simple_color: '#999999'
-            log_track_done:
-                metadata:
-                    internal: true
-                    description: 'Logistika dokončena (interní)'
-                    short_description: 'Log done'
-                    icon: 'orderstatus5'
-                    simple_color: '#999999'
-            pay_track_done:
-                metadata:
-                    internal: true
-                    description: 'Platba dokončena (interní)'
-                    short_description: 'Pay done'
-                    icon: 'orderstatus5'
-                    simple_color: '#999999'
-            # Final states
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value:
-                metadata:
-                    customer_label: 'Zrušeno'
-                    description: 'Zrušeno'
-                    short_description: 'Zrušeno'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value:
-                metadata:
-                    customer_label: 'Dokončeno'
-                    description: 'Dokončeno'
-                    short_description: 'Dokončeno'
-                    class: 'yellow'
-                    icon: 'orderstatus5'
-                    simple_color: '#ee9647'
-        transitions:
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_INIT_WISHLIST->value:
-                from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
-                to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_WISHLIST->value
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_INIT_CART->value:
-                from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
-                to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CHECKOUT->value:
-                from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
-                to: [ log_pending, pay_pending, log_track_cancellable, pay_track_cancellable ]
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email_with_proforma
-                    ]
-            create_shipment:
-                from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
-                to: [ log_ready_to_ship, pay_pending, log_track_cancellable, pay_track_cancellable ]
-            create_pickup:
-                from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
-                to: [ log_ready_for_pickup, pay_pending, log_track_cancellable, pay_track_cancellable ]
-            # --- Logistics ---
-            log_prepare_for_pickup:
-                from: [ log_pending, log_track_cancellable ]
-                to: [ log_ready_for_pickup, log_track_cancellable ]
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email,
-                        purchase_notification.customer_sms
-                    ]
-            log_prepare_to_ship:
-                from: [ log_pending, log_track_cancellable ]
-                to: [ log_ready_to_ship, log_track_cancellable ]
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_SEND->value:
-                from: [ log_ready_to_ship, log_track_cancellable ]
-                to: [ log_shipped ]   # removes log_track_cancellable — shipped order cannot cancel logistics
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email,
-                        purchase_notification.customer_sms
-                    ]
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_TO_DONE->value:
-                # Automatic: fired by PurchaseWorkflowFunnelSubscriber after T_LOG_SEND.
-                # Keeps log_shipped in marking for display; adds log_track_done for AND-join.
-                from: [ log_shipped ]
-                to: [ log_shipped, log_track_done ]
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_PICKUP_DONE->value:
-                # Manual: customer physically picked up the order.
-                # Removes log_track_cancellable (no longer cancellable); adds log_track_done for AND-join.
-                # Keeps log_ready_for_pickup in marking for display.
-                from: [ log_ready_for_pickup, log_track_cancellable ]
-                to: [ log_ready_for_pickup, log_track_done ]
-            # --- Payment ---
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_PAY->value:
-                from: [ pay_pending, pay_track_cancellable ]
-                to: [ pay_paid, pay_track_done ]
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email,
-                        purchase_notification.payment_vouchers
-                    ]
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_RETRY->value:
-                # Retry payment after failure. Functionally identical to T_PAY_PAY but from pay_failed.
-                from: [ pay_failed, pay_track_cancellable ]
-                to: [ pay_paid, pay_track_done ]
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email,
-                        purchase_notification.payment_vouchers
-                    ]
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_FAIL->value:
-                from: [ pay_pending, pay_track_cancellable ]
-                to: [ pay_failed, pay_track_cancellable ]  # keeps pay_track_cancellable — failed payment is still cancellable
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email
-                    ]
-            pay_refund:
-                from: [ pay_paid, pay_track_done ]
-                to: [ pay_refunded, pay_track_cancellable ]  # removes pay_track_done, restores cancellable
-            pay_renew:
-                from: [ pay_refunded, pay_track_cancellable ]
-                to: [ pay_pending, pay_track_cancellable ]
-            # --- Final ---
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CANCEL->value:
-                # AND-join: both tracks must be in a cancellable state.
-                # PurchaseStateSubscriber.onEnterCancelled cleans up leftover track places.
-                from: [ log_track_cancellable, pay_track_cancellable ]
-                to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email
-                    ]
-            !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_COMPLETE->value:
-                # AND-join: both tracks must be done.
-                # Fired automatically by PurchaseWorkflowFunnelSubscriber when both funnels are active.
-                # PurchaseStateSubscriber.onEnterCompleted cleans up leftover track places.
-                from: [ log_track_done, pay_track_done ]
-                to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value
-                metadata:
-                    notifications: [
-                        purchase_notification.customer_email
-                    ]
+        !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::NAME->value:
+            type: 'workflow'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'marking'
+            supports:
+                - Greendot\EshopBundle\Entity\Project\Purchase
+            initial_marking: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+            places:
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value:
+                    metadata:
+                        customer_label: 'Otevřená objednávka'
+                        description: 'Otevřená objednávka'
+                        short_description: 'Otevřená'
+                        class: 'yellow'
+                        icon: 'draft'
+                        simple_color: '#1f2bc2'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_WISHLIST->value:
+                    metadata:
+                        customer_label: 'Seznam přání'
+                        description: 'Seznam přání'
+                        short_description: 'Seznam přání'
+                        class: 'yellow'
+                        icon: 'draft'
+                        simple_color: '#1f2bc2'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value:
+                    metadata:
+                        customer_label: 'Košík'
+                        description: 'Košík'
+                        short_description: 'Košík'
+                        class: 'yellow'
+                        icon: 'draft'
+                        simple_color: '#1f2bc2'
+                # Logistics Track
+                log_pending:
+                    metadata:
+                        track: 'logistics'
+                        customer_label: 'Objednávka přijata'
+                        description: 'Čeká na zpracování'
+                        short_description: 'Čeká na zpracování'
+                        class: 'yellow'
+                        icon: 'received'
+                        simple_color: '#ee9647'
+                log_ready_for_pickup:
+                    metadata:
+                        track: 'logistics'
+                        customer_label: 'Připraveno k vyzvednutí'
+                        description: 'Připraveno k vyzvednutí'
+                        short_description: 'Připraveno k vyzvednutí'
+                        class: 'yellow'
+                        icon: 'picked_up'
+                        simple_color: '#ee9647'
+                log_ready_to_ship:
+                    metadata:
+                        track: 'logistics'
+                        # bez customer_label — interní stav, zákazník nevidí
+                        description: 'Připraveno k odeslání'
+                        short_description: 'Připraveno k odeslání'
+                        class: 'yellow'
+                        icon: 'sent'
+                        simple_color: '#ee9647'
+                log_shipped:
+                    metadata:
+                        track: 'logistics'
+                        customer_label: 'Expedováno'
+                        description: 'Expedováno'
+                        short_description: 'Expedováno'
+                        class: 'yellow'
+                        icon: 'sent'
+                        simple_color: '#ee9647'
+                log_delivered:
+                    metadata:
+                        track: 'logistics'
+                        customer_label: 'Doručeno'
+                        description: 'Doručeno kurýrem'
+                        short_description: 'Doručeno'
+                        class: 'yellow'
+                        icon: 'sent'
+                        simple_color: '#ee9647'
+                log_picked_up:
+                    metadata:
+                        track: 'logistics'
+                        customer_label: 'Vyzvednuto'
+                        description: 'Vyzvednuto'
+                        short_description: 'Vyzvednuto'
+                        class: 'yellow'
+                        icon: 'picked_up'
+                        simple_color: '#ee9647'
+                # Payment Track
+                pay_pending:
+                    metadata:
+                        track: 'payment'
+                        customer_label: 'Čeká na platbu'
+                        description: 'Čeká na platbu'
+                        short_description: 'Čeká na platbu'
+                        class: 'yellow'
+                        icon: 'paid'
+                        simple_color: '#ee9647'
+                pay_paid:
+                    metadata:
+                        track: 'payment'
+                        # bez customer_label — zákazník ví, že zaplatil, logistika přebírá zobrazení
+                        description: 'Zaplaceno'
+                        short_description: 'Zaplaceno'
+                        class: 'yellow'
+                        icon: 'paid'
+                        simple_color: '#ee9647'
+                pay_refunded:
+                    metadata:
+                        track: 'payment'
+                        customer_label: 'Peníze vráceny'
+                        description: 'Peníze vráceny'
+                        short_description: 'Peníze vráceny'
+                        class: 'yellow'
+                        icon: 'paid'
+                        simple_color: '#ee9647'
+                pay_failed:
+                    metadata:
+                        track: 'payment'
+                        customer_label: 'Platba se nezdařila'
+                        description: 'Neuhrazeno'
+                        short_description: 'Neuhrazeno'
+                        class: 'yellow'
+                        icon: 'paid'
+                        simple_color: '#ee9647'
+                # Internal funnel places — AND-join points for cancel and complete.
+                # These coexist with track-specific places in the marking. Never shown publicly.
+                log_track_cancellable:
+                    metadata:
+                        internal: true
+                        description: 'Logistika zrušitelná (interní)'
+                pay_track_cancellable:
+                    metadata:
+                        internal: true
+                        description: 'Platba zrušitelná (interní)'
+                log_track_done:
+                    metadata:
+                        internal: true
+                        description: 'Logistika dokončena (interní)'
+                pay_track_done:
+                    metadata:
+                        internal: true
+                        description: 'Platba dokončena (interní)'
+                # Final states
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value:
+                    metadata:
+                        customer_label: 'Zrušeno'
+                        description: 'Zrušeno'
+                        short_description: 'Zrušeno'
+                        class: 'yellow'
+                        icon: 'cancelled'
+                        simple_color: '#ee9647'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value:
+                    metadata:
+                        customer_label: 'Dokončeno'
+                        description: 'Dokončeno'
+                        short_description: 'Dokončeno'
+                        class: 'yellow'
+                        icon: 'new'
+                        simple_color: '#ee9647'
+            transitions:
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_INIT_WISHLIST->value:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_WISHLIST->value
+                    metadata:
+                        label: 'Vytvořit seznam přání'
+                        icon: 'draft'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_INIT_CART->value:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
+                    metadata:
+                        label: 'Vytvořit košík'
+                        icon: 'draft'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CHECKOUT->value:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CART->value
+                    to: [ log_pending, pay_pending, log_track_cancellable, pay_track_cancellable ]
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email_with_proforma
+                        ]
+                        label: 'Přijmout objednávku'
+                        icon: 'draft'
+                create_shipment:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: [ log_ready_to_ship, pay_pending, log_track_cancellable, pay_track_cancellable ]
+                    metadata:
+                        label: 'Vytvořit objednávku k odeslání'
+                        icon: 'sent'
+                create_pickup:
+                    from: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_DRAFT->value
+                    to: [ log_ready_for_pickup, pay_pending, log_track_cancellable, pay_track_cancellable ]
+                    metadata:
+                        label: 'Vytvořit objednávku k vyzvednutí'
+                        icon: 'picked_up'
+                # --- Logistics ---
+                log_prepare_for_pickup:
+                    from: [ log_pending, log_track_cancellable ]
+                    to: [ log_ready_for_pickup, log_track_cancellable ]
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.customer_sms
+                        ]
+                        label: 'Připravit k vyzvednutí'
+                        icon: 'picked_up'
+                log_prepare_to_ship:
+                    from: [ log_pending, log_track_cancellable ]
+                    to: [ log_ready_to_ship, log_track_cancellable ]
+                    metadata:
+                        label: 'Připravit k odeslání'
+                        icon: 'sent'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_SEND->value:
+                    from: [ log_ready_to_ship, log_track_cancellable ]
+                    to: [ log_shipped ]
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.customer_sms
+                        ]
+                        label: 'Expedovat'
+                        icon: 'sent'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_DELIVER->value:
+                    # Courier confirms delivery (webhook or manual). Adds log_track_done for AND-join.
+                    from: [ log_shipped ]
+                    to: [ log_delivered, log_track_done ]
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]
+                        label: 'Označit jako doručené'
+                        icon: 'sent'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_LOG_PICKUP_DONE->value:
+                    # Manual: customer physically picked up the order.
+                    # Removes log_track_cancellable (no longer cancellable); adds log_track_done for AND-join.
+                    from: [ log_ready_for_pickup, log_track_cancellable ]
+                    to: [ log_picked_up, log_track_done ]
+                    metadata:
+                        label: 'Označit jako vyzvednuté'
+                        icon: 'picked_up'
+                # --- Payment ---
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_PAY->value:
+                    from: [ pay_pending, pay_track_cancellable ]
+                    to: [ pay_paid, pay_track_done ]
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.payment_vouchers
+                        ]
+                        label: 'Označit jako zaplacené'
+                        icon: 'paid'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_RETRY->value:
+                    # Retry payment after failure. Functionally identical to T_PAY_PAY but from pay_failed.
+                    from: [ pay_failed, pay_track_cancellable ]
+                    to: [ pay_paid, pay_track_done ]
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email,
+                            purchase_notification.payment_vouchers
+                        ]
+                        label: 'Označit jako zaplacené'
+                        icon: 'paid'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_FAIL->value:
+                    from: [ pay_pending, pay_track_cancellable ]
+                    to: [ pay_failed, pay_track_cancellable ]  # keeps pay_track_cancellable — failed payment is still cancellable
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]
+                        label: 'Označit jako nezaplacené'
+                        icon: 'paid'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_REFUND->value:
+                    from: [ pay_paid, pay_track_done ]
+                    to: [ pay_refunded, pay_track_cancellable ]  # removes pay_track_done, restores cancellable
+                    metadata:
+                        label: 'Refundovat'
+                        icon: 'paid'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_PAY_RENEW->value:
+                    # No customer notification: this is an internal admin correction (refund reversal).
+                    # If a customer email is ever needed here, add purchase_notification.customer_email.
+                    from: [ pay_refunded, pay_track_cancellable ]
+                    to: [ pay_pending, pay_track_cancellable ]
+                    metadata:
+                        label: 'Obnovit platbu'
+                        icon: 'paid'
+                # --- Final ---
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_CANCEL->value:
+                    # AND-join: both tracks must be in a cancellable state.
+                    # PurchaseStateSubscriber.onEnterCancelled cleans up leftover track places.
+                    from: [ log_track_cancellable, pay_track_cancellable ]
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_CANCELLED->value
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]
+                        label: 'Zrušit objednávku'
+                        icon: 'cancelled'
+                !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::T_COMPLETE->value:
+                    # AND-join: both tracks must be done.
+                    # Fired automatically by PurchaseWorkflowFunnelSubscriber when both funnels are active.
+                    # PurchaseStateSubscriber.onEnterCompleted cleans up leftover track places.
+                    from: [ log_track_done, pay_track_done ]
+                    to: !php/enum Greendot\EshopBundle\Workflow\PurchaseWorkflowContract::S_COMPLETED->value
+                    metadata:
+                        notifications: [
+                            purchase_notification.customer_email
+                        ]
+                        label: 'Dokončit objednávku'
+                        icon: 'sent'
