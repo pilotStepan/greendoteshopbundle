@@ -18,6 +18,7 @@ use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Availability;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -33,9 +34,10 @@ class ProductRepository extends HintedRepositoryBase
         ManagerRegistry                     $registry,
         private readonly CategoryRepository $categoryRepository,
         private readonly CategoryInfoGetter $categoryInfoGetter,
+        RequestStack $requestStack
     )
     {
-        parent::__construct($registry, Product::class);
+        parent::__construct($registry, Product::class, $requestStack);
     }
 
     public function findProductUploadSubstitute(Product $product): ?Upload
@@ -96,17 +98,15 @@ class ProductRepository extends HintedRepositoryBase
             ->getResult();
     }
 
-
+    /**
+     * @deprecated Use function in AvailabilityRepository directly
+     *
+     * @param Product $product
+     * @return Availability|null
+     */
     public function findAvailabilityByProduct(Product $product): ?Availability
     {
-        $productAvailability = null;
-        foreach ($product->getProductVariants() as $variant) {
-            $variantAvailability = $variant->getAvailability();
-            if (!$productAvailability || $variantAvailability->getSequence() < $productAvailability->getSequence()){
-                $productAvailability = $variantAvailability;
-            }
-        }
-        return $productAvailability;
+        return $this->getEntityManager()->getRepository(Availability::class)->getAvailabilityForProduct($product->getId());
     }
 
     public function findTopSellingProducts(array $products, int $limit): array
@@ -374,11 +374,18 @@ class ProductRepository extends HintedRepositoryBase
     public function findProductsInCategory(QueryBuilder $qb, int $categoryId): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
-        $this->safeJoin($qb, $alias, 'categoryProducts', 'cp'); 
-        $this->safeJoin($qb, 'cp', 'category', 'ca'); 
-        $this->safeJoin($qb, 'ca', 'categorySubCategories', 'cc'); 
-        $qb->andWhere('cp.category = :categoryId OR cc.category_super = :categoryId');
-        $qb->setParameter('categoryId', $categoryId);
+
+        $categoryIds = $this->categoryRepository->findAllChildCategoryIds($categoryId);
+
+        $this->safeJoin($qb, $alias, 'categoryProducts', 'cp');
+        $qb->andWhere('cp.category IN (:categoryIds)')
+            ->setParameter('categoryIds', $categoryIds);
+
+        //$this->safeJoin($qb, $alias, 'categoryProducts', 'cp');
+        //$this->safeJoin($qb, 'cp', 'category', 'ca');
+        //$this->safeJoin($qb, 'ca', 'categorySubCategories', 'cc');
+        //$qb->andWhere('cp.category = :categoryId OR cc.category_super = :categoryId');
+        //$qb->setParameter('categoryId', $categoryId);
 
         return $qb;
     }
@@ -595,7 +602,7 @@ class ProductRepository extends HintedRepositoryBase
     }
 
 
-    public function mainProductsFilter(array $filters): QueryBuilder
+    public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
     {
         if (!isset($filters['categoryId'])) $filters['categoryId'] = 0;
 
@@ -605,6 +612,8 @@ class ProductRepository extends HintedRepositoryBase
 
         if (!isset($filters['discounts'])) $filters['discounts'] = false;
         if (!isset($filters['isStockOnly'])) $filters['isStockOnly'] = false;
+
+        if (!isset($filters['externalId'])) $filters['externalId'] = false;
 
 
         $availableOrderByIds = ['name', 'price', 'rating', 'default'];
@@ -631,6 +640,9 @@ class ProductRepository extends HintedRepositoryBase
             ->andWhere('p.isVisible = :visible')
             ->setParameter('visible', true)
         ;
+        if ($count){
+            $qb->select("COUNT(p.id)");
+        }
 
         if ($filters['categoryId'] > 0) {
             $this->findProductsInCategory($qb, $filters['categoryId']);
@@ -650,10 +662,21 @@ class ProductRepository extends HintedRepositoryBase
             $this->findDiscountedProducts($qb);
         }
 
+        if ($filters['externalId']) {
+            $qb->andWhere('p.externalId LIKE :externalId')
+                ->setParameter('externalId', $filters['externalId'] . '%')
+            ;
+        }
+
         if (count($filters['selectedParameters']) > 0) {
             $this->productsByParameters($qb, $filters['selectedParameters']);
         }
 
+        if ($count){
+            return $qb;
+        }
+
+        //this DOES NOT filter out only inStock product, but sorts them at the end
         if ($filters['isStockOnly']) {
             $this->sortProductsByAvailability($qb);
         }
@@ -677,6 +700,7 @@ class ProductRepository extends HintedRepositoryBase
                 $this->sortProductsBySequence($qb, 'DESC');
                 break;
         }
+
 
         $qb->addOrderBy('p.id', 'DESC');
 

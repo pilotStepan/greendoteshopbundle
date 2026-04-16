@@ -219,6 +219,7 @@ final class InvoiceDataFactory
             priceSecondary:         $priceVatSecondary,
             priceNoVat:             $priceNoVatPrimary,
             priceNoVatSecondary:    $priceNoVatSecondary,
+            branchName:             $purchase->getBranch()?->getName(),
         );
     }
 
@@ -300,6 +301,11 @@ final class InvoiceDataFactory
         $clientName = $client->getName();
         $clientSurname = $client->getSurname();
         $country = $this->countryRepository->findByCode($purchaseAddress->getCountry())?->getDescription() ?? $purchaseAddress->getCountry();
+        if ($purchaseAddress->getShipCountry()) {
+            $shipCountry = $this->countryRepository->findByCode($purchaseAddress->getShipCountry())?->getDescription() ?? $purchaseAddress->getShipCountry();
+        } else {
+            $shipCountry = null;
+        }
 
         return new InvoicePersonData(
             $purchaseAddress->getCompany(),
@@ -310,6 +316,15 @@ final class InvoiceDataFactory
             $country,
             $purchaseAddress->getIc(),
             $purchaseAddress->getDic(),
+            $purchaseAddress->getShipName(),
+            $purchaseAddress->getShipSurname(),
+            $purchaseAddress->getShipCompany(),
+            $purchaseAddress->getShipStreet(),
+            $purchaseAddress->getShipZip(),
+            $purchaseAddress->getShipCity(),
+            $shipCountry,
+            $purchaseAddress->getShipIc(),
+            $purchaseAddress->getShipDic(),
             $client->getPhone(),
             $client->getMail(),
         );

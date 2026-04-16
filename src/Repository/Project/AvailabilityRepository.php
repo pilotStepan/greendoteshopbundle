@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Greendot\EshopBundle\Entity\Project\Availability;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\Product;
 
 /**
  * @extends ServiceEntityRepository<Availability>
@@ -37,5 +38,19 @@ class AvailabilityRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function getAvailabilityForProduct(Product|int $product): ?Availability
+    {
+        if ($product instanceof Product) $product = $product->getId();
+
+        return $this->createQueryBuilder('availability')
+            ->leftJoin('availability.productVariants', 'productVariant')
+            ->where('productVariant.product = :product')
+            ->setParameter('product', $product)
+            ->orderBy('availability.sequence', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }
