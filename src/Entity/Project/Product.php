@@ -255,6 +255,9 @@ class Product implements Translatable
     #[ApiProperty]
     #[Groups(['product_item:read', 'product_list:read', 'product_product:read'])]
     private array $calculatedPrices = [];
+
+    #[ORM\Column(nullable: true)]
+    private ?array $additionalData = null;
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -868,6 +871,18 @@ class Product implements Translatable
     public function setProductViewType(?ProductViewType $productViewType): static
     {
         $this->productViewType = $productViewType;
+
+        return $this;
+    }
+
+    public function getAdditionalData(): ?array
+    {
+        return $this->additionalData;
+    }
+
+    public function setAdditionalData(?array $additionalData): static
+    {
+        $this->additionalData = $additionalData;
 
         return $this;
     }
