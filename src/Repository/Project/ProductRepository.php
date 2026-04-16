@@ -630,6 +630,18 @@ class ProductRepository extends HintedRepositoryBase
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.isVisible = :visible')
             ->setParameter('visible', true)
+            // ->leftJoin('p.productVariants', 'pv')
+            // ->addSelect('pv')         
+            // ->leftJoin('pv.parameters', 'pa')
+            // ->addSelect('pa')          
+            // ->leftJoin("p.labels", "l")
+            // ->addSelect("l")
+            // ->leftJoin("p.productParameterGroups", "ppg")
+            // ->addSelect("ppg")
+            // ->leftJoin("ppg.parameterGroup", "pg")
+            // ->addSelect("pg")
+            // ->leftJoin("pg.parameter", "pr")
+            // ->addSelect("pr")
         ;
 
         if ($filters['categoryId'] > 0) {
@@ -699,6 +711,39 @@ class ProductRepository extends HintedRepositoryBase
 
 
         return $qb;
+    }
+
+    public function primeProductList(array $productIds)
+    {
+        $this->createQueryBuilder('p')
+            ->addSelect('alias')
+            ->leftJoin('p.labels', 'alias')
+            ->where('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        $this->createQueryBuilder('p')
+            ->addSelect('alias')
+            ->leftJoin('p.productParameterGroups', 'alias')
+            ->where('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        $this->createQueryBuilder('p')
+            ->leftJoin('p.productVariants', 'pv')
+            ->addSelect('pv')
+            ->leftJoin('pv.parameters', 'par')
+            ->addSelect('par')
+            // ->leftJoin('par.parameterGroup', 'parg')
+            // ->addSelect('parg')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->andWhere('pv.isActive = true')
+            ->getQuery()
+            ->getResult();
+        
     }
 
 }

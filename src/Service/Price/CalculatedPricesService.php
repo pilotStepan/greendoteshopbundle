@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -62,9 +63,10 @@ class CalculatedPricesService
     /**
      * Sets the calculated prices matrix for product from the cheapest variant.
      */
-    public function makeCalculatedPricesForProduct(
+     public function makeCalculatedPricesForProduct(
         Product $product,
-        ?ProductVariantPriceContext $context = null
+        ?ProductVariantPriceContext $context = null,
+        ?Price $cheapestPrice = null,
     ) : Product
     {
         if (!empty($product->getCalculatedPrices())){
@@ -72,7 +74,12 @@ class CalculatedPricesService
         }
         $context = $this->resolveVariantContext($context);
 
-        $productVariantPrice = $this->findCheapestVariantPriceForProduct($product, $context);
+        if (!$cheapestPrice) {
+            $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        }
+
+        $productVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
+        
         if (!$productVariantPrice)
         {
             return $product;
