@@ -80,13 +80,8 @@ class BreadcrumbsMaker
 
     public function makeEntityBreadCrumb(PagableInterface $entity) 
     {
-        $name = $entity->getName();
-        if ($entity instanceof Comment) {
-            $name = $entity->getTitle();
-        }
-
         return new BreadCrumb(
-            name: $name,
+            name: $this->getEntityName($entity),
             link: $this->getEntityUrl($entity),
         );
     }
@@ -94,6 +89,15 @@ class BreadcrumbsMaker
     public function mapEntitiesToBreadCrumbArray(array $entities) : array
     {
         return array_map(fn($e) => $this->makeEntityBreadCrumb($e), $entities);
+    }
+
+    public function getEntityName(PagableInterface $entity) : string
+    {
+        $name = $entity->getName();
+        if ($entity instanceof Comment) {
+            $name = $entity->getTitle();
+        }
+        return $name;
     }
 
     public function getEntityUrl(PagableInterface $entity) : string
