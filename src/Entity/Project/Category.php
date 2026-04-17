@@ -20,6 +20,7 @@ use Exception;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Greendot\EshopBundle\Entity\Interface\PagableInterface;
 use Greendot\EshopBundle\Enum\SpecialCategoryEnum;
 use Symfony\Component\Serializer\Annotation\MaxDepth;
 use Symfony\Component\Validator\Constraints\Existence;
@@ -53,7 +54,7 @@ use Symfony\Component\Validator\Constraints\Existence;
 #[ApiFilter(OrderFilter::class, strategy: OrderFilter::NULLS_ALWAYS_LAST, properties: ['published_at'])]
 #[ApiFilter(CategorySuperFilter::class, properties: ['category_most_super'])]
 #[ApiFilter(CategoryHasProductsFilter::class, properties: ['has_products'])]
-class Category implements Translatable
+class Category implements Translatable, PagableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -2,11 +2,14 @@
 
 namespace Greendot\EshopBundle\Controller;
 
+use Dom\Comment;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Person;
+use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\PersonRepository;
+use Greendot\EshopBundle\Service\BreadcrumbsMaker;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -14,7 +17,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 class FragmentController extends AbstractController
 {
@@ -24,6 +27,7 @@ class FragmentController extends AbstractController
     {
     }
 
+    /** @deprecated use the /fragment/breadcrumbs/entity/{entity} routes instead  */
     #[CustomApiEndpoint]
     #[Route('/_fragment/breadCrumbs/category-{category}/json-{json}', name: 'fragment_category_breadCrumbs', options: ['expose' => true], defaults: ['product' => null, 'json' => false])]
     #[Route('/_fragment/breadCrumbs/product-{product}/json-{json}', name: 'fragment_product_breadCrumbs', options: ['expose' => true], defaults: ['category' => null, 'json' => false])]
@@ -51,6 +55,61 @@ class FragmentController extends AbstractController
 
         return ($json ? new JsonResponse($html->getContent(), 200) : $html);
     }
+
+
+    #[CustomApiEndpoint]
+    #[Route(
+        '/fragment/breadcrumbs/category/{category}.{_format}', 
+        name: 'app_fragment_breadcrumbs_category', 
+        defaults: ['_format' => 'html'], 
+        requirements: ['_format' => 'html|json'],
+        options: ['expose' => true]
+    )]
+    #[Route(
+        '/fragment/breadcrumbs/product/{product}.{_format}', 
+        name: 'app_fragment_breadcrumbs_product', 
+        defaults: ['_format' => 'html'], 
+        requirements: ['_format' => 'html|json'],
+        options: ['expose' => true]
+    )]
+    #[Route(
+        '/fragment/breadcrumbs/producer/{producer}.{_format}', 
+        name: 'app_fragment_breadcrumbs_producer', 
+        defaults: ['_format' => 'html'], 
+        requirements: ['_format' => 'html|json'],
+        options: ['expose' => true]
+    )]
+    #[Route(
+        '/fragment/breadcrumbs/comment/{comment}.{_format}', 
+        name: 'app_fragment_breadcrumbs_comment', 
+        defaults: ['_format' => 'html'], 
+        requirements: ['_format' => 'html|json'],
+        options: ['expose' => true]
+    )]
+    public function getBreadcrumbs(
+        #[MapEntity(mapping: ['category' => 'id'])] ?Category $category,
+        #[MapEntity(mapping: ['product' => 'id'])] ?Product $product, 
+        #[MapEntity(mapping: ['producer' => 'id'])] ?Producer $producer, 
+        #[MapEntity(mapping: ['comment' => 'id'])] ?Comment $comment, 
+        string $_format,
+        BreadcrumbsMaker $breadcrumbsMaker, 
+        Request $request
+    ): Response {
+        $entity = $category ?? $product ?? $producer ?? $comment;
+
+        $breadCrumbs = $breadcrumbsMaker->makeEntityBreadCrumbsArray($entity);
+
+        $html =  $this->render('components/fragment-breadcrumbs.html.twig', [
+            'breadcrumbs' => $breadCrumbs,
+        ]);
+
+        if ($_format === 'json') {
+            return new JsonResponse($html->getContent());
+        }
+
+        return $html;
+    }
+
 
     #[Route('/_assistant-box/category-{category}', name:'fragment_assistant_box', options:['expose' => true], priority: 50)]
     public function fragmentAssistantBox(
