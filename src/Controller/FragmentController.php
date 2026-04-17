@@ -2,12 +2,12 @@
 
 namespace Greendot\EshopBundle\Controller;
 
-use Dom\Comment;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\Comment;
 use Greendot\EshopBundle\Repository\Project\PersonRepository;
 use Greendot\EshopBundle\Service\BreadcrumbsMaker;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
