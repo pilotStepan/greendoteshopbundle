@@ -20,6 +20,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Entity\Interface\PagableInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
@@ -40,7 +41,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiFilter(SearchFilter::class, properties: ['title' => 'partial'])]
 #[ApiFilter(OrderFilter::class, properties: ['submitted'])]
 #[ApiFilter(MultipleFilter::class, properties: ['categories', 'products'])]
-class Comment
+class Comment implements PagableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -350,12 +351,12 @@ class Comment
         return $this;
     }
 
-    public function getSlug() : ?string
+    public function getSlug() : string
     {
-        return $this->slug;
+        return $this->slug ??  $this->getId();
     }
 
-    public function setSlug(?string $slug): self
+    public function setSlug(string $slug): self
     {
         $this->slug = $slug;
 

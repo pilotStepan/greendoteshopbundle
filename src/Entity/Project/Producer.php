@@ -13,15 +13,15 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
-use Greendot\EshopBundle\ApiResource\ProducerSearchFilter;
+use Greendot\EshopBundle\ApiResource\ProducerCategoryFilter;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Entity\Interface\PagableInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 
-#[ApiFilter(ProducerSearchFilter::class)]
 #[ApiResource(
     operations: [
         new GetCollection(),
@@ -34,8 +34,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['producer_info:read']],
     paginationClientItemsPerPage: true
 )]
+#[ApiFilter(filterClass: ProducerCategoryFilter::class, properties: ['category_id'])]
 #[ORM\Entity(repositoryClass: ProducerRepository::class)]
-class Producer implements Translatable
+class Producer implements Translatable, PagableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -29,6 +29,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Greendot\EshopBundle\Entity\Interface\PagableInterface;
 use Greendot\EshopBundle\StateProvider\ProductItemStateProvider;
 use Greendot\EshopBundle\StateProvider\ProductStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -74,7 +75,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiFilter(ProductFilterByReviews::class)]
 #[ApiFilter(ProductFilterByDiscount::class)]
 //#[ApiFilter(ProductPriceRangeFilter::class)]
-class Product implements Translatable
+class Product implements Translatable, PagableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -255,6 +256,9 @@ class Product implements Translatable
     #[ApiProperty]
     #[Groups(['product_item:read', 'product_list:read', 'product_product:read'])]
     private array $calculatedPrices = [];
+
+    #[ORM\Column(nullable: true)]
+    private ?array $additionalData = null;
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -868,6 +872,18 @@ class Product implements Translatable
     public function setProductViewType(?ProductViewType $productViewType): static
     {
         $this->productViewType = $productViewType;
+
+        return $this;
+    }
+
+    public function getAdditionalData(): ?array
+    {
+        return $this->additionalData;
+    }
+
+    public function setAdditionalData(?array $additionalData): static
+    {
+        $this->additionalData = $additionalData;
 
         return $this;
     }
