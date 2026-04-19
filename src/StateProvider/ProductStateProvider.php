@@ -38,8 +38,8 @@ readonly class ProductStateProvider implements ProviderInterface
     {
         $this->listenerManager->disableAll([
             ProductEventListener::class,
-            ProductVariantEventListener::class,
-            ParameterEventListener::class
+            // ProductVariantEventListener::class,
+            // ParameterEventListener::class
         ]);
         $start= microtime(true);
         $stamps = [];
