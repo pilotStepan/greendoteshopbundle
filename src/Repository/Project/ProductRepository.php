@@ -86,6 +86,7 @@ class ProductRepository extends HintedRepositoryBase
         return $parametersQB->getQuery()->getArrayResult();
     }
 
+
     public function findProductsByProducer(int $producerId): array
     {
         return $this->createQueryBuilder('p')
@@ -637,6 +638,7 @@ class ProductRepository extends HintedRepositoryBase
         }
 
         $qb = $this->createQueryBuilder('p')
+            ->select('p.id')
             ->andWhere('p.isVisible = :visible')
             ->setParameter('visible', true)
             // ->leftJoin('p.productVariants', 'pv')
@@ -716,57 +718,57 @@ class ProductRepository extends HintedRepositoryBase
 
         $qb->addOrderBy('p.id', 'DESC');
 
-        $limit = isset($filters['itemsPerPage']) ? (int)$filters['itemsPerPage'] : 30;
-        if ($limit <= 0) {
-            $limit = 30;
-        }
-        if ($limit > 200) {
-            $limit = 200;
-        }
-
-        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
-        if ($page <= 0) {
-            $page = 1;
-        }
-
-        $offset = ($page - 1) * $limit;
-        $qb->setMaxResults($limit);
-        $qb->setFirstResult($offset);
-
-
         return $qb;
     }
 
     public function primeProductList(array $productIds)
     {
-        $this->createQueryBuilder('p')
-            ->addSelect('alias')
-            ->leftJoin('p.labels', 'alias')
-            ->where('p.id IN (:ids)')
-            ->setParameter('ids', $productIds)
-            ->getQuery()
-            ->getResult();
-
-        $this->createQueryBuilder('p')
-            ->addSelect('alias')
-            ->leftJoin('p.productParameterGroups', 'alias')
-            ->where('p.id IN (:ids)')
-            ->setParameter('ids', $productIds)
-            ->getQuery()
-            ->getResult();
-
-        $this->createQueryBuilder('p')
-            ->leftJoin('p.productVariants', 'pv')
-            ->addSelect('pv')
-            ->leftJoin('pv.parameters', 'par')
-            ->addSelect('par')
-            // ->leftJoin('par.parameterGroup', 'parg')
-            // ->addSelect('parg')
+        $products =  $this->createQueryBuilder('p')
             ->andWhere('p.id IN (:ids)')
             ->setParameter('ids', $productIds)
-            ->andWhere('pv.isActive = true')
             ->getQuery()
             ->getResult();
+
+        $this->createQueryBuilder('p')
+            ->addSelect('l')
+            ->leftJoin('p.labels', 'l')
+            ->addSelect('pprg')
+            ->leftJoin('p.productParameterGroups', 'pprg')
+            ->andWhere('p.id IN (:ids)')
+            ->addSelect('pug')
+            ->leftJoin('p.productUploadGroups', 'pug')
+            ->addSelect('ug')
+            ->leftJoin('pug.UploadGroup', 'ug')
+            ->addSelect('u')
+            ->leftJoin('ug.upload', 'u')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        $this->createQueryBuilder('p')
+            ->addSelect('pv')
+            ->leftJoin('p.productVariants', 'pv')
+            ->leftJoin('pv.parameters', 'pr')
+            ->addSelect('pr')
+            ->addSelect('pvug')
+            ->leftJoin('pv.productVariantUploadGroups', 'pvug')
+            ->addSelect('ug')
+            ->leftJoin('pvug.UploadGroup', 'ug')
+            ->addSelect('u')
+            ->leftJoin('ug.upload', 'u')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        return $products;
+        //     // ->leftJoin('par.parameterGroup', 'parg')
+        //     // ->addSelect('parg')
+        //     ->andWhere('p.id IN (:ids)')
+        //     ->setParameter('ids', $productIds)
+        //     ->andWhere('pv.isActive = true')
+        //     ->getQuery()
+        //     ->getResult();
         
     }
 
