@@ -21,6 +21,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Availability;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -31,6 +32,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class ProductRepository extends HintedRepositoryBase
 {
     use SafeJoin;
+    use WorkflowPlaceFilterTrait;
 
     public function __construct(
         ManagerRegistry                     $registry,
@@ -573,15 +575,13 @@ class ProductRepository extends HintedRepositoryBase
             ->join('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pv', Join::WITH, 'pv.product = p.id')
             ->join('Greendot\EshopBundle\Entity\Project\PurchaseProductVariant', 'ppv', Join::WITH, 'ppv.ProductVariant = pv.id')
             ->join('Greendot\EshopBundle\Entity\Project\Purchase', 'pu', Join::WITH, 'ppv.purchase = pu.id')
-            ->where('pu.date_invoiced >= :startDate')
-            ->andWhere('pu.date_invoiced <= :endDate')
-            ->andWhere('pu.state NOT IN (:excludedStates)')
+            ->where('pu.date_invoiced >= :startDate')->setParameter('startDate', $startDate)
+            ->andWhere('pu.date_invoiced <= :endDate')->setParameter('endDate', $endDate)
+        ;
+        return $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART)
             ->groupBy('p.id')
-            ->setParameter('startDate', $startDate)
-            ->setParameter('endDate', $endDate)
-            ->setParameter('excludedStates', ['draft', 'new']);
-
-        return $qb->getQuery()->getResult();
+            ->getQuery()->getResult()
+        ;
     }
 
     /**

@@ -5,7 +5,6 @@ namespace Greendot\EshopBundle\Controller\Shop;
 use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Workflow\Registry;
 use Greendot\EshopBundle\Form\ClientFormType;
 use Symfony\Component\HttpFoundation\Request;
 use Greendot\EshopBundle\Service\ManageMails;
@@ -16,6 +15,7 @@ use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,10 +24,12 @@ use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -39,7 +41,8 @@ class PurchaseController extends AbstractController
         Request                $request,
         GPWebpay               $gpWebpay,
         EntityManagerInterface $entityManager,
-        Registry               $workflowRegistry,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
         PurchaseUrlGenerator   $urlGenerator,
         LoggerInterface        $logger,
     ): Response
@@ -59,14 +62,12 @@ class PurchaseController extends AbstractController
             $isOk = ($gatewayResponse->getPRCODE() === 0) && ($gatewayResponse->getSRCODE() === 0);
 
             // Update workflow state
-            $workflow = $workflowRegistry->get($purchase);
-            $transition = $isOk ? 'payment' : 'payment_issue';
-            $workflow->apply($purchase, $transition);
+            $transition = $isOk ? PWC::T_PAY_PAY->value : PWC::T_PAY_FAIL->value;
+            $purchaseWorkflow->apply($purchase, $transition);
             $entityManager->flush();
 
             return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
         } catch (Throwable $e) {
-
             $logger->error('Error during order verification', [
                 'purchaseId' => $purchase?->getId(),
                 'paymentId' => $paymentId,
@@ -76,10 +77,10 @@ class PurchaseController extends AbstractController
 
             if ($purchase) {
                 try {
-                    $workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
+                    $purchaseWorkflow->apply($purchase, PWC::T_PAY_FAIL->value);
                     $entityManager->flush();
                 } catch (Throwable $inner) {
-                    $logger->error('Failed to apply payment_issue transition after verification error', [
+                    $logger->error('Failed to apply pay_fail transition after verification error', [
                         'purchaseId' => $purchase->getId(),
                         'paymentId' => $paymentId,
                         'exception' => $inner::class,
@@ -101,7 +102,8 @@ class PurchaseController extends AbstractController
         Request                $request,
         RequestStack           $requestStack,
         PurchaseRepository     $purchaseRepository,
-        Registry               $workflow,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
         EntityManagerInterface $entityManager,
     ): Response
     {
@@ -111,15 +113,13 @@ class PurchaseController extends AbstractController
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
-        $flow = $workflow->get($purchase);
-        if ($purchase->getState() == 'draft') {
-            $flow->apply($purchase, 'create');
+        if (!$purchaseWorkflow->can($purchase, PWC::T_CANCEL->value)) {
+            $this->addFlash('error', 'Nelze zrušit tuto objednávku.');
+            return $this->redirectToRoute($redirectRoute);
         }
-        if ($flow->can($purchase, 'cancellation')) {
-            $flow->apply($purchase, 'cancellation');
-            $entityManager->flush();
 
-        }
+        $purchaseWorkflow->apply($purchase, PWC::T_CANCEL->value);
+        $entityManager->flush();
 
         $session = $requestStack->getSession();
         if ($session->has('purchase')) {
@@ -233,7 +233,7 @@ class PurchaseController extends AbstractController
     }
 
     #[Route('/api/purchase/{id}/continue', name: 'purchase_continue')]
-    public function setDraftAsCart(
+    public function purchaseContinue(
         Purchase         $purchase,
         SessionInterface $session,
         Request          $request,
@@ -248,11 +248,10 @@ class PurchaseController extends AbstractController
             throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
         }
 
-        // Check if state is 'draft'
-        if ($purchase->getState() !== 'draft') {
-            throw new BadRequestHttpException("Purchase ID {$purchase->getId()} is not in draft state.");
+        // Check if state is not 'cart'
+        if (!$purchase->hasPlace(PWC::S_CART->value)) {
+            throw new BadRequestHttpException("Purchase ID {$purchase->getId()} is not in cart state.");
         }
-
 
         // Check if purchase is valid
         if (!$managePurchase->isPurchaseValid($purchase)) {
@@ -274,6 +273,8 @@ class PurchaseController extends AbstractController
         Request                $request,
         ManagePurchase         $managePurchase,
         EntityManagerInterface $entityManager,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface $purchaseFlow,
     ): RedirectResponse
     {
         // Check user login and ownership
@@ -292,8 +293,8 @@ class PurchaseController extends AbstractController
         // set cart purchase
         $cartPurchase = new Purchase();
         $cartPurchase->setDateIssue(new \DateTime());
-        $cartPurchase->setState('draft');
         $cartPurchase->setClient($user);
+        $purchaseFlow->apply($cartPurchase, PWC::T_INIT_CART->value);
 
         // Put product variants to cart
         $purchaseProductVariants = $purchase->getProductVariants();

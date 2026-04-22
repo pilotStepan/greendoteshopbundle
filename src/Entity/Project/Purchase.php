@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
+use Doctrine\DBAL\Types\Types;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -24,6 +25,7 @@ use Greendot\EshopBundle\StateProvider\PurchaseStateProvider;
 use Greendot\EshopBundle\StateProvider\PurchaseWishlistStateProvider;
 use Greendot\EshopBundle\Validator\Constraints\ClientDiscountAvailability;
 use Greendot\EshopBundle\Validator\Constraints\TransportationPaymentAvailability;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
@@ -106,9 +108,20 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $date_delivery;
 
+    /**
+     * @deprecated use marking field instead
+     */
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $state = "draft";
+
+    #[ORM\Column(type: Types::JSON)]
+    #[Groups(['purchase:read'])]
+    private array $marking = ['draft' => 1];
+
+    #[ORM\Column(type: Types::JSON)]
+    #[Groups(['purchase:read'])]
+    private array $workflowFlags = [];
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -354,11 +367,18 @@ class Purchase
         return $this;
     }
 
+
+    /**
+     * @deprecated use marking field instead
+     */
     public function getState(): ?string
     {
         return $this->state;
     }
 
+    /**
+     * @deprecated use marking field instead
+     */
     public function setState(string $state): self
     {
         $this->state = $state;
@@ -982,5 +1002,70 @@ class Purchase
     {
         $this->calculatedPrices = $calculatedPrices;
         return $this;
+    }
+
+    public function getMarking(): array
+    {
+        return $this->marking;
+    }
+
+    public function setMarking(array $marking): void
+    {
+        $this->marking = $marking;
+    }
+
+    public function hasPlace(string $place): bool
+    {
+        return isset($this->marking[$place]);
+    }
+
+    public function hasAnyPlace(string ...$places): bool
+    {
+        foreach ($places as $place) {
+            if (isset($this->marking[$place])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function hasAllPlaces(string ...$places): bool
+    {
+        foreach ($places as $place) {
+            if (!isset($this->marking[$place])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public function getWorkflowFlags(): array
+    {
+        return $this->workflowFlags;
+    }
+
+    public function setWorkflowFlags(array $workflowFlags): void
+    {
+        $this->workflowFlags = $workflowFlags;
+    }
+
+    public function getWorkflowFlag(string $key): bool
+    {
+        return (bool) ($this->workflowFlags[$key] ?? false);
+    }
+
+    public function assignWorkflowFlag(string $key): void
+    {
+        $this->workflowFlags[$key] = 1;
+    }
+
+    public function clearWorkflowFlag(string $key): void
+    {
+        unset($this->workflowFlags[$key]);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->getWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
     }
 }

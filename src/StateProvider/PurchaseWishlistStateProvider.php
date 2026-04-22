@@ -5,25 +5,28 @@ namespace Greendot\EshopBundle\StateProvider;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Workflow\Registry;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Response;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseWishlistStateProvider implements ProviderInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
         private PurchaseRepository     $purchaseRepository,
-        private Registry               $workflowRegistry,
         private Security               $security,
         private RequestStack           $requestStack,
         private WishlistService        $wishlistService,
+        #[Target(PWC::NAME->value)]
+        private WorkflowInterface      $purchaseFlow,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): Purchase
@@ -50,19 +53,13 @@ readonly class PurchaseWishlistStateProvider implements ProviderInterface
     {
         $wishlist = (new Purchase())
             ->setDateIssue(new \DateTime())
-            ->setState('draft')
             ->setClient($client)
         ;
 
+        $this->purchaseFlow->apply($wishlist, PWC::T_INIT_WISHLIST->value);
+
         $this->em->persist($wishlist);
         $this->em->flush();
-
-        // Change purchase to 'wishlist' state after creation
-        $workflow = $this->workflowRegistry->get($wishlist);
-        if ($workflow->can($wishlist, 'create_wishlist')) {
-            $workflow->apply($wishlist, 'create_wishlist');
-            $this->em->flush();
-        }
 
         return $wishlist;
     }

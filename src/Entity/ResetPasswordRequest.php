@@ -3,7 +3,7 @@
 namespace Greendot\EshopBundle\Entity;
 
 use Greendot\EshopBundle\Entity\Project\Client;
-use App\Repository\ResetPasswordRequestRepository;
+use Greendot\EshopBundle\Repository\ResetPasswordRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordRequestInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordRequestTrait;

@@ -1,17 +1,20 @@
 <?php
 
-namespace Greendot\EshopBundle\Sms;
+declare(strict_types=1);
 
-use Exception;
-use Throwable;
+namespace Greendot\EshopBundle\Notification\Handler;
+
 use Psr\Log\LoggerInterface;
 use Neogate\SmsConnect\SmsConnect;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Sms\Factory\OrderTransitionSmsFactoryInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
+use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
+use Greendot\EshopBundle\Notification\Sms\OrderTransitionSmsFactoryInterface;
 
+#[AsTaggedItem(index: 'purchase_notification.customer_sms')]
 #[WithMonologChannel('notification.sms')]
-readonly class ManageSms
+final readonly class CustomerSmsHandler implements PurchaseNotificationHandlerInterface
 {
     public function __construct(
         private SmsConnect                         $client,
@@ -19,15 +22,16 @@ readonly class ManageSms
         private LoggerInterface                    $logger,
     ) {}
 
-    /**
-     * @throws Exception
-     */
-    public function sendOrderTransitionSms(Purchase $purchase, string $transition): void
+    public function handle(Purchase $purchase, string $transition): void
     {
         try {
             $message = $this->orderTransitionSmsFactory->create($purchase, $transition);
-            $this->client->sendSms($message->phone, $message->text, sender: $message->sender);
-        } catch (Throwable $e) {
+            $this->client->sendSms(
+                $message->phone,
+                $message->text,
+                sender: $message->sender,
+            );
+        } catch (\Throwable $e) {
             $this->logger->critical('SMS sending failed', [
                 'purchase' => $purchase->getId(),
                 'transition' => $transition,

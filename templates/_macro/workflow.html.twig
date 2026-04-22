@@ -1,0 +1,44 @@
+{% macro purchase_status(purchase, mode = 'compact') %}
+    {% set tracks = get_places_metadata_by_track(purchase) %}
+
+    {% if mode == 'compact' %}
+        {% set parts = [] %}
+        {% for track, meta in tracks %}
+            {% set parts = parts|merge([meta.customer_label]) %}
+        {% endfor %}
+        <span class="purchase-status purchase-status--{{ purchase.state }}">
+              {{ parts|join(' / ') }}
+          </span>
+
+    {% elseif mode == 'badges' %}
+        <span class="purchase-status-group">
+              {% for track, meta in tracks %}
+                  <span class="purchase-status-badge purchase-status-badge--{{ track }}"
+                        style="color: {{ meta.simple_color }}">
+                      {{ meta.customer_label }}
+                  </span>
+              {% endfor %}
+          </span>
+
+    {% elseif mode == 'full' %}
+        <div class="purchase-status-tracks">
+            {% if tracks.logistics is defined %}
+                <div class="purchase-status-track purchase-status-track--logistics">
+                    <small>Logistika</small>
+                    {{ tracks.logistics.customer_label }}
+                </div>
+            {% endif %}
+            {% if tracks.payment is defined %}
+                <div class="purchase-status-track purchase-status-track--payment">
+                    <small>Platba</small>
+                    {{ tracks.payment.customer_label }}
+                </div>
+            {% endif %}
+            {% if tracks._default is defined %}
+                <div class="purchase-status-track">
+                    {{ tracks._default.customer_label }}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endmacro %}

@@ -10,9 +10,9 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use ApiPlatform\Metadata\Operation;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
-use Symfony\Component\Workflow\Registry;
 use ApiPlatform\State\ProcessorInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -21,17 +21,17 @@ use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
+use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Greendot\EshopBundle\Service\AffiliateService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
-use Greendot\EshopBundle\EventSubscriber\PurchaseEventListener;
-use Greendot\EshopBundle\Service\ListenerManager;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Greendot\EshopBundle\EventSubscriber\PurchaseEventListener;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use function count;
 use function is_array;
@@ -40,17 +40,17 @@ use function is_array;
 final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface  $em,
-        private Registry                $workflowRegistry,
-        private Security                $security,
-        private ValidatorInterface      $validator,
-        private LoggerInterface         $logger,
-        private RequestStack            $requestStack,
-        private PaymentGatewayProvider  $gatewayProvider,
-        private PurchaseUrlGenerator    $urlGenerator,
-        private ManagePurchase          $managePurchase,
-        private AffiliateService        $affiliateService,
-        private ListenerManager         $listenerManager,
+        private EntityManagerInterface $em,
+        #[Target(PurchaseWorkflowContract::NAME->value)]
+        private WorkflowInterface      $purchaseWorkflow,
+        private Security               $security,
+        private ValidatorInterface     $validator,
+        private LoggerInterface        $logger,
+        private RequestStack           $requestStack,
+        private PaymentGatewayProvider $gatewayProvider,
+        private PurchaseUrlGenerator   $urlGenerator,
+        private ManagePurchase         $managePurchase,
+        private ListenerManager        $listenerManager,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
@@ -86,11 +86,6 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
                 throw new InvalidArgumentException('Košík nenalezen');
             }
-
-            $this->logger->debug('Checkout purchase loaded', [
-                'purchaseId' => $purchase->getId(),
-                'currentState' => method_exists($purchase, 'getState') ? $purchase->getState() : null,
-            ]);
 
             // 2. Validate provided consents exist and store them
             $consentIds = is_array($data->consents ?? null) ? $data->consents : [];
@@ -149,24 +144,13 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                     'notesCount' => count($notes),
                 ]);
 
-                // 7. Affiliate
-                $this->affiliateService->setAffiliateToPurchase($purchase);
-
-                $this->logger->debug('Checkout affiliate processed', [
+                // 7. Workflow transition
+                $this->logger->info('Checkout applying workflow transition', [
                     'purchaseId' => $purchase->getId(),
+                    'transition' => PurchaseWorkflowContract::T_CHECKOUT->value,
                 ]);
 
-                // 8. Workflow transitions
-                $purchaseWorkflow = $this->workflowRegistry->get($purchase);
-
-                $this->logger->info('Checkout applying workflow transitions', [
-                    'purchaseId' => $purchase->getId(),
-                    'transitions' => ['create', 'receive'],
-                ]);
-
-                $this->logger->debug('Applying transitions... (create, receive)');
-                $this->applyTransition($purchaseWorkflow, $purchase, 'create');
-                $this->applyTransition($purchaseWorkflow, $purchase, 'receive');
+                $this->applyTransition($purchase, PurchaseWorkflowContract::T_CHECKOUT->value);
             });
 
             $this->logger->info('Checkout DB transaction committed', [
@@ -305,10 +289,10 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         return $note;
     }
 
-    private function applyTransition(WorkflowInterface $workflow, Purchase $purchase, string $transition): void
+    private function applyTransition(Purchase $purchase, string $transition): void
     {
-        if (!$workflow->can($purchase, $transition)) {
-            $blockers = iterator_to_array($workflow->buildTransitionBlockerList($purchase, $transition));
+        if (!$this->purchaseWorkflow->can($purchase, $transition)) {
+            $blockers = iterator_to_array($this->purchaseWorkflow->buildTransitionBlockerList($purchase, $transition));
             $errors = array_map(static fn($b) => $b->getMessage(), $blockers);
 
             $this->logger->warning('Checkout workflow transition blocked', [
@@ -320,7 +304,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             throw new LogicException(json_encode($errors));
         }
 
-        $workflow->apply($purchase, $transition);
+        $this->purchaseWorkflow->apply($purchase, $transition);
     }
 
     private function buildRedirectUrl(Purchase $purchase): string
@@ -366,7 +350,18 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
             return $url;
         } catch (Throwable $e) {
-            $this->workflowRegistry->get($purchase)->apply($purchase, 'payment_issue');
+            try {
+                $this->applyTransition(
+                    $purchase,
+                    PurchaseWorkflowContract::T_PAY_FAIL->value,
+                );
+            } catch (Throwable $transitionError) {
+                $this->logger->warning('Checkout could not apply pay_fail transition', [
+                    'purchaseId' => $purchase->getId(),
+                    'exceptionClass' => $transitionError::class,
+                    'message' => $transitionError->getMessage(),
+                ]);
+            }
 
             $this->logger->error('Checkout failed to get payment gateway link, falling back to endscreen', [
                 'purchaseId' => $purchase->getId(),

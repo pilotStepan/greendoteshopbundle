@@ -23,7 +23,7 @@ class MessageRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('d')
             ->where('TYPE(d) = :type')
-            ->setParameter('type', 'App\\Entity\\Project\\PurchaseDiscussion')
+            ->setParameter('type', 'Greendot\EshopBundle\\Entity\\Project\\PurchaseDiscussion')
             ->orderBy('d.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
@@ -36,7 +36,7 @@ class MessageRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('d')
             ->where('TYPE(d) = :type')
-            ->setParameter('type', 'App\\Entity\\Project\\PurchaseDiscussion')
+            ->setParameter('type', 'Greendot\EshopBundle\\Entity\\Project\\PurchaseDiscussion')
             ->andWhere('d.isRead = false')
             ->orderBy('d.createdAt', 'DESC')
             ->getQuery()

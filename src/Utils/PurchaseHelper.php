@@ -1,10 +1,10 @@
 <?php
 
-namespace Greendot\EshopBundle\Sms\Factory;
+namespace Greendot\EshopBundle\Utils;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 
-trait SmsFactoryTrait
+class PurchaseHelper
 {
     /**
      * Normalises "human" phone input to pure digits accepted by SMS clients.
@@ -13,7 +13,7 @@ trait SmsFactoryTrait
      * • Produce 420777123456 / 421903123456 / ... (no "+", no separators)
      * • Return null when the result is not a 10- to 15-digit E.164 number.
      */
-    private function processPhone(Purchase $purchase): ?string
+    public static function processPhone(Purchase $purchase): ?string
     {
         $client = $purchase->getClient();
         $rawPhone = $client?->getPhone();

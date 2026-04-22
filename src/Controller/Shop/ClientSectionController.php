@@ -169,18 +169,18 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     {
         $client = $clientRepository->find($this->getUser());
         $orders = $orderRepository->getClientPurchases($client);
-        $drafts = $orderRepository->getClientDrafts($client);
+        $carts = $orderRepository->getClientCarts($client);
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
 
-        foreach ($drafts as $draft) {
-            $managePurchase->preparePrices($draft);
+        foreach ($carts as $cart) {
+            $managePurchase->preparePrices($cart);
         }
 
         return $this->render('client-section/orders.html.twig', [
             'client' => $client,
             'orders' => $orders,
-            'drafts' => $drafts,
+            'drafts' => $carts,
             'pagination' => $pagination,
         ]);
     }
@@ -246,7 +246,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
         if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
 
-        $orders = $orderRepository->getClientDrafts($client);
+        $orders = $orderRepository->getClientCarts($client);
 
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
