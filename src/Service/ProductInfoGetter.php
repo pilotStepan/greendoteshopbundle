@@ -8,6 +8,7 @@ use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Repository\Project\CategoryProductRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
@@ -16,11 +17,12 @@ use Symfony\Component\HttpFoundation\Request;
 class ProductInfoGetter
 {
     public function __construct(
-        private ProductRepository        $productRepository,
-        private ProductVariantRepository $productVariantRepository,
-        private PriceCalculator          $priceCalculator,
-        private CategoryInfoGetter       $categoryInfoGetter,
-        private PriceRepository          $priceRepository
+        private ProductRepository           $productRepository,
+        private CategoryProductRepository   $categoryProductRepository,
+        private ProductVariantRepository    $productVariantRepository,
+        private PriceCalculator             $priceCalculator,
+        private CategoryInfoGetter          $categoryInfoGetter,
+        private PriceRepository             $priceRepository
     )
     {
     }
@@ -109,23 +111,29 @@ class ProductInfoGetter
 
     public function getProductBreadCrumbsArray(Product $product, ?Request $request = null): array
     {
-        $referer      = $request?->headers->get('referer');
+        // $referer      = $request?->headers->get('referer');
         $returnArrays = [];
-        foreach ($product->getCategoryProducts() as $categoryProduct) {
-            $categoryCrumbs  = $this->categoryInfoGetter->getCategoryBreadCrumbsArray($categoryProduct->getCategory());
-            $returnArrays [] = $categoryCrumbs;
-        }
-        if ($referer) {
-            foreach ($returnArrays as $bredCrumbsArray) {
-                foreach ($bredCrumbsArray as $category) {
-                    if (str_contains($referer, $category->getSlug())) {
-                        return $bredCrumbsArray;
-                    }
-                }
-            }
-        }
 
-        return $returnArrays[0] ?? [];
+        $mainCategory = $this->categoryProductRepository->getMainCategoryForProduct($product->getId())?->getCategory() ?? $product->getCategoryProducts()->first()->getCategory();
+        
+        $returnArray = $this->categoryInfoGetter->getCategoryBreadCrumbsArray($mainCategory);
+
+        // forecach ($product->getCategoryProducts() as $categoryProduct) {
+        //     $categoryCrumbs  = $this->categoryInfoGetter->getCategoryBreadCrumbsArray($categoryProduct->getCategory());
+        //     $returnArrays [] = $categoryCrumbs;
+        // }
+        // dd($returnArrays);
+        // if ($referer) {
+        //     foreach ($returnArrays as $bredCrumbsArray) {
+        //         foreach ($bredCrumbsArray as $category) {
+        //             if (str_contains($referer, $category->getSlug())) {
+        //                 return $bredCrumbsArray;
+        //             }
+        //         }
+        //     }
+        // }
+
+        return $returnArray;
 
     }
 

@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Query\ResultSetMappingBuilder;
 
 /**
  * @extends ServiceEntityRepository<Price>
@@ -46,17 +47,60 @@ class PriceRepository extends ServiceEntityRepository
     public function findCheapestPriceForProduct(Product $product): ?Price
     {
         return $this->createQueryBuilder('p')
+            ->select('p, (p.price * (1 - p.discount) * (1 + p.vat)) as HIDDEN calculatedPrice')
             ->join('p.productVariant', 'pv')
             ->where('pv.product = :product')
             ->andWhere('p.validFrom <= :now')
-            ->andWhere('p.validUntil IS NULL OR p.validUntil > :now')
+            ->andWhere('(p.validUntil IS NULL OR p.validUntil > :now)')
             ->setParameter('product', $product)
             ->setParameter('now', new \DateTime())
-            ->orderBy('p.price', 'ASC')
+            ->orderBy('calculatedPrice', 'ASC') 
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+
+public function findCheapestPricesForProducts(array $productIds): array
+{
+    if (empty($productIds)) return [];
+
+    // 1. Create a ResultSetMapping to turn raw SQL into Price entities
+    $rsm = new ResultSetMappingBuilder($this->getEntityManager());
+    $rsm->addRootEntityFromClassMetadata(Price::class, 'p');
+
+    // 2. The SQL with a Window Function (ROW_NUMBER)
+    $sql = "
+        SELECT p_ordered.* FROM (
+            SELECT p.*, 
+                (p.price * (1 - COALESCE(p.discount, 0)) * (1 + COALESCE(p.vat, 0))) as calculated_price,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pv.product_id 
+                    ORDER BY (p.price * (1 - COALESCE(p.discount, 0)) * (1 + COALESCE(p.vat, 0))) ASC
+                ) as price_rank
+            FROM price p
+            JOIN product_variant pv ON p.product_variant_id = pv.id
+            WHERE pv.product_id IN (:productIds)
+              AND p.valid_from <= :now
+              AND (p.valid_until IS NULL OR p.valid_until > :now)
+        ) p_ordered
+        WHERE p_ordered.price_rank = 1
+    ";
+
+    $query = $this->getEntityManager()->createNativeQuery($sql, $rsm);
+    $query->setParameter('productIds', $productIds);
+    $query->setParameter('now', new \DateTime());
+
+    $results = $query->getResult();
+
+    // 3. Map into a dictionary [productId => PriceEntity] for easy access
+    $cheapestMap = [];
+    foreach ($results as $price) {
+        $cheapestMap[$price->getProductVariant()->getProduct()->getId()] = $price;
+    }
+
+    return $cheapestMap;
+}
 
     public function findPricesByDateAndProductVariant(ProductVariant $productVariant, \DateTime $date, ?int $minimalAmount = 1, int|null $vat = null): array
     {

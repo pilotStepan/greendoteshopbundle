@@ -7,6 +7,8 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Greendot\EshopBundle\Entity\Project\Upload;
+use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 
 /**
  * @method ProductVariant|null find($id, $lockMode = null, $lockVersion = null)
@@ -55,5 +57,23 @@ class ProductVariantRepository extends ServiceEntityRepository
             ->andWhere('pv.product = :product')->setParameter('product', $product)
             ->andWhere('pv.isActive = 1')
             ->getQuery()->getResult();
+    }
+
+    public function findProductVariantUploadSubstitute(ProductVariant $productVariant): ?Upload
+    {
+        $qb = $this->getEntityManager()->getRepository(Upload::class)->createQueryBuilder('u');
+
+
+        $qb
+            ->leftJoin('u.uploadGroup', 'ug')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->where('pvug.ProductVariant = :productVariant')
+            ->andWhere('ug.type = :type')
+            ->orderBy('u.sequence', 'ASC')
+            ->setParameter('productVariant', $productVariant)
+            ->setParameter('type', UploadGroupTypeEnum::IMAGE)
+            ->setMaxResults(1);
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 }

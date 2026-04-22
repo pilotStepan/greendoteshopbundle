@@ -15,6 +15,7 @@ use Greendot\EshopBundle\Entity\Project\Producer;
 use Greendot\EshopBundle\I18n\RouteTranslator;
 use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
+use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
@@ -99,7 +100,6 @@ class AppExtension extends AbstractExtension
             new TwigFunction('get_currencies', [$this, 'getCurrencies']),
             new TwigFunction('get_default_currency', [$this, 'getDefaultCurrency']),
             new TwigFunction('calculate_theoretical_discounted_price', [$this, 'calculateTheoreticalDiscountedPrice']),
-            new TwigFunction('price_table_array', [$this, 'priceTableArray']),
 
             new TwigFunction('sized_image', [$this, 'getSizedImage']),
 
@@ -333,33 +333,6 @@ class AppExtension extends AbstractExtension
         }
     }
 
-    public function priceTableArray(ProductVariant $productVariant, Currency $currency, string $vatCalculationType, $singleItemPrice = null, $do_rounding = true): array
-    {
-        $vatCalculationType = VatCalculationType::from($vatCalculationType);
-        $prices = $this->priceRepository->findPricesByDateAndProductVariantNotGrouped($productVariant, new DateTime("now"), null);
-        //$prices = $this->priceRepository->findBy(['productVariant' => $productVariant]);
-        $tableArray = [];
-        foreach ($prices as $price) {
-            //$price = new Price();
-            $purchase = new Purchase();
-            $purchaseProductVariant = new PurchaseProductVariant();
-            $purchaseProductVariant->setProductVariant($productVariant);
-            $purchaseProductVariant->setAmount($price->getMinimalAmount());
-            $purchaseProductVariant->setPurchase($purchase);
-            //dd($this->priceCalculator->calculateProductVariantPrice($purchaseProductVariant, $currency, $vatCalculationType, DiscountCalculationType::WithDiscount, true));
-
-            $calculatedPrice = $this->priceCalculator->calculateProductVariantPrice($purchaseProductVariant, $currency, $vatCalculationType, DiscountCalculationType::WithDiscount, $singleItemPrice, $do_rounding);
-            $onePrice = 0;
-            if ($calculatedPrice) {
-                $onePrice = $calculatedPrice / $price->getMinimalAmount();
-            }
-            if ($calculatedPrice <= $this->priceCalculator->convertCurrency(50000, $currency)) {
-                $tableArray[$price->getMinimalAmount()]['onePrice'] = $onePrice;
-                $tableArray[$price->getMinimalAmount()]['fullPrice'] = $calculatedPrice;
-            }
-        }
-        return $tableArray;
-    }
 
     public function paymentPrice(Purchase $purchase, string $vatCalculationType): ?float
     {

@@ -4,15 +4,24 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\CategoryProductRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Entity\Trait\MainCategoryTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+
 #[ORM\Entity(repositoryClass: CategoryProductRepository::class)]
+#[ORM\UniqueConstraint(
+    name: 'unique_main_category_per_product',
+    columns: ['product_id'],
+    options: ['where' => 'is_main_category = true']
+)]
 class CategoryProduct
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    use MainCategoryTrait;
 
     #[ORM\ManyToOne(cascade: ['persist'], inversedBy: 'categoryProducts')]
     #[ORM\JoinColumn(nullable: false)]

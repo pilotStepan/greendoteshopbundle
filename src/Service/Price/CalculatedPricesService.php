@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -44,6 +45,12 @@ class CalculatedPricesService
             pv: $variant, 
             context: $context
         );
+        
+        if(!$productVariantPrice)
+        {
+            return $variant;
+        }
+
         $amounts = $this->priceRepository->getUniqueMinimalAmounts($variant);
 
         $calculatedPricesCollection = $this->createVariantCalculatedPricesCollection($productVariantPrice, $amounts);
@@ -56,9 +63,10 @@ class CalculatedPricesService
     /**
      * Sets the calculated prices matrix for product from the cheapest variant.
      */
-    public function makeCalculatedPricesForProduct(
+     public function makeCalculatedPricesForProduct(
         Product $product,
-        ?ProductVariantPriceContext $context = null
+        ?ProductVariantPriceContext $context = null,
+        ?Price $cheapestPrice = null,
     ) : Product
     {
         if (!empty($product->getCalculatedPrices())){
@@ -66,7 +74,17 @@ class CalculatedPricesService
         }
         $context = $this->resolveVariantContext($context);
 
-        $productVariantPrice = $this->findCheapestVariantPriceForProduct($product, $context);
+        if (!$cheapestPrice) {
+            $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        }
+
+        $productVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
+        
+        if (!$productVariantPrice)
+        {
+            return $product;
+        }
+
         $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($productVariantPrice);
 
         $product->setCalculatedPrices((array)$calculatedPricesMatrix);
@@ -230,28 +248,29 @@ class CalculatedPricesService
     protected function findCheapestVariantPriceForProduct(
         Product $product, 
         ?ProductVariantPriceContext $context = null
-    )  : ProductVariantPrice
+    )  : ?ProductVariantPrice
     {
         $context = $this->resolveVariantContext($context);
 
-        $cheapestVariantPrice = null;
-        $currentPiecePrice = null;
-        foreach ($product->getProductVariants() as $variant) {
+        // $cheapestVariantPrice = null;
+        // $currentPiecePrice = null;
+        // foreach ($product->getProductVariants() as $variant) {
        
-            $productVariantPrice = $this->productVariantPriceFactory->createFromContext(  
-                pv: $variant, 
-                context: $context
-            );
+        //     $productVariantPrice = $this->productVariantPriceFactory->createFromContext(  
+        //         pv: $variant, 
+        //         context: $context
+        //     );
 
-            $piecePrice = $productVariantPrice->getPiecePrice();
+        //     $piecePrice = $productVariantPrice->getPiecePrice();
 
-            if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
-            {
-                $currentPiecePrice = $piecePrice;
-                $cheapestVariantPrice = $productVariantPrice;
-            }
-        }
-
+        //     if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
+        //     {
+        //         $currentPiecePrice = $piecePrice;
+        //         $cheapestVariantPrice = $productVariantPrice;
+        //     }
+        // }
+        $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        $cheapestVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
         return $cheapestVariantPrice;
     }  
 }
