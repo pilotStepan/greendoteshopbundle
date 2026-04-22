@@ -78,6 +78,10 @@ class CalculatedPricesService
             $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
         }
 
+        if (!$cheapestPrice) {
+            return $product;
+        }
+
         $productVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
         
         if (!$productVariantPrice)
@@ -270,6 +274,10 @@ class CalculatedPricesService
         //     }
         // }
         $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        if (!$cheapestPrice) {
+            return null;
+        }
+
         $cheapestVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
         return $cheapestVariantPrice;
     }  

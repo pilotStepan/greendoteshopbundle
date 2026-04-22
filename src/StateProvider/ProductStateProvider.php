@@ -108,7 +108,7 @@ readonly class ProductStateProvider implements ProviderInterface
 
         foreach ($products as $product) {
             $this->calculatedPricesService->makeCalculatedPricesForProduct(
-                product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$product->getId()]);
+                product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$product->getId()] ?? null);
 
             $product->setAvailability($availabilityMap[$product->getId()]);
             $product->setCurrencySymbol = $currency->getSymbol();

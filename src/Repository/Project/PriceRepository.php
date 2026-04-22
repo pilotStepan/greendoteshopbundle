@@ -81,6 +81,7 @@ public function findCheapestPricesForProducts(array $productIds): array
             FROM price p
             JOIN product_variant pv ON p.product_variant_id = pv.id
             WHERE pv.product_id IN (:productIds)
+              AND pv.is_active = 1
               AND p.valid_from <= :now
               AND (p.valid_until IS NULL OR p.valid_until > :now)
         ) p_ordered
