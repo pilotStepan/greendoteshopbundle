@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Review;
+use Greendot\EshopBundle\Entity\Project\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 class ReviewRepository extends ServiceEntityRepository
@@ -80,5 +81,25 @@ class ReviewRepository extends ServiceEntityRepository
             'distribution' => $distribution,
             'avgRating' => $avgRating,
         ];
+    }
+    
+    public function getAvgRatingValueForProduct(Product $product): float
+    {
+        $qb = $this->createQueryBuilder('r');
+        $qb = $this->findByProductQB($product->getId(), $qb);
+        $stats = $this->getStats($qb);
+        
+        return $stats['avgRating'];
+    }
+    
+    public function getReviewCountForProduct(Product $product): int
+    {
+        return (int)$this->createQueryBuilder('r')
+            ->select('COUNT(DISTINCT r.id)')
+            ->andWhere('r.Product = :productId')
+            ->andWhere('r.is_approved = true')
+            ->setParameter('productId', $product->getId())
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

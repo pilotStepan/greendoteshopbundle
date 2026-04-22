@@ -1,2 +1,4 @@
 *
 !.gitignore
+!php.xml
+!*.iml

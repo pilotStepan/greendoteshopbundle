@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\Review;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -13,6 +14,7 @@ use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Repository\Utils\SafeJoin;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use DateTime;
+use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
@@ -602,6 +604,42 @@ class ProductRepository extends HintedRepositoryBase
 
     }
 
+    /**
+     * @return ParameterGroup[]
+     */
+    public function findVariantParameterGroupsByProduct(Product $product): array
+    {
+        return $this->getEntityManager()->createQueryBuilder()
+            ->select('DISTINCT pg')
+            ->from(ParameterGroup::class, 'pg')
+            ->innerJoin('pg.productParameterGroups', 'ppg')
+            ->andWhere('ppg.product = :product')
+            ->andWhere('ppg.isVariant = :isVariant')
+            ->setParameter('product', $product)
+            ->setParameter('isVariant', true)
+            ->orderBy('pg.name', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * @return Review[]
+     */
+    public function findApprovedReviews(Product $product): array
+    {
+        return $this->getEntityManager()->createQueryBuilder()
+            ->select('r')
+            ->from(Review::class, 'r')
+            ->andWhere('r.Product = :product')
+            ->andWhere('r.is_approved = :isApproved')
+            ->setParameter('product', $product)
+            ->setParameter('isApproved', true)
+            ->orderBy('r.date', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
     public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
     {
