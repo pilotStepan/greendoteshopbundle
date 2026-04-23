@@ -73,7 +73,7 @@ readonly class OrderTransitionSmsFactory implements OrderTransitionSmsFactoryInt
         }
 
         if ($transitionTranslationFound && !empty($tracking)) {
-            $suffixKey = 'sms.order.' . $transition . '.tracking_suffix';
+            $suffixKey = 'sms.order.' . $transition . '.tracking';
             $suffix = $this->translator->trans($suffixKey, [], 'sms');
             if ($suffix !== $suffixKey) {
                 $text .= ' ' . $suffix . ': ' . $tracking . '.';

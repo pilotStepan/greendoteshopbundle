@@ -6,15 +6,14 @@
         {% for track, meta in tracks %}
             {% set parts = parts|merge([meta.customer_label]) %}
         {% endfor %}
-        <span class="purchase-status purchase-status--{{ purchase.state }}">
+        <span class="purchase-status purchase-status--{{ purchase.marking|keys|first }}">
               {{ parts|join(' / ') }}
           </span>
 
     {% elseif mode == 'badges' %}
         <span class="purchase-status-group">
               {% for track, meta in tracks %}
-                  <span class="purchase-status-badge purchase-status-badge--{{ track }}"
-                        style="color: {{ meta.simple_color }}">
+                  <span class="purchase-status-badge purchase-status-badge--{{ track }}">
                       {{ meta.customer_label }}
                   </span>
               {% endfor %}
