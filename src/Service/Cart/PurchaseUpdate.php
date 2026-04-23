@@ -82,16 +82,20 @@ class PurchaseUpdate
 
     private function applyAddress(array $addressData, Purchase $purchase): void
     {
-        // Replace PurchaseAddress
-        $old = $purchase->getPurchaseAddress();
-        $purchase->setPurchaseAddress(null);
-        if ($old) {
-            $this->em->remove($old);
+        // Merge into existing PurchaseAddress so partial updates accumulate across steps
+        $address = $purchase->getPurchaseAddress();
+        if (!$address) {
+            $address = new PurchaseAddress();
+            $this->em->persist($address);
+            $purchase->setPurchaseAddress($address);
         }
 
-        $address = PurchaseAddress::fromArray($addressData);
-        $this->em->persist($address);
-        $purchase->setPurchaseAddress($address);
+        foreach ($addressData as $key => $value) {
+            $setter = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $key)));
+            if (method_exists($address, $setter)) {
+                $address->$setter($value);
+            }
+        }
 
         // Keep logged-in user's ClientAddress in sync
         $user = $this->security->getUser();

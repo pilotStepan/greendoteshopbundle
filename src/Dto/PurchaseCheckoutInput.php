@@ -13,18 +13,18 @@ class PurchaseCheckoutInput
     #[Assert\Type('array')]
     #[Assert\Collection(
         fields: [
-            'name' => new Assert\Required([
-                new Assert\NotBlank,
-                new Assert\Length(max: 100),
-            ]),
-            'surname' => new Assert\Required([
-                new Assert\NotBlank,
-                new Assert\Length(max: 100),
-            ]),
-            'phone' => new Assert\Required([
-                new Assert\NotBlank,
-                new Assert\Length(max: 20),
-            ]),
+            'name' => new Assert\Required(
+                constraints: [new Assert\NotBlank, new Assert\Length(max: 100)],
+                groups: ['Default', 'patch'],
+            ),
+            'surname' => new Assert\Required(
+                constraints: [new Assert\NotBlank, new Assert\Length(max: 100)],
+                groups: ['Default', 'patch'],
+            ),
+            'phone' => new Assert\Required(
+                constraints: [new Assert\NotBlank, new Assert\Length(max: 20)],
+                groups: ['Default', 'patch'],
+            ),
             'mail' => new Assert\Email(),
         ],
         groups: ['Default', 'patch']
@@ -36,16 +36,55 @@ class PurchaseCheckoutInput
     #[Assert\Type('array')]
     #[Assert\Collection(
         fields: [
-            'street' => new Assert\Required([new Assert\NotBlank]),
-            'city' => new Assert\Required([new Assert\NotBlank]),
-            'zip' => new Assert\Required([new Assert\NotBlank]),
-            'country' => new Assert\Required([new Assert\NotBlank]),
+            'street' => new Assert\Required(
+                constraints: [new Assert\NotBlank],
+                groups: ['post', 'patch_full'],
+            ),
+            'city' => new Assert\Required(
+                constraints: [new Assert\NotBlank],
+                groups: ['post', 'patch_full'],
+            ),
+            'zip' => new Assert\Required(
+                constraints: [new Assert\NotBlank],
+                groups: ['post', 'patch_full'],
+            ),
+            'country' => new Assert\Required(
+                constraints: [new Assert\NotBlank],
+                groups: ['post', 'patch_full'],
+            ),
         ],
-        groups: ['Default', 'patch'],
+        groups: ['post', 'patch_full'],
         allowExtraFields: true
     )]
-    #[Assert\Callback([self::class, 'validateAddress'])]
+    #[Assert\Collection(
+        fields: [
+            'street' => new Assert\Optional(
+                constraints: [new Assert\NotBlank],
+                groups: ['patch'],
+            ),
+            'city' => new Assert\Optional(
+                constraints: [new Assert\NotBlank],
+                groups: ['patch'],
+            ),
+            'zip' => new Assert\Optional(
+                constraints: [new Assert\NotBlank],
+                groups: ['patch'],
+            ),
+            'country' => new Assert\Optional(
+                constraints: [new Assert\NotBlank],
+                groups: ['patch'],
+            ),
+        ],
+        groups: ['patch'],
+        allowExtraFields: true,
+        allowMissingFields: true
+    )]
+    #[Assert\Callback([self::class, 'validateAddress'], groups: ['post', 'patch_full'])]
     public ?array $address = null;
+
+    #[Groups(['purchase:checkout'])]
+    #[Assert\Type('bool')]
+    public bool $partial = false;
 
     #[Groups(['purchase:checkout'])]
     #[Assert\NotNull(groups: ['post'])]

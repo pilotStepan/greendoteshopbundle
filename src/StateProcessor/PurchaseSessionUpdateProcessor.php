@@ -28,7 +28,8 @@ final readonly class PurchaseSessionUpdateProcessor implements ProcessorInterfac
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse
     {
-        $violations = $this->validator->validate($data, null, ['Default', 'patch']);
+        $groups = $data->partial ? ['Default', 'patch'] : ['Default', 'patch', 'patch_full'];
+        $violations = $this->validator->validate($data, null, $groups);
         if ($violations->count()) {
             $msg = (string) $violations;
 
