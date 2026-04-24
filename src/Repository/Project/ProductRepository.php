@@ -376,11 +376,14 @@ class ProductRepository extends HintedRepositoryBase
         return $qb;
     }
 
-    public function findProductsInCategory(QueryBuilder $qb, int $categoryId): QueryBuilder
+    public function findProductsInCategory(QueryBuilder $qb, int $categoryId, bool $crawlUp = true): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
 
-        $categoryIds = $this->categoryRepository->findAllChildCategoryIds($categoryId);
+        $categoryIds = [$categoryId];
+        if($crawlUp){
+            $categoryIds = $this->categoryRepository->findAllChildCategoryIds($categoryId);
+        }
 
         $this->safeJoin($qb, $alias, 'categoryProducts', 'cp');
         $qb->andWhere('cp.category IN (:categoryIds)')
@@ -644,6 +647,7 @@ class ProductRepository extends HintedRepositoryBase
     public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
     {
         if (!isset($filters['categoryId'])) $filters['categoryId'] = 0;
+        if (!isset($filters['crawlCategoryUp'])) $filters['crawlCategoryUp'] = true;
 
         if (!isset($filters['supplierIds'])) $filters['supplierIds'] = [];
         if (!isset($filters['productViewTypes'])) $filters['productViewTypes'] = [];
@@ -697,7 +701,12 @@ class ProductRepository extends HintedRepositoryBase
         }
 
         if ($filters['categoryId'] > 0) {
-            $this->findProductsInCategory($qb, $filters['categoryId']);
+            $crawlUp = true;
+            if (in_array($filters['crawlCategoryUp'], [false, 'false', 'FALSE', 0, '0'], true)){
+                $crawlUp = false;
+            }
+
+            $this->findProductsInCategory($qb, $filters['categoryId'], $crawlUp);
         }
 
         if (count($filters['supplierIds']) > 0) {
