@@ -41,20 +41,14 @@ readonly class ProductStateProvider implements ProviderInterface
             // ProductVariantEventListener::class,
             // ParameterEventListener::class
         ]);
-        $start= microtime(true);
-        $stamps = [];
+      
         $rawParameters = $context['filters']['parameters'] ?? null;
         $filters = is_string($rawParameters) ? json_decode($rawParameters, true) : null;
 
-
-        
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
         // get all filtered IDs
         $productsQuery = $this->productRepository->mainProductsFilter($filters);
         $allProductIds = $productsQuery->getQuery()->getSingleColumnResult();
         
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
         // get count
         $totalItems = count($allProductIds);
 
@@ -75,13 +69,8 @@ readonly class ProductStateProvider implements ProviderInterface
 
         $productIds = array_slice($allProductIds, $offset, $limit);
         
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
         // get product entities with initilized associations
         $products = $this->productRepository->primeProductList($productIds);
-
-
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
         
         $currency = $this->currencyManager->get();
         $converstionRate = $this->priceUtils->getConversionRate($currency);
@@ -89,21 +78,10 @@ readonly class ProductStateProvider implements ProviderInterface
             currencyOrConversionRate: $converstionRate
         );
 
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
         // this is unoptimized, triggers n+1 query on purchase_product_variant assoc
         $cheapestPriceMap = $this->priceRepository->findCheapestPricesForProducts($productIds);
-
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
         $availabilityMap = $this->availabilityRepository->getAvailabilityForProductIds($productIds);
-
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
         $parametersMap = $this->parameterRepository->calculateParametersForProductIds($productIds);
-
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
 
 
         foreach ($products as $product) {
@@ -115,17 +93,8 @@ readonly class ProductStateProvider implements ProviderInterface
             if(array_key_exists($product->getId(), $parametersMap)) $product->setParameters($parametersMap[$product->getId()]);
         }
 
-
-
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
-
         $products = new \ArrayIterator($products);
-        $stamps[] = round((microtime(true) - $start) * 1000, 2) . ' ms';
 
-
-        // return new Response("hello");
-
-        // dd($stamps);
         return new TraversablePaginator(
             $products,
             currentPage: $offset,

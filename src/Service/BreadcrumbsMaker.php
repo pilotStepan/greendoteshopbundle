@@ -10,7 +10,7 @@ use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Greendot\EshopBundle\Dto\BreadCrumb;
-use Greendot\EshopBundle\Enum\SpecialCategoryEnum;
+use Greendot\EshopBundle\Enum\SpecialCategorycEnum;
 use Greendot\EshopBundle\Repository\Project\CategoryProductRepository;
 use InvalidArgumentException;
 
@@ -114,10 +114,10 @@ class BreadcrumbsMaker
         };
     }
 
+
     public function getCategoryUrl(Category $category) : string
     {
-        $route = $category->getCategoryType()->getControllerName();
-        return $this->router->generate($route, [
+        return $this->router->generate('app_master', [
             'slug' => $category->getSlug()
         ]);
     }
