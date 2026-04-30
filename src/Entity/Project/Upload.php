@@ -28,7 +28,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(stateless: true),
         new GetCollection(
-            uriTemplate: '/upload/product-with-variants/{id}',
+            uriTemplate: '/uploads/product-with-variants/{id}',
             provider: UploadProductWithVariantsProvider::class,
             normalizationContext: ['groups' => ['upload_product_with_variants:read']],
             stateless: true
