@@ -5,7 +5,9 @@ namespace Greendot\EshopBundle\StateProcessor;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Event\ClientRegisteredEvent;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -19,6 +21,7 @@ final readonly class ClientRegistrationStateProcessor implements ProcessorInterf
         private ProcessorInterface          $processor,
         private UserPasswordHasherInterface $passwordHasher,
         private TokenStorageInterface       $tokenStorage,
+        private EventDispatcherInterface    $dispatcher,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Client
@@ -39,6 +42,7 @@ final readonly class ClientRegistrationStateProcessor implements ProcessorInterf
 
         $client = $this->processor->process($data, $operation, $uriVariables, $context);
 
+        $this->dispatcher->dispatch(new ClientRegisteredEvent($client));
         $this->authenticateClient($client);
         return $client;
     }

@@ -25,17 +25,6 @@ class PurchaseRepository extends ServiceEntityRepository
         parent::__construct($registry, Purchase::class);
     }
 
-    public function lastInquiryOfUser($client)
-    {
-        return $this->createQueryBuilder('p')
-            ->setMaxResults(1)
-            ->orderBy("p.date_issue", "DESC")
-            ->andWhere("p.state = :inquiry")->setParameter('inquiry', 'inquiry')
-            ->andWhere("p.Client = :client")->setParameter("client", $client)
-            ->getQuery()->getOneOrNullResult()
-        ;
-    }
-
     public function lastPurchaseOfUser($client)
     {
         return $this->createQueryBuilder('p')

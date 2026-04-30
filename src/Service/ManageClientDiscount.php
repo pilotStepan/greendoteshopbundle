@@ -47,4 +47,14 @@ readonly class ManageClientDiscount
             }
         });
     }
+
+    public function makeUniqueHash(): string
+    {
+        $clientDiscountRepository = $this->em->getRepository(ClientDiscount::class);
+        do {
+            $hash = substr(bin2hex(random_bytes(3)), 0, 6);
+        } while ($clientDiscountRepository->findOneBy(['hash' => $hash]) !== null);
+
+        return $hash;
+    }
 }

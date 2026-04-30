@@ -56,7 +56,7 @@ class ClientDiscountRepository extends ServiceEntityRepository
                 )
             )
             ->setParameter('now', $now)
-            ->andWhere('cd.is_used != false')
+            ->andWhere('cd.is_used != true')
             ->orderBy('cd.discount', 'DESC')
             ->setMaxResults(1);
 

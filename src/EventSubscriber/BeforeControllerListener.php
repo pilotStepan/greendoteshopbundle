@@ -35,8 +35,13 @@ readonly class BeforeControllerListener implements EventSubscriberInterface
             : $event->getController();
 
         if ($controller instanceof ControllerTurnOffIsActiveFilterController) {
-            $this->entityManager->getFilters()->disable('products_active');
-            $this->entityManager->getFilters()->disable('variants_active');
+            $filters = $this->entityManager->getFilters();
+            if ($filters->isEnabled('products_active')) {
+                $filters->disable('products_active');
+            }
+            if ($filters->isEnabled('variants_active')) {
+                $filters->disable('variants_active');
+            }
         }
     }
 
