@@ -167,7 +167,7 @@ class Product implements Translatable, PagableInterface
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
     private Collection $productUploadGroups;
 
     #[Gedmo\Locale]
@@ -561,17 +561,17 @@ class Product implements Translatable, PagableInterface
     {
         if (!$this->productUploadGroups->contains($productUploadGroup)) {
             $this->productUploadGroups->add($productUploadGroup);
-            $productUploadGroup->setProductVariant($this);
+            $productUploadGroup->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeProductVariantUploadGroup(ProductUploadGroup $productUploadGroup): self
+    public function removeProductUploadGroup(ProductUploadGroup $productUploadGroup): self
     {
         if ($this->productUploadGroups->removeElement($productUploadGroup)) {
-            if ($productUploadGroup->getProductVariant() === $this) {
-                $productUploadGroup->setProductVariant(null);
+            if ($productUploadGroup->getProduct() === $this) {
+                $productUploadGroup->setProduct(null);
             }
         }
 
