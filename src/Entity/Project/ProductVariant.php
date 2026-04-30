@@ -95,7 +95,7 @@ class ProductVariant implements Translatable
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: ProductVariantUploadGroup::class)]
-    #[Groups(['product_variant:read', 'product_variant:write'])]
+    #[Groups(['product_variant:read', 'product_item:read', 'product_variant:write'])]
     private Collection $productVariantUploadGroups;
 
     #[ORM\Column(nullable: true)]
