@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\EventSubscriber\Decorated;
 
+use Greendot\EshopBundle\Attribute\OmitLocaleAwareListener;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
@@ -33,8 +34,22 @@ class LocaleAwareListenerDecorator implements EventSubscriberInterface
 
     private function isStateless(RequestEvent|FinishRequestEvent $event): bool
     {
-        $apiPlatformStateless = $event->getRequest()?->attributes?->get('_stateless') ?? false;
-        return $apiPlatformStateless;
+        $isStateless = $event->getRequest()?->attributes?->get('_stateless') ?? false;
+
+        $controllerMarker = false;
+        $controller = $event->getRequest()?->attributes?->get('_controller');
+
+        //str_contains($controller, '\\') - this should skip aliased routes so no unneccessary failing occurse
+        if ($controller and str_contains($controller, '\\')){
+            try {
+                $ref = new \ReflectionMethod($controller);
+                $controllerMarker = !empty($ref->getAttributes(OmitLocaleAwareListener::class));
+            } catch (\ReflectionException $e){
+                //silent fail
+            }
+        }
+
+        return $isStateless || $controllerMarker;
     }
 
     public static function getSubscribedEvents(): array
