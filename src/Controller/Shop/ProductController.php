@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Attribute\OmitLocaleAwareListener;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
@@ -45,6 +46,7 @@ class ProductController extends AbstractController
     {}
 
     #[CustomApiEndpoint]
+    #[OmitLocaleAwareListener]
     #[Route('/api/store-last-viewed-product', name: 'store_last_viewed_product', methods: ['POST'])]
     public function storeLastViewedProduct(Request $request, SessionInterface $session): JsonResponse
     {
