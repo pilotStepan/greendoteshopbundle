@@ -7,7 +7,7 @@ use Greendot\EshopBundle\Repository\Project\UploadGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Groups as Groups;
 
 #[ORM\Entity(repositoryClass: UploadGroupRepository::class)]
 class UploadGroup
@@ -38,9 +38,11 @@ class UploadGroup
     private Collection $personUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: ProductVariantUploadGroup::class)]
+    #[Groups(['upload_product_with_variants:read'])]
     private Collection $productVariantUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: ProductUploadGroup::class)]
+    #[Groups(['upload_product_with_variants:read'])]
     private Collection $productUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: EventUploadGroup::class)]

@@ -20,12 +20,19 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\ApiResource\ProductWithVariantsUploads;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\StateProvider\UploadProductWithVariantsProvider;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: UploadRepository::class)]
 #[ApiResource(
     operations: [
         new GetCollection(stateless: true),
+        new GetCollection(
+            uriTemplate: '/upload/product-with-variants/{id}',
+            provider: UploadProductWithVariantsProvider::class,
+            normalizationContext: ['groups' => ['upload_product_with_variants:read']],
+            stateless: true
+        ),
         new Get(stateless: true),
         new Post(security: "is_granted('ROLE_ADMIN')"),
         new Put(security: "is_granted('ROLE_ADMIN')"),
@@ -46,34 +53,34 @@ class Upload
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $extension = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $mime = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $shortDescription = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $created = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['upload:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
     private ?string $path = null;
 
     #[ORM\Column(length: 255)]
@@ -86,7 +93,7 @@ class Upload
     private ?string $height = null;
 
     #[ORM\ManyToOne(inversedBy: 'upload')]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?UploadGroup $uploadGroup = null;
 
     #[ORM\Column(nullable: true)]
@@ -112,7 +119,7 @@ class Upload
     private Collection $people;
 
     #[ORM\ManyToOne(inversedBy: 'upload')]
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?UploadType $uploadType = null;
 
     #[ApiProperty]

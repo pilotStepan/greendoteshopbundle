@@ -20,6 +20,7 @@ class ProductUploadGroup
     private ?UploadGroup $UploadGroup = null;
 
     #[ORM\ManyToOne(inversedBy: 'productUploadGroups')]
+    #[Groups(['upload_product_with_variants:read'])]
     private ?Product $Product = null;
 
     #[ORM\Column(nullable: true)]

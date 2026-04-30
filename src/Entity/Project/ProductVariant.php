@@ -39,7 +39,7 @@ class ProductVariant implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['product_variant:read','upload_product_with_variants:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
     private $id;
 
     #[Gedmo\Versioned]
