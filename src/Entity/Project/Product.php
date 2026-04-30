@@ -167,7 +167,7 @@ class Product implements Translatable, PagableInterface
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
-    #[Groups(['product_item:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
     private Collection $productUploadGroups;
 
     #[Gedmo\Locale]

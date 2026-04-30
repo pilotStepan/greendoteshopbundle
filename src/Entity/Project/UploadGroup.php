@@ -18,7 +18,7 @@ class UploadGroup
     private ?int $id = null;
 
     #[ORM\OneToMany(mappedBy: 'uploadGroup', targetEntity: Upload::class)]
-    #[Groups(['category_default', 'product_item:read','category:read', 'category:write'])]
+    #[Groups(['category_default','category:read', 'category:write'])]
     private Collection $upload;
 
 

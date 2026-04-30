@@ -17,7 +17,6 @@ class ProductVariantUploadGroup
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariantUploadGroups')]
-    #[Groups('product_item:read')]
     private ?UploadGroup $UploadGroup = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariantUploadGroups')]
