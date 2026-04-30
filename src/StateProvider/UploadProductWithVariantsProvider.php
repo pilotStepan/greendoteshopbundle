@@ -19,8 +19,8 @@ readonly class UploadProductWithVariantsProvider implements ProviderInterface
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
     {
-        dd();
         $request = $context['request'] ?? null;
+        dd();
 
         $productId = $request->query->get('id');
         return $this->uploadRepository->getProductWithVariantsUploads($productId);
