@@ -31,7 +31,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
             uriTemplate: '/uploads/product-with-variants/{id}',
             provider: UploadProductWithVariantsProvider::class,
             normalizationContext: ['groups' => ['upload_product_with_variants:read']],
-            // stateless: true
+            stateless: true
         ),
         new Get(stateless: true),
         new Post(security: "is_granted('ROLE_ADMIN')"),
