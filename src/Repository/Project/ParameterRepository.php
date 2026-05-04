@@ -490,4 +490,38 @@ class ParameterRepository extends ServiceEntityRepository
             ->andWhere('productVariant.product = :product')
             ->setParameter('product', $product);
     }
+
+    
+    public function calculateParametersForProductIds(array $productIds): array
+    {
+        if (empty($productIds)) {
+            return [];
+        }
+
+        $results = $this->createQueryBuilder('parameter')
+            ->leftJoin('parameter.productVariant', 'pv')
+            ->leftJoin('parameter.parameterGroup', 'pg')
+            ->select('parameter.data', 'pg.name', 'IDENTITY(pv.product) AS productId')
+            ->where('pv.product IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getArrayResult();
+
+        $map = [];
+
+        foreach ($results as $row) {
+            $pid = $row['productId'];
+            
+            if (!isset($map[$pid])) {
+                $map[$pid] = [];
+            }
+
+            $map[$pid][] = [
+                'name' => $row['name'],
+                'data' => $row['data'],
+            ];
+        }
+
+        return $map;
+    }
 }

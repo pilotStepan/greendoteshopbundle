@@ -2,9 +2,8 @@
 
 namespace Greendot\EshopBundle\Entity;
 
-use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
-use App\Repository\ExternalIdsRepository;
+use Greendot\EshopBundle\Repository\ExternalIdsRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ExternalIdsRepository::class)]

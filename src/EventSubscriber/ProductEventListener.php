@@ -35,13 +35,13 @@ class ProductEventListener
         $parameters = $this->productRepository->calculateParameters($product);
 
         // if it doesn't have main upload, it tries to substitute it
-        if ($product->getUpload() === null) {
-            $upload = $this->productRepository->findProductUploadSubstitute($product);
-            if ($upload) {
-                $upload->setIsDynamicallySet(true);
-                $product->setUpload($upload);
-            }
-        }
+        // if ($product->getUpload() === null) {
+        //     $upload = $this->productRepository->findProductUploadSubstitute($product);
+        //     if ($upload) {
+        //         $upload->setIsDynamicallySet(true);
+        //         $product->setUpload($upload);
+        //     }
+        // }
 
         $product->setCurrencySymbol($currencySymbol);
         $product->setAvailability($availability);

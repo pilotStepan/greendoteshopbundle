@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Validator\Constraints;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 final class VoucherAssignableToPurchaseValidator extends ConstraintValidator
 {
@@ -33,8 +34,8 @@ final class VoucherAssignableToPurchaseValidator extends ConstraintValidator
             $this->context->buildViolation($constraint->message)->addViolation();
         }
 
-        // Check if the purchase is not in draft state (cart state)
-        if ($value->getState() !== 'draft') {
+        // Check if the purchase is not in cart state
+        if (!$value->hasPlace(PWC::S_CART->value)) {
             $this->context->buildViolation($constraint->message)->addViolation();
         }
     }

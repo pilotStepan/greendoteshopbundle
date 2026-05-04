@@ -8,6 +8,7 @@ use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\calculatedPrices\ServiceCalculatedPrices;
 use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
+use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Transportation;
@@ -59,7 +60,7 @@ class CalculatedPricesService
         $amounts = $this->priceRepository->getUniqueMinimalAmounts($variant);
 
         $calculatedPricesCollection = $this->createVariantCalculatedPricesCollection($productVariantPrice, $amounts);
-
+        
         $variant->setCalculatedPrices($calculatedPricesCollection);
         return $variant;
     }
@@ -68,18 +69,29 @@ class CalculatedPricesService
     /**
      * Sets the calculated prices matrix for product from the cheapest variant.
      */
-    public function makeCalculatedPricesForProduct(
-        Product                     $product,
-        ?ProductVariantPriceContext $context = null
-    ): Product
+     public function makeCalculatedPricesForProduct(
+        Product $product,
+        ?ProductVariantPriceContext $context = null,
+        ?Price $cheapestPrice = null,
+    ) : Product
     {
-        if (!empty($product->getCalculatedPrices())) {
+        if (!empty($product->getCalculatedPrices())){
             return $product;
         }
         $context = $this->resolveVariantContext($context);
 
-        $productVariantPrice = $this->findCheapestVariantPriceForProduct($product, $context);
-        if (!$productVariantPrice) {
+        if (!$cheapestPrice) {
+            $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        }
+
+        if (!$cheapestPrice) {
+            return $product;
+        }
+
+        $productVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
+
+        if (!$productVariantPrice)
+        {
             return $product;
         }
 
@@ -269,23 +281,29 @@ class CalculatedPricesService
     {
         $context = $this->resolveVariantContext($context);
 
-        $cheapestVariantPrice = null;
-        $currentPiecePrice = null;
-        foreach ($product->getProductVariants() as $variant) {
+        // $cheapestVariantPrice = null;
+        // $currentPiecePrice = null;
+        // foreach ($product->getProductVariants() as $variant) {
 
-            $productVariantPrice = $this->productVariantPriceFactory->createFromContext(
-                pv: $variant,
-                context: $context
-            );
+        //     $productVariantPrice = $this->productVariantPriceFactory->createFromContext(
+        //         pv: $variant,
+        //         context: $context
+        //     );
 
-            $piecePrice = $productVariantPrice->getPiecePrice();
+        //     $piecePrice = $productVariantPrice->getPiecePrice();
 
-            if (!$currentPiecePrice || $piecePrice < $currentPiecePrice) {
-                $currentPiecePrice = $piecePrice;
-                $cheapestVariantPrice = $productVariantPrice;
-            }
+        //     if (!$currentPiecePrice || $piecePrice < $currentPiecePrice)
+        //     {
+        //         $currentPiecePrice = $piecePrice;
+        //         $cheapestVariantPrice = $productVariantPrice;
+        //     }
+        // }
+        $cheapestPrice = $this->priceRepository->findCheapestPriceForProduct($product);
+        if (!$cheapestPrice) {
+            return null;
         }
 
+        $cheapestVariantPrice = $this->productVariantPriceFactory->entityLoadFromContext($cheapestPrice, $context);
         return $cheapestVariantPrice;
     }
 

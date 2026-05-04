@@ -2,14 +2,11 @@
 
 namespace Greendot\EshopBundle\Controller;
 
-use Greendot\EshopBundle\Sms\ManageSms;
 use Greendot\EshopBundle\Service\ManageMails;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Greendot\EshopBundle\Entity\Project\ClientAddress;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -36,26 +33,6 @@ class TestController extends AbstractController
         $gatewayLink = $gateway->getPayLink($purchase);
 
         return new JsonResponse(['redirect' => $gatewayLink], 200);
-    }
-
-    #[Route('/sms', name: 'payment_gateway_verify')]
-    public function sms(
-        ManageSms $manageSms,
-    ): Response
-    {
-        $purchase = (new Purchase())
-            ->setClient((new Client())
-                ->setPhone('+420 773 130 352')
-                ->addClientAddress((new ClientAddress())
-                    ->setIsPrimary(true)
-                    ->setCountry('cz')
-                )
-            )
-            ->setState('paid')
-            ->setTransportNumber('TEST123456')
-        ;
-        $manageSms->sendOrderTransitionSms($purchase, 'payment');
-        return new JsonResponse(['status' => 'SMS sent'], 200);
     }
 
     #[Route('/mails/purchases/{purchase}/transitions/{transition}/{mod}', name: 'mails_purchases_transitions')]

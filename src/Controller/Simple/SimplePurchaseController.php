@@ -43,11 +43,15 @@ class SimplePurchaseController extends AbstractController
         $placesMetaData = [];
         foreach ($places as $place) {
             $metadataArray = $pFlow->getMetadataStore()->getPlaceMetadata($place);
-            $placesMetaData[$place]['desc'] = $metadataArray['description'];
-            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'];
-            $placesMetaData[$place]['icon'] = $metadataArray['icon'];
+            if ($metadataArray['internal'] ?? false) {
+                continue;
+            }
+            $placesMetaData[$place]['desc'] = $metadataArray['description'] ?? null;
+            $placesMetaData[$place]['short_desc'] = $metadataArray['short_description'] ?? null;
+            $placesMetaData[$place]['icon'] = $metadataArray['icon'] ?? null;
             $placesMetaData[$place]['simple_color'] = $metadataArray['simple_color'] ?? '#999999';
             $placesMetaData[$place]['name'] = $place;
+            $placesMetaData[$place]['track'] = $metadataArray['track'] ?? 'default';
         }
         return $this->json($placesMetaData, 200);
     }
@@ -58,7 +62,21 @@ class SimplePurchaseController extends AbstractController
         $purchase = new Purchase();
         $pFlow = $registry->get($purchase);
         $transitions = $pFlow->getDefinition()->getTransitions();
-        return $this->json($transitions, 200);
+        $result = [];
+        foreach ($transitions as $transition) {
+            $meta = $pFlow->getMetadataStore()->getTransitionMetadata($transition);
+            if ($meta['internal'] ?? false) {
+                continue;
+            }
+            $result[] = [
+                'name'  => $transition->getName(),
+                'label' => $meta['label'] ?? $transition->getName(),
+                'icon'  => $meta['icon'] ?? null,
+                'froms' => $transition->getFroms(),
+                'tos'   => $transition->getTos(),
+            ];
+        }
+        return $this->json($result, 200);
     }
 
     #[Route('/{purchase}/make-transition', name: 'make_transition', methods: ['POST'])]
@@ -96,7 +114,7 @@ class SimplePurchaseController extends AbstractController
             ]);
 
             // no need for persist(), purchase is already managed
-            return $purchase->getState();
+            return $purchase->getMarking();
         });
 
         return $this->json(['state' => $newState]);

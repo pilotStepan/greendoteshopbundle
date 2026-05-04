@@ -20,6 +20,8 @@ use Exception;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Greendot\EshopBundle\Entity\Interface\PagableInterface;
+use Greendot\EshopBundle\Enum\SpecialCategoryEnum;
 use Symfony\Component\Serializer\Annotation\MaxDepth;
 use Symfony\Component\Validator\Constraints\Existence;
 
@@ -52,7 +54,7 @@ use Symfony\Component\Validator\Constraints\Existence;
 #[ApiFilter(OrderFilter::class, strategy: OrderFilter::NULLS_ALWAYS_LAST, properties: ['published_at'])]
 #[ApiFilter(CategorySuperFilter::class, properties: ['category_most_super'])]
 #[ApiFilter(CategoryHasProductsFilter::class, properties: ['has_products'])]
-class Category implements Translatable
+class Category implements Translatable, PagableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -181,7 +183,7 @@ class Category implements Translatable
     private ?bool $isIndexable = null;
 
     #[ORM\ManyToOne(inversedBy: 'categories')]
-    #[Groups(['category_with_parents:read', 'category:read'])]
+    #[Groups(['category_with_parents:read', 'category:read', 'product_item:read'])]
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: CategoryMenuType::class)]
@@ -206,6 +208,10 @@ class Category implements Translatable
 
     #[ORM\Column(nullable: true)]
     private ?array $additionalData = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true, enumType: SpecialCategoryEnum::class)]
+    #[Groups(['category_default', 'category:read'])]
+    private ?SpecialCategoryEnum $specialCategoryCode = null;
 
     public function __construct()
     {
@@ -825,6 +831,18 @@ class Category implements Translatable
     public function setPublishedAt(?\DateTimeImmutable $published_at): self
     {
         $this->published_at = $published_at;
+
+        return $this;
+    }
+
+    public function getSpecialCategoryCode() : ?SpecialCategoryEnum
+    {
+        return $this->specialCategoryCode;
+    }
+
+    public function setSpecialCategoryCode(?SpecialCategoryEnum $specialCategoryCode) : self
+    {
+        $this->specialCategoryCode = $specialCategoryCode;
 
         return $this;
     }

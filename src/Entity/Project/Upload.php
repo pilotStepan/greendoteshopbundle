@@ -25,8 +25,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: UploadRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
+        new GetCollection(stateless: true),
+        new Get(stateless: true),
         new Post(security: "is_granted('ROLE_ADMIN')"),
         new Put(security: "is_granted('ROLE_ADMIN')"),
         new Patch(security: "is_granted('ROLE_ADMIN')"),
@@ -122,6 +122,9 @@ class Upload
     #[ORM\Column(type: 'integer', enumType: DownloadRestriction::class)]
     private DownloadRestriction $restriction = DownloadRestriction::NoRestrictions;
 
+    #[ORM\OneToMany(mappedBy: 'upload', targetEntity: InformationBlock::class)]
+    private Collection $informationBlocks;
+
     public function __construct()
     {
         $this->products = new ArrayCollection();
@@ -129,6 +132,7 @@ class Upload
         $this->producers = new ArrayCollection();
         $this->categories = new ArrayCollection();
         $this->people = new ArrayCollection();
+        $this->informationBlocks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -485,6 +489,36 @@ class Upload
     {
         $this->isDynamicallySet = $isDynamicallySet;
      
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, InformationBlock>
+     */
+    public function getInformationBlocks(): Collection
+    {
+        return $this->informationBlocks;
+    }
+
+    public function addInformationBlock(InformationBlock $informationBlock): static
+    {
+        if (!$this->informationBlocks->contains($informationBlock)) {
+            $this->informationBlocks->add($informationBlock);
+            $informationBlock->setUpload($this);
+        }
+
+        return $this;
+    }
+
+    public function removeInformationBlock(InformationBlock $informationBlock): static
+    {
+        if ($this->informationBlocks->removeElement($informationBlock)) {
+            // set the owning side to null (unless already changed)
+            if ($informationBlock->getUpload() === $this) {
+                $informationBlock->setUpload(null);
+            }
+        }
+
         return $this;
     }
 }

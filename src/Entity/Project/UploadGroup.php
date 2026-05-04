@@ -18,7 +18,7 @@ class UploadGroup
     private ?int $id = null;
 
     #[ORM\OneToMany(mappedBy: 'uploadGroup', targetEntity: Upload::class)]
-    #[Groups(['category_default', 'category:read', 'category:write'])]
+    #[Groups(['category_default', 'product_item:read','category:read', 'category:write'])]
     private Collection $upload;
 
 
@@ -49,6 +49,8 @@ class UploadGroup
     #[ORM\OneToMany(mappedBy: 'uploadGroup', targetEntity: ProducerUploadGroup::class)]
     private Collection $producerUploadGroups;
 
+    #[ORM\OneToMany(mappedBy: 'uploadGroup', targetEntity: InformationBlockUploadGroup::class)]
+    private Collection $informationBlockUploadGroups;
     public function __construct()
     {
         $this->upload = new ArrayCollection();
@@ -58,6 +60,7 @@ class UploadGroup
         $this->productUploadGroups = new ArrayCollection();
         $this->eventUploadGroups = new ArrayCollection();
         $this->producerUploadGroups = new ArrayCollection();
+        $this->informationBlockUploadGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -288,4 +291,34 @@ class UploadGroup
         return $this;
     }
 
+
+    /**
+     * @return Collection<int, InformationBlockUploadGroup>
+     */
+    public function getInformationBlockUploadGroups(): Collection
+    {
+        return $this->informationBlockUploadGroups;
+    }
+
+    public function addInformationBlockUploadGroup(InformationBlockUploadGroup $informationBlockUploadGroup): static
+    {
+        if (!$this->informationBlockUploadGroups->contains($informationBlockUploadGroup)) {
+            $this->informationBlockUploadGroups->add($informationBlockUploadGroup);
+            $informationBlockUploadGroup->setUploadGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeInformationBlockUploadGroup(InformationBlockUploadGroup $informationBlockUploadGroup): static
+    {
+        if ($this->informationBlockUploadGroups->removeElement($informationBlockUploadGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($informationBlockUploadGroup->getUploadGroup() === $this) {
+                $informationBlockUploadGroup->setUploadGroup(null);
+            }
+        }
+
+        return $this;
+    }
 }

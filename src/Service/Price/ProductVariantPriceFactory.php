@@ -77,10 +77,11 @@ readonly class ProductVariantPriceFactory
     }
 
     public function entityLoad(
-        Price                   $price,
-        Currency|ConversionRate $currencyOrConversionRate,
-        VatCalculationType      $vatCalculationType = VatCalculationType::WithoutVAT,
-        DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount,
+        Price                       $price,
+        Currency|ConversionRate     $currencyOrConversionRate,
+        VatCalculationType          $vatCalculationType = VatCalculationType::WithoutVAT,
+        DiscountCalculationType     $discountCalculationType = DiscountCalculationType::WithDiscount,
+        Product|ProductProduct|null  $parentProduct = null,
     ): ProductVariantPrice
     {
         $amount = $price->getMinimalAmount();
@@ -89,7 +90,7 @@ readonly class ProductVariantPriceFactory
             $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate);
         }
 
-        return new ProductVariantPrice(
+        $productVariantPrice = new ProductVariantPrice(
             $price->getProductVariant(),
             $amount,
             $conversionRate,
@@ -103,12 +104,18 @@ readonly class ProductVariantPriceFactory
             $this->productProductRepository,
             $price
         );
+
+         if ($parentProduct){
+            $productVariantPrice->setParentProduct($parentProduct);
+        }
+
+        return $productVariantPrice;
     }
 
     public function createFromContext(
         ProductVariant|PurchaseProductVariant   $pv, 
         ProductVariantPriceContext              $context
-    )
+    ) : ProductVariantPrice
     {
         return $this->create(
             pv: $pv,
@@ -139,4 +146,16 @@ readonly class ProductVariantPriceFactory
             $productVariantPrice->emptyParentProduct();
         }
     }
+
+    public function entityLoadFromContext(Price $price, $context) : ProductVariantPrice
+    {
+        return $this->entityLoad(
+            price:    $price,
+            currencyOrConversionRate:   $context->currencyOrConversionRate,
+            vatCalculationType:         $context->vatCalculationType,
+            discountCalculationType:    $context->discountCalculationType,
+            parentProduct:              $context->parentProduct
+        );
+    }
 }
+

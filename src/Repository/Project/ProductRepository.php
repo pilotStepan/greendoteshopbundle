@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
+use Greendot\EshopBundle\Entity\Project\Review;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Parameter;
 use Greendot\EshopBundle\Entity\Project\Person;
@@ -13,12 +14,14 @@ use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Repository\Utils\SafeJoin;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
 use DateTime;
+use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Availability;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -29,12 +32,13 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class ProductRepository extends HintedRepositoryBase
 {
     use SafeJoin;
+    use WorkflowPlaceFilterTrait;
 
     public function __construct(
         ManagerRegistry                     $registry,
         private readonly CategoryRepository $categoryRepository,
         private readonly CategoryInfoGetter $categoryInfoGetter,
-        RequestStack                        $requestStack,
+        RequestStack $requestStack
     )
     {
         parent::__construct($registry, Product::class, $requestStack);
@@ -85,6 +89,7 @@ class ProductRepository extends HintedRepositoryBase
 
         return $parametersQB->getQuery()->getArrayResult();
     }
+
 
     public function findProductsByProducer(int $producerId): array
     {
@@ -371,11 +376,14 @@ class ProductRepository extends HintedRepositoryBase
         return $qb;
     }
 
-    public function findProductsInCategory(QueryBuilder $qb, int $categoryId): QueryBuilder
+    public function findProductsInCategory(QueryBuilder $qb, int $categoryId, bool $crawlUp = true): QueryBuilder
     {
         $alias = $qb->getRootAliases()[0];
 
-        $categoryIds = $this->categoryRepository->findAllChildCategoryIds($categoryId);
+        $categoryIds = [$categoryId];
+        if($crawlUp){
+            $categoryIds = $this->categoryRepository->findAllChildCategoryIds($categoryId);
+        }
 
         $this->safeJoin($qb, $alias, 'categoryProducts', 'cp');
         $qb->andWhere('cp.category IN (:categoryIds)')
@@ -570,15 +578,13 @@ class ProductRepository extends HintedRepositoryBase
             ->join('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pv', Join::WITH, 'pv.product = p.id')
             ->join('Greendot\EshopBundle\Entity\Project\PurchaseProductVariant', 'ppv', Join::WITH, 'ppv.ProductVariant = pv.id')
             ->join('Greendot\EshopBundle\Entity\Project\Purchase', 'pu', Join::WITH, 'ppv.purchase = pu.id')
-            ->where('pu.date_invoiced >= :startDate')
-            ->andWhere('pu.date_invoiced <= :endDate')
-            ->andWhere('pu.state NOT IN (:excludedStates)')
+            ->where('pu.date_invoiced >= :startDate')->setParameter('startDate', $startDate)
+            ->andWhere('pu.date_invoiced <= :endDate')->setParameter('endDate', $endDate)
+        ;
+        return $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART)
             ->groupBy('p.id')
-            ->setParameter('startDate', $startDate)
-            ->setParameter('endDate', $endDate)
-            ->setParameter('excludedStates', ['draft', 'new']);
-
-        return $qb->getQuery()->getResult();
+            ->getQuery()->getResult()
+        ;
     }
 
     /**
@@ -601,10 +607,47 @@ class ProductRepository extends HintedRepositoryBase
 
     }
 
+    /**
+     * @return ParameterGroup[]
+     */
+    public function findVariantParameterGroupsByProduct(Product $product): array
+    {
+        return $this->getEntityManager()->createQueryBuilder()
+            ->select('DISTINCT pg')
+            ->from(ParameterGroup::class, 'pg')
+            ->innerJoin('pg.productParameterGroups', 'ppg')
+            ->andWhere('ppg.product = :product')
+            ->andWhere('ppg.isVariant = :isVariant')
+            ->setParameter('product', $product)
+            ->setParameter('isVariant', true)
+            ->orderBy('pg.name', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * @return Review[]
+     */
+    public function findApprovedReviews(Product $product): array
+    {
+        return $this->getEntityManager()->createQueryBuilder()
+            ->select('r')
+            ->from(Review::class, 'r')
+            ->andWhere('r.Product = :product')
+            ->andWhere('r.is_approved = :isApproved')
+            ->setParameter('product', $product)
+            ->setParameter('isApproved', true)
+            ->orderBy('r.date', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
     public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
     {
         if (!isset($filters['categoryId'])) $filters['categoryId'] = 0;
+        if (!isset($filters['crawlCategoryUp'])) $filters['crawlCategoryUp'] = true;
 
         if (!isset($filters['supplierIds'])) $filters['supplierIds'] = [];
         if (!isset($filters['productViewTypes'])) $filters['productViewTypes'] = [];
@@ -612,6 +655,8 @@ class ProductRepository extends HintedRepositoryBase
 
         if (!isset($filters['discounts'])) $filters['discounts'] = false;
         if (!isset($filters['isStockOnly'])) $filters['isStockOnly'] = false;
+
+        if (!isset($filters['externalId'])) $filters['externalId'] = false;
 
 
         $availableOrderByIds = ['name', 'price', 'rating', 'default'];
@@ -635,6 +680,7 @@ class ProductRepository extends HintedRepositoryBase
         }
 
         $qb = $this->createQueryBuilder('p')
+            ->select('p.id')
             ->andWhere('p.isVisible = :visible')
             ->setParameter('visible', true)
         ;
@@ -643,7 +689,12 @@ class ProductRepository extends HintedRepositoryBase
         }
 
         if ($filters['categoryId'] > 0) {
-            $this->findProductsInCategory($qb, $filters['categoryId']);
+            $crawlUp = true;
+            if (in_array($filters['crawlCategoryUp'], [false, 'false', 'FALSE', 0, '0'], true)){
+                $crawlUp = false;
+            }
+
+            $this->findProductsInCategory($qb, $filters['categoryId'], $crawlUp);
         }
 
         if (count($filters['supplierIds']) > 0) {
@@ -658,6 +709,12 @@ class ProductRepository extends HintedRepositoryBase
 
         if ($filters['discounts']) {
             $this->findDiscountedProducts($qb);
+        }
+
+        if ($filters['externalId']) {
+            $qb->andWhere('p.externalId LIKE :externalId')
+                ->setParameter('externalId', $filters['externalId'] . '%')
+            ;
         }
 
         if (count($filters['selectedParameters']) > 0) {
@@ -696,25 +753,51 @@ class ProductRepository extends HintedRepositoryBase
 
         $qb->addOrderBy('p.id', 'DESC');
 
-        $limit = isset($filters['itemsPerPage']) ? (int)$filters['itemsPerPage'] : 30;
-        if ($limit <= 0) {
-            $limit = 30;
-        }
-        if ($limit > 200) {
-            $limit = 200;
-        }
-
-        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
-        if ($page <= 0) {
-            $page = 1;
-        }
-
-        $offset = ($page - 1) * $limit;
-        $qb->setMaxResults($limit);
-        $qb->setFirstResult($offset);
-
-
         return $qb;
+    }
+
+    public function primeProductList(array $productIds)
+    {
+        $products =  $this->createQueryBuilder('p')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        $this->createQueryBuilder('p')
+            ->addSelect('l')
+            ->leftJoin('p.labels', 'l')
+            ->addSelect('pprg')
+            ->leftJoin('p.productParameterGroups', 'pprg')
+            ->andWhere('p.id IN (:ids)')
+            ->addSelect('pug')
+            ->leftJoin('p.productUploadGroups', 'pug')
+            ->addSelect('ug')
+            ->leftJoin('pug.UploadGroup', 'ug')
+            ->addSelect('u')
+            ->leftJoin('ug.upload', 'u')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        $this->createQueryBuilder('p')
+            ->addSelect('pv')
+            ->leftJoin('p.productVariants', 'pv')
+            ->leftJoin('pv.parameters', 'pr')
+            ->addSelect('pr')
+            ->addSelect('pvug')
+            ->leftJoin('pv.productVariantUploadGroups', 'pvug')
+            ->addSelect('ug')
+            ->leftJoin('pvug.UploadGroup', 'ug')
+            ->addSelect('u')
+            ->leftJoin('ug.upload', 'u')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        return $products;
+
     }
 
 }

@@ -105,14 +105,14 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
 
     final public function hintQuery(Query $query): Query
     {
-        $locale = $this->requestStack->getCurrentRequest()?->getLocale();
+        $locale = $this->requestStack->getCurrentRequest()->getLocale();
 
         $query->setHint(
             Query::HINT_CUSTOM_OUTPUT_WALKER,
             'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
         );
 
-        if ($locale) {
+        if ($locale){
             $query->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $locale);
         }
 

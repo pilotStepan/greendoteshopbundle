@@ -81,12 +81,19 @@ class InformationBlock implements Translatable
     #[Gedmo\Locale]
     private $locale;
 
+    #[ORM\ManyToOne(inversedBy: 'informationBlocks')]
+    private ?Upload $upload = null;
+
+    #[ORM\OneToMany(mappedBy: 'informationBlock', targetEntity: InformationBlockUploadGroup::class, cascade: ['persist'])]
+    private Collection $informationBlockUploadGroups;
+
     public function __construct()
     {
         $this->categoryInformationBlocks = new ArrayCollection();
         $this->productInformationBlocks = new ArrayCollection();
         $this->eventInformationBlocks = new ArrayCollection();
         $this->personInformationBlocks = new ArrayCollection();
+        $this->informationBlockUploadGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -301,5 +308,48 @@ class InformationBlock implements Translatable
     public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
+    }
+
+
+    public function getUpload(): ?Upload
+    {
+        return $this->upload;
+    }
+
+    public function setUpload(?Upload $upload): static
+    {
+        $this->upload = $upload;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, InformationBlockUploadGroup>
+     */
+    public function getInformationBlockUploadGroups(): Collection
+    {
+        return $this->informationBlockUploadGroups;
+    }
+
+    public function addInformationBlockUploadGroup(InformationBlockUploadGroup $informationBlockUploadGroup): static
+    {
+        if (!$this->informationBlockUploadGroups->contains($informationBlockUploadGroup)) {
+            $this->informationBlockUploadGroups->add($informationBlockUploadGroup);
+            $informationBlockUploadGroup->setInformationBlock($this);
+        }
+
+        return $this;
+    }
+
+    public function removeInformationBlockUploadGroup(InformationBlockUploadGroup $informationBlockUploadGroup): static
+    {
+        if ($this->informationBlockUploadGroups->removeElement($informationBlockUploadGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($informationBlockUploadGroup->getInformationBlock() === $this) {
+                $informationBlockUploadGroup->setInformationBlock(null);
+            }
+        }
+
+        return $this;
     }
 }

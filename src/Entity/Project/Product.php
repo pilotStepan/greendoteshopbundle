@@ -29,6 +29,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Greendot\EshopBundle\Entity\Interface\PagableInterface;
 use Greendot\EshopBundle\StateProvider\ProductItemStateProvider;
 use Greendot\EshopBundle\StateProvider\ProductStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -74,7 +75,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiFilter(ProductFilterByReviews::class)]
 #[ApiFilter(ProductFilterByDiscount::class)]
 //#[ApiFilter(ProductPriceRangeFilter::class)]
-class Product implements Translatable
+class Product implements Translatable, PagableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -166,7 +167,7 @@ class Product implements Translatable
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
-    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
     private Collection $productUploadGroups;
 
     #[Gedmo\Locale]
@@ -560,17 +561,17 @@ class Product implements Translatable
     {
         if (!$this->productUploadGroups->contains($productUploadGroup)) {
             $this->productUploadGroups->add($productUploadGroup);
-            $productUploadGroup->setProductVariant($this);
+            $productUploadGroup->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeProductVariantUploadGroup(ProductUploadGroup $productUploadGroup): self
+    public function removeProductUploadGroup(ProductUploadGroup $productUploadGroup): self
     {
         if ($this->productUploadGroups->removeElement($productUploadGroup)) {
-            if ($productUploadGroup->getProductVariant() === $this) {
-                $productUploadGroup->setProductVariant(null);
+            if ($productUploadGroup->getProduct() === $this) {
+                $productUploadGroup->setProduct(null);
             }
         }
 

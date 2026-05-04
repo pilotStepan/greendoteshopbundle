@@ -3,7 +3,7 @@
 namespace Greendot\EshopBundle\Entity;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use App\Repository\PurchaseTrackingRepository;
+use Greendot\EshopBundle\Repository\PurchaseTrackingRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PurchaseTrackingRepository::class)]
