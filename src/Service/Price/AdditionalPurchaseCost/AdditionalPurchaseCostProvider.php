@@ -18,25 +18,29 @@ class AdditionalPurchaseCostProvider
         $this->additionalPurchaseCosts = $additionalPurchaseCosts;
     }
 
-    public function get(Purchase $purchase): iterable
-    {
-        return $this->getApplicable($purchase);
-    }
-
-    public function getAdditionalPurchaseCosts(Purchase $purchase): iterable
-    {
-        return $this->getApplicable($purchase, true);
-    }
-
-    private function getApplicable(Purchase $purchase, bool $returnApplicable = false): iterable
+    /**
+     * @param Purchase $purchase
+     * @return AdditionalPurchaseCost[]
+     */
+    public function getEntities(Purchase $purchase): iterable
     {
         foreach ($this->additionalPurchaseCosts as $additionalPurchaseCost) {
             assert($additionalPurchaseCost instanceof AdditionalPurchaseCostInterface);
-            $cost = $additionalPurchaseCost->getApplicable($purchase);
-            if (!$cost) continue;
-            if ($returnApplicable){
-                yield $cost;
-            }else{
+            if ($additionalPurchaseCost->isApplicable($purchase)){
+                yield $additionalPurchaseCost->getAdditionalPurchaseCost();
+            }
+        }
+    }
+
+    /**
+     * @param Purchase $purchase
+     * @return AdditionalPurchaseCostInterface[]
+     */
+    public function get(Purchase $purchase): iterable
+    {
+        foreach ($this->additionalPurchaseCosts as $additionalPurchaseCost) {
+            assert($additionalPurchaseCost instanceof AdditionalPurchaseCostInterface);
+            if ($additionalPurchaseCost->isApplicable($purchase)){
                 yield $additionalPurchaseCost;
             }
         }

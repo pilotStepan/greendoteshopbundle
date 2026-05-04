@@ -11,10 +11,12 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 interface AdditionalPurchaseCostInterface
 {
 
-
+    public function getAdditionalPurchaseCost(): AdditionalPurchaseCost;
     /**
      * @param Purchase $purchase
-     * @return AdditionalPurchaseCost|null
+     * @return bool
      */
-    public function getApplicable(Purchase $purchase): ?AdditionalPurchaseCost;
+    public function isApplicable(Purchase $purchase): bool;
+
+    public function includeFree(): bool;
 }

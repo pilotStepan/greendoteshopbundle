@@ -14,6 +14,7 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostInterface;
 use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 
 class PurchasePrice
@@ -278,7 +279,7 @@ class PurchasePrice
         if (false){ // TODO: add if readonly
             $this->additionalPurchaseCosts = $this->purchase->getAdditionalPurchaseCosts()->toArray();
         }else{
-            $this->additionalPurchaseCosts = iterator_to_array($this->additionalPurchaseCostProvider->getAdditionalPurchaseCosts($this->purchase));
+            $this->additionalPurchaseCosts = iterator_to_array($this->additionalPurchaseCostProvider->get($this->purchase));
         }
 
         if ($this->purchase->getTransportation()) {
@@ -298,6 +299,11 @@ class PurchasePrice
         $this->additionalPurchasePriceCombined = null;
         $this->additionalPurchaseCostsCalculated = [];
         foreach ($this->additionalPurchaseCosts as $additionalPurchaseCost){
+            $includeFree = true;
+            if ($additionalPurchaseCost instanceof AdditionalPurchaseCostInterface){
+                $includeFree = $additionalPurchaseCost->includeFree();
+                $additionalPurchaseCost = $additionalPurchaseCost->getAdditionalPurchaseCost();
+            }
             $price =  $this->serviceCalculationUtils->calculateServicePrice(
                 $additionalPurchaseCost,
                 $this->conversionRate,
@@ -305,13 +311,14 @@ class PurchasePrice
                 $purchasePrice,
                 true
             );
+            if ($price > 0 or $includeFree){
+                $this->additionalPurchaseCostsCalculated [] = new AdditionalPurchaseCostCalculatedPrice(
+                    $additionalPurchaseCost,
+                    $this->priceUtils->convertCurrency($price, $this->conversionRate)
+                );
 
-            $this->additionalPurchaseCostsCalculated [] = new AdditionalPurchaseCostCalculatedPrice(
-                $additionalPurchaseCost,
-                $this->priceUtils->convertCurrency($price, $this->conversionRate)
-            );
-
-            $this->additionalPurchasePriceCombined += $price;
+                $this->additionalPurchasePriceCombined += $price;
+            }
         }
     }
 
