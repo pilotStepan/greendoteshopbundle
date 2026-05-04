@@ -27,7 +27,7 @@ class UploadGroup
      * @var UploadGroupTypeEnum
      * Type for the purpose of the upload group.
      */
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     #[ORM\Column(type: "integer", enumType: UploadGroupTypeEnum::class)]
     private UploadGroupTypeEnum $type;
 
