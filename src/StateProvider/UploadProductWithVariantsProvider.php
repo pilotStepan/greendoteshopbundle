@@ -20,7 +20,7 @@ readonly class UploadProductWithVariantsProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
     {        
         $uploads = $this->uploadRepository->getProductWithVariantsUploads($uriVariables['id']);
-        dd($uploads);
+        // dd($uploads);
         
         return $uploads;
     }
