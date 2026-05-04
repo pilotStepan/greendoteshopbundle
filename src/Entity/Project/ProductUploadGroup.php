@@ -14,6 +14,7 @@ class ProductUploadGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['upload_product_with_variants:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'productUploadGroups')]
