@@ -23,16 +23,25 @@ final readonly class UserContextProcessor
     public function __invoke(LogRecord $record): LogRecord
     {
         $current = $this->requestStack->getCurrentRequest();
-        if (!$current) return $record;
+        if ($current === null) {
+            return $record;
+        }
+
+        $record->extra += [
+            'client_ip' => $current->getClientIp(),
+            'request_uri' => $current->getUri(),
+            'request_method' => $current->getMethod(),
+        ];
+
+        if ($current->attributes->get('_stateless', false)) {
+            return $record;
+        }
 
         [$userId, $isAdmin] = $this->extractUserContext();
 
         $record->extra += [
             'is_admin' => $isAdmin,
             'client_id' => $userId,
-            'client_ip' => $current->getClientIp(),
-            'request_uri' => $current->getUri(),
-            'request_method' => $current->getMethod(),
         ];
 
         return $record;
@@ -45,17 +54,14 @@ final readonly class UserContextProcessor
     {
         $user = $this->tokenStorage->getToken()?->getUser();
 
-        // Authenticated client
         if ($user instanceof Client) {
             return [$user->getId(), false];
         }
 
-        // Simple admin
         if ($user instanceof InMemoryUser && $user->getRoles() === ['ROLE_API']) {
             return [null, true];
         }
 
-        // No user
         return [null, false];
     }
 }
