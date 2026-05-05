@@ -9,6 +9,7 @@ use ApiPlatform\Doctrine\Orm\Util\QueryNameGenerator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
 use ApiPlatform\Doctrine\Orm\Extension\QueryCollectionExtensionInterface;
+use Traversable;
 
 class ReviewStatsStateProvider implements ProviderInterface
 {
@@ -19,7 +20,7 @@ class ReviewStatsStateProvider implements ProviderInterface
         private iterable         $collectionExtensions,
     ) {}
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): array
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): object
     {
         // Create base query builder
         $em = $this->managerRegistry->getManagerForClass('Greendot\EshopBundle\Entity\Project\Review');
@@ -42,11 +43,17 @@ class ReviewStatsStateProvider implements ProviderInterface
             }
         }
 
+        $count = (int)(clone $queryBuilder)
+            ->select('COUNT(DISTINCT r.id)')
+            ->getQuery()->getSingleScalarResult() ?? 0;
+
         // Get statistics
         $stats = $this->reviewRepository->getStats($queryBuilder);
-        return [
-            'distribution' => $stats['distribution'],
-            'avgRating' => $stats['avgRating'],
-        ];
+
+        return new class($stats, $count) implements \IteratorAggregate, \Countable {
+            public function __construct(private array $stats, private int $total) {}
+            public function getIterator(): Traversable { return new \ArrayIterator($this->stats); }
+            public function count(): int{ return $this->total; }
+        };
     }
 }
