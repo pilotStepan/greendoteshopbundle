@@ -13,6 +13,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Greendot\EshopBundle\Repository\Project\TransportationGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\StateProvider\TransportationGroupPrices;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TransportationGroupRepository::class)]
@@ -27,6 +28,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
     ],
     normalizationContext: ['groups' => ['transportation_group:read']],
     denormalizationContext: ['groups' => ['transportation_group:write']],
+    provider: TransportationGroupPrices::class,
+    parameters: ['cart' => false]
+
 )]
 class TransportationGroup
 {
