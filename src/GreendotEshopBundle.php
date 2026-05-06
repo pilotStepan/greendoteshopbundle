@@ -3,6 +3,8 @@
 namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -31,6 +33,24 @@ class GreendotEshopBundle extends AbstractBundle
                         ->arrayNode('order')
                             ->children()
                                 ->booleanNode('send_proforma')->defaultValue(true)->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('shop')
+                    ->children()
+                        ->stringNode('default_vat_type')
+                            ->defaultValue(VatCalculationType::WithVAT->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(VatCalculationType::cases(), 'value'))
+                                ->thenInvalid('Invalid VAT type "%s"')
+                            ->end()
+                        ->end()
+                        ->stringNode('default_discount_type')
+                            ->defaultValue(DiscountCalculationType::WithDiscount->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(DiscountCalculationType::cases(), 'value'))
+                                ->thenInvalid('Invalid VAT type "%s"')
                             ->end()
                         ->end()
                     ->end()
@@ -97,6 +117,14 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.blog.slug',
             $config['blog']['slug']
+        );
+        $builder->setParameter(
+            'greendot_eshop.shop.default_vat_type',
+            $config['shop']['default_vat_type']
+        );
+        $builder->setParameter(
+            'greendot_eshop.shop.default_discount_type',
+            $config['shop']['default_discount_type']
         );
 
         $sendProforma = $config['mail']['order']['send_proforma'] ?? true;

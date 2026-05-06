@@ -10,6 +10,13 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
+use Doctrine\ORM\QueryBuilder;
+use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Enum\DiscountAmountType;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
+
+use const Dom\VALIDATION_ERR;
 
 /**
  * @extends ServiceEntityRepository<Price>
@@ -238,5 +245,84 @@ public function findCheapestPricesForProducts(array $productIds): array
             ->getQuery()
             ->getSingleColumnResult();
         return array_map('intval', $uniqueMinimalAmounts);
+    }
+
+
+    public function getPriceMinMaxQB(VatCalculationType $vatType, DiscountCalculationType $discountType) : QueryBuilder
+    {
+        
+        $priceCalculation = $this->resolvePriceCalculationExpression($vatType, $discountType);
+        return $this->createQueryBuilder('price')
+            ->leftJoin('price.productVariant', 'pv')
+            ->leftJoin('pv.product', 'p')
+            ->select("MIN({$priceCalculation}) as priceMin, MAX({$priceCalculation}) as priceMax")
+            ->andWhere('price.validFrom <= :date')
+            ->andWhere('price.validUntil >= :date OR price.validUntil IS NULL')
+            ->andWhere("price.minimalAmount = 1")
+            ->setParameter('date', new \DateTime());
+    }
+
+    public function getPriceMinMaxForCategory(VatCalculationType $vatType, DiscountCalculationType $discountType, int $categoryId, $crawlUp = true) : array
+    {
+        
+        $categoryIds = [$categoryId];
+        if($crawlUp){
+            $categoryRepository = $this->getEntityManager()->getRepository(Category::class);
+            $categoryIds = $categoryRepository->findAllChildCategoryIds($categoryId);
+        }
+
+        return $this->getPriceMinMaxQB($vatType, $discountType)
+            ->leftJoin('p.categoryProducts', 'cp')
+            ->andWhere('cp.category IN(:categoryIds)')
+            ->setParameter('categoryIds', $categoryIds)
+            ->getQuery()
+            ->getResult()[0];
+    }
+
+    public function getPriceMinMaxForProducer(VatCalculationType $vatType, DiscountCalculationType $discountType, int $producerId) : array
+    {
+        return $this->getPriceMinMaxQB($vatType, $discountType)
+            ->innerJoin("p.producer", 'pc')
+            ->orWhere('pc.id = :producerId')
+            ->setParameter('producerId', $producerId)
+            ->getQuery()
+            ->getResult()[0];
+
+    }
+
+    public function getPriceMinMaxForDiscount(VatCalculationType $vatType, DiscountCalculationType $discountType) : array
+    {
+        return $this->getPriceMinMaxQB($vatType, $discountType)
+            ->andWhere('price.discount IS NOT NULL AND price.discount > 0')
+            ->getQuery()
+            ->getResult()[0];
+    }
+
+    public function resolvePriceCalculationExpression(
+        VatCalculationType $vatCalculationType,
+        DiscountCalculationType $discountCalculationType
+    ) {
+
+        $priceCalculation = 'price.price';
+
+        if($vatCalculationType === VatCalculationType::WithVAT) {
+            $priceCalculation .= ' * (1 + COALESCE(price.vat, 0) / 100)';
+        }
+        elseif($vatCalculationType === VatCalculationType::WithoutVAT) {
+            $priceCalculation .= '';
+        }   
+        elseif($vatCalculationType === VatCalculationType::OnlyVAT) {
+            $priceCalculation .= ' * (COALESCE(price.vat, 0) / 100)';
+        }
+        
+        if ($discountCalculationType === DiscountCalculationType::WithDiscount) {
+            $priceCalculation .= ' * (1 - COALESCE(price.discount, 0) / 100 )';
+        }
+        elseif ($discountCalculationType === DiscountCalculationType::WithoutDiscount) {
+            $priceCalculation .= '';
+
+        }
+        
+        return $priceCalculation;
     }
 }
