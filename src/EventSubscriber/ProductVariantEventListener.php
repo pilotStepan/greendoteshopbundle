@@ -2,15 +2,15 @@
 
 namespace Greendot\EshopBundle\EventSubscriber;
 
+use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
-use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Events;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
-#[AsEntityListener(event: Events::postLoad, method: 'postLoad', entity: ProductVariant::class)]
+#[AsEntityListener(event: Events::loadClassMetadata, method: 'loadClassMetadata', entity: ProductVariant::class)]
 class ProductVariantEventListener
 {
     public function __construct(
@@ -20,7 +20,7 @@ class ProductVariantEventListener
     ) {}
 
     // TODO: move calculatedPrices creation to provider
-    public function postLoad(ProductVariant $productVariant, PostLoadEventArgs $event): void
+    public function loadClassMetadata(ProductVariant $productVariant, LoadClassMetadataEventArgs $event): void
     {
         if (!$this->supports())
         {
