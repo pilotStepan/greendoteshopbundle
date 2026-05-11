@@ -38,6 +38,7 @@ class GreendotEshopBundle extends AbstractBundle
                     ->end()
                 ->end()
                 ->arrayNode('shop')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->stringNode('default_vat_type')
                             ->defaultValue(VatCalculationType::WithVAT->value)
@@ -103,7 +104,6 @@ class GreendotEshopBundle extends AbstractBundle
     {
         // load an XML, PHP or YAML file
         $container->import('../config/services.yaml');
-
 
         $absoluteUrl = $config['global']['absolute_url'] ?? 'https://www.example.com';
         $builder->setParameter(
