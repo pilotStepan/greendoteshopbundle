@@ -8,18 +8,15 @@ use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Events;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Service\ListenerManager;
-use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 
 #[AsEntityListener(event: Events::loadClassMetadata, method: 'loadClassMetadata', entity: ProductVariant::class)]
 class ProductVariantEventListener
 {
     public function __construct(
-        private CalculatedPricesService $calculatedPricesService,
         private ListenerManager         $listenerManager,
         private readonly ProductVariantRepository $productVariantRepository
     ) {}
 
-    // TODO: move calculatedPrices creation to provider
     public function loadClassMetadata(ProductVariant $productVariant, LoadClassMetadataEventArgs $event): void
     {
         if (!$this->supports())
