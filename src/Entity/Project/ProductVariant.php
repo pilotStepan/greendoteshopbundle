@@ -102,6 +102,10 @@ class ProductVariant implements Translatable
     #[Groups(["SearchProductResultApiModel"])]
     private ?bool $isActive = null;
 
+    #[ORM\Column(nullable: true, options: ['default' => false])]
+    #[Groups(['product_variant:read', 'product_product:read', 'product_item:read', 'comment:read', "SearchProductResultApiModel"])]
+    private ?bool $isDeleted = null;
+
     #[Gedmo\Locale]
     private $locale;
 
@@ -429,5 +433,17 @@ class ProductVariant implements Translatable
     public function getImagePath(): ?string
     {
         return $this->upload?->getPath() ?? $this->product?->getUpload()?->getPath();
+    }
+
+    public function isIsDeleted(): ?bool
+    {
+        return $this->isDeleted;
+    }
+
+    public function setIsDeleted(?bool $isDeleted): static
+    {
+        $this->isDeleted = $isDeleted;
+
+        return $this;
     }
 }
