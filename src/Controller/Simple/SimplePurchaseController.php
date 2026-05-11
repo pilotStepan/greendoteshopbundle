@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Controller\Simple;
 use JsonException;
 use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
+use DoctrineFiltersConfigNames;
 use Symfony\Component\Workflow\Registry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -154,6 +155,8 @@ class SimplePurchaseController extends AbstractController
     #[Route('/{purchase}/invoice/pdf', name: 'invoice_download_pdf', methods: ['GET'])]
     public function downloadInvoicePdf(Purchase $purchase, InvoiceMaker $invoiceMaker): BinaryFileResponse
     {
+        $this->em->getFilters()->disable(DoctrineFiltersConfigNames::ProductActiveFilter->value);
+
         $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
 
         if (!file_exists($pdfFilePath) || !is_readable($pdfFilePath)) {
@@ -173,12 +176,17 @@ class SimplePurchaseController extends AbstractController
     #[Route('/{purchase}/invoice/xls', name: 'invoice_download_xls', methods: ['GET'])]
     public function downloadInvoiceXls(Purchase $purchase): JsonResponse
     {
+        $this->em->getFilters()->disable(DoctrineFiltersConfigNames::ProductActiveFilter->value);
+
+            
         return $this->json(['message' => 'To be implemented']);
     }
 
     #[Route('/{purchase}/invoice/print', name: 'invoice_download_print', methods: ['GET'])]
     public function downloadInvoicePrint(Purchase $purchase): JsonResponse
     {
+        $this->em->getFilters()->disable(DoctrineFiltersConfigNames::ProductActiveFilter->value);
+        
         return $this->json(['message' => 'To be implemented']);
     }
 
