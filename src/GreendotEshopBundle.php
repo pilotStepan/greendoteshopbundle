@@ -25,6 +25,7 @@ class GreendotEshopBundle extends AbstractBundle
                 ->arrayNode('blog')
                     ->children()
                         ->stringNode('slug')->defaultValue('blog')->end()
+                        ->integerNode('items_per_page')->defaultValue(10)->end()
                         ->booleanNode('has_landing')->defaultValue(true)->end()
                     ->end()
                 ->end()
@@ -117,6 +118,10 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.blog.slug',
             $config['blog']['slug']
+        );
+        $builder->setParameter(
+            'greendot_eshop.blog.items_per_page',
+            $config['blog']['items_per_page']
         );
         $builder->setParameter(
             'greendot_eshop.shop.default_vat_type',
