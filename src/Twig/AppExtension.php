@@ -49,6 +49,7 @@ use Greendot\EshopBundle\Repository\Project\CategoryRepository;
 use Greendot\EshopBundle\Repository\Project\CountryRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
+use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 
 class AppExtension extends AbstractExtension
 {
@@ -76,6 +77,7 @@ class AppExtension extends AbstractExtension
         private readonly RouteTranslator            $routeTranslator,
         private readonly CurrencyManager            $currencyManager,
         private readonly CalculatedPricesService    $calculatedPricesService,
+        private readonly PurchaseUrlGenerator       $purchaseUrlGenerator,
     ) {}
 
     public function getFunctions(): array
@@ -152,6 +154,8 @@ class AppExtension extends AbstractExtension
 
             new TwigFunction('get_price_from', $this->getPriceFrom(...)),
             new TwigFunction('find_product_availability', $this->findProductAvailability(...)),
+
+            new TwigFunction('invoice_url', [$this, 'invoiceUrl']),
         ];
     }
 
@@ -614,5 +618,10 @@ class AppExtension extends AbstractExtension
     public function findProductAvailability(Product $product): ?Availability
     {
         return $this->productRepository->findAvailabilityByProduct($product);
+    }
+
+    public function invoiceUrl(Purchase $purchase)
+    {
+        return $this->purchaseUrlGenerator->buildInvoiceUrl($purchase);
     }
 }

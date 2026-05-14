@@ -63,6 +63,23 @@ final readonly class PurchaseUrlGenerator
         return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($orderDetailUrl);
     }
 
+    public function buildInvoiceUrl(Purchase $purchase) : string
+    {
+        $invoiceUrl = $this->router->generate(
+            'client_download_invoice',
+            ['orderId' => $purchase->getId()]
+        );
+
+        // If the client is registered, return the URL directly
+        if (!$purchase->getClient()->isIsAnonymous()) return $invoiceUrl;
+
+        // If the client is anonymous, generate a login link
+        $client = $purchase->getClient();
+        $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
+
+        return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($invoiceUrl);
+    }
+
     public function buildTrackingUrl(Purchase $purchase): ?string
     {
         if (!$purchase->getTransportNumber() || !$purchase->getTransportation()?->getStateUrl()) {
