@@ -39,7 +39,7 @@ class ProductVariant implements Translatable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
+    #[Groups(['product_variant:read','upload_product_with_variants:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
     private $id;
 
     #[Gedmo\Versioned]
@@ -101,6 +101,10 @@ class ProductVariant implements Translatable
     #[ORM\Column(nullable: true)]
     #[Groups(["SearchProductResultApiModel"])]
     private ?bool $isActive = null;
+
+    #[ORM\Column(nullable: true, options: ['default' => false])]
+    #[Groups(['product_variant:read', 'product_product:read', 'product_item:read', 'comment:read', "SearchProductResultApiModel"])]
+    private ?bool $isDeleted = null;
 
     #[Gedmo\Locale]
     private $locale;
@@ -429,5 +433,17 @@ class ProductVariant implements Translatable
     public function getImagePath(): ?string
     {
         return $this->upload?->getPath() ?? $this->product?->getUpload()?->getPath();
+    }
+
+    public function isIsDeleted(): ?bool
+    {
+        return $this->isDeleted;
+    }
+
+    public function setIsDeleted(?bool $isDeleted): static
+    {
+        $this->isDeleted = $isDeleted;
+
+        return $this;
     }
 }

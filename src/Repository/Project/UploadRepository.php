@@ -155,6 +155,21 @@ class UploadRepository extends ServiceEntityRepository
         return $qb;
     }
 
+     public function getProductWithVariantsUploads(int $productId) : array
+    {
+        return $this->createQueryBuilder('u')
+            ->innerJoin('u.uploadGroup', 'ug')
+            ->leftJoin('ug.productUploadGroups', 'pug')
+            ->leftJoin('pug.Product', 'p')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->leftJoin('pvug.ProductVariant', 'pv')
+            ->leftJoin('pv.product', 'pvp')
+            ->andWhere('(p.id = :productId OR pvp.id = :productId)')
+            ->setParameter('productId', $productId)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findFirstImageUploadForProduct(Product $product, UploadGroupTypeEnum $type): ?Upload
     {
         return $this->createQueryBuilder('u')

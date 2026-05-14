@@ -14,13 +14,14 @@ class ProductUploadGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['upload_product_with_variants:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'productUploadGroups')]
-    #[Groups(['product_item:read'])]
     private ?UploadGroup $UploadGroup = null;
 
     #[ORM\ManyToOne(inversedBy: 'productUploadGroups')]
+    #[Groups(['upload_product_with_variants:read'])]
     private ?Product $Product = null;
 
     #[ORM\Column(nullable: true)]

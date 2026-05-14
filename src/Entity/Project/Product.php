@@ -80,7 +80,7 @@ class Product implements Translatable, PagableInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
+    #[Groups(['product_item:read', 'upload_product_with_variants:read', 'product_list:read', 'product_product:read', 'product_info:write', "SearchProductResultApiModel", 'purchase:read', 'comment:read'])]
     private $id;
 
     #[Gedmo\Translatable]
@@ -167,7 +167,7 @@ class Product implements Translatable, PagableInterface
     private ?Upload $upload = null;
 
     #[ORM\OneToMany(mappedBy: 'Product', targetEntity: ProductUploadGroup::class)]
-    #[Groups(['product_item:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
+    #[Groups(['product_variant:read', 'product_variant:write', 'purchase:read', 'comment:read'])]
     private Collection $productUploadGroups;
 
     #[Gedmo\Locale]

@@ -20,8 +20,11 @@ use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Availability;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -35,9 +38,11 @@ class ProductRepository extends HintedRepositoryBase
     use WorkflowPlaceFilterTrait;
 
     public function __construct(
-        ManagerRegistry                     $registry,
-        private readonly CategoryRepository $categoryRepository,
-        private readonly CategoryInfoGetter $categoryInfoGetter,
+        ManagerRegistry                         $registry,
+        private readonly CategoryRepository     $categoryRepository,
+        private readonly CategoryInfoGetter     $categoryInfoGetter,
+        private readonly PriceRepository        $priceRepository,
+        private readonly ParameterBagInterface  $parameterBag,
         RequestStack $requestStack
     )
     {
@@ -420,12 +425,14 @@ class ProductRepository extends HintedRepositoryBase
                 // Join prices for price filtering
                 $this->safeJoin($queryBuilder, 'pv', 'price', 'price');
 
-                // TODO: maybe based on something different?
-                // now it works as a property of price parameterGroup that is set in vue (productBase/category)
-                $minPriceCalculation = ($parameter['parameterGroup']['withVat'] ?? false) ?
-                    'price.price * (1 + COALESCE(price.vat, 0) / 100) * (1 - COALESCE(price.discount, 0) / 100 )' :
-                    'price.price';
+                $vatCalculationTypeValue = $this->parameterBag->get('greendot_eshop.shop.default_vat_type');
+                $vatCalculationType = VatCalculationType::from($vatCalculationTypeValue);
 
+                $discountCalculationTypeValue = $this->parameterBag->get('greendot_eshop.shop.default_discount_type');
+                $discountCalculationType = DiscountCalculationType::from($discountCalculationTypeValue);
+
+                // TODO: change according to config default types and priceRepository->
+                $minPriceCalculation = $this->priceRepository->resolvePriceCalculationExpression($vatCalculationType, $discountCalculationType);
                 // Apply range filter using MIN($minPriceCalculation)
                 $queryBuilder
                     ->andWhere('price.validFrom <= :date')

@@ -3,6 +3,8 @@
 namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -23,6 +25,7 @@ class GreendotEshopBundle extends AbstractBundle
                 ->arrayNode('blog')
                     ->children()
                         ->stringNode('slug')->defaultValue('blog')->end()
+                        ->integerNode('items_per_page')->defaultValue(10)->end()
                         ->booleanNode('has_landing')->defaultValue(true)->end()
                     ->end()
                 ->end()
@@ -31,6 +34,25 @@ class GreendotEshopBundle extends AbstractBundle
                         ->arrayNode('order')
                             ->children()
                                 ->booleanNode('send_proforma')->defaultValue(true)->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('shop')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->stringNode('default_vat_type')
+                            ->defaultValue(VatCalculationType::WithVAT->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(VatCalculationType::cases(), 'value'))
+                                ->thenInvalid('Invalid VAT type "%s"')
+                            ->end()
+                        ->end()
+                        ->stringNode('default_discount_type')
+                            ->defaultValue(DiscountCalculationType::WithDiscount->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(DiscountCalculationType::cases(), 'value'))
+                                ->thenInvalid('Invalid VAT type "%s"')
                             ->end()
                         ->end()
                     ->end()
@@ -84,7 +106,6 @@ class GreendotEshopBundle extends AbstractBundle
         // load an XML, PHP or YAML file
         $container->import('../config/services.yaml');
 
-
         $absoluteUrl = $config['global']['absolute_url'] ?? 'https://www.example.com';
         $builder->setParameter(
             'greendot_eshop.global.absolute_url',
@@ -97,6 +118,18 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.blog.slug',
             $config['blog']['slug']
+        );
+        $builder->setParameter(
+            'greendot_eshop.blog.items_per_page',
+            $config['blog']['items_per_page']
+        );
+        $builder->setParameter(
+            'greendot_eshop.shop.default_vat_type',
+            $config['shop']['default_vat_type']
+        );
+        $builder->setParameter(
+            'greendot_eshop.shop.default_discount_type',
+            $config['shop']['default_discount_type']
         );
 
         $sendProforma = $config['mail']['order']['send_proforma'] ?? true;

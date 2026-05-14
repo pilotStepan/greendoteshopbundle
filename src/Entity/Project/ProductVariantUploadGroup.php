@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Repository\Project\ProductVariantUploadGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProductVariantUploadGroupRepository::class)]
 #[ApiResource]
@@ -19,6 +20,7 @@ class ProductVariantUploadGroup
     private ?UploadGroup $UploadGroup = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariantUploadGroups')]
+    #[Groups(['upload_product_with_variants:read'])]
     private ?ProductVariant $ProductVariant = null;
 
     #[ORM\Column(nullable: true)]

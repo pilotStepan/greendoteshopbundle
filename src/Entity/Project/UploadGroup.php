@@ -7,7 +7,7 @@ use Greendot\EshopBundle\Repository\Project\UploadGroupRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Groups as Groups;
 
 #[ORM\Entity(repositoryClass: UploadGroupRepository::class)]
 class UploadGroup
@@ -18,7 +18,7 @@ class UploadGroup
     private ?int $id = null;
 
     #[ORM\OneToMany(mappedBy: 'uploadGroup', targetEntity: Upload::class)]
-    #[Groups(['category_default', 'product_item:read','category:read', 'category:write'])]
+    #[Groups(['category_default','category:read', 'category:write'])]
     private Collection $upload;
 
 
@@ -27,7 +27,7 @@ class UploadGroup
      * @var UploadGroupTypeEnum
      * Type for the purpose of the upload group.
      */
-    #[Groups(['upload:read'])]
+    #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     #[ORM\Column(type: "integer", enumType: UploadGroupTypeEnum::class)]
     private UploadGroupTypeEnum $type;
 
@@ -38,9 +38,11 @@ class UploadGroup
     private Collection $personUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: ProductVariantUploadGroup::class)]
+    #[Groups(['upload_product_with_variants:read'])]
     private Collection $productVariantUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: ProductUploadGroup::class)]
+    #[Groups(['upload_product_with_variants:read'])]
     private Collection $productUploadGroups;
 
     #[ORM\OneToMany(mappedBy: 'UploadGroup', targetEntity: EventUploadGroup::class)]

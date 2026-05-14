@@ -70,8 +70,19 @@ readonly class ProductStateProvider implements ProviderInterface
         $productIds = array_slice($allProductIds, $offset, $limit);
         
         // get product entities with initilized associations
-        $products = $this->productRepository->primeProductList($productIds);
+        $unorderedProducts = $this->productRepository->primeProductList($productIds);
         
+        // HACK: fetching by IN(...) breaks order so they have to be reordered
+        $productIdMap = [];
+        foreach($unorderedProducts as $product) {
+            $productIdMap[$product->getId()] = $product;
+        }
+        $products = [];
+        foreach($productIds  as $id) {
+            $products[] = $productIdMap[$id];
+        }
+
+
         $currency = $this->currencyManager->get();
         $converstionRate = $this->priceUtils->getConversionRate($currency);
         $context = new ProductVariantPriceContext(

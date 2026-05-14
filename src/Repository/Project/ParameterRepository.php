@@ -255,6 +255,7 @@ class ParameterRepository extends ServiceEntityRepository
             ->groupBy($alias.'.data');
     }
 
+
     public function getByManufacturerGroupAndMostSuperiorCategoryQB(QueryBuilder $queryBuilder, int $category){
 
         $category = $this->categoryRepository->find($category);

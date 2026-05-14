@@ -55,7 +55,15 @@ class BlogController extends AbstractController
     #[Route(path: '/vse/stranka-{page}', name: 'web_blog_all_paged', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null, 'slug' => null], priority: 2)]
     #[Route(path: '/{slug}-c', name: 'web_blog_filter', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['page' => null], priority: 2)]
     #[Route(path: '/{slug}-c/stranka-{page}', requirements: ['slug' => '[A-Za-z0-9\-]+'], name: 'web_blog_filter_paged', priority: 2)]
-    public function blogCategory(?string $slug, $page, CategoryRepository $categoryRepository, PaginatorInterface $paginator, LabelRepository $labelRepository): Response
+    public function blogCategory(
+        ?string $slug, 
+        $page, 
+        CategoryRepository 
+        $categoryRepository, 
+        PaginatorInterface $paginator, 
+        LabelRepository $labelRepository,
+        ParameterBagInterface $parameterBag
+    ): Response
     {
         $blogLandingPage = $categoryRepository->find(2);
         if ($slug == null) {
@@ -73,7 +81,8 @@ class BlogController extends AbstractController
             $page = 1;
         }
 
-        $pagination = $paginator->paginate($blogArticles, $page, 10);
+        $itemsPerPage = $parameterBag->get('greendot_eshop.blog.items_per_page');
+        $pagination = $paginator->paginate($blogArticles, $page, $itemsPerPage);
         $pagination->setTemplate('pagination/pagination_blog.html.twig');
 
 

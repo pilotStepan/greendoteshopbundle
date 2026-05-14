@@ -8,6 +8,7 @@ use Greendot\EshopBundle\Utils\ApiRequestMatcher;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController as ControllerTurnOffIsActiveFilterController;
+use Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames;
 
 readonly class BeforeControllerListener implements EventSubscriberInterface
 {
@@ -33,11 +34,11 @@ readonly class BeforeControllerListener implements EventSubscriberInterface
 
         if ($controller instanceof ControllerTurnOffIsActiveFilterController) {
             $filters = $this->entityManager->getFilters();
-            if ($filters->isEnabled('products_active')) {
-                $filters->disable('products_active');
+            if ($filters->isEnabled(DoctrineFiltersConfigNames::ProductActiveFilter->value)) {
+                $filters->disable(DoctrineFiltersConfigNames::ProductActiveFilter->value);
             }
-            if ($filters->isEnabled('variants_active')) {
-                $filters->disable('variants_active');
+            if ($filters->isEnabled(DoctrineFiltersConfigNames::ProductVariantActiveFilter->value)) {
+                $filters->disable(DoctrineFiltersConfigNames::ProductVariantActiveFilter->value);
             }
         }
     }
