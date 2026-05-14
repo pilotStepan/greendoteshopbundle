@@ -35,7 +35,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
     ],
     normalizationContext: ['groups' => ['comment:read']],
     denormalizationContext: ['groups' => ['comment:write']],
-    paginationEnabled: true
+    paginationEnabled: true,
+    order: ['submitted' => 'DESC'],
 )]
 #[ApiFilter(ExistsFilter::class, properties: ['comment'])] // set this to false, to filter only main comments
 #[ApiFilter(SearchFilter::class, properties: ['title' => 'partial'])]
