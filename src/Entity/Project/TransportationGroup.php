@@ -29,7 +29,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['transportation_group:read']],
     denormalizationContext: ['groups' => ['transportation_group:write']],
     provider: TransportationGroupPrices::class,
-    parameters: ['cart' => false]
 
 )]
 class TransportationGroup
