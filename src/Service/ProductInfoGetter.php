@@ -111,30 +111,20 @@ class ProductInfoGetter
 
     public function getProductBreadCrumbsArray(Product $product, ?Request $request = null): array
     {
-        // $referer      = $request?->headers->get('referer');
-        $returnArrays = [];
+        $categoryProduct = $this->categoryProductRepository->getMainCategoryForProduct($product->getId());
+        if (!$categoryProduct) {
+            $categoryProduct = $product?->getCategoryProducts()?->first();
+        }
 
-        $mainCategory = $this->categoryProductRepository->getMainCategoryForProduct($product->getId())?->getCategory() ?? $product->getCategoryProducts()->first()->getCategory();
-        
-        $returnArray = $this->categoryInfoGetter->getCategoryBreadCrumbsArray($mainCategory);
+        $mainCategory = null;
+        if ($categoryProduct){
+            $mainCategory = $categoryProduct?->getCategory() ?? null;
+        }
 
-        // forecach ($product->getCategoryProducts() as $categoryProduct) {
-        //     $categoryCrumbs  = $this->categoryInfoGetter->getCategoryBreadCrumbsArray($categoryProduct->getCategory());
-        //     $returnArrays [] = $categoryCrumbs;
-        // }
-        // dd($returnArrays);
-        // if ($referer) {
-        //     foreach ($returnArrays as $bredCrumbsArray) {
-        //         foreach ($bredCrumbsArray as $category) {
-        //             if (str_contains($referer, $category->getSlug())) {
-        //                 return $bredCrumbsArray;
-        //             }
-        //         }
-        //     }
-        // }
 
-        return $returnArray;
+        if (!$mainCategory) return [];
 
+        return $this->categoryInfoGetter->getCategoryBreadCrumbsArray($mainCategory);
     }
 
     public function getProductsForEntity($entity, $onlyActive = true)

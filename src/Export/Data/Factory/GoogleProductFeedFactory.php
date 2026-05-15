@@ -4,8 +4,10 @@ namespace Greendot\EshopBundle\Export\Data\Factory;
 
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Export\Data\Model\GoogleProductFeedModel;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Routing\Exception\InvalidParameterException;
@@ -22,6 +24,7 @@ class GoogleProductFeedFactory
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly CurrencyManager $currencyManager,
         private readonly SluggerInterface $slugger,
+        private readonly ProductVariantPriceFactory $productVariantPriceFactory,
         ParameterBagInterface $parameterBag
     ){
         $this->url = $parameterBag->get('greendot_eshop.global.absolute_url') ?? 'https://www.example.com';
@@ -30,6 +33,7 @@ class GoogleProductFeedFactory
     public function create(ProductVariant $productVariant): GoogleProductFeedModel
     {
         $product = $productVariant->getProduct();
+        $currency = $this->currencyManager->get();
 
         $description = htmlspecialchars(strip_tags($product->getTextGeneral()), ENT_XML1);
         if (strlen($description) > 3000){
@@ -50,16 +54,20 @@ class GoogleProductFeedFactory
         $brand = $product?->getProducer()?->getName();
         $externalId = $productVariant?->getExternalId();
 
-        $calculatedPrices = $productVariant->getCalculatedPrices() ?? [];
-        if (!empty($calculatedPrices)){
-            $calculatedPrices = $calculatedPrices[array_key_first($calculatedPrices)];
-        }
-        $price = $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVatNoDiscount');
-        $priceDiscount = $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVat');
+        $variantPrice = $this->productVariantPriceFactory->create($productVariant, $currency);
+        $price = $variantPrice->getPrice();
+        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
+        $priceDiscount = $variantPrice->getPrice();
+
+//        $calculatedPrices = $productVariant->getCalculatedPrices() ?? [];
+//        if (!empty($calculatedPrices)){
+//            $calculatedPrices = $calculatedPrices[array_key_first($calculatedPrices)];
+//        }
+//        $price = $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVatNoDiscount');
+//        $priceDiscount = $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVat');
         if ($price <= $priceDiscount){
             $priceDiscount = null;
         }
-        $currency = $this->currencyManager->get();
 
         return new GoogleProductFeedModel(
             id: $productVariant->getId(),
