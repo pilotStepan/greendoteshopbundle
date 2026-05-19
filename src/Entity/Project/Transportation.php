@@ -153,6 +153,9 @@ class Transportation implements Translatable
     #[Groups(['transportation:read', 'purchase:read'])]
     private ?TransportationAPI $transportationAPI;
 
+    #[ORM\Column(nullable: true)]
+    private ?array $exportNames = null;
+
     public function __construct()
     {
         $this->purchases      = new ArrayCollection();
@@ -537,6 +540,18 @@ class Transportation implements Translatable
     public function setAmountUntilFree(?float $amountUntilFree): static
     {
         $this->amountUntilFree = $amountUntilFree;
+
+        return $this;
+    }
+
+    public function getExportNames(): ?array
+    {
+        return $this->exportNames;
+    }
+
+    public function setExportNames(?array $exportNames): static
+    {
+        $this->exportNames = $exportNames;
 
         return $this;
     }
