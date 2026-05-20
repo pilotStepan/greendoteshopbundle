@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Twig;
 
+use Greendot\EshopBundle\DataLayer\Event\CheckoutFunnelEvent;
 use Greendot\EshopBundle\DataLayer\Event\PageViewEvent;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
@@ -9,6 +10,7 @@ use Greendot\EshopBundle\DataLayer\Event\ViewItemListEvent;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Twig\Attribute\AsTwigFunction;
@@ -17,7 +19,8 @@ class GoogleTagManagerExtension
 {
     public function __construct(
         private readonly DataLayerManager $dataLayerManager,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly PurchaseRepository $purchaseRepository
     )
     {
     }
@@ -50,6 +53,30 @@ class GoogleTagManagerExtension
     public function pageView(Category $category): void
     {
         $this->eventDispatcher->dispatch(new PageViewEvent($category));
+    }
+
+    #[AsTwigFunction('gtm_view_cart')]
+    public function viewCart(?Purchase $purchase = null): void
+    {$this->checkoutFunnel(CheckoutFunnelEvent::ViewCart, $purchase);}
+
+    #[AsTwigFunction('gtm_begin_checkout')]
+    public function beginCheckout(?Purchase $purchase = null): void
+    {$this->checkoutFunnel(CheckoutFunnelEvent::BeginCheckout, $purchase);}
+
+    #[AsTwigFunction('gtm_add_payment_info')]
+    public function addPaymentInfo(?Purchase $purchase = null): void
+    {$this->checkoutFunnel(CheckoutFunnelEvent::AddPaymentInfo, $purchase);}
+
+    #[AsTwigFunction('gtm_add_shipping_info')]
+    public function addShippingInfo(?Purchase $purchase = null): void
+    {$this->checkoutFunnel(CheckoutFunnelEvent::AddShippingInfo, $purchase);}
+
+    private function checkoutFunnel(string $type, ?Purchase $purchase = null): void
+    {
+        if (!$purchase){
+            $purchase = $this->purchaseRepository->findOneBySession();
+        }
+        $this->eventDispatcher->dispatch(new CheckoutFunnelEvent($purchase,$type));
     }
 
 }

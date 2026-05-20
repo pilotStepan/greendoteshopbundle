@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Events;
+use Greendot\EshopBundle\DataLayer\Event\AddToWishlistEvent;
 use Greendot\EshopBundle\DataLayer\Event\ModifyCart;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
@@ -84,7 +85,15 @@ class CartModifiedListener
 
         $events = array_merge($insertEvents, $updateEvents, $removeEvents);
         foreach ($events as $event){
-            $this->eventDispatcher->dispatch($event);
+            assert($event instanceof ModifyCart);
+            if (!$event->getPurchaseProductVariant()->getPurchase()->hasPlace('wishlist')){
+                $this->eventDispatcher->dispatch($event);
+                continue;
+            }
+
+            if ($event->getType() == ModifyCart::Add){
+                $this->eventDispatcher->dispatch( new AddToWishlistEvent($event->getPurchaseProductVariant(), $event->getQuantity()));
+            }
         }
 
     }
