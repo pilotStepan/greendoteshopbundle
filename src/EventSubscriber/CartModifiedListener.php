@@ -86,7 +86,7 @@ class CartModifiedListener
         $events = array_merge($insertEvents, $updateEvents, $removeEvents);
         foreach ($events as $event){
             assert($event instanceof ModifyCart);
-            if (!$event->getPurchaseProductVariant()->getPurchase()->hasPlace('wishlist')){
+            if (!$event->getPurchaseProductVariant()?->getPurchase()?->hasPlace('wishlist')){
                 $this->eventDispatcher->dispatch($event);
                 continue;
             }
