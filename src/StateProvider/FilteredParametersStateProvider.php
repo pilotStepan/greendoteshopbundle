@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\EventSubscriber\ParameterEventListener;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -21,6 +22,7 @@ class FilteredParametersStateProvider implements ProviderInterface
         private EntityManagerInterface  $em,
         private ListenerManager         $listenerManager,
         private ParameterBagInterface   $parameterBag,
+        private CurrencyManager         $currencyManager,
     ) {
     }
 
@@ -78,6 +80,7 @@ class FilteredParametersStateProvider implements ProviderInterface
             "parameterGroupFilterType" => [ "id" => 1, "name" => "range"],
             "isProductParameter" => true,
             "isFilter" => true,
+            "rounding" => $this->currencyManager->get()->getRounding(),
         ];    
         $parameters = [];
         if (isset($priceMinMax)) {
