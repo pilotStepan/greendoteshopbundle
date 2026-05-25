@@ -259,6 +259,9 @@ class Product implements Translatable, PagableInterface
 
     #[ORM\Column(nullable: true)]
     private ?array $additionalData = null;
+
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $isDeleted = false;
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
@@ -885,6 +888,17 @@ class Product implements Translatable, PagableInterface
     {
         $this->additionalData = $additionalData;
 
+        return $this;
+    }
+
+    public function getIsDeleted(): ?bool
+    {
+        return $this->isDeleted;
+    }
+
+    public function setIsDeleted(bool $isDeleted): self
+    {
+        $this->isDeleted = $isDeleted;
         return $this;
     }
 }
