@@ -71,8 +71,8 @@ class Parameter implements Translatable
     #[ORM\ManyToOne(inversedBy: 'parameters')]
     private ?Person $person = null;
 
-    #[Groups(['product_item:read'])]
     #[ORM\Column(nullable: true)]
+    #[Groups(['product_item:read'])]
     private ?int $sequence = null;
 
     #[ApiProperty]
