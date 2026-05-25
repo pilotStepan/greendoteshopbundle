@@ -3,14 +3,16 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\ColourRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: ColourRepository::class)]
-class Colour
+class Colour implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -19,6 +21,7 @@ class Colour
     private $id;
 
     #[Groups(['product_item:read', 'product_list:read', 'product_variant:read', 'colour:read', 'colour:write', "SearchProductResultApiModel"])]
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
     private $name;
 
@@ -32,6 +35,9 @@ class Colour
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $externalId = null;
+
+    #[Gedmo\Locale]
+    private $locale;
 
 
     public function __construct()
@@ -91,4 +97,8 @@ class Colour
         return $this;
     }
 
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
+    }
 }
