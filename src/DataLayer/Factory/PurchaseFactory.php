@@ -4,8 +4,6 @@ namespace Greendot\EshopBundle\DataLayer\Factory;
 
 
 use Greendot\EshopBundle\DataLayer\Data\Purchase\Purchase;
-use Greendot\EshopBundle\DataLayer\Data\Purchase\PurchaseItem;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
@@ -16,9 +14,10 @@ class PurchaseFactory
     use FactoryUtilsTrait;
 
     public function __construct(
-        private readonly CurrencyManager $currencyManager,
-        private readonly PurchaseRepository $purchaseRepository,
-        private readonly PurchasePriceFactory $purchasePriceFactory
+        private readonly CurrencyManager      $currencyManager,
+        private readonly PurchaseRepository   $purchaseRepository,
+        private readonly PurchasePriceFactory $purchasePriceFactory,
+        private readonly DataLayerItemFactory $dataLayerItemFactory,
     ){}
 
     public function create(\Greendot\EshopBundle\Entity\Project\Purchase $purchase): Purchase
@@ -27,7 +26,11 @@ class PurchaseFactory
 
         $items = [];
         foreach ($purchase->getProductVariants() as $purchaseProductVariant){
-            $items[] = $this->createPurchaseItem($purchaseProductVariant);
+            $items[] = $this->dataLayerItemFactory->createFromVariant(
+                variant: $purchaseProductVariant->getProductVariant(),
+                currency: $currency,
+                quantity: $purchaseProductVariant->getAmount(),
+            );
         }
         $purchasePrice = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT);
         $value = $purchasePrice->getPrice(true);
@@ -47,25 +50,6 @@ class PurchaseFactory
         );
     }
 
-    private function createPurchaseItem(PurchaseProductVariant $purchaseProductVariant): PurchaseItem
-    {
-        $category = $purchaseProductVariant?->getProductVariant()?->getProduct()?->getCategoryProducts()?->first()?->getCategory();
-        $categories = [];
-        if ($category){
-            $categories[] = $this->getCategoryNameTreeUp($category);
-        }
-
-        $calculatedPrices = $purchaseProductVariant->getCalculatedPrices() ?? [];
-
-        return new PurchaseItem(
-            item_id: $purchaseProductVariant->getProductVariant()->getId(),
-            item_name: $purchaseProductVariant->getProductVariant()->getProduct()->getName(),
-            priceVat: $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVat'),
-            priceNoVat: $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceNoVat'),
-            quantity: $purchaseProductVariant->getAmount(),
-            categories: $categories
-        );
-    }
 
     protected function getCustomerType(\Greendot\EshopBundle\Entity\Project\Purchase $purchase): string
     {

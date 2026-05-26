@@ -12,4 +12,71 @@
             window.dataLayer.push(event);
         })
     })
+
+
+    //debug
+    debug();
+    function debug() {
+        // 1. Check if the debug item exists in localStorage
+        if (!localStorage.getItem('debug_gtm')) return;
+
+        // A helper function to build and append the tracker once the body exists
+        function initOverlay() {
+            // Prevent duplicate containers if called twice
+            if (document.getElementById('gtm-debug-overlay')) return;
+
+            // 2. Create and style the overlay container
+            const container = document.createElement('div');
+            container.id = 'gtm-debug-overlay';
+
+            // Apply styles directly
+            Object.assign(container.style, {
+                position: 'fixed',
+                top: '10px',
+                right: '10px',
+                zIndex: '999999',
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                color: '#00ff00',
+                padding: '15px',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                maxHeight: '80vh',
+                maxWidth: '400px',
+                overflowY: 'auto',
+                borderRadius: '5px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                pointerEvents: 'auto',
+                whiteSpace: 'pre-wrap'
+            });
+
+            document.body.appendChild(container);
+
+            let lastDataLayerString = '';
+
+            // 3. The update function
+            function updateDebugOverlay() {
+                const currentDataLayer = window.dataLayer || [];
+                const currentString = JSON.stringify(currentDataLayer, null, 2);
+
+                if (currentString !== lastDataLayerString) {
+                    container.textContent = currentString;
+                    lastDataLayerString = currentString;
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+
+            // 4. Run it immediately, then poll every 300ms for updates
+            updateDebugOverlay();
+            setInterval(updateDebugOverlay, 300);
+        }
+
+        // Safely wait for the body to exist
+        if (document.body) {
+            initOverlay();
+        } else {
+            document.addEventListener('DOMContentLoaded', initOverlay);
+        }
+    }
+
+
 </script>

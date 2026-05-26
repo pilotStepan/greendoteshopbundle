@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\DataLayer\Data\ViewItemList;
 
+use Greendot\EshopBundle\DataLayer\Data\DataLayerItem;
+
 class ViewItemList
 {
 
@@ -9,7 +11,7 @@ class ViewItemList
         public string $item_list_id,
         public string $item_list_name,
         /**
-         * @var ViewItemListItem[]
+         * @var DataLayerItem[]
          */
         public array $items = []
     ){}

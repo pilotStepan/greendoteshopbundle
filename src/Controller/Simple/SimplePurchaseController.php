@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Controller\Simple;
 use JsonException;
 use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
-use DoctrineFiltersConfigNames;
+use Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames;
 use Symfony\Component\Workflow\Registry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

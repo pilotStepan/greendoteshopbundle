@@ -2,26 +2,32 @@
 
 namespace Greendot\EshopBundle\DataLayer\EventListener;
 
+use Greendot\EshopBundle\DataLayer\Event\AddToWishlistEvent;
+use Greendot\EshopBundle\DataLayer\Event\CheckoutFunnelEvent;
 use Greendot\EshopBundle\DataLayer\Event\ModifyCart;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemListEvent;
 use Greendot\EshopBundle\DataLayer\Factory\CartFactory;
+use Greendot\EshopBundle\DataLayer\Factory\CheckoutFunnelFactory;
 use Greendot\EshopBundle\DataLayer\Factory\PurchaseFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemListFactory;
+use Greendot\EshopBundle\DataLayer\Factory\WishlistFactory;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class DataLayerEventListener
 {
     public function __construct(
-        private readonly DataLayerManager $dataLayerManager,
-        private readonly ViewItemListFactory $viewItemListFactory,
-        private readonly ViewItemFactory $viewItemFactory,
-        private readonly PurchaseFactory $purchaseFactory,
-        private readonly CartFactory $cartFactory
-    ){}
+        private readonly DataLayerManager      $dataLayerManager,
+        private readonly ViewItemListFactory   $viewItemListFactory,
+        private readonly ViewItemFactory       $viewItemFactory,
+        private readonly PurchaseFactory       $purchaseFactory,
+        private readonly CartFactory           $cartFactory,
+        private readonly CheckoutFunnelFactory $checkoutFunnelFactory,
+        private readonly WishlistFactory       $wishlistFactory,
+    ) {}
 
     #[AsEventListener(event: ViewItemListEvent::class)]
     public function onViewItemList(ViewItemListEvent $viewItemList): void
@@ -57,6 +63,27 @@ class DataLayerEventListener
         }else{
             $this->dataLayerManager->push(['event' => 'add_to_cart', 'ecommerce' => $eventData], true);
         }
+    }
+
+    #[AsEventListener(event: CheckoutFunnelEvent::class)]
+    public function onCheckoutFunnel(CheckoutFunnelEvent $event): void
+    {
+        $purchase = $event->getPurchase();
+        $eventData = match ($event->getType()) {
+            CheckoutFunnelEvent::ViewCart   => $this->checkoutFunnelFactory->createViewCart($purchase),
+            CheckoutFunnelEvent::BeginCheckout   => $this->checkoutFunnelFactory->createBeginCheckout($purchase),
+            CheckoutFunnelEvent::AddPaymentInfo  => $this->checkoutFunnelFactory->createAddPaymentInfo($purchase),
+            CheckoutFunnelEvent::AddShippingInfo => $this->checkoutFunnelFactory->createAddShippingInfo($purchase),
+        };
+        $this->dataLayerManager->push(['ecommerce' => null]);
+        $this->dataLayerManager->push(['event' => $event->getType(), 'ecommerce' => $eventData], true);
+    }
+
+    #[AsEventListener(event: AddToWishlistEvent::class)]
+    public function onAddToWishlist(AddToWishlistEvent $event): void
+    {
+        $eventData = $this->wishlistFactory->create($event->getPurchaseProductVariant(), $event->getQuantity());
+        $this->dataLayerManager->push(['event' => 'add_to_wishlist', 'ecommerce' => $eventData], true);
     }
 
 }

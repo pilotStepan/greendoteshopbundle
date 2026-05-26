@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\DataLayer\Data\Purchase;
 
+use Greendot\EshopBundle\DataLayer\Data\DataLayerItem;
+
 class Purchase
 {
     public function __construct(
@@ -13,7 +15,7 @@ class Purchase
         public string $customer_type, // new || returning
 
         /**
-         * @var PurchaseItem[]
+         * @var DataLayerItem[]
          */
         public array $items
     ){}
