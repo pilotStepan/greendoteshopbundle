@@ -205,6 +205,9 @@ class OrderDataFactory
             street: $addr->getStreet(),
             city: $addr->getCity(),
             zip: $addr->getZip(),
+            company: $addr->getCompany(),
+            ic: $addr->getIc(),
+            dic: $addr->getDic(),
         );
 
         $shipping = null;
@@ -217,6 +220,9 @@ class OrderDataFactory
                 street: $addr->getShipStreet(),
                 city: $addr->getShipCity(),
                 zip: $addr->getShipZip(),
+                company: $addr->getShipCompany(),
+                ic: $addr->getShipIc(),
+                dic: $addr->getShipDic(),
             );
         }
 
