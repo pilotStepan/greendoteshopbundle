@@ -212,11 +212,8 @@ class OrderDataFactory
 
         $shipping = null;
         if ($addr->getShipStreet() && $addr->getShipCity() && $addr->getShipZip()) {
-            $shippingFullName = trim(($addr->getShipName() ?? '') . ' ' . ($addr->getShipSurname() ?? ''))
-                ?: $purchase->getClient()->getFullname();
-
             $shipping = new OrderAddressData(
-                fullName: $shippingFullName,
+                fullName: trim(($addr->getShipName() ?? '') . ' ' . ($addr->getShipSurname() ?? '')),
                 street: $addr->getShipStreet(),
                 city: $addr->getShipCity(),
                 zip: $addr->getShipZip(),
