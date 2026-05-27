@@ -76,7 +76,7 @@ class ClientDiscount
     #[ORM\Column(type: "string", enumType: DiscountType::class)]
     private DiscountType $type;
 
-    #[ORM\Column(length: 6, unique: true)]
+    #[ORM\Column(length: 16, unique: true)]
     #[Groups(['purchase:read'])]
     #[ApiProperty(identifier: true)]
     private ?string $hash = null;

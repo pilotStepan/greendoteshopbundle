@@ -6,6 +6,7 @@ namespace Greendot\EshopBundle\Mail\Factory;
 use Throwable;
 use RuntimeException;
 use DateTimeImmutable;
+use Psr\Log\LoggerInterface;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Mail\Data\OrderData;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -42,6 +43,7 @@ class OrderDataFactory
         private QRcodeGenerator            $qrGenerator,
         private PaymentGatewayProvider     $gatewayProvider,
         private PurchaseUrlGenerator       $purchaseUrlGenerator,
+        private readonly LoggerInterface   $logger,
     ) {}
 
     public function create(Purchase $purchase): OrderData
@@ -103,7 +105,8 @@ class OrderDataFactory
         try {
             $dueDate = new DateTimeImmutable('+14 days');
             return $this->qrGenerator->getFullUrl($purchase, $dueDate);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            $this->logger->error('Failed to generate QR code for purchase {purchaseId}', ['purchaseId' => $purchase->getId(), 'exception' => $e]);
             return null;
         }
     }
@@ -125,7 +128,7 @@ class OrderDataFactory
     }
 
     /** @return OrderItemData[] */
-    public function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
+    private function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
     {
         $items = [];
 
@@ -202,18 +205,21 @@ class OrderDataFactory
             street: $addr->getStreet(),
             city: $addr->getCity(),
             zip: $addr->getZip(),
+            company: $addr->getCompany(),
+            ic: $addr->getIc(),
+            dic: $addr->getDic(),
         );
 
         $shipping = null;
         if ($addr->getShipStreet() && $addr->getShipCity() && $addr->getShipZip()) {
-            $shippingFullName = trim(($addr->getShipName() ?? '') . ' ' . ($addr->getShipSurname() ?? ''))
-                ?: $purchase->getClient()->getFullname();
-
             $shipping = new OrderAddressData(
-                fullName: $shippingFullName,
+                fullName: trim(($addr->getShipName() ?? '') . ' ' . ($addr->getShipSurname() ?? '')),
                 street: $addr->getShipStreet(),
                 city: $addr->getShipCity(),
                 zip: $addr->getShipZip(),
+                company: $addr->getShipCompany(),
+                ic: $addr->getShipIc(),
+                dic: $addr->getShipDic(),
             );
         }
 

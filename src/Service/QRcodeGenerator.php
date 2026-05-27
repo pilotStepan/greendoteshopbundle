@@ -12,14 +12,18 @@ use Exception;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class QRcodeGenerator
 {
-   
     public function __construct(
-        private Filesystem $filesystem, 
+        private Filesystem $filesystem,
         private RequestStack $requestStack,
         private UrlGeneratorInterface $router,
+        #[Autowire('%kernel.project_dir%')]
+        private string $projectDir,
+        #[Autowire('%env(APP_URL)%')]
+        private string $appUrl = '',
     )
     { }
 
@@ -46,7 +50,7 @@ class QRcodeGenerator
             'roundBlockSizeMode' => RoundBlockSizeMode::Margin,
         ];
 
-        $logoPath = 'build/img/logo_qr.jpg'; // Must be an absolute or relative server path
+        $logoPath = $this->projectDir . '/public/build/img/logo_qr.jpg';
         if (file_exists($logoPath)) {
             $builderParams['logoPath'] = $logoPath;
             $builderParams['logoResizeToWidth'] = 100;
@@ -56,23 +60,26 @@ class QRcodeGenerator
         $result = $builder->build();
 
         $filePath = sprintf('QRcodes/qr_code_%s.png', $purchase->getId());
-        $fullPath = 'public/' . $filePath;
+        $fullPath = $this->projectDir . '/public/' . $filePath;
 
         $this->filesystem->dumpFile($fullPath, $result->getString());
 
-        return '/' . $fullPath;
+        return '/' . $filePath;
     }
     
 
-    public function getFullUrl(Purchase $purchase, \DateTimeInterface $dueDate) : string
+    public function getFullUrl(Purchase $purchase, \DateTimeInterface $dueDate): string
     {
         $request = $this->requestStack->getCurrentRequest();
-            
+
         if ($request) {
-            $domain = $request->getSchemeAndHttpHost(); 
+            $domain = $request->getSchemeAndHttpHost();
         } else {
             $context = $this->router->getContext();
-            $domain = $context->getScheme() . '://' . $context->getHost();
+            $host = $context->getHost();
+            $domain = $host
+                ? $context->getScheme() . '://' . $host
+                : rtrim($this->appUrl, '/');
         }
 
         return $domain . $this->getUri($purchase, $dueDate);

@@ -283,6 +283,9 @@ class Purchase
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $adId = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?array $additionalInfo = null;
+
     public function __construct()
     {
         $this->date_issue = new \DateTime();
@@ -1067,5 +1070,18 @@ class Purchase
     public function isPaid(): bool
     {
         return $this->getWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
+    }
+
+
+    public function getAdditionalInfo(): ?array
+    {
+        return $this->additionalInfo;
+    }
+
+    public function setAdditionalInfo(?array $additionalInfo): static
+    {
+        $this->additionalInfo = $additionalInfo;
+
+        return $this;
     }
 }
