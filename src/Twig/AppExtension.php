@@ -171,17 +171,18 @@ class AppExtension extends AbstractExtension
 
     public function getAllParentSubcategories(Category $category): array
     {
-        if ($category->getCategorySubCategories()->count() == 0) {
+        if($category->getCategorySubCategories()->count() == 0) {
             return [];
-        }
+        } 
 
-        $parentCategories = $category?->getCategorySubCategories();
+        $parentCategories = $category?->getCategorySubCategories(); // subCategories are reversed
         if (!$parentCategories) return [];
         $return  =  [];
         foreach ($parentCategories as $parentCategory){
+            // go one level higher and then get all one level lower     
             if (!$parentCategory or !$parentCategory?->getCategorySuper()){
                 continue;
-            }
+            }            
             $parentCategory = $parentCategory->getCategorySuper();
             $subCategories =  $this->categoryRepository->getSubcategories($parentCategory);
             $parent = ['parent' => $parentCategory, 'subCategories' => $subCategories];
