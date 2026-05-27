@@ -390,7 +390,7 @@ class CategoryRepository extends HintedRepositoryBase
         $query = $this->createQueryBuilder('category')
             ->leftJoin('category.categorySubCategories', 'sub_categories')
             ->andWhere('sub_categories.category_super = :cat')
-            ->andWhere('sub_categories.category_sub.isActive = 1')
+            ->andWhere('category.isActive = 1')
             ->setParameter('cat', $category)
             ->orderBy('sub_categories.sequence', 'ASC')
             ->getQuery();
