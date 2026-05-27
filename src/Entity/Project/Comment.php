@@ -39,6 +39,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     order: ['submitted' => 'DESC'],
 )]
 #[ApiFilter(ExistsFilter::class, properties: ['comment'])] // set this to false, to filter only main comments
+#[ApiFilter(ExistsFilter::class, properties: ['underComment'])] // set this to true, to filter only comments with responses
 #[ApiFilter(SearchFilter::class, properties: ['title' => 'partial'])]
 #[ApiFilter(OrderFilter::class, properties: ['submitted'])]
 #[ApiFilter(MultipleFilter::class, properties: ['categories', 'products'])]
