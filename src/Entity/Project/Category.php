@@ -22,6 +22,7 @@ use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Greendot\EshopBundle\Entity\Interface\PagableInterface;
 use Greendot\EshopBundle\Enum\SpecialCategoryEnum;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\MaxDepth;
 use Symfony\Component\Validator\Constraints\Existence;
 
@@ -29,6 +30,7 @@ use Symfony\Component\Validator\Constraints\Existence;
  * @Gedmo\Loggable()
  */
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
+#[UniqueEntity(fields: ['specialCategoryCode'])]
 #[ORM\Table(name: 'p_category')]
 #[ApiResource(
     operations: [
