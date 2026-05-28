@@ -88,6 +88,10 @@ readonly class ManagePurchase
 
     public function issueInvoice(Purchase $purchase): void
     {
+        if ($purchase->getInvoiceNumber() !== null) {
+            return;
+        }
+
         $invoiceNumber = $this->purchaseRepository->findNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);
         $purchase->setDateInvoiced(new DateTime());

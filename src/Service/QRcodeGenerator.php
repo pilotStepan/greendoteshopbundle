@@ -20,6 +20,7 @@ class QRcodeGenerator
         private Filesystem $filesystem,
         private RequestStack $requestStack,
         private UrlGeneratorInterface $router,
+        private ManagePurchase $managePurchase,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,
         #[Autowire('%env(APP_URL)%')]
@@ -31,6 +32,8 @@ class QRcodeGenerator
     {
         $iban = $purchase->getPaymentType()->getIban();
         if (!$iban) throw new Exception('Missing IBAN in paymentType id'.$purchase->getPaymentType()->getId());
+
+        $this->managePurchase->preparePrices($purchase);
 
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($purchase->getTotalPrice(), 2, '.', '') .

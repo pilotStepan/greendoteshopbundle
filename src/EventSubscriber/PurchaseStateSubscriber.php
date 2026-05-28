@@ -166,9 +166,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment');
-
-        //? We don't want automatic invoice issue on payment
-        // $this->managePurchase->issueInvoice($purchase); 
     }
 
     public function onPaymentIssue(Event $event): void
