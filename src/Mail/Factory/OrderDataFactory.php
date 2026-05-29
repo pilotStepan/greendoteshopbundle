@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Mail\Factory;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use RuntimeException;
 use DateTimeImmutable;

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use SimpleXMLElement;
 use RuntimeException;

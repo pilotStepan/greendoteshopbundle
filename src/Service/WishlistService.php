@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use InvalidArgumentException;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
