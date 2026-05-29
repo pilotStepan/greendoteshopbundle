@@ -295,6 +295,7 @@ class Purchase
     private Collection $additionalPurchaseCosts;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['purchase:read', 'purchase:write'])]
     private ?array $additionalInfo = null;
 
     public function __construct()
