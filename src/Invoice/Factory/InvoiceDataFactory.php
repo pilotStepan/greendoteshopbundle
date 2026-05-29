@@ -41,7 +41,7 @@ final class InvoiceDataFactory
         private CurrencyRepository          $currencyRepository,
         private CountryRepository           $countryRepository,
         private QRcodeGenerator             $qrGenerator,
-        #[Autowire('greendot_eshop.shop.secondary_currency_name')]
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
         private string $secondaryCurrencyName,
     ) {}
 
