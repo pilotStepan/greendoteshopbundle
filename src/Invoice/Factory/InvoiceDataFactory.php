@@ -65,7 +65,9 @@ final class InvoiceDataFactory
         $vatCategories = $this->buildVatCategories($purchase, $czk, $eur);
         [$discountPercentage, $discountValueCzk, $discountValueEur] = array_values($this->buildDiscount($czk, $eur));
         [$totalPriceNoVatCzk, $totalPriceNoVatEur, $totalPriceVatCzk, $totalPriceVatEur, $totalPriceNoVatNoDiscountCzk, $totalPriceNoVatNoDiscountEur, $totalPriceVatNoDiscountCzk, $totalPriceVatNoDiscountEur] = array_values($this->buildPrices($czk, $eur));
-        [$voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
+        [$vouchersUsed, $voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
+
+        $purchaseDiscount = $purchase->getClientDiscount();
 
         return new InvoiceData(
             invoiceId:                              $purchase->getInvoiceNumber(),
@@ -92,9 +94,11 @@ final class InvoiceDataFactory
             totalPriceNoVatNoDiscountSecondary:     $totalPriceNoVatNoDiscountEur,
             totalPriceVatNoDiscount:                $totalPriceVatNoDiscountCzk,
             totalPriceVatNoDiscountSecondary:       $totalPriceVatNoDiscountEur,
+            purchaseDiscount:                       $purchaseDiscount,
             discountPercentage:                     $discountPercentage,
             discountValue:                          $discountValueCzk,
             discountValueSecondary:                 $discountValueEur,
+            vouchersUsed:                           $vouchersUsed,
             voucherValue:                           $voucherValueCzk,
             voucherValueSecondary:                  $voucherValueEur,
         );
@@ -348,8 +352,10 @@ final class InvoiceDataFactory
     {
         $voucherValuePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getVouchersUsedValue();
         $voucherValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getVouchersUsedValue();
+        $vouchersUsed = $this->purchasePrice->getVouchersUsed();
 
         return [
+            $vouchersUsed,
             $voucherValuePrimary,
             $voucherValueSecondary,
         ];
