@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use InvalidArgumentException;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
@@ -21,6 +22,8 @@ readonly class WishlistService
         private CurrencyRepository         $currencyRepository,
         private Encryptor                  $encryptor,
         private PurchaseRepository         $purchaseRepository,
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
+        private string $secondaryCurrencyName,
     ) {}
 
     public function generateUrlToken(Purchase $wishlist): string
@@ -52,7 +55,7 @@ readonly class WishlistService
     public function preparePrices(Purchase $wishlist): Purchase
     {
         $main = $this->currencyRepository->findOneBy(['isDefault' => 1]);
-        $secondary = $this->currencyRepository->findOneBy(['name' => 'Euro']);
+        $secondary = $this->currencyRepository->findOneBy(['name' => $this->secondaryCurrencyName]);
 
         $priceCalc = $this->purchasePriceFactory->create($wishlist, $main, VatCalculationType::WithVAT);
         $totalWithVatMain = $priceCalc->getPrice();

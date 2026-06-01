@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\Parcel;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use SimpleXMLElement;
 use RuntimeException;
@@ -32,6 +33,8 @@ class PacketeryParcel implements ParcelServiceInterface
         private readonly LoggerInterface        $logger,
         private readonly PurchasePriceFactory   $purchasePriceFactory,
         private readonly CurrencyRepository     $currencyRepository,
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
+        private string $secondaryCurrencyName,
     ) {}
 
     /**
@@ -106,10 +109,10 @@ class PacketeryParcel implements ParcelServiceInterface
 
         $calculatorCurrencies = [
             'CZK' => $this->currencyRepository->findOneBy(['isDefault' => true]),
-            'EUR' => $currency = $this->currencyRepository->findOneBy(['name' => 'Euro']),
+            'EUR' => $currency = $this->currencyRepository->findOneBy(['name' => $this->secondaryCurrencyName]),
         ];
 
-        $purchasePriceCalculator = $this->purchasePriceFactory->create($purchase, $$calculatorCurrencies[$currency]);
+        $purchasePriceCalculator = $this->purchasePriceFactory->create($purchase, $calculatorCurrencies[$currency]);
 
         // TODO: check that calculation types for value and cod correct
 

@@ -55,6 +55,7 @@ class GreendotEshopBundle extends AbstractBundle
                                 ->thenInvalid('Invalid VAT type "%s"')
                             ->end()
                         ->end()
+                        ->stringNode('secondary_currency_name')->defaultValue('EUR')->end()
                     ->end()
                 ->end()
             ->end();
@@ -76,12 +77,11 @@ class GreendotEshopBundle extends AbstractBundle
         parent::build($container);
         $ormCompilerClass = 'Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass';
 
-        if (class_exists($ormCompilerClass))
-        {
+        if (class_exists($ormCompilerClass)) {
 
             $namespaces = ['GreendotEshopBundle',];
             $directories = [
-                realpath(__DIR__.'/Entity'),
+                realpath(__DIR__ . '/Entity'),
             ];
             $managerParameters = array();
             $enabledParameter = false;
@@ -134,8 +134,14 @@ class GreendotEshopBundle extends AbstractBundle
 
         $sendProforma = $config['mail']['order']['send_proforma'] ?? true;
         $builder->setParameter(
-          'greendot_eshop.mail.order.send_proforma',
+            'greendot_eshop.mail.order.send_proforma',
             $sendProforma
+        );
+
+        $secondaryCurrencyName = $config['shop']['secondary_currency_name'] ?? 'EUR';
+        $builder->setParameter(
+            'greendot_eshop.shop.secondary_currency_name',
+            $secondaryCurrencyName
         );
 
 //        $builder->setParameter(

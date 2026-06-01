@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Mail\Factory;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use RuntimeException;
 use DateTimeImmutable;
@@ -44,6 +45,8 @@ class OrderDataFactory
         private PaymentGatewayProvider     $gatewayProvider,
         private PurchaseUrlGenerator       $purchaseUrlGenerator,
         private readonly LoggerInterface   $logger,
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
+        private string $secondaryCurrencyName,
     ) {}
 
     public function create(Purchase $purchase): OrderData
@@ -86,7 +89,7 @@ class OrderDataFactory
     private function loadCurrencies(): array
     {
         $czk = $this->currencyRepository->findOneBy(['isDefault' => true]);
-        $eur = $this->currencyRepository->findOneBy(['name' => 'Euro']);
+        $eur = $this->currencyRepository->findOneBy(['name' => $this->secondaryCurrencyName]);
 
         if (!$czk || !$eur) {
             throw new RuntimeException('Missing CZK or EUR currency in DB.');
