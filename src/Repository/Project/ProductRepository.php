@@ -580,18 +580,21 @@ class ProductRepository extends HintedRepositoryBase
 
     public function getSoldProductsCount(DateTime $startDate, DateTime $endDate): array
     {
-        $qb = $this->createQueryBuilder('p')
-            ->select('p.id, SUM(ppv.amount) as sold_amount')
-            ->join('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pv', Join::WITH, 'pv.product = p.id')
-            ->join('Greendot\EshopBundle\Entity\Project\PurchaseProductVariant', 'ppv', Join::WITH, 'ppv.ProductVariant = pv.id')
-            ->join('Greendot\EshopBundle\Entity\Project\Purchase', 'pu', Join::WITH, 'ppv.purchase = pu.id')
-            ->where('pu.date_invoiced >= :startDate')->setParameter('startDate', $startDate)
-            ->andWhere('pu.date_invoiced <= :endDate')->setParameter('endDate', $endDate)
-        ;
-        return $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART)
-            ->groupBy('p.id')
-            ->getQuery()->getResult()
-        ;
+       $qb = $this->createQueryBuilder('p')
+            ->select('p.id, COALESCE(SUM(ppv.amount), 0) as sold_amount') // 2. Handle nulls
+            ->leftJoin('p.productVariants', 'pv')
+            ->leftJoin('pv.orderProductVariants', 'ppv')
+            // 1. Move the date conditions INTO the join criteria
+            ->leftJoin('ppv.purchase', 'pu', 'WITH', 'pu.date_invoiced >= :startDate AND pu.date_invoiced <= :endDate')
+            ->groupBy('p.id');
+
+        // 3. Ensure your excludePlaces helper also accounts for LEFT JOIN nulls
+        $qb = $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART);
+
+        return $qb->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $endDate)
+                ->getQuery()
+          ->getResult();
     }
 
     /**

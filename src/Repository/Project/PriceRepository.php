@@ -61,7 +61,9 @@ class PriceRepository extends ServiceEntityRepository
             ->andWhere('(p.validUntil IS NULL OR p.validUntil > :now)')
             ->setParameter('product', $product)
             ->setParameter('now', new \DateTime())
-            ->orderBy('calculatedPrice', 'ASC') 
+            ->orderBy('p.minimalAmount', 'ASC')
+            ->addOrderBy('calculatedPrice', 'ASC') 
+            // ->orderBy('calculatedPrice', 'ASC') 
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -83,7 +85,7 @@ public function findCheapestPricesForProducts(array $productIds): array
                 (p.price * (1 - COALESCE(p.discount, 0)) * (1 + COALESCE(p.vat, 0))) as calculated_price,
                 ROW_NUMBER() OVER (
                     PARTITION BY pv.product_id 
-                    ORDER BY (p.price * (1 - COALESCE(p.discount, 0)) * (1 + COALESCE(p.vat, 0))) ASC
+                    ORDER BY  p.minimal_amount ASC, (p.price * (1 - COALESCE(p.discount, 0)) * (1 + COALESCE(p.vat, 0))) ASC
                 ) as price_rank
             FROM price p
             JOIN product_variant pv ON p.product_variant_id = pv.id
