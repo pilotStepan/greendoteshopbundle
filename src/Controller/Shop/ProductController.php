@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
+use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -34,14 +35,16 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Doctrine\ORM\Query\ResultSetMappingBuilder;
 
 class ProductController extends AbstractController
 {
     public function __construct(
-        private readonly ProductVariantRepository $productVariantRepository,
-        private readonly CalculatedPricesService  $calculatedPricesService,
+        private readonly ProductRepository          $productRepository,
+        private readonly ProductVariantRepository   $productVariantRepository,
+        private readonly CalculatedPricesService    $calculatedPricesService,
         #[Target(PWC::NAME->value)]
-        private readonly WorkflowInterface        $purchaseFlow,
+        private readonly WorkflowInterface          $purchaseFlow,
     )
     {}
 
@@ -87,6 +90,46 @@ class ProductController extends AbstractController
             'productId' => $product->getId(),
         ]);
     }
+
+    
+    #[Route(
+        '/{slug}{id}p', 
+        name: 'product_by_import_id', 
+        requirements: [
+            'slug' => '[a-zA-Z0-9_-]+?',
+            'id' => '\d+'               
+        ],
+        priority: 2
+    )]
+    public function importIdRedirect(
+        string $slug, 
+        int $id,
+        EntityManagerInterface $entityManager,
+        ): Response
+    {
+      
+        $rsm = new ResultSetMappingBuilder($entityManager);
+        $rsm->addRootEntityFromClassMetadata(Product::class, 'p');
+
+        $sql = 'SELECT p.* FROM product p WHERE p.import_id = :id LIMIT 1';
+        $query = $entityManager->createNativeQuery($sql, $rsm);
+        $query->setParameter('id', $id);
+
+        $product = $query->getOneOrNullResult();
+
+        if (!$product) {
+            throw $this->createNotFoundException('Product not found.');
+        }
+
+        $template = 'shop/product/index.html.twig';
+
+        return $this->render($template, [
+            'product' => $product,
+            'productId' => $product->getId(),
+        ]);
+    }
+
+
     #[TranslatableRoute(class: Product::class, property: 'slug')]
     #[Route('/{slug}-p/add', name: 'add_product', requirements: ['slug' => '[A-Za-z0-9\-]+'], priority: 2)]
     public function add(
