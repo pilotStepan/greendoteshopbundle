@@ -118,7 +118,7 @@ class ProductController extends AbstractController
         $product = $query->getOneOrNullResult();
 
         if (!$product) {
-            throw $this->createNotFoundException('Product not found.');
+            throw $this->createNotFoundException("Product not found by import_id {$id}s.");
         }
 
         $template = 'shop/product/index.html.twig';
