@@ -91,39 +91,6 @@ class ProductController extends AbstractController
         ]);
     }
 
-    
-    #[Route(
-        '/{slug}{id}p', 
-        name: 'product_by_import_id', 
-        requirements: [
-            'slug' => '[a-zA-Z0-9_-]+?',
-            'id' => '\d+'               
-        ],
-        priority: 2
-    )]
-    public function importIdRedirect(
-        string $slug, 
-        int $id,
-        EntityManagerInterface $entityManager,
-        ): Response
-    {
-      
-        $rsm = new ResultSetMappingBuilder($entityManager);
-        $rsm->addRootEntityFromClassMetadata(Product::class, 'p');
-
-        $sql = 'SELECT p.* FROM product p WHERE p.import_id = :id LIMIT 1';
-        $query = $entityManager->createNativeQuery($sql, $rsm);
-        $query->setParameter('id', $id);
-
-        $product = $query->getOneOrNullResult();
-
-        if (!$product and !$product instanceof Product) {
-            throw $this->createNotFoundException("Product not found by import_id {$id}s.");
-        }
-
-        return $this->redirectToRoute('shop_product', ['slug'=> $product->getSlug()] , 301);
-    }
-
 
     #[TranslatableRoute(class: Product::class, property: 'slug')]
     #[Route('/{slug}-p/add', name: 'add_product', requirements: ['slug' => '[A-Za-z0-9\-]+'], priority: 2)]
