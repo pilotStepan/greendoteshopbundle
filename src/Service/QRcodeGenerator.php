@@ -28,16 +28,18 @@ class QRcodeGenerator
     )
     { }
 
-    public function getUri(Purchase $purchase, \DateTimeInterface $dueDate): string
+    public function getUri(Purchase $purchase): string
     {
         $iban = $purchase->getPaymentType()->getIban();
         if (!$iban) throw new Exception('Missing IBAN in paymentType id'.$purchase->getPaymentType()->getId());
 
         $this->managePurchase->preparePrices($purchase);
 
+        $now = new \DateTimeImmutable('now');
+
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($purchase->getTotalPrice(), 2, '.', '') .
-            '*CC:CZK*DT:' . $dueDate->format("Ymd") .
+            '*CC:CZK*DT:' . $now->format("Ymd") .
             '*X-VS:' . $purchase->getId().
             '*X-KS:308';
 
@@ -71,7 +73,7 @@ class QRcodeGenerator
     }
     
 
-    public function getFullUrl(Purchase $purchase, \DateTimeInterface $dueDate): string
+    public function getFullUrl(Purchase $purchase): string
     {
         $request = $this->requestStack->getCurrentRequest();
 
@@ -85,6 +87,6 @@ class QRcodeGenerator
                 : rtrim($this->appUrl, '/');
         }
 
-        return $domain . $this->getUri($purchase, $dueDate);
+        return $domain . $this->getUri($purchase);
     }
 }

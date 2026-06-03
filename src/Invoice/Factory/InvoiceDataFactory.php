@@ -124,8 +124,7 @@ final class InvoiceDataFactory
     private function buildQrCode(Purchase $purchase): ?string
     {
         try {
-            $dueDate = new DateTimeImmutable('+14 days');
-            return $this->qrGenerator->getFullUrl($purchase, $dueDate);
+            return $this->qrGenerator->getFullUrl($purchase);
         } catch (Throwable) {
             return null;
         }

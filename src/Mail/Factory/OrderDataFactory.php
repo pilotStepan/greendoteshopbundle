@@ -106,8 +106,7 @@ class OrderDataFactory
         }
 
         try {
-            $dueDate = new DateTimeImmutable('+14 days');
-            return $this->qrGenerator->getFullUrl($purchase, $dueDate);
+            return $this->qrGenerator->getFullUrl($purchase);
         } catch (Throwable $e) {
             $this->logger->error('Failed to generate QR code for purchase {purchaseId}', ['purchaseId' => $purchase->getId(), 'exception' => $e]);
             return null;
