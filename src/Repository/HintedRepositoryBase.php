@@ -32,13 +32,57 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
 
     final public function findOneByHinted(array $criteria, array $orderBy = null): ?object
     {
-        $qb = $this->createQueryBuilder('e');
+        $stringCriteria = array_filter($criteria, static fn($v) => is_string($v) && $v !== '');
 
+        if (count($stringCriteria) === 1) {
+            $locale = $this->requestStack->getCurrentRequest()?->getLocale();
+
+            if ($locale) {
+                $field = array_key_first($stringCriteria);
+                $value = $stringCriteria[$field];
+
+                $entityId = $this->findIdInTranslations($locale, $field, $value);
+                if ($entityId !== null) {
+                    $entity = $this->findHinted($entityId);
+                    if ($entity !== null) {
+                        return $entity;
+                    }
+                }
+
+                $entity = $this->findOneBy($criteria, $orderBy);
+                if ($entity !== null) {
+                    return $this->findHinted($entity->getId());
+                }
+
+                return null;
+            }
+        }
+
+        $qb = $this->createQueryBuilder('e');
         $qb = $this->handleCriteria($qb, $criteria);
         $qb = $this->handleOrderBy($qb, $orderBy);
+        return $this->hintQuery($qb->getQuery())->getOneOrNullResult();
+    }
 
-        $qb = $this->hintQuery($qb->getQuery());
-        return $qb->getOneOrNullResult();
+    private function findIdInTranslations(string $locale, string $field, string $value): ?int
+    {
+        $result = $this->getEntityManager()
+            ->createQueryBuilder()
+            ->select('t.foreignKey')
+            ->from(GedmoTranslation::class, 't')
+            ->where('t.locale = :locale')
+            ->andWhere('t.objectClass = :class')
+            ->andWhere('t.field = :field')
+            ->andWhere('t.content = :value')
+            ->setParameter('locale', $locale)
+            ->setParameter('class', $this->getEntityName())
+            ->setParameter('field', $field)
+            ->setParameter('value', $value)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result ? (int) $result['foreignKey'] : null;
     }
 
     final public function findByHinted(array $criteria, array $orderBy = null, $limit = null, $offset = null): array
