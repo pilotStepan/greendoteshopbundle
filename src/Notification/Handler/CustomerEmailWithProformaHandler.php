@@ -44,7 +44,7 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
         if ($invoicePath) {
             $email->attachFromPath(
                 $invoicePath,
-                'proforma_' . $purchase->getId() . '.pdf',
+                 $purchase->getId() . '.pdf',
                 'application/pdf',
             );
         }

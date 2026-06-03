@@ -19,6 +19,7 @@ use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
@@ -149,7 +150,13 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $this->manageClientDiscount->use($clientDiscount, $purchase);
         }
 
-        $this->manageVoucher->initiateVouchers($purchase);
+        $issuedVouchers = $this->manageVoucher->initiateVouchers($purchase);
+
+        //makes voucher active when paymentTypeActionGroup is COD
+        if ($purchase->getPaymentType()?->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY) {
+            $this->manageVoucher->handleVouchersTransition($issuedVouchers, 'payment');
+        }
+
         $this->managePurchase->generateTransportData($purchase);
         $this->dateService->calculatePurchaseDeliveryDate($purchase);
     }
