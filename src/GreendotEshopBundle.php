@@ -9,9 +9,34 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Yaml\Yaml;
 
 class GreendotEshopBundle extends AbstractBundle
 {
+
+    /**
+     * Uses symfony-native prependExtension
+     * Configured to look into config/extension/*.yaml and prepend those extensions
+     * filename doesn't matter (but you should still keep the convention... )
+     * What matters is the root key in yaml files which MUST specify the extension name (eg: doctrine, services) and valid config
+     *
+     * @param ContainerConfigurator $container
+     * @param ContainerBuilder $builder
+     * @return void
+     */
+    public function prependExtension(ContainerConfigurator $container, ContainerBuilder $builder): void
+    {
+        $configDir = __DIR__. '/../config/extensions';
+        foreach (glob($configDir. '/*.yaml') as $file) {
+            $config = Yaml::parseFile($file);
+            foreach ($config as $extension => $values){
+                if (!$builder->hasExtension($extension)) continue;
+                $builder->prependExtensionConfig($extension, $values);
+            }
+        }
+        parent::prependExtension($container, $builder);
+    }
+
 
     public function configure(DefinitionConfigurator $definition): void
     {
