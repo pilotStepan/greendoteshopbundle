@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -12,14 +11,12 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
-use Greendot\EshopBundle\ApiResource\ParameterCategoryFilter;
-use Greendot\EshopBundle\ApiResource\ParameterSupplierFilter;
-use Greendot\EshopBundle\ApiResource\ParameterDiscountFilter;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\StateProvider\FilteredParametersStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
-
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 #[ORM\Entity(repositoryClass: ParameterRepository::class)]
 #[ApiResource(
       operations: [
@@ -37,12 +34,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
     ],
     paginationEnabled: false
 )]
-// TODO: make endpoint for productListingParametrFetch
-// FIXME: doesn't fetch params from subcategories
-// TODO: set the filters correctly (should be filtered only when the parameter is sent)
-// #[ApiFilter(ParameterCategoryFilter::class)]
-// #[ApiFilter(ParameterSupplierFilter::class)]
-// #[ApiFilter(ParameterDiscountFilter::class)]
 class Parameter implements Translatable
 {
     #[ORM\Id]
@@ -81,6 +72,15 @@ class Parameter implements Translatable
 
     #[Gedmo\Locale]
     private $locale;
+
+    #[ORM\ManyToMany(targetEntity: ParameterType::class, mappedBy: 'parameters')]
+    private Collection $parameterTypes;
+
+
+    public function __construct()
+    {
+        $this->parameterTypes = new ArrayCollection();
+    }
 
 
     public function getId(): ?int
@@ -175,5 +175,33 @@ class Parameter implements Translatable
     public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
+    }
+
+
+    /**
+     * @return Collection<int, ParameterType>
+     */
+    public function getParameterTypes(): Collection
+    {
+        return $this->parameterTypes;
+    }
+
+    public function addParameterType(ParameterType $parameterType): static
+    {
+        if (!$this->parameterTypes->contains($parameterType)) {
+            $this->parameterTypes->add($parameterType);
+            $parameterType->addParameter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParameterType(ParameterType $parameterType): static
+    {
+        if ($this->parameterTypes->removeElement($parameterType)) {
+            $parameterType->removeParameter($this);
+        }
+
+        return $this;
     }
 }
