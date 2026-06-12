@@ -10,7 +10,7 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-readonly class ManageMails
+class ManageMails
 {
     private Address $fromAddress;
 

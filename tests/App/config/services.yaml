@@ -9,3 +9,13 @@ services:
 
     Greendot\EshopBundle\Controller\Shop\ClientSectionController:
         tags: ['controller.service_arguments']
+
+    Greendot\EshopBundle\Controller\Simple\SimpleProductVariantController:
+        tags: ['controller.service_arguments']
+
+    # Synthetic services allow functional tests to inject mocks via $container->set()
+    Greendot\EshopBundle\Repository\Project\ProductVariantRepository:
+        synthetic: true
+
+    Symfony\Component\Messenger\MessageBusInterface:
+        synthetic: true
