@@ -17,14 +17,15 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 class QRcodeGenerator
 {
     public function __construct(
-        private Filesystem $filesystem,
-        private RequestStack $requestStack,
-        private UrlGeneratorInterface $router,
-        private ManagePurchase $managePurchase,
+        private Filesystem              $filesystem,
+        private RequestStack            $requestStack,
+        private UrlGeneratorInterface   $router,
+        private CurrencyManager         $currencyManager, 
+        private ManagePurchase          $managePurchase,
         #[Autowire('%kernel.project_dir%')]
-        private string $projectDir,
+        private string                  $projectDir,
         #[Autowire('%env(APP_URL)%')]
-        private string $appUrl = '',
+        private string                  $appUrl = '',
     )
     { }
 
@@ -36,12 +37,14 @@ class QRcodeGenerator
         $this->managePurchase->preparePrices($purchase);
 
         $now = new \DateTimeImmutable('now');
+        $currency = $this->currencyManager->get();
 
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($purchase->getTotalPrice(), 2, '.', '') .
-            '*CC:CZK*DT:' . $now->format("Ymd") .
+            '*CC:' . $currency->getName() . '*DT:' . $now->format("Ymd") .
             '*X-VS:' . $purchase->getId().
             '*X-KS:308';
+
 
         $builderParams = [
             'writer' => new PngWriter(),

@@ -1,0 +1,6 @@
+doctrine:
+  orm:
+    dql:
+      string_functions:
+        CAST: DoctrineExtensions\Query\Mysql\Cast
+        REPLACE: DoctrineExtensions\Query\Mysql\Replace
