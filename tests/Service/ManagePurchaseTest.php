@@ -3,57 +3,52 @@
 namespace Greendot\EshopBundle\Tests\Service;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Entity\Project\TransportationAction;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\MessageRepository;
+use Greendot\EshopBundle\Enum\TransportationAPI;
+use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
+use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Service\InvoiceMaker;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
+use Greendot\EshopBundle\Service\Vies\ManageVies;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\Workflow\Registry;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class ManagePurchaseTest extends TestCase
 {
     private PurchaseRepository&MockObject $purchaseRepository;
-    private ParcelServiceProvider&MockObject $parcelServiceProvider;
+    private MessageBusInterface&MockObject $bus;
     private ManagePurchase $managePurchase;
 
     protected function setUp(): void
     {
-        $workflowRegistry = $this->createMock(Registry::class);
         $this->purchaseRepository = $this->createMock(PurchaseRepository::class);
-        $currencyRepository = $this->createMock(CurrencyRepository::class);
-        $messageRepository = $this->createMock(MessageRepository::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $invoiceMaker = $this->createMock(InvoiceMaker::class);
-        $this->parcelServiceProvider = $this->createMock(ParcelServiceProvider::class);
-        $requestStack = $this->createMock(RequestStack::class);
+        $this->bus = $this->createMock(MessageBusInterface::class);
 
-        $session = $this->createMock(Session::class);
-        $session->method('isStarted')->willReturn(true);
-        $session->method('get')->willReturn($this->createMock(Currency::class));
-        $requestStack->method('getSession')->willReturn($session);
-
-        $this->managePurchase = new ManagePurchase(
-            $workflowRegistry,
+        $this->managePurchase = $this->createManagePurchase(
             $this->purchaseRepository,
-            $currencyRepository,
-            $messageRepository,
-            $logger,
-            $invoiceMaker,
-            $this->parcelServiceProvider,
-            $requestStack
+            $this->bus,
+            new ParcelServiceProvider([]),
         );
     }
 
@@ -84,7 +79,6 @@ class ManagePurchaseTest extends TestCase
 
         $existingPPV = $this->createMock(PurchaseProductVariant::class);
         $existingPPV->method('getProductVariant')->willReturn($productVariant);
-        // Stub the current amount to 2 so that adding 1 results in 3.
         $existingPPV->method('getAmount')->willReturn(2);
         $existingPPV->expects($this->once())
             ->method('setAmount')
@@ -98,7 +92,6 @@ class ManagePurchaseTest extends TestCase
         $this->assertSame($purchase, $result);
     }
 
-
     public function testCalculateInquiryNumberWithPurchase(): void
     {
         $purchase = $this->createMock(Purchase::class);
@@ -109,30 +102,40 @@ class ManagePurchaseTest extends TestCase
         $this->assertSame('1672531200456', $result);
     }
 
-    public function testGenerateTransportDataSuccessful(): void
+    public function testGenerateTransportDataDispatchesMessageWhenServiceExists(): void
     {
-        // Set up transportation and its action.
-        $transportation = $this->createMock(Transportation::class);
-        $action = $this->createMock(TransportationAction::class);
-        $action->method('getId')->willReturn(3); // Non-pickup action.
-        $transportation->method('getTransportationAction')->willReturn($action);
-        $transportation->method('getId')->willReturn(1);
+        $transportationAPI = TransportationAPI::PACKETA;
 
-        // Set up purchase to return the transportation.
+        $transportation = new Transportation();
+        $transportation->setTransportationAPI($transportationAPI);
+
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getTransportation')->willReturn($transportation);
+        $purchase->method('getId')->willReturn(42);
 
-        // Create a mock for ParcelServiceInterface.
         $parcelService = $this->createMock(ParcelServiceInterface::class);
-        $parcelService->method('createParcel')->with($purchase)->willReturn('TRACK123');
+        $parcelService->method('supports')->with($transportationAPI)->willReturn(true);
 
-        // When parcel service provider is asked, return our mock.
-        $this->parcelServiceProvider->method('get')->with(1)->willReturn($parcelService);
+        $managePurchase = $this->createManagePurchase(
+            $this->purchaseRepository,
+            $this->bus,
+            new ParcelServiceProvider([$parcelService]),
+        );
 
-        // Expect that the purchase gets its transport number set.
-        $purchase->expects($this->once())
-            ->method('setTransportNumber')
-            ->with('TRACK123');
+        $this->bus->expects($this->once())
+            ->method('dispatch')
+            ->with($this->isInstanceOf(CreateParcelMessage::class))
+            ->willReturn(new Envelope(new CreateParcelMessage(42)));
+
+        $managePurchase->generateTransportData($purchase);
+    }
+
+    public function testGenerateTransportDataDoesNothingWhenNoService(): void
+    {
+        $purchase = $this->createMock(Purchase::class);
+        $purchase->method('getTransportation')->willReturn(null);
+
+        $this->bus->expects($this->never())->method('dispatch');
 
         $this->managePurchase->generateTransportData($purchase);
     }
@@ -141,15 +144,12 @@ class ManagePurchaseTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage("Inquiry ID has a wrong format.");
-        // Inquiry number with exactly 10 characters (timestamp only) is invalid.
-        $inquiryNumber = "0123456789";
-        $this->managePurchase->findPurchaseByInquiryNumber($inquiryNumber);
+        $this->managePurchase->findPurchaseByInquiryNumber("0123456789");
     }
 
     public function testFindPurchaseByInquiryNumberThrowsExceptionWhenPurchaseNotFound(): void
     {
-        $inquiryNumber = "0123456789123"; // 10-digit timestamp + "123"
-        // Expect the repository to look for purchase ID "123" and return null.
+        $inquiryNumber = "0123456789123";
         $this->purchaseRepository->expects($this->once())
             ->method('find')
             ->with("123")
@@ -162,9 +162,8 @@ class ManagePurchaseTest extends TestCase
 
     public function testFindPurchaseByInquiryNumberReturnsPurchase(): void
     {
-        $inquiryNumber = "0123456789123"; // 10-digit timestamp + "123"
+        $inquiryNumber = "0123456789123";
         $dummyPurchase = new Purchase();
-        // Expect the repository to return the dummy purchase when searching by "123".
         $this->purchaseRepository->expects($this->once())
             ->method('find')
             ->with("123")
@@ -172,5 +171,51 @@ class ManagePurchaseTest extends TestCase
 
         $result = $this->managePurchase->findPurchaseByInquiryNumber($inquiryNumber);
         $this->assertSame($dummyPurchase, $result);
+    }
+
+    private function createManagePurchase(
+        PurchaseRepository $purchaseRepository,
+        MessageBusInterface $bus,
+        ParcelServiceProvider $parcelServiceProvider,
+    ): ManagePurchase {
+        $conversionRateRepository = $this->createMock(ConversionRateRepository::class);
+        $priceRepository = $this->createMock(PriceRepository::class);
+        $settingsRepository = $this->createMock(SettingsRepository::class);
+        $handlingPriceRepository = $this->createMock(HandlingPriceRepository::class);
+        $productProductRepository = $this->createMock(ProductProductRepository::class);
+        $security = $this->createMock(Security::class);
+        $discountService = $this->createMock(DiscountService::class);
+        $requestStack = $this->createMock(RequestStack::class);
+        $currencyRepository = $this->createMock(CurrencyRepository::class);
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $priceUtils = new PriceUtils($conversionRateRepository);
+        $serviceCalculationUtils = new ServiceCalculationUtils($handlingPriceRepository, $priceUtils);
+        $productVariantPriceFactory = new ProductVariantPriceFactory(
+            $security,
+            $priceRepository,
+            $discountService,
+            $priceUtils,
+            $settingsRepository,
+            $productProductRepository,
+        );
+        $purchasePriceFactory = new PurchasePriceFactory(
+            $productVariantPriceFactory,
+            $priceUtils,
+            $serviceCalculationUtils,
+            $settingsRepository,
+        );
+        $currencyManager = new CurrencyManager($requestStack, $currencyRepository);
+        $manageVies = new ManageVies($logger);
+
+        return new ManagePurchase(
+            $currencyManager,
+            $purchasePriceFactory,
+            $productVariantPriceFactory,
+            $purchaseRepository,
+            $manageVies,
+            $bus,
+            $parcelServiceProvider,
+        );
     }
 }

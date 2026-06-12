@@ -9,57 +9,76 @@ use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
 use Greendot\EshopBundle\Repository\Project\ConsentRepository;
+use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\DateService;
+use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
-use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\ManageVoucher;
+use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
+use Greendot\EshopBundle\Service\Vies\ManageVies;
+use LogicException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\Marking;
 use Symfony\Component\Workflow\Transition;
 use Symfony\Component\Workflow\Workflow;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 
-/**
- * Test class for PurchaseStateSubscriber.
- *
- * These tests validate that the guard method in the subscriber correctly
- * stops (blocks) the transition when specific conditions are not met.
- */
 class PurchaseStateSubscriberTest extends TestCase
 {
-    private MockObject $manageMails;
     private MockObject $entityManager;
     private MockObject $manageVoucher;
-    private MockObject $managePurchase;
-    private MockObject $manageClientDiscount;
+    private ManageClientDiscount $manageClientDiscount;
+    private MockObject $dateService;
+    private MockObject $eventDispatcher;
+    private MockObject $purchaseWorkflow;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void
     {
-        $this->manageMails = $this->createMock(ManageMails::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->manageVoucher = $this->createMock(ManageVoucher::class);
-        $this->managePurchase = $this->createMock(ManagePurchase::class);
-        $this->manageClientDiscount = $this->createMock(ManageClientDiscount::class);
+        $this->manageClientDiscount = new ManageClientDiscount($this->createMock(EntityManagerInterface::class));
+        $this->dateService = $this->createMock(DateService::class);
+        $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $this->purchaseWorkflow = $this->createMock(WorkflowInterface::class);
 
         $this->subscriber = new PurchaseStateSubscriber(
-            $this->manageMails,
             $this->entityManager,
             $this->manageVoucher,
-            $this->managePurchase,
-            $this->manageClientDiscount
+            $this->buildManagePurchase(),
+            $this->manageClientDiscount,
+            $this->dateService,
+            $this->eventDispatcher,
+            $this->purchaseWorkflow,
         );
     }
 
     public function testGuardReceiveBlocksWhenNoProductVariants(): void
     {
-        // Create a Purchase mock with an empty product variants collection.
         $purchase = $this->createPurchaseMock(productVariants: []);
 
         $event = $this->createGuardEvent($purchase);
@@ -70,7 +89,6 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenNoClient(): void
     {
-        // Create a Purchase mock that has some product variant but no client.
         $purchase = $this->createPurchaseMock(client: null);
 
         $event = $this->createGuardEvent($purchase);
@@ -81,7 +99,6 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenNoPaymentType(): void
     {
-        // Create a Purchase mock with valid client but no payment type.
         $purchase = $this->createPurchaseMock(client: new Client(), paymentType: null);
 
         $event = $this->createGuardEvent($purchase);
@@ -92,9 +109,7 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenNoTransportation(): void
     {
-        // Create a valid payment type so that payment type check passes.
         $paymentType = $this->createValidPaymentType();
-        // null transportation is passed to simulate the missing transportation case.
         $purchase = $this->createPurchaseMock(paymentType: $paymentType, transportation: null);
 
         $event = $this->createGuardEvent($purchase);
@@ -105,15 +120,12 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenIncompatiblePaymentAndTransport(): void
     {
-        // Create a payment type mock that returns a collection without the required transportation.
         $paymentType = $this->createMock(PaymentType::class);
         $transportation = $this->createMock(Transportation::class);
 
-        // Ensure that the allowed transportations do not include the given transportation.
         $paymentType->method('getTransportations')
             ->willReturn(new ArrayCollection([$this->createMock(Transportation::class)]));
 
-        // Create a valid client and pass the mismatching payment type and transportation.
         $purchase = $this->createPurchaseMock(client: new Client(), paymentType: $paymentType, transportation: $transportation);
 
         $event = $this->createGuardEvent($purchase);
@@ -124,21 +136,16 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenMissingConsent(): void
     {
-        // Set up valid transportation and payment type so these checks pass.
         $transportation = $this->createValidTransportation();
         $paymentType = $this->createValidPaymentType($transportation);
 
-        // Create a Consent object representing the missing required consent.
         $missingConsent = (new Consent())->setDescription('GDPR Consent');
 
-        // Mock the consent repository to return the missing consent.
         $consentRepo = $this->createMock(ConsentRepository::class);
         $consentRepo->method('findMissingRequiredConsent')->willReturn($missingConsent);
 
-        // Configure the entity manager to return this consent repository.
         $this->entityManager->method('getRepository')->with(Consent::class)->willReturn($consentRepo);
 
-        // Create a Purchase mock with valid client, payment type, transportation, but an empty consent collection.
         $purchase = $this->createPurchaseMock(client: new Client(), paymentType: $paymentType, transportation: $transportation, consents: []);
 
         $event = $this->createGuardEvent($purchase);
@@ -149,13 +156,11 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenInvalidVoucher(): void
     {
-        // Ensure valid transportation and payment type so earlier checks pass.
         $transportation = $this->createValidTransportation();
         $paymentType = $this->createValidPaymentType($transportation);
 
-        // Prepare an invalid voucher to simulate the error.
-        $invalidVoucher = (new Voucher())->setHash('INVALID123');
-        $this->manageVoucher->method('validateUsedVouchers')->willReturn($invalidVoucher);
+        $this->manageVoucher->method('validateVouchersTransition')
+            ->willThrowException(new LogicException('Nelze uplatnit neplatný voucher: INVALID123'));
 
         $purchase = $this->createPurchaseMock(paymentType: $paymentType, transportation: $transportation);
 
@@ -167,45 +172,38 @@ class PurchaseStateSubscriberTest extends TestCase
 
     public function testGuardReceiveBlocksWhenInvalidClientDiscount(): void
     {
-        // Set up valid transportation and payment type.
         $transportation = $this->createValidTransportation();
         $paymentType = $this->createValidPaymentType($transportation);
 
-        // Create a discount and simulate that it is not available.
+        // A used discount will fail guardUse validation
         $discount = new ClientDiscount();
-        $this->manageClientDiscount->method('isAvailable')->willReturn(false);
+        $discount->setIsUsed(true);
 
         $purchase = $this->createPurchaseMock(paymentType: $paymentType, transportation: $transportation, clientDiscount: $discount);
 
         $event = $this->createGuardEvent($purchase);
         $this->subscriber->onGuardReceive($event);
 
-        $this->assertBlockedWithMessage($event, 'Objednávka má neplatnou klientskou slevu');
+        $this->assertBlockedWithMessage($event, 'Slevový kupón není platný');
     }
 
     public function testGuardReceiveAllowsTransitionWhenAllValid(): void
     {
-        // Build a valid payment type that allows the chosen transportation.
         $paymentType = $this->createMock(PaymentType::class);
         $transportation = $this->createMock(Transportation::class);
         $paymentType->method('getTransportations')->willReturn(new ArrayCollection([$transportation]));
 
-        // Simulate a consent repository that indicates no missing consents.
         $consentRepo = $this->createMock(ConsentRepository::class);
         $consentRepo->method('findMissingRequiredConsent')->willReturn(null);
         $this->entityManager->method('getRepository')->with(Consent::class)->willReturn($consentRepo);
 
-        // Ensure that voucher validation passes and client discount is available.
-        $this->manageVoucher->method('validateUsedVouchers')->willReturn(null);
-        $this->manageClientDiscount->method('isAvailable')->willReturn(true);
+        $this->manageVoucher->method('validateVouchersTransition')->willReturn(true);
 
-        // Create a Purchase mock with valid client, payment type, transportation, consents, and discount.
         $purchase = $this->createPurchaseMock(
             client: new Client(),
             paymentType: $paymentType,
             transportation: $transportation,
             consents: [new Consent()],
-            clientDiscount: new ClientDiscount()
         );
 
         $event = $this->createGuardEvent($purchase);
@@ -214,8 +212,61 @@ class PurchaseStateSubscriberTest extends TestCase
         $this->assertFalse($event->isBlocked(), 'Transition should not be blocked');
     }
 
+    private function buildManagePurchase(): ManagePurchase
+    {
+        $conversionRateRepo = $this->createMock(ConversionRateRepository::class);
+        $priceRepository = $this->createMock(PriceRepository::class);
+        $settingsRepository = $this->createMock(SettingsRepository::class);
+        $handlingPriceRepo = $this->createMock(HandlingPriceRepository::class);
+        $productProductRepo = $this->createMock(ProductProductRepository::class);
+        $security = $this->createMock(Security::class);
+        $discountService = $this->createMock(DiscountService::class);
+        $requestStack = $this->createMock(RequestStack::class);
+        $currencyRepository = $this->createMock(CurrencyRepository::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $bus = $this->createMock(MessageBusInterface::class);
+
+        $priceUtils = new PriceUtils($conversionRateRepo);
+        $serviceCalculationUtils = new ServiceCalculationUtils($handlingPriceRepo, $priceUtils);
+        $pvPriceFactory = new ProductVariantPriceFactory(
+            $security,
+            $priceRepository,
+            $discountService,
+            $priceUtils,
+            $settingsRepository,
+            $productProductRepo,
+        );
+        $purchasePriceFactory = new PurchasePriceFactory(
+            $pvPriceFactory,
+            $priceUtils,
+            $serviceCalculationUtils,
+            $settingsRepository,
+        );
+
+        return new ManagePurchase(
+            new CurrencyManager($requestStack, $currencyRepository),
+            $purchasePriceFactory,
+            $pvPriceFactory,
+            $this->createMock(PurchaseRepository::class),
+            new ManageVies($logger),
+            $bus,
+            new ParcelServiceProvider([]),
+        );
+    }
+
+    private function createPurchaseProductVariantMock(): MockObject
+    {
+        $productVariant = $this->createMock(\Greendot\EshopBundle\Entity\Project\ProductVariant::class);
+        $productVariant->method('getAvailability')->willReturn(null);
+
+        $ppv = $this->createMock(\Greendot\EshopBundle\Entity\Project\PurchaseProductVariant::class);
+        $ppv->method('getProductVariant')->willReturn($productVariant);
+
+        return $ppv;
+    }
+
     private function createPurchaseMock(
-        array           $productVariants = [new \stdClass()],
+        ?array          $productVariants = null,
         ?Client         $client = new Client(),
         ?MockObject     $paymentType = null,
         ?MockObject     $transportation = null,
@@ -223,9 +274,16 @@ class PurchaseStateSubscriberTest extends TestCase
         ?ClientDiscount $clientDiscount = null
     ): MockObject
     {
+        if ($productVariants === null) {
+            $productVariants = [$this->createPurchaseProductVariantMock()];
+        }
+
         if ($paymentType && $transportation) {
             $paymentType->method('getTransportations')->willReturn(new ArrayCollection([$transportation]));
         }
+
+        $purchaseAddress = $this->createMock(PurchaseAddress::class);
+        $purchaseAddress->method('getDic')->willReturn(null);
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getProductVariants')->willReturn(new ArrayCollection($productVariants));
@@ -234,6 +292,8 @@ class PurchaseStateSubscriberTest extends TestCase
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getConsents')->willReturn(new ArrayCollection($consents));
         $purchase->method('getClientDiscount')->willReturn($clientDiscount);
+        $purchase->method('getVouchersUsed')->willReturn(new ArrayCollection());
+        $purchase->method('getPurchaseAddress')->willReturn($purchaseAddress);
         return $purchase;
     }
 
@@ -241,7 +301,7 @@ class PurchaseStateSubscriberTest extends TestCase
     {
         $paymentType = $this->createMock(PaymentType::class);
         $paymentType->method('getTransportations')
-            ->willReturn(new ArrayCollection([$transportation]) ?? new ArrayCollection());
+            ->willReturn(new ArrayCollection($transportation ? [$transportation] : []));
         return $paymentType;
     }
 

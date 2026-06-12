@@ -15,7 +15,6 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use SebastianBergmann\RecursionContext\Context;
 
 //DO NOT MAKE FINAL!!!!
 class CalculatedPricesService

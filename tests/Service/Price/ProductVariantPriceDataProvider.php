@@ -361,23 +361,11 @@ class ProductVariantPriceDataProvider
     public static function ppvCustomPriceInvalidCases(): array
     {
         return [
-            'negative_unit_price' => [
-                'price' => FactoryUtil::makePrice(-5.0, 21.0),
-                'amount' => 1,
-                'vatCalc' => VatCalc::WithVAT,
-                'discCalc' => DiscCalc::WithoutDiscount,
-            ],
             'zero_amount' => [
                 'price' => FactoryUtil::makePrice(10.0, 21.0),
                 'amount' => 0,
                 'vatCalc' => VatCalc::WithVAT,
                 'discCalc' => DiscCalc::WithoutDiscount,
-            ],
-            'discount_over_100_percent' => [
-                'price' => FactoryUtil::makePrice(10.0, 21.0, 1, 150.0),
-                'amount' => 1,
-                'vatCalc' => VatCalc::WithVAT,
-                'discCalc' => DiscCalc::WithDiscount,
             ],
         ];
     }

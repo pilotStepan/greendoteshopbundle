@@ -9,7 +9,7 @@ use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 
-readonly class PurchasePriceFactory
+class PurchasePriceFactory
 {
     public function __construct(
         private ProductVariantPriceFactory $productVariantPriceFactory,

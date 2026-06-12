@@ -1,0 +1,11 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    # Register controllers needed for functional tests.
+    # autoconfigure: true is required for AbstractController to receive its container (ServiceSubscriberInterface).
+    # controller.service_arguments tag allows the framework to inject route parameters as action arguments.
+
+    Greendot\EshopBundle\Controller\Shop\ClientSectionController:
+        tags: ['controller.service_arguments']

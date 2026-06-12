@@ -1,0 +1,3 @@
+client_section_controller:
+    resource: '../../../src/Controller/Shop/ClientSectionController.php'
+    type: attribute

@@ -172,7 +172,7 @@ class Purchase
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
-    private ?Client $client;
+    private ?Client $client = null;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     /**
@@ -243,7 +243,7 @@ class Purchase
     #[ORM\JoinColumn(nullable: true)]
     #[ClientDiscountAvailability]
     #[Groups(['purchase:read', 'purchase:write'])]
-    private ?ClientDiscount $clientDiscount;
+    private ?ClientDiscount $clientDiscount = null;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'purchases')]
     private Collection $Consents;

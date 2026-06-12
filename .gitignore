@@ -5,3 +5,4 @@ var/
 CLAUDE.md
 .claude
 AGENTS.md
+*.cache

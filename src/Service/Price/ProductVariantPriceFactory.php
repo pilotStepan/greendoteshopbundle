@@ -18,9 +18,9 @@ use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Symfony\Bundle\SecurityBundle\Security;
 
-readonly class ProductVariantPriceFactory
+class ProductVariantPriceFactory
 {
-    private readonly int $afterRegistrationBonus;
+    private int $afterRegistrationBonus;
 
     public function __construct(
         private Security           $security,
@@ -113,7 +113,7 @@ readonly class ProductVariantPriceFactory
     }
 
     public function createFromContext(
-        ProductVariant|PurchaseProductVariant   $pv, 
+        ProductVariant|PurchaseProductVariant   $pv,
         ProductVariantPriceContext              $context
     ) : ProductVariantPrice
     {
@@ -147,7 +147,7 @@ readonly class ProductVariantPriceFactory
         }
     }
 
-    public function entityLoadFromContext(Price $price, $context) : ProductVariantPrice
+    public function entityLoadFromContext(Price $price, $context) : ?ProductVariantPrice
     {
         return $this->entityLoad(
             price:    $price,
