@@ -5,11 +5,11 @@ namespace Greendot\EshopBundle\Schema\Provider;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\WebPage;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
+use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
-class ProductWebPageSchemaProvider implements SchemaProviderInterface
+class WebPageSchemaProvider implements SchemaProviderInterface
 {
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -17,7 +17,7 @@ class ProductWebPageSchemaProvider implements SchemaProviderInterface
 
     public function supports(mixed $object): bool
     {
-        return $object instanceof ProductEntity;
+        return $object instanceof PageableInterface;
     }
 
     public function provide(mixed $object): WebPage
@@ -25,12 +25,14 @@ class ProductWebPageSchemaProvider implements SchemaProviderInterface
         if (!$this->supports($object)) {
             throw new UnsupportedSchemaSubjectException();
         }
-        /** @var ProductEntity $object */
+
+        /** @var PageableInterface $object */
         $url = $this->urlGenerator->generate(
-            'shop_product',
+            $object->getControllerName(),
             ['slug' => $object->getSlug()],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
+
         return Schema::webPage()
             ->identifier(sprintf('%s#webpage', $url))
             ->url($url)

@@ -92,8 +92,7 @@ class FragmentController extends AbstractController
         #[MapEntity(mapping: ['producer' => 'id'])] ?Producer $producer, 
         #[MapEntity(mapping: ['comment' => 'id'])] ?Comment $comment, 
         string $_format,
-        BreadcrumbsMaker $breadcrumbsMaker, 
-        Request $request
+        BreadcrumbsMaker $breadcrumbsMaker,
     ): Response {
         $entity = $category ?? $product ?? $producer ?? $comment;
 

@@ -18,7 +18,7 @@ use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Greendot\EshopBundle\Entity\Interface\PagableInterface;
+use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 
@@ -36,7 +36,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 )]
 #[ApiFilter(filterClass: ProducerCategoryFilter::class, properties: ['category_id'])]
 #[ORM\Entity(repositoryClass: ProducerRepository::class)]
-class Producer implements Translatable, PagableInterface
+class Producer implements Translatable, PageableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -81,7 +81,7 @@ class Producer implements Translatable, PagableInterface
     #[ORM\Column(length: 255)]
     #[Groups(['product_item:read'])]
     #[Gedmo\Translatable]
-    private ?string $slug = null;
+    private string $slug;
 
     #[ORM\OneToMany(mappedBy: 'producer', targetEntity: ProducerUploadGroup::class)]
     private Collection $producerUploadGroups;
@@ -219,7 +219,7 @@ class Producer implements Translatable, PagableInterface
         return $this;
     }
 
-    public function getSlug(): ?string
+    public function getSlug(): string
     {
         return $this->slug;
     }
@@ -259,5 +259,9 @@ class Producer implements Translatable, PagableInterface
         }
 
         return $this;
+    }
+
+    public function getControllerName(): string {
+        return 'shop_producer_products';
     }
 }

@@ -20,7 +20,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Greendot\EshopBundle\Entity\Interface\PagableInterface;
+use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
@@ -43,7 +43,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiFilter(SearchFilter::class, properties: ['title' => 'partial'])]
 #[ApiFilter(OrderFilter::class, properties: ['submitted'])]
 #[ApiFilter(MultipleFilter::class, properties: ['categories', 'products'])]
-class Comment implements PagableInterface
+class Comment implements PageableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -109,7 +109,7 @@ class Comment implements PagableInterface
     #[ORM\Column(length: 255, unique: true )]
     #[Slug(fields: ['title'])]
     #[Groups(['comment:read'])]
-    private ?string $slug = null;
+    private string $slug;
 
     public function __construct()
     {
@@ -353,9 +353,9 @@ class Comment implements PagableInterface
         return $this;
     }
 
-    public function getSlug() : string
+    public function getSlug(): string
     {
-        return $this->slug ??  $this->getId();
+        return $this->slug;
     }
 
     public function setSlug(string $slug): self
@@ -365,4 +365,11 @@ class Comment implements PagableInterface
         return $this;
     }
 
+    public function getControllerName(): string {
+        return 'app_comment_detail';
+    }
+
+    public function getDescription(): ?string {
+        return $this->getContent();
+    }
 }

@@ -172,7 +172,7 @@ class ProductRepository extends HintedRepositoryBase
             ->getResult();
     }
 
-    public function findCategoryProducts(Category $category, $limit = null)
+    public function findCategoryProducts(Category $category, $limit = null, int $offset = 0)
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -195,8 +195,11 @@ class ProductRepository extends HintedRepositoryBase
         $qb->andWhere('p.isActive = :val');
         $qb->distinct();
         $qb->orderBy('p.sequence', 'ASC');
-        if($limit !== null){
+        if ($limit !== null) {
             $qb->setMaxResults($limit);
+        }
+        if ($offset > 0) {
+            $qb->setFirstResult($offset);
         }
         return $qb->getQuery()->getResult();
     }
@@ -639,9 +642,9 @@ class ProductRepository extends HintedRepositoryBase
     /**
      * @return Review[]
      */
-    public function findApprovedReviews(Product $product): array
+    public function findApprovedReviews(Product $product, ?int $limit = null): array
     {
-        return $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('r')
             ->from(Review::class, 'r')
             ->andWhere('r.Product = :product')
@@ -649,9 +652,13 @@ class ProductRepository extends HintedRepositoryBase
             ->setParameter('product', $product)
             ->setParameter('isApproved', true)
             ->orderBy('r.date', 'DESC')
-            ->getQuery()
-            ->getResult()
         ;
+
+        if ($limit !== null) {
+            $qb->setMaxResults($limit);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
@@ -826,7 +833,42 @@ class ProductRepository extends HintedRepositoryBase
         //     ->andWhere('pv.isActive = true')
         //     ->getQuery()
         //     ->getResult();
-        
+
+    }
+
+    public function findCategoryProductsOrdered(Category $category, int $limit, int $offset = 0): array
+    {
+        $filters = [
+            'categoryId'  => $category->getId(),
+            'orderBy'     => ['id' => null, 'direction' => null],
+            'isStockOnly' => true,
+        ];
+
+        $allIds = $this->mainProductsFilter($filters)->getQuery()->getSingleColumnResult();
+        $pagedIds = array_slice($allIds, $offset, $limit);
+
+        if (empty($pagedIds)) {
+            return [];
+        }
+
+        $unordered = $this->createQueryBuilder('p')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $pagedIds)
+            ->getQuery()
+            ->getResult();
+
+        $map = [];
+        foreach ($unordered as $product) {
+            $map[$product->getId()] = $product;
+        }
+        $ordered = [];
+        foreach ($pagedIds as $id) {
+            if (isset($map[$id])) {
+                $ordered[] = $map[$id];
+            }
+        }
+
+        return $ordered;
     }
 
 }

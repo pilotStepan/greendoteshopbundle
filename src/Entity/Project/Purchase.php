@@ -33,9 +33,12 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     operations: [
         new Get(
+            security: "is_granted('ROLE_ADMIN') or object.getClient() == user",
             provider: PurchaseItemStateProvider::class,
         ),
-        new GetCollection(),
+        new GetCollection(
+            security: "is_granted('ROLE_ADMIN')",
+        ),
         new GetCollection(
             uriTemplate: '/purchases/session',
             provider: PurchaseStateProvider::class,
@@ -56,7 +59,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
             denormalizationContext: ['groups' => ['default']],
             provider: PurchaseWishlistStateProvider::class,
         ),
-        new Post(),
+        new Post(
+            security: "is_granted('ROLE_ADMIN')",
+        ),
         new Post(
             uriTemplate: '/purchases/session/checkout',
             status: 200,
@@ -81,7 +86,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['purchase:write']],
     paginationEnabled: false
 )]
-#[Get(provider: PurchaseStateProvider::class)]
 #[ApiFilter(PurchaseSession::class)]
 #[TransportationPaymentAvailability]
 class Purchase
