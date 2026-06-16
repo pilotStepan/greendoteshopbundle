@@ -237,29 +237,7 @@ class ProductVariantPrice
     {
         if (!$this->price) return;
 
-        $totalDiscountedPercentage = 0;
-        switch ($this->discountCalculationType) {
-            case DiscountCalculationType::WithoutDiscount:
-                break;
-            case DiscountCalculationType::WithDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage + $this->clientDiscount + $this->parentProductDiscountPercentage;
-                break;
-            case DiscountCalculationType::OnlyProductDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage;
-                break;
-            case DiscountCalculationType::OnlyComplementDiscount:
-                $totalDiscountedPercentage = $this->parentProductDiscountPercentage;
-                break;
-            case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage + $this->parentProductDiscountPercentage;
-                if (!$this->clientDiscount) {
-                    $totalDiscountedPercentage += $this->afterRegistrationBonus;
-                }
-                break;
-            case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->clientDiscount ?? $this->afterRegistrationBonus;
-                break;
-        }
+        $totalDiscountedPercentage = $this->getDiscountPercentage();
 
         $fullDiscountValue = $this->priceUtils->calculatePercentage($this->price, $totalDiscountedPercentage);
         $price = $this->price - $fullDiscountValue;
