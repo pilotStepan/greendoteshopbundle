@@ -15,7 +15,6 @@ use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
-use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 
 class EshopProductGroupSchemaProvider implements SchemaProviderInterface
 {
@@ -26,7 +25,6 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
         private readonly ProductSchemaBuilder       $builder,
         private readonly ProductVariantPriceFactory $priceFactory,
         private readonly CurrencyManager            $currencyManager,
-        private readonly ProductProductRepository   $productProductRepository,
     ) {}
 
     public function supports(mixed $object): bool
@@ -65,7 +63,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
 
         $schema = Schema::productGroup()
             ->identifier(sprintf('%s#group',
-                $this->urlGenerator->generate('shop_product', ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
+                $this->urlGenerator->generate($object->getControllerName(), ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
             ))
             ->name($object->getName())
             ->description($object->getDescription())
@@ -80,7 +78,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             )
             ->hasVariant(
                 array_map(
-                    fn($variant) => $this->builder->forProductVariant($variant)->build(),
+                    fn($variant) => $this->builder->buildVariantReference($variant),
                     $variants,
                 ),
             )
@@ -107,28 +105,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             )
         ;
 
-        $relations = $this->productProductRepository->findBy(['parentProduct' => $object]);
-        $similarTo = [];
-        $relatedTo = [];
-        foreach ($relations as $relation) {
-            $child = $relation->getChildrenProduct();
-            if ($child === null) {
-                continue;
-            }
-            $url = $this->urlGenerator->generate($child->getControllerName(), ['slug' => $child->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL);
-            $ref = Schema::product()->url($url)->name($child->getName());
-            match ($relation->getProductProductType()->getName()) {
-                'RELATED'    => $similarTo[] = $ref,
-                'COMPLEMENT' => $relatedTo[] = $ref,
-                default      => null,
-            };
-        }
-        if (!empty($similarTo)) {
-            $schema->isSimilarTo($similarTo);
-        }
-        if (!empty($relatedTo)) {
-            $schema->isRelatedTo($relatedTo);
-        }
+        $this->builder->applyRelationships($schema, $object);
 
         return $schema;
     }

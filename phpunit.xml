@@ -9,6 +9,7 @@
             <directory>tests/EventSubscriber</directory>
             <directory>tests/MessageHandler</directory>
             <directory>tests/Entity</directory>
+            <directory>tests/Schema</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

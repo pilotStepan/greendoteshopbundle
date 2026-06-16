@@ -3,8 +3,8 @@
 namespace Greendot\EshopBundle\Schema\Builder;
 
 use Spatie\SchemaOrg\Schema;
+use Spatie\SchemaOrg\BaseType;
 use Spatie\SchemaOrg\Product as ProductSchema;
-use Spatie\SchemaOrg\Contracts\ThingContract;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
@@ -33,15 +33,21 @@ class ProductSchemaBuilder
         private readonly ProductVariantPriceFactory $priceFactory,
     ) {}
 
+    public function __clone(): void
+    {
+        if ($this->schema !== null) {
+            $this->schema = clone $this->schema;
+        }
+    }
+
     public function forProduct(ProductEntity $product): self
     {
         $clone = clone $this;
         $clone->product = $product;
 
-        $url = $this->urlGenerator->generate('shop_product', [
+        $url = $this->urlGenerator->generate($product->getControllerName(), [
             'slug' => $product->getSlug(),
-        ], UrlGeneratorInterface::ABSOLUTE_URL,
-        );
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $clone->schema = Schema::product()
             ->identifier(sprintf('%s#product', $url))
@@ -57,30 +63,27 @@ class ProductSchemaBuilder
         return $clone;
     }
 
-    public function forProductVariant(ProductVariantEntity $variant): self
+    public function forProductWithVariant(ProductEntity $product, ProductVariantEntity $variant): self
     {
-        $clone = clone $this;
-        $clone->variant = $variant;
+        return $this->forProduct($product)->forProductVariant($variant);
+    }
+
+    private function forProductVariant(ProductVariantEntity $variant): self
+    {
+        if ($this->product === null || $this->schema === null) {
+            throw new \LogicException('Call forProduct() before forProductVariant().');
+        }
 
         if ($variant->getProduct() === null) {
             throw new \LogicException('ProductVariant must be associated with a Product.');
         }
 
-        $clone->product ??= $variant->getProduct();
+        $clone = clone $this;
+        $clone->variant = $variant;
 
-        $url = $this->urlGenerator->generate('shop_product', [
+        $url = $this->urlGenerator->generate($variant->getProduct()->getControllerName(), [
             'slug' => $variant->getProduct()->getSlug(),
         ], UrlGeneratorInterface::ABSOLUTE_URL);
-
-        if ($clone->schema === null) {
-            $clone->schema = Schema::product()
-                ->identifier(sprintf('%s#variant-%d', $url, $variant->getId() ?? 0))
-                ->url($url)
-                ->brand(Schema::brand()
-                    ->name($variant->getProduct()->getProducer()?->getName()),
-                )
-            ;
-        }
 
         $clone->schema
             ->name($variant->getName() ?? $variant->getProduct()->getName())
@@ -110,6 +113,46 @@ class ProductSchemaBuilder
         return $clone;
     }
 
+    public function buildVariantReference(ProductVariantEntity $variant): ProductSchema
+    {
+        if ($variant->getProduct() === null) {
+            throw new \LogicException('ProductVariant must be associated with a Product.');
+        }
+
+        $product = $variant->getProduct();
+        $url = $this->urlGenerator->generate($product->getControllerName(), [
+            'slug' => $product->getSlug(),
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return Schema::product()
+            ->identifier(sprintf('%s#variant-%d', $url, $variant->getId() ?? 0))
+            ->url($url)
+            ->name($variant->getName() ?? $product->getName())
+            ->image($variant->getUpload()?->getPath() ? $this->absoluteUrl . $variant->getUpload()?->getPath() : null)
+            ->brand(Schema::brand()->name($product->getProducer()?->getName()))
+            ->offers(Schema::offer()
+                ->url($url)
+                ->price(
+                    $this->priceFactory->create(
+                        $variant,
+                        $this->currencyManager->get(),
+                        vatCalculationType: VatCalculationType::WithVAT,
+                    )->getPrice(),
+                )
+                ->priceCurrency($this->getCurrencyCode())
+                ->availability(Schema::itemAvailability()
+                    ->identifier($variant->getAvailability()?->getIsPurchasable()
+                        ? 'https://schema.org/InStock'
+                        : 'https://schema.org/OutOfStock',
+                    ),
+                )
+                ->itemCondition(Schema::offerItemCondition()
+                    ->identifier('https://schema.org/NewCondition'),
+                ),
+            )
+        ;
+    }
+
     protected function getCurrencyCode(): string
     {
         return $this->currencyManager->get()->getName();
@@ -122,12 +165,10 @@ class ProductSchemaBuilder
         }
 
         $clone = clone $this;
-        $clone->schema
-            ->aggregateRating(Schema::aggregateRating()
-                ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($this->product))
-                ->reviewCount($this->reviewRepository->getReviewCountForProduct($this->product)),
-            )
-        ;
+        $clone->schema->aggregateRating(Schema::aggregateRating()
+            ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($this->product))
+            ->reviewCount($this->reviewRepository->getReviewCountForProduct($this->product)),
+        );
 
         return $clone;
     }
@@ -145,22 +186,18 @@ class ProductSchemaBuilder
         }
 
         $clone = clone $this;
-        $clone->schema->reviews(
-            array_map(
-                fn($review) => Schema::review()
-                    ->author(
-                        Schema::person()
-                            ->name($review->getReviewerName())
-                            ->email($review->getReviewerEmail()),
-                    )
-                    ->reviewRating(
-                        Schema::rating()
-                            ->ratingValue($review->getStars()),
-                    )
-                    ->reviewBody($review->getContents()),
-                $reviews,
-            ),
-        );
+        $clone->schema->reviews(array_map(
+            fn($review) => Schema::review()
+                ->author(Schema::person()
+                    ->name($review->getReviewerName())
+                    ->email($review->getReviewerEmail()),
+                )
+                ->reviewRating(Schema::rating()
+                    ->ratingValue($review->getStars()),
+                )
+                ->reviewBody($review->getContents()),
+            $reviews,
+        ));
 
         return $clone;
     }
@@ -172,7 +209,14 @@ class ProductSchemaBuilder
         }
 
         $clone = clone $this;
-        $relations = $this->productProductRepository->findBy(['parentProduct' => $this->product]);
+        $this->applyRelationships($clone->schema, $this->product);
+
+        return $clone;
+    }
+
+    public function applyRelationships(BaseType $schema, ProductEntity $product): void
+    {
+        $relations = $this->productProductRepository->findBy(['parentProduct' => $product]);
 
         $similarTo = [];
         $relatedTo = [];
@@ -196,13 +240,11 @@ class ProductSchemaBuilder
         }
 
         if (!empty($similarTo)) {
-            $clone->schema->isSimilarTo($similarTo);
+            $schema->isSimilarTo($similarTo);
         }
         if (!empty($relatedTo)) {
-            $clone->schema->isRelatedTo($relatedTo);
+            $schema->isRelatedTo($relatedTo);
         }
-
-        return $clone;
     }
 
     public function build(): ProductSchema
@@ -212,58 +254,5 @@ class ProductSchemaBuilder
         }
 
         return clone $this->schema;
-    }
-
-    public function buildForListing(ProductEntity $product): ThingContract
-    {
-        $variants = $product->getProductVariants()->toArray();
-        $variantCount = count($variants);
-
-        if ($variantCount === 0) {
-            return $this->forProduct($product)->build();
-        }
-
-        if ($variantCount === 1) {
-            return $this->forProduct($product)->forProductVariant($variants[0])->withAggregateRating()->build();
-        }
-
-        $url = $this->urlGenerator->generate(
-            'shop_product',
-            ['slug' => $product->getSlug()],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
-        $currency = $this->currencyManager->get();
-
-        $prices = array_filter(array_map(
-            fn($v) => $this->priceFactory->create($v, $currency, vatCalculationType: VatCalculationType::WithVAT)->getPrice(),
-            $variants,
-        ));
-
-        $schema = Schema::productGroup()
-            ->identifier(sprintf('%s#group', $url))
-            ->url($url)
-            ->name($product->getName())
-            ->brand(Schema::brand()->name($product->getProducer()?->getName()))
-            ->image($this->absoluteUrl . $product->getUpload()?->getPath())
-        ;
-
-        if (!empty($prices)) {
-            $schema->offers(Schema::aggregateOffer()
-                ->lowPrice(min($prices))
-                ->highPrice(max($prices))
-                ->priceCurrency($currency->getName())
-                ->offerCount($variantCount),
-            );
-        }
-
-        $reviewCount = $this->reviewRepository->getReviewCountForProduct($product);
-        if ($reviewCount > 0) {
-            $schema->aggregateRating(Schema::aggregateRating()
-                ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($product))
-                ->reviewCount($reviewCount),
-            );
-        }
-
-        return $schema;
     }
 }

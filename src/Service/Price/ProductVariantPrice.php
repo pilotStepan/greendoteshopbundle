@@ -127,8 +127,9 @@ class ProductVariantPrice
     {
         switch ($this->discountCalculationType) {
             case DiscountCalculationType::WithDiscount:
+                return $this->discountPercentage + $this->parentProductDiscountPercentage + $this->clientDiscount;
             case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $clientDiscount = $this->clientDiscount ?? $this->afterRegistrationBonus;
+                $clientDiscount = $this->clientDiscount ?: $this->afterRegistrationBonus;
                 return $this->discountPercentage + $this->parentProductDiscountPercentage + $clientDiscount;
             case DiscountCalculationType::WithoutDiscount:
                 return null;

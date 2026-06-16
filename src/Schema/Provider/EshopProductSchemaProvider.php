@@ -32,8 +32,7 @@ class EshopProductSchemaProvider implements SchemaProviderInterface
         $variant = $object->getProductVariants()->first();
 
         return $this->builder
-            ->forProduct($object)
-            ->forProductVariant($variant)
+            ->forProductWithVariant($object, $variant)
             ->withAggregateRating()
             ->withReviews()
             ->withProductRelationships()
