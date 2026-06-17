@@ -35,6 +35,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Get(
             security: "is_granted('ROLE_ADMIN') or object.getClient() == user",
             provider: PurchaseItemStateProvider::class,
+            requirements: ['id' => '\d+'],
         ),
         new GetCollection(
             security: "is_granted('ROLE_ADMIN')",
