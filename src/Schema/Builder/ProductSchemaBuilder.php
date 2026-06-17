@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Schema\Builder;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\BaseType;
 use Spatie\SchemaOrg\Product as ProductSchema;
+use Spatie\SchemaOrg\Contracts\ThingContract;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
@@ -245,6 +246,59 @@ class ProductSchemaBuilder
         if (!empty($relatedTo)) {
             $schema->isRelatedTo($relatedTo);
         }
+    }
+
+    public function buildForListing(ProductEntity $product): ThingContract
+    {
+        $variants = $product->getProductVariants()->toArray();
+        $variantCount = count($variants);
+
+        if ($variantCount === 0) {
+            return $this->forProduct($product)->build();
+        }
+
+        if ($variantCount === 1) {
+            return $this->forProduct($product)->forProductVariant($variants[0])->withAggregateRating()->build();
+        }
+
+        $url = $this->urlGenerator->generate(
+            'shop_product',
+            ['slug' => $product->getSlug()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+        $currency = $this->currencyManager->get();
+
+        $prices = array_filter(array_map(
+            fn($v) => $this->priceFactory->create($v, $currency, vatCalculationType: VatCalculationType::WithVAT)->getPrice(),
+            $variants,
+        ));
+
+        $schema = Schema::productGroup()
+            ->identifier(sprintf('%s#group', $url))
+            ->url($url)
+            ->name($product->getName())
+            ->brand(Schema::brand()->name($product->getProducer()?->getName()))
+            ->image($this->absoluteUrl . $product->getUpload()?->getPath())
+        ;
+
+        if (!empty($prices)) {
+            $schema->offers(Schema::aggregateOffer()
+                ->lowPrice(min($prices))
+                ->highPrice(max($prices))
+                ->priceCurrency($currency->getName())
+                ->offerCount($variantCount),
+            );
+        }
+
+        $reviewCount = $this->reviewRepository->getReviewCountForProduct($product);
+        if ($reviewCount > 0) {
+            $schema->aggregateRating(Schema::aggregateRating()
+                ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($product))
+                ->reviewCount($reviewCount),
+            );
+        }
+
+        return $schema;
     }
 
     public function build(): ProductSchema

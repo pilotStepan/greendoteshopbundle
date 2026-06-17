@@ -134,7 +134,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
 
-
         try {
             $this->eventDispatcher->dispatch(new PurchaseEvent($purchase));
         } catch (Exception $exception) {
@@ -150,13 +149,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $this->manageClientDiscount->use($clientDiscount, $purchase);
         }
 
-        $issuedVouchers = $this->manageVoucher->initiateVouchers($purchase);
-
-        //makes voucher active when paymentTypeActionGroup is COD
-        if ($purchase->getPaymentType()?->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY) {
-            $this->manageVoucher->handleVouchersTransition($issuedVouchers, 'payment');
-        }
-
+        $this->manageVoucher->initiateVouchers($purchase);
         $this->managePurchase->generateTransportData($purchase);
         $this->dateService->calculatePurchaseDeliveryDate($purchase);
     }

@@ -222,4 +222,16 @@ class Voucher
 
         return $this;
     }
+
+    public function getExtra(): ?array
+    {
+        return $this->extra;
+    }
+
+    public function setExtra(?array $extra): static
+    {
+        $this->extra = $extra;
+
+        return $this;
+    }
 }

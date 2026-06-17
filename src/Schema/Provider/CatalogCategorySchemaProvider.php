@@ -16,7 +16,7 @@ use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 class CatalogCategorySchemaProvider implements SchemaProviderInterface
 {
-    private const array SUPPORTED_TYPES = [
+    private const SUPPORTED_TYPES = [
         CategoryTypeEnum::CATEGORY->value,
         CategoryTypeEnum::SUB_CATEGORY->value,
     ];
