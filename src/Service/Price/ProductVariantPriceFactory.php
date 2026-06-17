@@ -16,22 +16,41 @@ use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\DiscountService;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\DiscountCombinationStrategyInterface;
+use Psr\Container\ContainerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 
 class ProductVariantPriceFactory
 {
     private int $afterRegistrationBonus;
 
     public function __construct(
-        private Security           $security,
-        private PriceRepository    $priceRepository,
-        private DiscountService    $discountService,
-        private PriceUtils         $priceUtils,
-        private SettingsRepository $settingsRepository,
-        private ProductProductRepository $productProductRepository
-    )
-    {
+        private Security                    $security,
+        private PriceRepository             $priceRepository,
+        private DiscountService             $discountService,
+        private PriceUtils                  $priceUtils,
+        private SettingsRepository          $settingsRepository,
+        private ProductProductRepository    $productProductRepository,
+        #[AutowireLocator('greendot_eshop.discount_combination_strategy', indexAttribute: 'key')]
+        private ContainerInterface          $discountCombinationStrategies,
+        #[Autowire(param: 'greendot_eshop.shop.price.extension.discount_combination_strategy')]
+        private string                      $discountCombinationStrategyKey,
+    ) {
         $this->afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
+    }
+
+    private function discountCombinationStrategy(): DiscountCombinationStrategyInterface
+    {
+        if (!$this->discountCombinationStrategies->has($this->discountCombinationStrategyKey)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Unknown discount combination strategy "%s". No service tagged "greendot_eshop.discount_combination_strategy" with key "%s" found.',
+                $this->discountCombinationStrategyKey,
+                $this->discountCombinationStrategyKey,
+            ));
+        }
+        return $this->discountCombinationStrategies->get($this->discountCombinationStrategyKey);
     }
 
     public function create(
@@ -57,7 +76,7 @@ class ProductVariantPriceFactory
             $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate, $purchase);
         }
 
-        $productVariantPrice =  new ProductVariantPrice(
+        $productVariantPrice = new ProductVariantPrice(
             $pv,
             $amount,
             $conversionRate,
@@ -68,7 +87,8 @@ class ProductVariantPriceFactory
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
-            $this->productProductRepository
+            $this->productProductRepository,
+            $this->discountCombinationStrategy(),
         );
         if ($parentProduct){
             $productVariantPrice->setParentProduct($parentProduct);
@@ -102,6 +122,7 @@ class ProductVariantPriceFactory
             $this->discountService,
             $this->priceUtils,
             $this->productProductRepository,
+            $this->discountCombinationStrategy(),
             $price
         );
 

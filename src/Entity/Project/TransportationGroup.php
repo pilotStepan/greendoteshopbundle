@@ -11,7 +11,9 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\TransportationGroupRepository;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -28,7 +30,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['transportation_group:read']],
     denormalizationContext: ['groups' => ['transportation_group:write']],
 )]
-class TransportationGroup
+class TransportationGroup implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -37,10 +39,12 @@ class TransportationGroup
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'purchase:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'purchase:read'])]
     private ?string $description = null;
 
@@ -51,6 +55,10 @@ class TransportationGroup
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'purchase:read'])]
     private ?string $country;
+
+
+    #[Gedmo\Locale]
+    private $locale;
 
     /**
      * @var Collection<int, Transportation>
@@ -138,5 +146,10 @@ class TransportationGroup
         $this->transportations->removeElement($transportation);
 
         return $this;
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 }

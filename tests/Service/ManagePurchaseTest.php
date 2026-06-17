@@ -21,6 +21,8 @@ use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
@@ -191,6 +193,11 @@ class ManagePurchaseTest extends TestCase
 
         $priceUtils = new PriceUtils($conversionRateRepository);
         $serviceCalculationUtils = new ServiceCalculationUtils($handlingPriceRepository, $priceUtils);
+        $discountLocator = new \Symfony\Component\DependencyInjection\ServiceLocator([
+            'sum'     => fn() => new SumDiscountStrategy(),
+            'highest' => fn() => new HighestDiscountStrategy(),
+        ]);
+
         $productVariantPriceFactory = new ProductVariantPriceFactory(
             $security,
             $priceRepository,
@@ -198,6 +205,8 @@ class ManagePurchaseTest extends TestCase
             $priceUtils,
             $settingsRepository,
             $productProductRepository,
+            $discountLocator,
+            'sum',
         );
         $purchasePriceFactory = new PurchasePriceFactory(
             $productVariantPriceFactory,

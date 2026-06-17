@@ -81,6 +81,19 @@ class GreendotEshopBundle extends AbstractBundle
                             ->end()
                         ->end()
                         ->stringNode('secondary_currency_name')->defaultValue('EUR')->end()
+                        ->arrayNode('price')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->arrayNode('extension')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->stringNode('discount_combination_strategy')
+                                            ->defaultValue('sum')
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end();
@@ -167,6 +180,11 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.shop.secondary_currency_name',
             $secondaryCurrencyName
+        );
+
+        $builder->setParameter(
+            'greendot_eshop.shop.price.extension.discount_combination_strategy',
+            $config['shop']['price']['extension']['discount_combination_strategy'],
         );
 
 //        $builder->setParameter(

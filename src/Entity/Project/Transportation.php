@@ -58,10 +58,12 @@ class Transportation implements Translatable
     private $purchases;
 
     #[ORM\Column(type: 'text')]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description;
 
     #[ORM\Column(type: 'text')]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description_mail;
 
@@ -70,6 +72,7 @@ class Transportation implements Translatable
     private $description_duration;
 
     #[ORM\Column(type: 'text')]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $html;
 
