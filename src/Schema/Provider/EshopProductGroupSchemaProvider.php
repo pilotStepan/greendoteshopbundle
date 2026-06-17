@@ -18,6 +18,13 @@ use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 class EshopProductGroupSchemaProvider implements SchemaProviderInterface
 {
+    private const SCHEMA_VARIES_BY_MAP = [
+        'velikost' => 'size',
+        'barva' => 'color',
+        'váha' => 'weight',
+        'šířka' => 'width',
+    ];
+
     public function __construct(
         private readonly UrlGeneratorInterface      $urlGenerator,
         private readonly ProductRepository          $productRepository,
@@ -72,7 +79,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             )
             ->variesBy(
                 array_map(
-                    fn($paramGroup) => $paramGroup->getName(),
+                    fn($paramGroup) => self::SCHEMA_VARIES_BY_MAP[mb_strtolower($paramGroup->getName())] ?? $paramGroup->getName(),
                     $this->productRepository->findVariantParameterGroupsByProduct($object),
                 ),
             )
