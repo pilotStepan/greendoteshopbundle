@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 #[WithMonologChannel('branch_import')]
 final class PacketaBranchImporter implements ProviderImporterInterface
@@ -17,26 +18,34 @@ final class PacketaBranchImporter implements ProviderImporterInterface
 
     private const PROVIDER_KEY = 'packeta';
     private const SUPPORTED_COUNTRIES = ['cz', 'sk'];
-    private const API_URL = 'http://www.zasilkovna.cz/api/v4/41494564a70d6de6/branch.xml';
+    private const BRANCH_FEED_BASE = 'http://www.zasilkovna.cz/api/v4/%s/branch.xml';
 
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
+        #[Autowire(param: 'greendot_eshop.parcel.packeta.api_password')]
+        private readonly string $apiPassword,
     ) {}
 
     public function key(): string { return self::PROVIDER_KEY; }
 
+    private function feedUrl(): string
+    {
+        return sprintf(self::BRANCH_FEED_BASE, $this->apiPassword);
+    }
+
     public function downloadTo(string $filePath): bool
     {
-        return $this->downloadStreamToFile(self::API_URL, $filePath);
+        return $this->downloadStreamToFile($this->feedUrl(), $filePath);
     }
 
     public function fetch(): iterable
     {
-        $this->logger->info('Fetching provider feed', ['provider' => $this->key(), 'url' => self::API_URL]);
+        $url = $this->feedUrl();
+        $this->logger->info('Fetching provider feed', ['provider' => $this->key(), 'url' => $url]);
 
         try {
-            foreach ($this->streamXmlElements(self::API_URL, 'branch') as $b) {
+            foreach ($this->streamXmlElements($url, 'branch') as $b) {
                 if (
                     !in_array($b->country, self::SUPPORTED_COUNTRIES) ||
                     ((bool)$b->displayFrontend) === false

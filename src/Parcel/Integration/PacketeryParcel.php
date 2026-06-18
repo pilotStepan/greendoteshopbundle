@@ -3,8 +3,9 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Throwable;
-use SimpleXMLElement;
 use RuntimeException;
+use SimpleXMLElement;
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
@@ -12,9 +13,9 @@ use Greendot\EshopBundle\Enum\TransportationAPI;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
@@ -23,24 +24,20 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
-
 #[WithMonologChannel('api.parcel.packetery')]
 class PacketeryParcel implements ParcelServiceInterface
 {
     private const API_URL = 'https://www.zasilkovna.cz/api/rest';
 
     public function __construct(
-        private readonly HttpClientInterface    $httpClient,
-        private readonly LoggerInterface        $logger,
-        private readonly PurchasePriceFactory   $purchasePriceFactory,
-        private readonly CurrencyRepository     $currencyRepository,
-        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
-        private string $secondaryCurrencyName,
+        private readonly HttpClientInterface  $httpClient,
+        private readonly LoggerInterface      $logger,
+        private readonly PurchasePriceFactory $purchasePriceFactory,
+        private readonly CurrencyRepository   $currencyRepository,
+        #[Autowire(param: 'greendot_eshop.parcel.packeta.eshop_name')]
+        private readonly string               $eshopName,
     ) {}
 
-    /**
-     * @throws Throwable
-     */
     public function createParcel(Purchase $purchase): string
     {
         $transportation = $purchase->getTransportation();
@@ -49,27 +46,30 @@ class PacketeryParcel implements ParcelServiceInterface
             throw new InvalidArgumentException('No transportation set for purchase');
         }
 
-        $requestData = $this->prepareParcelData($purchase);
+        $xmlBody = $this->buildXml('createPacket', $this->prepareParcelData($purchase));
 
         try {
             $response = $this->httpClient->request('POST', self::API_URL, [
-                'auth_bearer' => $transportation->getToken(),
-                'body' => $this->createXmlRequest('createPacket', $requestData),
+                'headers' => ['Content-Type' => 'application/xml'],
+                'body' => $xmlBody,
             ]);
 
-            $data = $response->toArray();
+            $xml = simplexml_load_string($response->getContent());
 
-            if (isset($data['packetId'])) {
-                return $data['packetId'];
+            if ((string)$xml->status !== 'ok') {
+                $message = (string)($xml->fault->message ?? 'unknown error');
+                $this->logger->error('Packeta API error on createPacket', [
+                    'purchaseId' => $purchase->getId(),
+                    'message' => $message,
+                ]);
+                throw new RuntimeException("Packeta createPacket failed: $message");
             }
 
-            $this->logger->error('Failed to create parcel', [
-                'purchaseId' => $purchase->getId(),
-                'response' => $data,
-            ]);
-            throw new RuntimeException('Failed to create parcel: packetId not returned from API');
+            return (string)$xml->result->barcode;
+        } catch (RuntimeException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            $this->logger->error('Parcel API exception', [
+            $this->logger->error('Packeta HTTP exception on createPacket', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);
@@ -77,90 +77,142 @@ class PacketeryParcel implements ParcelServiceInterface
         }
     }
 
-    /**
-     * @throws Throwable
-     */
     public function getParcelStatus(Purchase $purchase): ParcelStatusInfoDto
     {
-        // FIXME: Implement the actual logic to retrieve the parcel status
-        return new ParcelStatusInfoDto(
-            ParcelDeliveryStateEnum::DELIVERED,
-        );
+        $transportation = $purchase->getTransportation();
+        $apiPassword = $transportation?->getSecretKey() ?? '';
+        $packetId = $purchase->getTransportNumber();
+
+        $xmlBody = $this->buildXml('packetStatus', [
+            'apiPassword' => $apiPassword,
+            'packetId' => $packetId,
+        ]);
+
+        try {
+            $response = $this->httpClient->request('POST', self::API_URL, [
+                'headers' => ['Content-Type' => 'application/xml'],
+                'body' => $xmlBody,
+            ]);
+
+            $xml = simplexml_load_string($response->getContent());
+
+            if ((string)$xml->status !== 'ok') {
+                $message = (string)($xml->fault->message ?? 'unknown error');
+                throw new RuntimeException("Packeta packetStatus failed: $message");
+            }
+
+            $statusCode = (int)$xml->result->statusCode;
+            $codeText = (string)$xml->result->codeText;
+            $dateTime = isset($xml->result->dateTime)
+                ? new DateTimeImmutable((string)$xml->result->dateTime)
+                : null;
+
+            return new ParcelStatusInfoDto(
+                state: $this->mapStatusCode($statusCode),
+                details: ['statusCode' => $statusCode, 'codeText' => $codeText],
+                occurredAt: $dateTime,
+            );
+        } catch (RuntimeException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            $this->logger->error('Packeta HTTP exception on packetStatus', [
+                'purchaseId' => $purchase->getId(),
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    public function supports(TransportationAPI $transportationAPI): bool
+    {
+        return $transportationAPI === TransportationAPI::PACKETA;
     }
 
     private function prepareParcelData(Purchase $purchase): array
     {
+        $transportation = $purchase->getTransportation();
         $client = $purchase->getClient();
+        $address = $purchase->getPurchaseAddress();
+        $country = $address->getCountry();
 
-         //? maybe country should be an enum or something like that to not make this check value match dependant
-        $country = $purchase->getPurchaseAddress()->getCountry();
-        switch ($country) {
-            case 'cz':
-                $currency = 'CZK';
-                break;
+        $currency = match ($country) {
+            'sk'    => 'EUR',
+            default => 'CZK',
+        };
 
-            case 'sk':
-                $currency = 'EUR';
-                break;
-                
-            default:
-                $currency = 'CZK';
-                break;
-        }
+        $currencyEntity = $currency === 'EUR'
+            ? $this->currencyRepository->findOneBy(['isDefault' => false])
+            : $this->currencyRepository->findOneBy(['isDefault' => true]);
 
-        $calculatorCurrencies = [
-            'CZK' => $this->currencyRepository->findOneBy(['isDefault' => true]),
-            'EUR' => $currency = $this->currencyRepository->findOneBy(['name' => $this->secondaryCurrencyName]),
-        ];
+        $priceCalculator = $this->purchasePriceFactory->create($purchase, $currencyEntity);
 
-        $purchasePriceCalculator = $this->purchasePriceFactory->create($purchase, $calculatorCurrencies[$currency]);
-
-        // TODO: check that calculation types for value and cod correct
-
-        //! max 10,000 czk/400 eur
-        // calculate parcel value
-        $value = (clone $purchasePriceCalculator)
+        $value = (clone $priceCalculator)
             ->setVatCalculationType(VatCalculationType::WithVAT)
             ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
             ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
-            ->getPrice();
+            ->getPrice()
+        ;
 
-
-        // calculate cash on delivery (null if cash on delivery payment not wanted)
-        //* this is automatically converted to the countrys currency by Packeta, and will be payed to sender in CZK
-        $cod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY
-            ? $purchasePriceCalculator
+        $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
+        $cod = $isCod
+            ? $priceCalculator
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
                 ->getPrice()
             : null;
 
-        //! hardcoded 2Kg
+        $branch = $purchase->getBranch();
+        $addressId = $branch !== null
+            ? (int)str_replace('packeta_', '', $branch->getProviderId())
+            : (int)$transportation->getToken();
+
+        // TODO: derive weight from order items
         $weight = 2;
-        // see "2 Parameters of the Shipment" on https://www.packeta.com/general-terms-conditions        
-        
-        // docs: https://docs.packeta.com/docs/api-reference/data-structures#packetattributes
-        return  [
-            'apiPassword' => $purchase->getTransportation()->getSecretKey(),
-            'packetAttributes' => [
-                'number' => (string)$purchase->getId(),
-                'name' => $client->getName(),
-                'surname' => $client->getSurname(),
-                'email' => $client->getMail(),
-                'phone' => $client->getPhone(),
-                'addressId' => $purchase->getTransportation()->getToken(),
-                'value' => $value, 
-                'eshop' => 'yogashop',
-                ...($cod !== null ? ['cod' => $cod] : []),
-                'currency' => $currency,
-                'weight' => $weight, 
-            ],
+
+        $packetAttributes = [
+            'number' => (string)$purchase->getId(),
+            'name' => $client->getName(),
+            'surname' => $client->getSurname(),
+            'email' => $client->getMail(),
+            'phone' => $client->getPhone(),
+            'addressId' => $addressId,
+            'value' => $value,
+            'currency' => $currency,
+            'weight' => $weight,
+            'eshop' => $this->eshopName,
+        ];
+
+        if ($cod !== null) {
+            $packetAttributes['cod'] = $cod;
+        }
+
+        if ($branch === null) {
+            $packetAttributes['street'] = $address->getStreet();
+            $packetAttributes['city'] = $address->getCity();
+            $packetAttributes['zip'] = $address->getZip();
+        }
+
+        return [
+            'apiPassword' => $transportation->getSecretKey(),
+            'packetAttributes' => $packetAttributes,
         ];
     }
 
-    private function createXmlRequest(string $method, array $data): string
+    private function mapStatusCode(int $code): ParcelDeliveryStateEnum
     {
-        $xml = new SimpleXMLElement("<?xml version=\"1.0\"?><$method></$method>");
+        return match ($code) {
+            1       => ParcelDeliveryStateEnum::RECEIVED_DATA,
+            2, 3, 4 => ParcelDeliveryStateEnum::IN_TRANSIT,
+            5       => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
+            7       => ParcelDeliveryStateEnum::DELIVERED,
+            8       => ParcelDeliveryStateEnum::NOT_PICKED_UP,
+            default => ParcelDeliveryStateEnum::CANCELLED,
+        };
+    }
+
+    private function buildXml(string $rootElement, array $data): string
+    {
+        $xml = new SimpleXMLElement("<?xml version=\"1.0\" encoding=\"UTF-8\"?><$rootElement/>");
         $this->arrayToXml($data, $xml);
         return $xml->asXML();
     }
@@ -169,16 +221,11 @@ class PacketeryParcel implements ParcelServiceInterface
     {
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                $subnode = $xml->addChild($key);
-                $this->arrayToXml($value, $subnode);
+                $child = $xml->addChild($key);
+                $this->arrayToXml($value, $child);
             } else {
-                $xml->addChild($key, $value);
+                $xml->addChild($key, htmlspecialchars((string)$value, ENT_XML1));
             }
         }
-    }
-
-    public function supports(TransportationAPI $transportationAPI): bool
-    {
-        return $transportationAPI === TransportationAPI::PACKETA;
     }
 }

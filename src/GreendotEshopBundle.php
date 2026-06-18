@@ -76,6 +76,18 @@ class GreendotEshopBundle extends AbstractBundle
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('parcel')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('packeta')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->stringNode('eshop_name')->defaultValue('')->end()
+                                ->stringNode('api_password')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('shop')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -207,9 +219,8 @@ class GreendotEshopBundle extends AbstractBundle
             $config['shop']['price']['extension']['discount_combination_strategy'],
         );
 
-//        $builder->setParameter(
-//            'greendot_eshop.transportation.dpd.sender_data',
-//            $config['transportation']['dpd'] ?? []
-//        );
+        $packetaConfig = $config['parcel']['packeta'] ?? [];
+        $builder->setParameter('greendot_eshop.parcel.packeta.eshop_name',   $packetaConfig['eshop_name']   ?? '');
+        $builder->setParameter('greendot_eshop.parcel.packeta.api_password',  $packetaConfig['api_password']  ?? '');
     }
 }

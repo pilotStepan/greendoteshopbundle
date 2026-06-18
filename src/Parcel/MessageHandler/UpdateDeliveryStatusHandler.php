@@ -101,8 +101,10 @@ readonly class UpdateDeliveryStatusHandler
 
         $latest = $purchase->getLatestTransportationEvent(); // refresh latest event
 
-        if ($latest?->getState() === ParcelDeliveryStateEnum::SUBMITTED) {
-            $this->prepareForSending($purchase);
+        if ($latest?->getState() === ParcelDeliveryStateEnum::RECEIVED_DATA) {
+            $this->applyTransitionIfPossible($purchase, PWC::T_LOG_SEND->value);
+        } elseif ($latest?->getState() === ParcelDeliveryStateEnum::DELIVERED) {
+            $this->applyTransitionIfPossible($purchase, PWC::T_LOG_DELIVER->value);
         }
 
         if ($latest?->getState()->isFinal()) {
@@ -120,20 +122,20 @@ readonly class UpdateDeliveryStatusHandler
         ]);
     }
 
-    private function prepareForSending(Purchase $purchase): void
+    private function applyTransitionIfPossible(Purchase $purchase, string $transition): void
     {
-        if ($this->purchaseFlow->can($purchase, 'prepare_for_sending')) {
-            $this->purchaseFlow->apply($purchase, 'prepare_for_sending');
+        if ($this->purchaseFlow->can($purchase, $transition)) {
+            $this->purchaseFlow->apply($purchase, $transition);
         } else {
             $errors = array_map(
                 static fn($b) => $b->getMessage(),
-                iterator_to_array($this->purchaseFlow->buildTransitionBlockerList($purchase, 'prepare_for_sending')),
+                iterator_to_array($this->purchaseFlow->buildTransitionBlockerList($purchase, $transition)),
             );
-            $this->logger->error('Cannot apply transition to prepare for sending', [
+            $this->logger->warning('Cannot apply workflow transition', [
                 'purchaseId' => $purchase->getId(),
+                'transition' => $transition,
                 'errors' => $errors,
             ]);
-            throw new UnrecoverableMessageHandlingException("Cannot apply transition to prepare for sending (Purchase ID: {$purchase->getId()}");
         }
     }
 }

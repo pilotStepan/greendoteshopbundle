@@ -14,37 +14,88 @@ services:
         autowire: true
         autoconfigure: true
 
+    Greendot\EshopBundle\Affiliate\:
+        resource: '../../../../src/Affiliate/*'
 
-    # Curated wiring for API Platform functional tests: import the bundle's own services
-    # so entities/StateProcessors/StateProviders resolve via the same DI graph as production,
-    # but exclude subtrees that reach out to external integrations (SMS, payment, JWT auth,
-    # OAuth2, mailer, url-encryption, etc.) which need credentials/bundles not present here.
-    Greendot\EshopBundle\:
-        resource: '../../../../src/*'
+    Greendot\EshopBundle\ApiResource\:
+        resource: '../../../../src/ApiResource/*'
+
+    Greendot\EshopBundle\DataFixtures\:
+        resource: '../../../../src/DataFixtures/*'
+
+    Greendot\EshopBundle\DataLayer\:
+        resource: '../../../../src/DataLayer/*'
+
+    Greendot\EshopBundle\Doctrine\:
+        resource: '../../../../src/Doctrine/*'
+
+    Greendot\EshopBundle\Dto\:
+        resource: '../../../../src/Dto/*'
+
+    Greendot\EshopBundle\EventSubscriber\:
+        resource: '../../../../src/EventSubscriber/*'
         exclude:
-            - '../../../../src/{DependencyInjection,Migrations,Tests,Kernel.php}'
-            - '../../../../src/Controller'
-            - '../../../../src/Sms'
-            - '../../../../src/Notification'
-            - '../../../../src/Mail'
-            - '../../../../src/Url'
-            - '../../../../src/Security'
-            - '../../../../src/Export'
-            - '../../../../src/MessageHandler/Export'
-            - '../../../../src/MessageHandler/Parcel'
-            - '../../../../src/Service/ManageMails.php'
-            - '../../../../src/MessageHandler/Notification'
-            - '../../../../src/MessageHandler/Watchdog'
-            - '../../../../src/Service/WishlistService.php'
-            # Needs PurchaseUrlGenerator -> security.authenticator.login_link_handler.main,
-            # which requires a login_link firewall feature not set up in this minimal test
-            # security config. Excluded for now; checkout flow needs dedicated test wiring.
-            - '../../../../src/StateProcessor/PurchaseCheckoutProcessor.php'
-            - '../../../../src/StateProvider/PurchaseWishlistStateProvider.php'
-            - '../../../../src/OpenApi'
-            - '../../../../src/Invoice'
-            - '../../../../src/Twig'
-            - '../../../../src/I18n'
-            # Depends on a 'purchase_flow' Workflow definition that the consuming app
-            # registers, not the bundle itself. Not needed outside the Purchase workflow tests.
             - '../../../../src/EventSubscriber/PurchaseStateSubscriber.php'
+
+    Greendot\EshopBundle\Factory\:
+        resource: '../../../../src/Factory/*'
+
+    Greendot\EshopBundle\Form\:
+        resource: '../../../../src/Form/*'
+
+    Greendot\EshopBundle\Logging\:
+        resource: '../../../../src/Logging/*'
+
+    Greendot\EshopBundle\Message\:
+        resource: '../../../../src/Message/*'
+
+    Greendot\EshopBundle\MessageHandler\:
+        resource: '../../../../src/MessageHandler/*'
+        exclude:
+            - '../../../../src/MessageHandler/Export'
+            - '../../../../src/MessageHandler/Notification'
+            - '../../../../src/MessageHandler/Parcel'
+            - '../../../../src/MessageHandler/Watchdog'
+
+    Greendot\EshopBundle\Normalizer\:
+        resource: '../../../../src/Normalizer/*'
+
+    Greendot\EshopBundle\Parcel\:
+        resource: '../../../../src/Parcel/*'
+        exclude:
+            - '../../../../src/Parcel/Integration'
+
+    Greendot\EshopBundle\Payment\:
+        resource: '../../../../src/Payment/*'
+
+    Greendot\EshopBundle\Repository\:
+        resource: '../../../../src/Repository/*'
+
+    Greendot\EshopBundle\Schema\:
+        resource: '../../../../src/Schema/*'
+
+    Greendot\EshopBundle\Service\:
+        resource: '../../../../src/Service/*'
+        exclude:
+            - '../../../../src/Service/ManageMails.php'
+            - '../../../../src/Service/WishlistService.php'
+            - '../../../../src/Service/Imports'
+
+    Greendot\EshopBundle\StateProcessor\:
+        resource: '../../../../src/StateProcessor/*'
+        exclude:
+            - '../../../../src/StateProcessor/PurchaseCheckoutProcessor.php'
+
+    Greendot\EshopBundle\StateProvider\:
+        resource: '../../../../src/StateProvider/*'
+        exclude:
+            - '../../../../src/StateProvider/PurchaseWishlistStateProvider.php'
+
+    Greendot\EshopBundle\Utils\:
+        resource: '../../../../src/Utils/*'
+
+    Greendot\EshopBundle\Validator\:
+        resource: '../../../../src/Validator/*'
+
+    Greendot\EshopBundle\Workflow\:
+        resource: '../../../../src/Workflow/*'
