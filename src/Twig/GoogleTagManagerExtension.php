@@ -7,8 +7,10 @@ use Greendot\EshopBundle\DataLayer\Event\PageViewEvent;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemListEvent;
+use Greendot\EshopBundle\DataLayer\Event\ViewItemListProductEvent;
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
@@ -37,10 +39,16 @@ class GoogleTagManagerExtension
         $this->eventDispatcher->dispatch(new ViewItemListEvent($category, $productFetchUri, $productIds));
     }
 
-    #[AsTwigFunction('gtm_view_item')]
-    public function viewItem(Product $product, ?array $selectedVariants = null): void
+    #[AsTwigFunction('gtm_view_item_list_product')]
+    public function viewItemListProduct(Product $product): void
     {
-        $this->eventDispatcher->dispatch(new ViewItemEvent($product, $selectedVariants));
+        $this->eventDispatcher->dispatch(new ViewItemListProductEvent($product));
+    }
+
+    #[AsTwigFunction('gtm_view_item')]
+    public function viewItem(ProductVariant $productVariant): void
+    {
+        $this->eventDispatcher->dispatch(new ViewItemEvent($productVariant));
     }
 
     #[AsTwigFunction('gtm_purchase')]

@@ -2,13 +2,14 @@
 
 namespace Greendot\EshopBundle\DataLayer\Factory;
 
-use Greendot\EshopBundle\DataLayer\Data\ViewItem\ViewItem;
+use Greendot\EshopBundle\DataLayer\Data\ViewItemListProduct\ViewItemListProduct;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 
-class ViewItemFactory
+class ViewItemListProductFactory
 {
     private Currency $currency;
 
@@ -21,15 +22,25 @@ class ViewItemFactory
         $this->currency = $currencyManager->get();
     }
 
-    public function create(ProductVariant $productVariant): ViewItem
+    public function create(Product $product): ViewItemListProduct
     {
-        $items[] = $this->dataLayerItemFactory->createFromVariant(
-            variant: $productVariant,
-            currency: $this->currency,
-            item_variant: $this->getVariantNameSafe($productVariant),
-            parameters: $this->getFormatedParameters($productVariant),
-        );
+        $items = [];
 
+        $valueVat = 0;
+        $valueNoVat = 0;
+
+        foreach ($product->getProductVariants() as $variant) {
+            $item = $this->dataLayerItemFactory->createFromVariant(
+                variant: $variant,
+                currency: $this->currency,
+                item_variant: $this->getVariantNameSafe($variant),
+                parameters: $this->getFormatedParameters($variant),
+            );
+            $valueNoVat += $item->priceNoVat;
+            $valueVat += $item->priceVat;
+
+            $items[] = $item;
+        }
 
         $lowestPriceItem = null;
         foreach ($items as $item) {
@@ -48,12 +59,12 @@ class ViewItemFactory
             }
         }
 
-        return new ViewItem(
+        return new ViewItemListProduct(
             currency: $this->currency->getName(),
             priceVat: $lowestPriceItem->priceVat,
             priceNoVat: $lowestPriceItem->priceNoVat,
-            valueVat: $lowestPriceItem->priceVat,
-            valueNoVat: $lowestPriceItem->priceNoVat,
+            valueVat: $valueVat,
+            valueNoVat: $valueNoVat,
             items: $items
         );
     }
