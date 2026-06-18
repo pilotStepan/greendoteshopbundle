@@ -1,9 +1,9 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\Parcel;
+namespace Greendot\EshopBundle\Parcel;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\TransportationAPI;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**

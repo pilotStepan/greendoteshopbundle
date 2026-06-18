@@ -1,18 +1,19 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\Parcel;
+namespace Greendot\EshopBundle\Parcel\Integration;
 
-use Greendot\EshopBundle\Enum\TransportationAPI;
 use Throwable;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
-use Greendot\EshopBundle\Dto\ParcelStatusInfo;
+use Greendot\EshopBundle\Enum\TransportationAPI;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\ParcelDeliveryState;
+use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 
 #[WithMonologChannel('api.parcel.czech_post')]
 class CzechPostParcel implements ParcelServiceInterface
@@ -66,7 +67,7 @@ class CzechPostParcel implements ParcelServiceInterface
     /**
      * @throws Throwable
      */
-    public function getParcelStatus(Purchase $purchase): ParcelStatusInfo
+    public function getParcelStatus(Purchase $purchase): ParcelStatusInfoDto
     {
         $transportNumber = $purchase->getTransportNumber();
         if (!$transportNumber) {
@@ -87,8 +88,8 @@ class CzechPostParcel implements ParcelServiceInterface
             ]);
 
             // TODO: Implement proper status mapping
-            return new ParcelStatusInfo(
-                ParcelDeliveryState::DELIVERED,
+            return new ParcelStatusInfoDto(
+                ParcelDeliveryStateEnum::DELIVERED,
                 $response->toArray(),
             );
         } catch (Throwable $e) {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\MessageHandler\Parcel;
+namespace Greendot\EshopBundle\Parcel\MessageHandler;
 
 use Throwable;
 use Psr\Log\LoggerInterface;
@@ -9,12 +9,12 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
+use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Message\Parcel\UpdateDeliveryStatusMessage;
+use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 

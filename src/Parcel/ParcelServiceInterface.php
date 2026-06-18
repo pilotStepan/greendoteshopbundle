@@ -1,11 +1,10 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\Parcel;
+namespace Greendot\EshopBundle\Parcel;
 
 use Throwable;
-use Greendot\EshopBundle\Dto\ParcelStatusInfo;
-use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\TransportationAPI;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 /**
@@ -26,10 +25,10 @@ interface ParcelServiceInterface
     /**
      * Retrieves the status of a parcel for the given purchase.
      * @param Purchase $purchase
-     * @return ParcelStatusInfo Dto containing status information
+     * @return ParcelStatusInfoDto Dto containing status information
      * @throws Throwable Throw it when service is unavailable or invalid data passed
      */
-    public function getParcelStatus(Purchase $purchase): ParcelStatusInfo;
+    public function getParcelStatus(Purchase $purchase): ParcelStatusInfoDto;
 
     /**
      * Checks if the service supports the given transportationAPI enum.

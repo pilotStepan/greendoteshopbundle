@@ -1,8 +1,8 @@
 <?php
 
-namespace Greendot\EshopBundle\Enum;
+namespace Greendot\EshopBundle\Parcel;
 
-enum ParcelDeliveryState: string
+enum ParcelDeliveryStateEnum: string
 {
     // these are just examples, change them...
     case TRANSMITTED_DATA = 'transmitted_data';

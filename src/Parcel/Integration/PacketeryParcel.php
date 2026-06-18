@@ -1,26 +1,27 @@
 <?php
 
-namespace Greendot\EshopBundle\Service\Parcel;
+namespace Greendot\EshopBundle\Parcel\Integration;
 
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use SimpleXMLElement;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
-use Greendot\EshopBundle\Dto\ParcelStatusInfo;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\ParcelDeliveryState;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Enum\DiscountCalculationType;
-use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\TransportationAPI;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 
 #[WithMonologChannel('api.parcel.packetery')]
@@ -79,11 +80,11 @@ class PacketeryParcel implements ParcelServiceInterface
     /**
      * @throws Throwable
      */
-    public function getParcelStatus(Purchase $purchase): ParcelStatusInfo
+    public function getParcelStatus(Purchase $purchase): ParcelStatusInfoDto
     {
         // FIXME: Implement the actual logic to retrieve the parcel status
-        return new ParcelStatusInfo(
-            ParcelDeliveryState::DELIVERED,
+        return new ParcelStatusInfoDto(
+            ParcelDeliveryStateEnum::DELIVERED,
         );
     }
 

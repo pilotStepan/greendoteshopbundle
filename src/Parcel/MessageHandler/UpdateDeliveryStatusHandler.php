@@ -1,23 +1,25 @@
 <?php
 
-namespace Greendot\EshopBundle\MessageHandler\Parcel;
+namespace Greendot\EshopBundle\Parcel\MessageHandler;
 
 use Throwable;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Workflow\Registry;
 use Monolog\Attribute\WithMonologChannel;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\ParcelDeliveryState;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Entity\Project\TransportationEvent;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Message\Parcel\UpdateDeliveryStatusMessage;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
@@ -34,7 +36,8 @@ readonly class UpdateDeliveryStatusHandler
         private EntityManagerInterface $em,
         private MessageBusInterface    $bus,
         private LoggerInterface        $logger,
-        private Registry               $registry,
+        #[Target(PWC::NAME->value)]
+        private WorkflowInterface              $purchaseFlow,
     ) {}
 
     /**
@@ -98,7 +101,7 @@ readonly class UpdateDeliveryStatusHandler
 
         $latest = $purchase->getLatestTransportationEvent(); // refresh latest event
 
-        if ($latest?->getState() === ParcelDeliveryState::SUBMITTED) {
+        if ($latest?->getState() === ParcelDeliveryStateEnum::SUBMITTED) {
             $this->prepareForSending($purchase);
         }
 
@@ -119,13 +122,12 @@ readonly class UpdateDeliveryStatusHandler
 
     private function prepareForSending(Purchase $purchase): void
     {
-        $workflow = $this->registry->get($purchase);
-        if ($workflow->can($purchase, 'prepare_for_sending')) {
-            $workflow->apply($purchase, 'prepare_for_sending');
+        if ($this->purchaseFlow->can($purchase, 'prepare_for_sending')) {
+            $this->purchaseFlow->apply($purchase, 'prepare_for_sending');
         } else {
             $errors = array_map(
                 static fn($b) => $b->getMessage(),
-                iterator_to_array($workflow->buildTransitionBlockerList($purchase, 'prepare_for_sending')),
+                iterator_to_array($this->purchaseFlow->buildTransitionBlockerList($purchase, 'prepare_for_sending')),
             );
             $this->logger->error('Cannot apply transition to prepare for sending', [
                 'purchaseId' => $purchase->getId(),

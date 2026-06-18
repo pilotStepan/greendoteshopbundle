@@ -6,7 +6,7 @@ use DateTimeInterface;
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
-use Greendot\EshopBundle\Enum\ParcelDeliveryState;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 
 #[ORM\Entity(repositoryClass: TransportationEventRepository::class)]
@@ -24,8 +24,8 @@ class TransportationEvent
     #[ORM\Column(name: 'recorded_at', type: 'datetime_immutable')]
     private DateTimeInterface $recordedAt; // When we stored it
 
-    #[ORM\Column(type: "string", enumType: ParcelDeliveryState::class)]
-    private ParcelDeliveryState $state;
+    #[ORM\Column(type: "string", enumType: ParcelDeliveryStateEnum::class)]
+    private ParcelDeliveryStateEnum $state;
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $details = null;
@@ -60,12 +60,12 @@ class TransportationEvent
         return $this->recordedAt;
     }
 
-    public function getState(): ParcelDeliveryState
+    public function getState(): ParcelDeliveryStateEnum
     {
         return $this->state;
     }
 
-    public function setState(ParcelDeliveryState $state): static
+    public function setState(ParcelDeliveryStateEnum $state): static
     {
         $this->state = $state;
         return $this;
