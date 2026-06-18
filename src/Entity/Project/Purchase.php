@@ -327,7 +327,7 @@ class Purchase
         return $this->id;
     }
 
-    public function getDateIssue(): ?\DateTimeInterface
+    public function getDateIssue(): \DateTimeInterface
     {
         return $this->date_issue;
     }

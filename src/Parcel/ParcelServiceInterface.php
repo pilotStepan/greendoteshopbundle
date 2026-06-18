@@ -3,7 +3,6 @@
 namespace Greendot\EshopBundle\Parcel;
 
 use Throwable;
-use Greendot\EshopBundle\Enum\TransportationAPI;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 

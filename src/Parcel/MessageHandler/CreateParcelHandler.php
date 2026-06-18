@@ -6,11 +6,11 @@ use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
-use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -25,12 +25,11 @@ readonly class CreateParcelHandler
     private const INITIAL_STATUS_DELAY_MS = 8 * 60 * 60 * 1000; // 8h
 
     public function __construct(
-        private ParcelServiceProvider  $parcelServiceProvider,
-        private PurchaseRepository     $purchaseRepository,
-        private ManagePurchase         $managePurchase,
-        private EntityManagerInterface $em,
-        private MessageBusInterface    $bus,
-        private LoggerInterface        $logger,
+        private ParcelServiceProviderInterface $parcelServiceProvider,
+        private PurchaseRepository             $purchaseRepository,
+        private EntityManagerInterface         $em,
+        private MessageBusInterface            $bus,
+        private LoggerInterface                $logger,
     ) {}
 
     /**
@@ -42,7 +41,6 @@ readonly class CreateParcelHandler
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
-            // Permanent: do not retry
             $this->logger->error('Purchase not found', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
@@ -57,16 +55,14 @@ readonly class CreateParcelHandler
             return;
         }
 
-        // Resolve service
-        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
-        if (!$parcelService) {
+        try {
+            $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
+        } catch (ParcelServiceNotFoundException $e) {
             $this->logger->error('No parcel service available', ['purchaseId' => $purchaseId]);
-            throw new UnrecoverableMessageHandlingException("No parcel service available (Purchase ID: $purchaseId)");
+            throw new UnrecoverableMessageHandlingException("No parcel service available (Purchase ID: $purchaseId)", 0, $e);
         }
 
-        // Create parcel
         try {
-            $this->managePurchase->preparePrices($purchase);
             $parcelId = $parcelService->createParcel($purchase);
             $purchase->setTransportNumber($parcelId);
             $this->em->flush();

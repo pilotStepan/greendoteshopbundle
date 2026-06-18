@@ -243,9 +243,35 @@ class PacketeryParcelTest extends TestCase
         $this->assertFalse($result->state->isFinal());
     }
 
+    public function testGetParcelStatus_statusCode2_returnsInTransit(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-07T08:00:00</dateTime><statusCode>2</statusCode><codeText>on the way</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null)
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
     public function testGetParcelStatus_statusCode3_returnsInTransit(): void
     {
         $xml = '<response><status>ok</status><result><dateTime>2024-01-07T12:44:43</dateTime><statusCode>3</statusCode><codeText>prepared for departure</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null)
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_statusCode4_returnsInTransit(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-08T09:15:00</dateTime><statusCode>4</statusCode><codeText>en route to destination</codeText></result></response>';
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(

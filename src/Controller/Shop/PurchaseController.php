@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -169,8 +170,12 @@ class PurchaseController extends AbstractController
         EntityManagerInterface $entityManager,
     ): JsonResponse
     {
-        $parcelService = $provider->getByPurchase($purchase);
-        $parcelId = $parcelService?->createParcel($purchase);
+        try {
+            $parcelService = $provider->getByPurchase($purchase);
+            $parcelId = $parcelService->createParcel($purchase);
+        } catch (ParcelServiceNotFoundException) {
+            return new JsonResponse(['message' => 'No parcel service configured'], 400);
+        }
 
         if (!$parcelId) {
             return new JsonResponse(['message' => 'Failed to create parcel'], 500);
@@ -192,11 +197,11 @@ class PurchaseController extends AbstractController
         ParcelServiceProvider $provider,
     ): JsonResponse
     {
-        $parcelService = $provider->getByPurchase($purchase);
-        $status = $parcelService->getParcelStatus($purchase);
-
-        if (!$status) {
-            return new JsonResponse(['message' => 'Failed to get parcel status'], 500);
+        try {
+            $parcelService = $provider->getByPurchase($purchase);
+            $status = $parcelService->getParcelStatus($purchase);
+        } catch (ParcelServiceNotFoundException) {
+            return new JsonResponse(['message' => 'No parcel service configured'], 400);
         }
 
         return new JsonResponse($status);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Enum;
+namespace Greendot\EshopBundle\Parcel;
 
 enum TransportationAPI: string
 {

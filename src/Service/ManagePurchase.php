@@ -14,7 +14,8 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
-use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
@@ -33,7 +34,7 @@ readonly class ManagePurchase
         private PurchaseRepository         $purchaseRepository,
         private ManageVies                 $manageVies,
         private MessageBusInterface        $bus,
-        private ParcelServiceProvider      $parcelServiceProvider,
+        private ParcelServiceProviderInterface $parcelServiceProvider,
         #[Target(PWC::NAME->value)]
         private WorkflowInterface          $purchaseFlow,
     ) {}
@@ -83,9 +84,11 @@ readonly class ManagePurchase
 
     public function generateTransportData(Purchase $purchase): void
     {
-        // If purchase does not have a parcel service, we do not create a parcel
-        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
-        if (!$parcelService) return;
+        try {
+            $this->parcelServiceProvider->getByPurchase($purchase);
+        } catch (ParcelServiceNotFoundException) {
+            return;
+        }
 
         $this->bus->dispatch(
             new CreateParcelMessage($purchase->getId()),
