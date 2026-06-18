@@ -217,6 +217,31 @@ class PurchasePriceTest extends PriceCalculationTestCase
         );
     }
 
+    #[DataProviderExternal(PurchasePriceDataProvider::class, 'ppvCustomPrice')]
+    public function testPpvCustomPriceInPurchase(
+        array    $ppv,
+        VatCalc  $vatCalc,
+        DiscCalc $discCalc,
+        Currency $currency,
+        ?float   $clientDiscount,
+        float    $expectedPurchasePrice,
+    ): void
+    {
+        // ARRANGE
+        $purchase = $this->createPurchase($ppv, $clientDiscount, vouchers: null);
+
+        // ACT
+        $pp = $this->createPurchasePrice($purchase, $vatCalc, $discCalc, $currency);
+
+        // ASSERT
+        $this->assertEqualsWithDelta(
+            $expectedPurchasePrice,
+            $pp->getPrice(),
+            0.001,
+            "Purchase price with PPV custom price mismatch"
+        );
+    }
+
     public function testEmptyPurchase(): void
     {
         // ARRANGE
