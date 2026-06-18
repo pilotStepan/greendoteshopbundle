@@ -82,8 +82,18 @@ class GreendotEshopBundle extends AbstractBundle
                         ->arrayNode('packeta')
                             ->addDefaultsIfNotSet()
                             ->children()
+                                ->booleanNode('enabled')->defaultValue(false)->end()
                                 ->stringNode('eshop_name')->defaultValue('')->end()
                                 ->stringNode('api_password')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('dpd')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->booleanNode('enabled')->defaultValue(false)->end()
+                                ->stringNode('bu_code')->defaultValue('')->end()
+                                ->stringNode('customer_id')->defaultValue('')->end()
+                                ->stringNode('sender_address_id')->defaultValue('')->end()
                             ->end()
                         ->end()
                     ->end()
@@ -220,7 +230,14 @@ class GreendotEshopBundle extends AbstractBundle
         );
 
         $packetaConfig = $config['parcel']['packeta'] ?? [];
+        $builder->setParameter('greendot_eshop.parcel.packeta.enabled',      $packetaConfig['enabled']       ?? false);
         $builder->setParameter('greendot_eshop.parcel.packeta.eshop_name',   $packetaConfig['eshop_name']   ?? '');
         $builder->setParameter('greendot_eshop.parcel.packeta.api_password',  $packetaConfig['api_password']  ?? '');
+
+        $dpdConfig = $config['parcel']['dpd'] ?? [];
+        $builder->setParameter('greendot_eshop.parcel.dpd.enabled',            $dpdConfig['enabled']            ?? false);
+        $builder->setParameter('greendot_eshop.parcel.dpd.bu_code',            $dpdConfig['bu_code']            ?? '');
+        $builder->setParameter('greendot_eshop.parcel.dpd.customer_id',        $dpdConfig['customer_id']        ?? '');
+        $builder->setParameter('greendot_eshop.parcel.dpd.sender_address_id',  $dpdConfig['sender_address_id']  ?? '');
     }
 }

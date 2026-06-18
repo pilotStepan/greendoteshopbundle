@@ -36,6 +36,8 @@ class PacketeryParcel implements ParcelServiceInterface
         private readonly CurrencyRepository   $currencyRepository,
         #[Autowire(param: 'greendot_eshop.parcel.packeta.eshop_name')]
         private readonly string               $eshopName,
+        #[Autowire(param: 'greendot_eshop.parcel.packeta.enabled')]
+        private readonly bool                 $enabled = false,
     ) {}
 
     public function createParcel(Purchase $purchase): string
@@ -125,7 +127,7 @@ class PacketeryParcel implements ParcelServiceInterface
 
     public function supports(TransportationAPI $transportationAPI): bool
     {
-        return $transportationAPI === TransportationAPI::PACKETA;
+        return $this->enabled && $transportationAPI === TransportationAPI::PACKETA;
     }
 
     private function prepareParcelData(Purchase $purchase): array

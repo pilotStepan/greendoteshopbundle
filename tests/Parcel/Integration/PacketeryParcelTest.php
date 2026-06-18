@@ -9,6 +9,7 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Parcel\Integration\PacketeryParcel;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Entity\Project\Branch;
@@ -95,7 +96,7 @@ class PacketeryParcelTest extends TestCase
         return $repo;
     }
 
-    private function makeService(MockHttpClient $httpClient, float $price = 500.0): PacketeryParcel
+    private function makeService(MockHttpClient $httpClient, float $price = 500.0, bool $enabled = true): PacketeryParcel
     {
         return new PacketeryParcel(
             $httpClient,
@@ -103,6 +104,7 @@ class PacketeryParcelTest extends TestCase
             $this->makePriceFactory($price),
             $this->makeCurrencyRepo(),
             'TestEshop',
+            $enabled,
         );
     }
 
@@ -332,5 +334,26 @@ class PacketeryParcelTest extends TestCase
 
         $this->assertSame(ParcelDeliveryStateEnum::CANCELLED, $result->state);
         $this->assertTrue($result->state->isFinal());
+    }
+
+    public function testSupports_whenEnabled_returnsTrueForPacketa(): void
+    {
+        $service = $this->makeService(new MockHttpClient(), enabled: true);
+
+        $this->assertTrue($service->supports(TransportationAPI::PACKETA));
+    }
+
+    public function testSupports_whenDisabled_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient(), enabled: false);
+
+        $this->assertFalse($service->supports(TransportationAPI::PACKETA));
+    }
+
+    public function testSupports_neverMatchesOtherCarrier(): void
+    {
+        $service = $this->makeService(new MockHttpClient(), enabled: true);
+
+        $this->assertFalse($service->supports(TransportationAPI::DPD));
     }
 }
