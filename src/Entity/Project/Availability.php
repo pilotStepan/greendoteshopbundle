@@ -6,10 +6,12 @@ use Greendot\EshopBundle\Repository\Project\AvailabilityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AvailabilityRepository::class)]
-class Availability
+class Availability implements Translatable
 {
 
     #[ORM\Id]
@@ -18,10 +20,12 @@ class Availability
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write','searchable', "search_result", "SearchProductResultApiModel"])]
     private $id;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:wishlist'])]
     private $name;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'text')]
     #[Groups(['product_list:read', 'product_item:read'])]
     private $description;
@@ -46,9 +50,17 @@ class Availability
     private $productVariants;
 
 
+    #[Gedmo\Locale]
+    private $locale;
+
     public function __construct()
     {
         $this->productVariants = new ArrayCollection();
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 
     public function getId(): ?int
