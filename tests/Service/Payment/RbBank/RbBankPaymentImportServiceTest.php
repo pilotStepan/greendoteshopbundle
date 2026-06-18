@@ -4,28 +4,30 @@ namespace Greendot\EshopBundle\Tests\Service\Payment\RbBank;
 
 use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpClient\MockHttpClient;
-use PHPUnit\Framework\MockObject\MockObject;
-use Symfony\Component\HttpClient\Response\MockResponse;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
-use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
+use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
+use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
+use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 
 class RbBankPaymentImportServiceTest extends TestCase
 {
-    private const HEADER_DEFAULTS = '01.06.2026;30.06.2026;100.00;CZK;%s;%s;111111;0100;222222;5500;%s;0;poznamka;%d;%s';
+    // col: validFrom;validTo;prescribed;currency;transferred;transferDate;debitAcc;debitBank;creditAcc;creditBank;VS;KS;note;status;txId
+    private const ROW = '01.06.2026;30.06.2026;100.00;CZK;%s;%s;111111;0100;222222;5500;%s;0;poznamka;%d;%s';
 
     private PurchaseRepository&MockObject $purchaseRepository;
     private PaymentTypeRepository&MockObject $paymentTypeRepository;
@@ -40,81 +42,132 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->purchaseFlow = $this->createMock(WorkflowInterface::class);
 
         $this->bankTransferPaymentType = new PaymentType();
-        $this->paymentTypeRepository->method('findOneBy')
+        $this->paymentTypeRepository
+            ->method('findOneBy')
             ->with([
                 'action_group' => PaymentTypeActionGroup::BANK_TRANSFER,
                 'account' => '123',
                 'bank_number' => '5500',
             ])
-            ->willReturn($this->bankTransferPaymentType);
-
-        $this->purchaseFlow = $this->createMock(WorkflowInterface::class);
+            ->willReturn($this->bankTransferPaymentType)
+        ;
     }
 
     public function testCompletedPaymentIsMatchedAndConfirmed(): void
     {
         $purchase = new Purchase();
-        $this->purchaseFlow->method('can')->willReturn(true);
         $this->purchaseRepository->expects($this->once())->method('find')->with('42')->willReturn($purchase);
 
-        $this->entityManager->expects($this->exactly(3))->method('persist'); // Log + Purchase + success PaymentAction
-        $this->entityManager->expects($this->exactly(2))->method('flush'); // audit log flush + final flush
+        $this->entityManager->expects($this->exactly(2))->method('persist'); // Purchase + success PaymentAction
+        $this->entityManager->expects($this->once())->method('flush');
 
-        $line = sprintf(self::HEADER_DEFAULTS, '100.00', '15.06.2026', '42', 2, 'tx-1');
-        $service = $this->createService(new MockHttpClient(new MockResponse($line)));
-
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+        $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
 
         $this->assertSame($this->bankTransferPaymentType, $purchase->getPaymentType());
+    }
+
+    public function testAlreadyPaidPurchaseIsPersistedAsSuccessWithoutChangingPaymentType(): void
+    {
+        $purchase = new Purchase();
+        $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
+
+        $this->purchaseRepository->method('find')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->never())->method('apply');
+
+        // applyBankTransferPayment returns silently → processRecord logs success and persists
+        $this->entityManager->expects($this->exactly(2))->method('persist'); // Purchase + success PaymentAction
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    public function testWorkflowExceptionLogsFailureAndSkipsPersistingPurchase(): void
+    {
+        $purchase = new Purchase();
+        $this->purchaseFlow->method('apply')->willThrowException(new \RuntimeException('Transition blocked'));
+        $this->purchaseRepository->method('find')->willReturn($purchase);
+
+        $this->entityManager->expects($this->exactly(1))->method('persist'); // failure PaymentAction only
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
     }
 
     public function testPendingOrTerminatedPaymentsAreSkipped(): void
     {
         $this->purchaseRepository->expects($this->never())->method('find');
-        $this->entityManager->expects($this->exactly(1))->method('persist'); // only the audit Log
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
 
-        $pending = sprintf(self::HEADER_DEFAULTS, '0.00', '15.06.2026', '42', 0, 'tx-1');
-        $terminated = sprintf(self::HEADER_DEFAULTS, '0.00', '15.06.2026', '43', 4, 'tx-2');
-        $body = $pending . "\r\n" . $terminated;
+        $pending = sprintf(self::ROW, '0.00', '15.06.2026', '42', 0, 'tx-1');
+        $terminated = sprintf(self::ROW, '0.00', '15.06.2026', '43', 4, 'tx-2');
 
-        $service = $this->createService(new MockHttpClient(new MockResponse($body)));
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+        $this->createService(new MockHttpClient(new MockResponse($pending . "\r\n" . $terminated)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
     }
 
-    public function testUnmatchedPurchaseIsLoggedAsFailure(): void
+    public function testUnmatchedPurchaseIsSkippedWithoutPersisting(): void
     {
         $this->purchaseRepository->expects($this->once())->method('find')->with('99')->willReturn(null);
-        $this->entityManager->expects($this->exactly(2))->method('persist'); // audit Log + failure PaymentAction
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
 
-        $line = sprintf(self::HEADER_DEFAULTS, '100.00', '15.06.2026', '99', 2, 'tx-1');
-        $service = $this->createService(new MockHttpClient(new MockResponse($line)));
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
-    }
-
-    public function testAlreadyPaidPurchaseIsLoggedAsFailure(): void
-    {
-        $purchase = new Purchase();
-        $this->purchaseFlow->method('can')->willReturn(false); // simulates an already-confirmed purchase
-        $this->purchaseRepository->method('find')->willReturn($purchase);
-        $this->entityManager->expects($this->exactly(2))->method('persist'); // audit Log + failure PaymentAction
-
-        $line = sprintf(self::HEADER_DEFAULTS, '100.00', '15.06.2026', '42', 2, 'tx-1');
-        $service = $this->createService(new MockHttpClient(new MockResponse($line)));
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+        $line = sprintf(self::ROW, '100.00', '15.06.2026', '99', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
     }
 
     public function testMalformedRowIsSkipped(): void
     {
         $this->purchaseRepository->expects($this->never())->method('find');
-        $this->entityManager->expects($this->exactly(1))->method('persist'); // only the audit Log
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+        $this->logger->expects($this->atLeastOnce())->method('warning');
 
-        $service = $this->createService(new MockHttpClient(new MockResponse('too;short;row')));
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+        $this->createService(new MockHttpClient(new MockResponse('too;short;row')))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
     }
 
-    public function testRequestUsesConfiguredCredentialsAndLocksDownColumnLayout(): void
+    public function testMultipleCompletedRecordsAreAllProcessedInOneBatch(): void
+    {
+        $purchase1 = new Purchase();
+        $purchase2 = new Purchase();
+
+        $this->purchaseRepository->method('find')
+            ->willReturnOnConsecutiveCalls($purchase1, $purchase2)
+        ;
+
+        $this->entityManager->expects($this->exactly(4))->method('persist'); // 2× Purchase + 2× PaymentAction
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line1 = sprintf(self::ROW, '50.00', '15.06.2026', '11', 2, 'tx-a');
+        $line2 = sprintf(self::ROW, '75.00', '16.06.2026', '22', 2, 'tx-b');
+
+        $this->createService(new MockHttpClient(new MockResponse($line1 . "\n" . $line2)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+    }
+
+    public function testRequestUsesConfiguredCredentialsAndColumnLayout(): void
     {
         $httpClient = new MockHttpClient(function (string $method, string $url) {
             $this->assertSame('GET', $method);
@@ -129,8 +182,7 @@ class RbBankPaymentImportServiceTest extends TestCase
             return new MockResponse('');
         });
 
-        $service = $this->createService($httpClient);
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+        $this->createService($httpClient)->downloadAndProcessPayments(new \DateTime('2026-06-01'));
     }
 
     public function testThrowsAndLogsCriticalWhenBankTransferPaymentTypeIsNotConfigured(): void
@@ -138,33 +190,36 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
         $this->paymentTypeRepository->method('findOneBy')->willReturn(null);
 
-        $this->entityManager->expects($this->exactly(1))->method('persist'); // only the audit Log
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->never())->method('flush');
         $this->logger->expects($this->once())->method('critical');
 
-        $service = $this->createService(new MockHttpClient(new MockResponse('')));
-
         $this->expectException(\RuntimeException::class);
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+
+        $this->createService(new MockHttpClient(new MockResponse('')))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
     }
 
-    public function testThrowsAndLogsCriticalWhenTheHttpRequestFails(): void
+    public function testThrowsAndLogsCriticalWhenHttpRequestFails(): void
     {
         $httpClient = new MockHttpClient(function () {
             throw new \RuntimeException('connection refused');
         });
 
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->never())->method('flush');
         $this->logger->expects($this->once())->method('critical');
 
-        $service = $this->createService($httpClient);
-
         $this->expectException(\Throwable::class);
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+
+        $this->createService($httpClient)->downloadAndProcessPayments(new \DateTime('2026-06-01'));
     }
 
     public function testCriticalLogRedactsPasswordFromExceptionMessage(): void
     {
         $httpClient = new MockHttpClient(function () {
-            throw new \RuntimeException('request to https://online.rb.cz/...?password=SECRET&... failed');
+            throw new \RuntimeException('https://online.rb.cz/...?password=SECRET&... failed');
         });
 
         $this->logger->expects($this->once())
@@ -174,32 +229,31 @@ class RbBankPaymentImportServiceTest extends TestCase
                 $this->assertStringNotContainsString('SECRET', $context['exception_message']);
                 $this->assertStringContainsString('***', $context['exception_message']);
                 return true;
-            }));
-
-        $service = $this->createService($httpClient);
+            }))
+        ;
 
         $this->expectException(\Throwable::class);
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+
+        $this->createService($httpClient)->downloadAndProcessPayments(new \DateTime('2026-06-01'));
     }
 
     public function testDoesNothingWhenIntegrationIsDisabled(): void
     {
         $httpClient = new MockHttpClient(function () {
-            $this->fail('HTTP client should not be called when the integration is disabled.');
+            $this->fail('HTTP client must not be called when the integration is disabled.');
         });
 
         $this->entityManager->expects($this->never())->method('persist');
         $this->entityManager->expects($this->never())->method('flush');
         $this->logger->expects($this->once())->method('info');
 
-        $service = $this->createService($httpClient, enabled: false);
-        $service->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+        $this->createService($httpClient, enabled: false)
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
     }
 
     private function createService(MockHttpClient $httpClient, bool $enabled = true): RbBankPaymentImportService
     {
-        $manageViesLogger = $this->createMock(LoggerInterface::class);
-
         return new RbBankPaymentImportService(
             $httpClient,
             $this->entityManager,
@@ -210,7 +264,7 @@ class RbBankPaymentImportServiceTest extends TestCase
                 $this->createMock(PurchasePriceFactory::class),
                 $this->createMock(ProductVariantPriceFactory::class),
                 $this->purchaseRepository,
-                new ManageVies($manageViesLogger),
+                new ManageVies($this->createMock(LoggerInterface::class)),
                 $this->createMock(MessageBusInterface::class),
                 new ParcelServiceProvider([]),
                 $this->purchaseFlow,

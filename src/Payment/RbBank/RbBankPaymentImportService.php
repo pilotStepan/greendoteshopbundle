@@ -5,9 +5,7 @@ namespace Greendot\EshopBundle\Payment\RbBank;
 use Throwable;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
-use Greendot\EshopBundle\Enum\LogType;
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Entity\Project\Log;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -55,8 +53,6 @@ readonly class RbBankPaymentImportService
 
         try {
             $rawList = $this->fetchPaymentsList($startDate);
-            $this->logRawResponse($rawList);
-
             $paymentType = $this->resolveBankTransferPaymentType();
 
             foreach ($this->parsePaymentsList($rawList) as $record) {
@@ -103,16 +99,17 @@ readonly class RbBankPaymentImportService
     {
         $purchase = $this->purchaseRepository->find($record->variableSymbol);
         if (!$purchase) {
-            $this->logOutcome('failure', sprintf('Nenalezena objednávka pro variabilní symbol %s.', $record->variableSymbol), $record);
             return;
         }
 
-        $confirmed = $this->managePurchase->confirmBankTransferPayment($purchase, $paymentType);
-        if (!$confirmed) {
+        try {
+            $this->managePurchase->applyBankTransferPayment($purchase, $paymentType);
+        } catch (\Throwable $e) {
             $this->logOutcome('failure', sprintf(
-                'Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit (již zaplaceno nebo nepovolený přechod stavu).',
+                'Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit. Error: %s',
                 $purchase->getId(),
                 $record->variableSymbol,
+                $e->getMessage(),
             ), $record);
             return;
         }
@@ -163,18 +160,6 @@ readonly class RbBankPaymentImportService
         ]);
 
         return $response->getContent();
-    }
-
-    private function logRawResponse(string $rawList): void
-    {
-        $log = (new Log())
-            ->setType(LogType::Bank->value)
-            ->setDate(new \DateTime())
-            ->setData($rawList)
-        ;
-
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
     }
 
     /** @return RbBankPaymentRecord[] */

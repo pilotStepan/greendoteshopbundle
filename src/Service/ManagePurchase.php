@@ -92,23 +92,17 @@ readonly class ManagePurchase
         );
     }
 
-    /*
-     * Marks a Purchase as paid via a confirmed bank transfer and
-     * corrects its PaymentType to the one the customer actually used
+    /**
+     * @throws \Throwable
      */
-    public function confirmBankTransferPayment(Purchase $purchase, PaymentType $paymentType): bool
+    public function applyBankTransferPayment(Purchase $purchase, PaymentType $paymentType): void
     {
         if ($purchase->isPaid()) {
-            return false;
+            return;
         }
 
-        if (!$this->purchaseFlow->can($purchase, PWC::T_PAY_PAY->value)) {
-            return false;
-        }
         $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value);
         $purchase->setPaymentType($paymentType);
-
-        return true;
     }
 
     public function issueInvoice(Purchase $purchase): void

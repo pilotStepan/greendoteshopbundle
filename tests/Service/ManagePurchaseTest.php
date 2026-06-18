@@ -63,27 +63,11 @@ class ManagePurchaseTest extends TestCase
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
         $purchaseFlow = $this->createMock(WorkflowInterface::class);
-        $purchaseFlow->expects($this->never())->method('can');
         $purchaseFlow->expects($this->never())->method('apply');
 
         $managePurchase = $this->createManagePurchase($this->purchaseRepository, $this->bus, new ParcelServiceProvider([]), $purchaseFlow);
 
-        $result = $managePurchase->confirmBankTransferPayment($purchase, new PaymentType());
-        $this->assertFalse($result);
-    }
-
-    public function testConfirmBankTransferPaymentDoesNothingWhenTransitionNotAllowed(): void
-    {
-        $purchase = new Purchase();
-
-        $purchaseFlow = $this->createMock(WorkflowInterface::class);
-        $purchaseFlow->method('can')->with($purchase, PWC::T_PAY_PAY->value)->willReturn(false);
-        $purchaseFlow->expects($this->never())->method('apply');
-
-        $managePurchase = $this->createManagePurchase($this->purchaseRepository, $this->bus, new ParcelServiceProvider([]), $purchaseFlow);
-
-        $result = $managePurchase->confirmBankTransferPayment($purchase, new PaymentType());
-        $this->assertFalse($result);
+        $managePurchase->applyBankTransferPayment($purchase, new PaymentType());
     }
 
     public function testConfirmBankTransferPaymentAppliesTransitionAndSwitchesPaymentType(): void
@@ -92,14 +76,12 @@ class ManagePurchaseTest extends TestCase
         $paymentType = new PaymentType();
 
         $purchaseFlow = $this->createMock(WorkflowInterface::class);
-        $purchaseFlow->method('can')->with($purchase, PWC::T_PAY_PAY->value)->willReturn(true);
         $purchaseFlow->expects($this->once())->method('apply')->with($purchase, PWC::T_PAY_PAY->value);
 
         $managePurchase = $this->createManagePurchase($this->purchaseRepository, $this->bus, new ParcelServiceProvider([]), $purchaseFlow);
 
-        $result = $managePurchase->confirmBankTransferPayment($purchase, $paymentType);
+        $managePurchase->applyBankTransferPayment($purchase, $paymentType);
 
-        $this->assertTrue($result);
         $this->assertSame($paymentType, $purchase->getPaymentType());
     }
 
