@@ -11,13 +11,17 @@ use InvalidArgumentException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 
 readonly class ManagePurchase
@@ -30,6 +34,8 @@ readonly class ManagePurchase
         private ManageVies                 $manageVies,
         private MessageBusInterface        $bus,
         private ParcelServiceProvider      $parcelServiceProvider,
+        #[Target(PWC::NAME->value)]
+        private WorkflowInterface          $purchaseFlow,
     ) {}
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase
@@ -84,6 +90,25 @@ readonly class ManagePurchase
         $this->bus->dispatch(
             new CreateParcelMessage($purchase->getId()),
         );
+    }
+
+    /*
+     * Marks a Purchase as paid via a confirmed bank transfer and
+     * corrects its PaymentType to the one the customer actually used
+     */
+    public function confirmBankTransferPayment(Purchase $purchase, PaymentType $paymentType): bool
+    {
+        if ($purchase->isPaid()) {
+            return false;
+        }
+
+        if (!$this->purchaseFlow->can($purchase, PWC::T_PAY_PAY->value)) {
+            return false;
+        }
+        $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value);
+        $purchase->setPaymentType($paymentType);
+
+        return true;
     }
 
     public function issueInvoice(Purchase $purchase): void

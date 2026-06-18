@@ -63,6 +63,19 @@ class GreendotEshopBundle extends AbstractBundle
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('payment')
+                    ->children()
+                        ->arrayNode('rb_bank')
+                            ->children()
+                                ->booleanNode('enabled')->defaultValue(false)->end()
+                                ->stringNode('shopname')->defaultValue('')->end()
+                                ->stringNode('account')->defaultValue('')->end()
+                                ->stringNode('bank_code')->defaultValue('')->end()
+                                ->stringNode('password')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('shop')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -175,6 +188,13 @@ class GreendotEshopBundle extends AbstractBundle
             'greendot_eshop.mail.order.send_proforma',
             $sendProforma
         );
+
+        $rbBankConfig = $config['payment']['rb_bank'] ?? [];
+        $builder->setParameter('greendot_eshop.payment.rb_bank.enabled', $rbBankConfig['enabled'] ?? false);
+        $builder->setParameter('greendot_eshop.payment.rb_bank.shopname', $rbBankConfig['shopname'] ?? '');
+        $builder->setParameter('greendot_eshop.payment.rb_bank.account', $rbBankConfig['account'] ?? '');
+        $builder->setParameter('greendot_eshop.payment.rb_bank.bank_code', $rbBankConfig['bank_code'] ?? '');
+        $builder->setParameter('greendot_eshop.payment.rb_bank.password', $rbBankConfig['password'] ?? '');
 
         $secondaryCurrencyName = $config['shop']['secondary_currency_name'] ?? 'EUR';
         $builder->setParameter(

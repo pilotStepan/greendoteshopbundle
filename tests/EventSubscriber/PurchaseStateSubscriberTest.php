@@ -2,51 +2,51 @@
 
 namespace Greendot\EshopBundle\Tests\EventSubscriber;
 
-use Doctrine\Common\Collections\ArrayCollection;
+use LogicException;
+use Psr\Log\LoggerInterface;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Workflow\Marking;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Workflow\Workflow;
+use Symfony\Component\Workflow\Transition;
+use Symfony\Bundle\SecurityBundle\Security;
+use PHPUnit\Framework\MockObject\MockObject;
+use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\ClientDiscount;
+use Greendot\EshopBundle\Service\ManageVoucher;
+use Doctrine\Common\Collections\ArrayCollection;
 use Greendot\EshopBundle\Entity\Project\Consent;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Service\ManagePurchase;
+use Symfony\Component\Workflow\Event\GuardEvent;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\DiscountService;
+use Greendot\EshopBundle\Service\Vies\ManageVies;
+use Symfony\Component\Workflow\WorkflowInterface;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Service\ManageClientDiscount;
+use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
-use Greendot\EshopBundle\Repository\Project\ConsentRepository;
-use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Repository\Project\ConsentRepository;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
-use Greendot\EshopBundle\Service\CurrencyManager;
-use Greendot\EshopBundle\Service\DateService;
-use Greendot\EshopBundle\Service\DiscountService;
-use Greendot\EshopBundle\Service\ManageClientDiscount;
-use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Service\ManageVoucher;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
-use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy;
-use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PriceUtils;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
-use Greendot\EshopBundle\Service\Vies\ManageVies;
-use LogicException;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Workflow\Event\GuardEvent;
-use Symfony\Component\Workflow\Marking;
-use Symfony\Component\Workflow\Transition;
-use Symfony\Component\Workflow\Workflow;
-use Symfony\Component\Workflow\WorkflowInterface;
+use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy;
 
 
 class PurchaseStateSubscriberTest extends TestCase
@@ -259,6 +259,7 @@ class PurchaseStateSubscriberTest extends TestCase
             new ManageVies($logger),
             $bus,
             new ParcelServiceProvider([]),
+            $this->createMock(WorkflowInterface::class),
         );
     }
 
