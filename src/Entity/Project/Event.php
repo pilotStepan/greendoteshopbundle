@@ -16,6 +16,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: EventRepository::class)]
@@ -33,13 +35,14 @@ use Symfony\Component\Serializer\Annotation\Groups;
     order: ['dateStart' => 'DESC']
 )]
 #[ApiFilter(DateFilter::class, properties: ['dateStart', 'dateEnd'])]
-class Event
+class Event implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255)]
     #[Groups(['event:read', 'event:write'])]
     private ?string $name = null;
@@ -52,14 +55,17 @@ class Event
     #[Groups(['event:read', 'event:write'])]
     private ?\DateTimeInterface $dateEnd = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['event:read', 'event:write'])]
     private ?string $location = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['event:read', 'event:write'])]
     private ?string $description = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['event:read', 'event:write'])]
     private ?string $html = null;
@@ -74,6 +80,7 @@ class Event
     #[ORM\OneToMany(mappedBy: 'event', targetEntity: CategoryEvent::class)]
     private Collection $categories;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255)]
     #[Groups(['event:read', 'event:write'])]
     private ?string $slug = null;
@@ -92,11 +99,19 @@ class Event
     #[ORM\OneToMany(mappedBy: "Event", targetEntity: EventUploadGroup::class)]
     private Collection $eventUploadGroups;
 
+    #[Gedmo\Locale]
+    private $locale;
+
     public function __construct()
     {
         $this->categories = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
         $this->eventUploadGroups = new ArrayCollection();
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 
     public function getId(): ?int
