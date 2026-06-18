@@ -1,0 +1,50 @@
+parameters:
+    greendot_eshop.global.absolute_url: 'https://test.example.com'
+    greendot_eshop.blog.has_landing: true
+    greendot_eshop.blog.slug: 'blog'
+    greendot_eshop.blog.items_per_page: 10
+    greendot_eshop.shop.default_vat_type: 'Price including VAT'
+    greendot_eshop.shop.default_discount_type: 'Price including conventional discounts'
+    greendot_eshop.mail.order.send_proforma: false
+    greendot_eshop.shop.secondary_currency_name: 'EUR'
+    greendot_eshop.shop.price.extension.discount_combination_strategy: 'sum'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+
+    # Curated wiring for API Platform functional tests: import the bundle's own services
+    # so entities/StateProcessors/StateProviders resolve via the same DI graph as production,
+    # but exclude subtrees that reach out to external integrations (SMS, payment, JWT auth,
+    # OAuth2, mailer, url-encryption, etc.) which need credentials/bundles not present here.
+    Greendot\EshopBundle\:
+        resource: '../../../../src/*'
+        exclude:
+            - '../../../../src/{DependencyInjection,Migrations,Tests,Kernel.php}'
+            - '../../../../src/Controller'
+            - '../../../../src/Sms'
+            - '../../../../src/Notification'
+            - '../../../../src/Mail'
+            - '../../../../src/Url'
+            - '../../../../src/Security'
+            - '../../../../src/Export'
+            - '../../../../src/MessageHandler/Export'
+            - '../../../../src/MessageHandler/Parcel'
+            - '../../../../src/Service/ManageMails.php'
+            - '../../../../src/MessageHandler/Notification'
+            - '../../../../src/MessageHandler/Watchdog'
+            - '../../../../src/Service/WishlistService.php'
+            # Needs PurchaseUrlGenerator -> security.authenticator.login_link_handler.main,
+            # which requires a login_link firewall feature not set up in this minimal test
+            # security config. Excluded for now; checkout flow needs dedicated test wiring.
+            - '../../../../src/StateProcessor/PurchaseCheckoutProcessor.php'
+            - '../../../../src/StateProvider/PurchaseWishlistStateProvider.php'
+            - '../../../../src/OpenApi'
+            - '../../../../src/Invoice'
+            - '../../../../src/Twig'
+            - '../../../../src/I18n'
+            # Depends on a 'purchase_flow' Workflow definition that the consuming app
+            # registers, not the bundle itself. Not needed outside the Purchase workflow tests.
+            - '../../../../src/EventSubscriber/PurchaseStateSubscriber.php'
