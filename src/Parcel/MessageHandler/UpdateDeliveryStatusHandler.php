@@ -11,17 +11,17 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Entity\Project\TransportationEvent;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
@@ -30,7 +30,7 @@ use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 readonly class UpdateDeliveryStatusHandler
 {
     private const MAX_POLL_DAYS = 14;
-    private const REFRESH_INTERVAL = 4 * 60 * 60 * 1000; // 4h
+    private const REFRESH_INTERVAL = 1 * 60 * 60 * 1000; // 1h
 
     public function __construct(
         private ParcelServiceProviderInterface $parcelServiceProvider,
@@ -108,7 +108,10 @@ readonly class UpdateDeliveryStatusHandler
 
         if ($statusInfo->state === ParcelDeliveryStateEnum::IN_TRANSIT) {
             $this->applyTransitionIfPossible($purchase, PWC::T_LOG_SEND->value);
-        } elseif ($statusInfo->state === ParcelDeliveryStateEnum::DELIVERED) {
+        } else if (in_array($statusInfo->state, [
+            ParcelDeliveryStateEnum::DELIVERED,
+            ParcelDeliveryStateEnum::READY_FOR_PICKUP,
+        ])) {
             $this->applyTransitionIfPossible($purchase, PWC::T_LOG_DELIVER->value);
         }
 

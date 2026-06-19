@@ -23,8 +23,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
-use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -165,9 +165,9 @@ class PurchaseController extends AbstractController
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
     public function createParcel(
-        Purchase               $purchase,
-        ParcelServiceProvider  $provider,
-        EntityManagerInterface $entityManager,
+        Purchase                       $purchase,
+        ParcelServiceProviderInterface $provider,
+        EntityManagerInterface         $entityManager,
     ): JsonResponse
     {
         try {
@@ -193,8 +193,8 @@ class PurchaseController extends AbstractController
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
     public function getParcelStatus(
-        Purchase              $purchase,
-        ParcelServiceProvider $provider,
+        Purchase                       $purchase,
+        ParcelServiceProviderInterface $provider,
     ): JsonResponse
     {
         try {

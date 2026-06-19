@@ -28,15 +28,15 @@ use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 readonly class ManagePurchase
 {
     public function __construct(
-        private CurrencyManager            $currencyManager,
-        private PurchasePriceFactory       $purchasePriceFactory,
-        private ProductVariantPriceFactory $productVariantPriceFactory,
-        private PurchaseRepository         $purchaseRepository,
-        private ManageVies                 $manageVies,
-        private MessageBusInterface        $bus,
+        private CurrencyManager                $currencyManager,
+        private PurchasePriceFactory           $purchasePriceFactory,
+        private ProductVariantPriceFactory     $productVariantPriceFactory,
+        private PurchaseRepository             $purchaseRepository,
+        private ManageVies                     $manageVies,
+        private MessageBusInterface            $bus,
         private ParcelServiceProviderInterface $parcelServiceProvider,
         #[Target(PWC::NAME->value)]
-        private WorkflowInterface          $purchaseFlow,
+        private WorkflowInterface              $purchaseFlow,
     ) {}
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase

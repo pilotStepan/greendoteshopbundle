@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Greendot\EshopBundle\Parcel\MessageHandler\CreateParcelHandler;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
@@ -23,20 +24,23 @@ class CreateParcelHandlerTest extends TestCase
 {
     private PurchaseRepository $purchaseRepo;
     private ParcelServiceProviderInterface $provider;
+    private TransportationEventRepository $transportationEventRepo;
     private EntityManagerInterface $em;
     private MessageBusInterface $bus;
     private CreateParcelHandler $handler;
 
     protected function setUp(): void
     {
-        $this->purchaseRepo = $this->createMock(PurchaseRepository::class);
-        $this->provider     = $this->createMock(ParcelServiceProviderInterface::class);
-        $this->em           = $this->createMock(EntityManagerInterface::class);
-        $this->bus          = $this->createMock(MessageBusInterface::class);
+        $this->purchaseRepo            = $this->createMock(PurchaseRepository::class);
+        $this->provider                = $this->createMock(ParcelServiceProviderInterface::class);
+        $this->transportationEventRepo = $this->createMock(TransportationEventRepository::class);
+        $this->em                      = $this->createMock(EntityManagerInterface::class);
+        $this->bus                     = $this->createMock(MessageBusInterface::class);
 
         $this->handler = new CreateParcelHandler(
             $this->provider,
             $this->purchaseRepo,
+            $this->transportationEventRepo,
             $this->em,
             $this->bus,
             new NullLogger(),
@@ -108,6 +112,8 @@ class CreateParcelHandlerTest extends TestCase
         $this->provider->method('getByPurchase')->willReturn($service);
 
         $purchase->expects($this->once())->method('setTransportNumber')->with('Z99999');
+        $this->transportationEventRepo->method('findLatestByPurchase')->willReturn(null);
+        $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
 
         $this->bus->expects($this->once())->method('dispatch')

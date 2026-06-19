@@ -15,22 +15,12 @@ readonly class ParcelServiceProvider implements ParcelServiceProviderInterface
     /* @var ParcelServiceInterface[] $parcelServices */
     private iterable $parcelServices;
 
-    /* Symfony DI will inject all services that implement ParcelServiceInterface (defined in services.yaml) */
-    public function __construct(
-        #[AutowireIterator('app.parcel_service')]
-        iterable $parcelServices,
-    )
+    public function __construct(#[AutowireIterator('app.parcel_service')] iterable $parcelServices)
     {
         $this->parcelServices = $parcelServices;
     }
 
-    /**
-     * Retrieves the parcel service that supports the given transportation API.
-     *
-     * @param TransportationAPI $transportationAPI The transportationAPI to find a service for.
-     * @return ?ParcelServiceInterface The parcel service that supports the transportation API.
-     */
-    public function get(TransportationAPI $transportationAPI): ?ParcelServiceInterface
+    public function get(TransportationAPI $transportationAPI): ParcelServiceInterface
     {
         /* @var ParcelServiceInterface[] $service */
         foreach ($this->parcelServices as $service) {
@@ -38,27 +28,25 @@ readonly class ParcelServiceProvider implements ParcelServiceProviderInterface
                 return $service;
             }
         }
-        return null;
+        throw new ParcelServiceNotFoundException(
+            sprintf('No parcel service found for transportation API %s', $transportationAPI->value),
+        );
     }
 
-    /**
-     * Retrieves the parcel service for a given purchase.
-     * Uses the transportationAPI enum from the purchase.transportation to find the appropriate service.
-     *
-     * @param Purchase $purchase The purchase to get the parcel service for.
-     * @throws ParcelServiceNotFoundException If no parcel service supports this purchase's transportation.
-     */
     public function getByPurchase(Purchase $purchase): ParcelServiceInterface
     {
-        $transportationAPI = $purchase->getTransportation()?->getTransportationAPI();
-        $service = $transportationAPI ? $this->get($transportationAPI) : null;
-
-        if ($service === null) {
+        if (!$transportation = $purchase->getTransportation()) {
             throw new ParcelServiceNotFoundException(
-                sprintf('No parcel service found for purchase ID %d', $purchase->getId()),
+                sprintf('Purchase with id %d does not have transportation defined', $purchase->getId()),
             );
         }
 
-        return $service;
+        if (!$transportationAPI = $transportation->getTransportationAPI()) {
+            throw new ParcelServiceNotFoundException(
+                sprintf('Transportation with id %d does not have transportation API defined', $transportation->getId()),
+            );
+        }
+
+        return $this->get($transportationAPI);
     }
 }
