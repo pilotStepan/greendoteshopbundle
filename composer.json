@@ -26,7 +26,7 @@
     "doctrine/orm": "^3.1",
     "symfony/serializer": "^7.0",
     "api-platform/core": "^4.0",
-    "gedmo/doctrine-extensions": "*",
+    "gedmo/doctrine-extensions": "^3.21",
     "symfonycasts/reset-password-bundle": "^1.22",
     "symfony/form": "^7.1",
     "symfony/mailer": "^7.1",
