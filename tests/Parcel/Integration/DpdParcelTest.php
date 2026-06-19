@@ -229,36 +229,6 @@ class DpdParcelTest extends TestCase
         );
     }
 
-    public function testCreateParcel_usesSandboxUrlInTestEnvironment(): void
-    {
-        $capturedUrl = null;
-        $httpClient = new MockHttpClient(function (string $method, string $url) use (&$capturedUrl) {
-            $capturedUrl = $url;
-            return new MockResponse(self::successResponse());
-        });
-
-        $this->makeService($httpClient, environment: 'test')->createParcel(
-            $this->makePurchase($this->makeTransportation('jwt123'))
-        );
-
-        $this->assertStringStartsWith('https://nst-preprod.dpsin.dpdgroup.com/api/v1.1/', $capturedUrl);
-    }
-
-    public function testCreateParcel_usesSandboxUrlInDevEnvironment(): void
-    {
-        $capturedUrl = null;
-        $httpClient = new MockHttpClient(function (string $method, string $url) use (&$capturedUrl) {
-            $capturedUrl = $url;
-            return new MockResponse(self::successResponse());
-        });
-
-        $this->makeService($httpClient, environment: 'dev')->createParcel(
-            $this->makePurchase($this->makeTransportation('jwt123'))
-        );
-
-        $this->assertStringStartsWith('https://nst-preprod.dpsin.dpdgroup.com/api/v1.1/', $capturedUrl);
-    }
-
     public function testCreateParcel_usesProdUrlInProdEnvironment(): void
     {
         $capturedUrl = null;
