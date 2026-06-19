@@ -84,7 +84,6 @@ class GreendotEshopBundle extends AbstractBundle
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
                                 ->stringNode('eshop_name')->defaultValue('')->end()
-                                ->stringNode('api_password')->defaultValue('')->end()
                             ->end()
                         ->end()
                         ->arrayNode('dpd')
@@ -232,7 +231,6 @@ class GreendotEshopBundle extends AbstractBundle
         $packetaConfig = $config['parcel']['packeta'] ?? [];
         $builder->setParameter('greendot_eshop.parcel.packeta.enabled',      $packetaConfig['enabled']       ?? false);
         $builder->setParameter('greendot_eshop.parcel.packeta.eshop_name',   $packetaConfig['eshop_name']   ?? '');
-        $builder->setParameter('greendot_eshop.parcel.packeta.api_password',  $packetaConfig['api_password']  ?? '');
 
         $dpdConfig = $config['parcel']['dpd'] ?? [];
         $builder->setParameter('greendot_eshop.parcel.dpd.enabled',            $dpdConfig['enabled']            ?? false);

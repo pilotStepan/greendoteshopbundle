@@ -135,7 +135,7 @@ class PacketeryParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
-        $country = $address->getCountry();
+        $country = $address->getShipCountry() ?? $address->getCountry();
 
         $currency = match ($country) {
             'sk'    => 'EUR',
@@ -189,9 +189,9 @@ class PacketeryParcel implements ParcelServiceInterface
         }
 
         if ($branch === null) {
-            $packetAttributes['street'] = $address->getStreet();
-            $packetAttributes['city'] = $address->getCity();
-            $packetAttributes['zip'] = $address->getZip();
+            $packetAttributes['street'] = $address->getShipStreet() ?? $address->getStreet();
+            $packetAttributes['city'] = $address->getShipCity() ?? $address->getCity();
+            $packetAttributes['zip'] = $address->getShipZip() ?? $address->getZip();
         }
 
         return [

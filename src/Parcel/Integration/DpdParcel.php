@@ -46,11 +46,13 @@ class DpdParcel implements ParcelServiceInterface
         #[Autowire(param: 'greendot_eshop.parcel.dpd.sender_address_id')]
         private readonly string               $senderAddressId,
         #[Autowire(param: 'kernel.environment')]
-        string                                 $environment,
+        string                                $environment,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.enabled')]
-        private readonly bool                  $enabled = false,
-    ) {
-        $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
+        private readonly bool                 $enabled = false,
+    )
+    {
+        // $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
+        $this->baseUrl = self::PROD_URL;
     }
 
     public function createParcel(Purchase $purchase): string
