@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Invoice\Factory;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use RuntimeException;
 use DateTimeImmutable;
@@ -40,6 +41,8 @@ final class InvoiceDataFactory
         private CurrencyRepository          $currencyRepository,
         private CountryRepository           $countryRepository,
         private QRcodeGenerator             $qrGenerator,
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
+        private string $secondaryCurrencyName,
     ) {}
 
     public function create(Purchase $purchase): InvoiceData
@@ -65,7 +68,9 @@ final class InvoiceDataFactory
         $vatCategories = $this->buildVatCategories($purchase, $czk, $eur);
         [$discountPercentage, $discountValueCzk, $discountValueEur] = array_values($this->buildDiscount($czk, $eur));
         [$totalPriceNoVatCzk, $totalPriceNoVatEur, $totalPriceVatCzk, $totalPriceVatEur, $totalPriceNoVatNoDiscountCzk, $totalPriceNoVatNoDiscountEur, $totalPriceVatNoDiscountCzk, $totalPriceVatNoDiscountEur] = array_values($this->buildPrices($czk, $eur));
-        [$voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
+        [$vouchersUsed, $voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
+
+        $purchaseDiscount = $purchase->getClientDiscount();
 
         return new InvoiceData(
             invoiceId:                              $purchase->getInvoiceNumber(),
@@ -92,9 +97,11 @@ final class InvoiceDataFactory
             totalPriceNoVatNoDiscountSecondary:     $totalPriceNoVatNoDiscountEur,
             totalPriceVatNoDiscount:                $totalPriceVatNoDiscountCzk,
             totalPriceVatNoDiscountSecondary:       $totalPriceVatNoDiscountEur,
+            purchaseDiscount:                       $purchaseDiscount,
             discountPercentage:                     $discountPercentage,
             discountValue:                          $discountValueCzk,
             discountValueSecondary:                 $discountValueEur,
+            vouchersUsed:                           $vouchersUsed,
             voucherValue:                           $voucherValueCzk,
             voucherValueSecondary:                  $voucherValueEur,
         );
@@ -105,7 +112,7 @@ final class InvoiceDataFactory
     private function loadCurrencies(): array
     {
         $czk = $this->currencyRepository->findOneBy(['isDefault' => true]);
-        $eur = $this->currencyRepository->findOneBy(['name' => 'Euro']);
+        $eur = $this->currencyRepository->findOneBy(['name' => $this->secondaryCurrencyName]);
 
         if (!$czk || !$eur) {
             throw new RuntimeException('Missing CZK or EUR currency in DB.');
@@ -117,8 +124,7 @@ final class InvoiceDataFactory
     private function buildQrCode(Purchase $purchase): ?string
     {
         try {
-            $dueDate = new DateTimeImmutable('+14 days');
-            return $this->qrGenerator->getFullUrl($purchase, $dueDate);
+            return $this->qrGenerator->getFullUrl($purchase);
         } catch (Throwable) {
             return null;
         }
@@ -348,8 +354,10 @@ final class InvoiceDataFactory
     {
         $voucherValuePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getVouchersUsedValue();
         $voucherValueSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getVouchersUsedValue();
+        $vouchersUsed = $this->purchasePrice->getVouchersUsed();
 
         return [
+            $vouchersUsed,
             $voucherValuePrimary,
             $voucherValueSecondary,
         ];

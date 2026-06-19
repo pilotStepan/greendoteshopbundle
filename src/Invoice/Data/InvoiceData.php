@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Invoice\Data;
 
 use DateTime;
+use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Tests\Service\Price\PurchasePriceDataProvider;
 
@@ -41,10 +42,12 @@ class InvoiceData
         public float                        $totalPriceVatNoDiscount,
         public float                        $totalPriceVatNoDiscountSecondary,
 
+        public ?ClientDiscount              $purchaseDiscount,
         public float                        $discountPercentage,
         public float                        $discountValue,
         public float                        $discountValueSecondary,
 
+        public array                        $vouchersUsed,
         public float                        $voucherValue,
         public float                        $voucherValueSecondary,
     ) {}

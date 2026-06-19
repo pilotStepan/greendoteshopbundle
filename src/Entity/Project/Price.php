@@ -76,7 +76,7 @@ class Price
     #[Groups(['product_item:read', 'product_variant:read'])]
     private array $calculatedPrices = [];
 
-    #[ORM\OneToOne(targetEntity: PurchaseProductVariant::class, mappedBy: 'price', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(targetEntity: PurchaseProductVariant::class, mappedBy: 'price')]
     private ?PurchaseProductVariant $purchaseProductVariant = null;
 
     public function getId(): ?int

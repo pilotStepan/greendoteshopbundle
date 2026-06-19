@@ -10,6 +10,8 @@ class ViewItemList
     public function __construct(
         public string $item_list_id,
         public string $item_list_name,
+        public float  $valueVat,
+        public float  $valueNoVat,
         /**
          * @var DataLayerItem[]
          */

@@ -76,7 +76,7 @@ class ClientDiscount
     #[ORM\Column(type: "string", enumType: DiscountType::class)]
     private DiscountType $type;
 
-    #[ORM\Column(length: 6, unique: true)]
+    #[ORM\Column(length: 16, unique: true)]
     #[Groups(['purchase:read'])]
     #[ApiProperty(identifier: true)]
     private ?string $hash = null;
@@ -88,6 +88,9 @@ class ClientDiscount
      */
     #[ORM\Column]
     private ?bool $is_used = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $extra = null;
 
     public function __construct()
     {
@@ -210,6 +213,18 @@ class ClientDiscount
     public function setHash(string $hash): static
     {
         $this->hash = $hash;
+
+        return $this;
+    }
+
+    public function getExtra(): ?array
+    {
+        return $this->extra;
+    }
+
+    public function setExtra(?array $extra): static
+    {
+        $this->extra = $extra;
 
         return $this;
     }

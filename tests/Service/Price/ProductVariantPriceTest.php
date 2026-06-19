@@ -151,6 +151,36 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
 
         $this->createProductVariantPrice($variant, FactoryUtil::czk(), $vatCalc, $discCalc, null);
     }
+    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'discountCombinationHighest')]
+    public function testHighestDiscountCombinationStrategy(
+        string   $productType,
+        array    $prices,
+        int      $amount,
+        VatCalc  $vatCalc,
+        Currency $currency,
+        DiscCalc $discCalc,
+        ?float   $clientDiscount,
+        float    $expectedPrice,
+    ): void {
+        $variant = $this->createVariant($productType, $amount, $prices, $clientDiscount);
+
+        $pvp = $this->createProductVariantPrice(
+            $variant,
+            $currency,
+            $vatCalc,
+            $discCalc,
+            $amount,
+            new \Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy(),
+        );
+
+        $this->assertEqualsWithDelta(
+            $expectedPrice,
+            $pvp->getPrice(),
+            0.01,
+            'Highest discount strategy: wrong price',
+        );
+    }
+
 // Commented out - missing provider
 //    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'mixedVatException')]
 //    public function testProductVariantPriceMixedVatException(

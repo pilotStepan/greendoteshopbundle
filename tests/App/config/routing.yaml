@@ -1,0 +1,7 @@
+client_section_controller:
+    resource: '../../../src/Controller/Shop/ClientSectionController.php'
+    type: attribute
+
+simple_product_variant_controller:
+    resource: '../../../src/Controller/Simple/SimpleProductVariantController.php'
+    type: attribute

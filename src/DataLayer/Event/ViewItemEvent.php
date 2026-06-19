@@ -2,23 +2,17 @@
 
 namespace Greendot\EshopBundle\DataLayer\Event;
 
-use Greendot\EshopBundle\Entity\Project\Product;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Symfony\Contracts\EventDispatcher\Event;
 
 class ViewItemEvent extends Event
 {
     public function __construct(
-        private readonly Product $product,
-        private readonly ?array $selectedVariants = null
+        private readonly ProductVariant $productVariant,
     ){}
 
-    public function getProduct(): Product
+    public function getProductVariant(): ProductVariant
     {
-        return $this->product;
-    }
-
-    public function getSelectedVariants(): ?array
-    {
-        return $this->selectedVariants;
+        return $this->productVariant;
     }
 }

@@ -56,7 +56,7 @@ final readonly class VariantAvailableEmailHandler
                 'product_name' => $variant->getProduct()->getName(),
                 'product_slug' => $variant->getProduct()->getSlug(),
             ]])
-            ->subject('Nová varianta produktu je dostupná')
+            ->subject('Produkt je opět dostupný')
         ;
 
         $this->manageMails->sendTemplate($email);

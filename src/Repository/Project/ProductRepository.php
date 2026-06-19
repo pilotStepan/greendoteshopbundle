@@ -172,7 +172,7 @@ class ProductRepository extends HintedRepositoryBase
             ->getResult();
     }
 
-    public function findCategoryProducts(Category $category, $limit = null)
+    public function findCategoryProducts(Category $category, $limit = null, int $offset = 0)
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -195,9 +195,19 @@ class ProductRepository extends HintedRepositoryBase
         $qb->andWhere('p.isActive = :val');
         $qb->distinct();
         $qb->orderBy('p.sequence', 'ASC');
-        if($limit !== null){
+        if ($limit !== null) {
             $qb->setMaxResults($limit);
         }
+        if ($offset > 0) {
+            $qb->setFirstResult($offset);
+        }
+
+        // filter availability
+        $qb ->innerJoin('p.productVariants', 'pv')
+            ->innerJoin('pv.availability', 'a')
+            ->andWhere('pv.isActive = 1')
+            ->andWhere('a.isPurchasable = 1');
+
         return $qb->getQuery()->getResult();
     }
 
@@ -580,18 +590,21 @@ class ProductRepository extends HintedRepositoryBase
 
     public function getSoldProductsCount(DateTime $startDate, DateTime $endDate): array
     {
-        $qb = $this->createQueryBuilder('p')
-            ->select('p.id, SUM(ppv.amount) as sold_amount')
-            ->join('Greendot\EshopBundle\Entity\Project\ProductVariant', 'pv', Join::WITH, 'pv.product = p.id')
-            ->join('Greendot\EshopBundle\Entity\Project\PurchaseProductVariant', 'ppv', Join::WITH, 'ppv.ProductVariant = pv.id')
-            ->join('Greendot\EshopBundle\Entity\Project\Purchase', 'pu', Join::WITH, 'ppv.purchase = pu.id')
-            ->where('pu.date_invoiced >= :startDate')->setParameter('startDate', $startDate)
-            ->andWhere('pu.date_invoiced <= :endDate')->setParameter('endDate', $endDate)
-        ;
-        return $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART)
-            ->groupBy('p.id')
-            ->getQuery()->getResult()
-        ;
+       $qb = $this->createQueryBuilder('p')
+            ->select('p.id, COALESCE(SUM(ppv.amount), 0) as sold_amount') // 2. Handle nulls
+            ->leftJoin('p.productVariants', 'pv')
+            ->leftJoin('pv.orderProductVariants', 'ppv')
+            // 1. Move the date conditions INTO the join criteria
+            ->leftJoin('ppv.purchase', 'pu', 'WITH', 'pu.date_invoiced >= :startDate AND pu.date_invoiced <= :endDate')
+            ->groupBy('p.id');
+
+        // 3. Ensure your excludePlaces helper also accounts for LEFT JOIN nulls
+        $qb = $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART);
+
+        return $qb->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $endDate)
+                ->getQuery()
+          ->getResult();
     }
 
     /**
@@ -636,9 +649,9 @@ class ProductRepository extends HintedRepositoryBase
     /**
      * @return Review[]
      */
-    public function findApprovedReviews(Product $product): array
+    public function findApprovedReviews(Product $product, ?int $limit = null): array
     {
-        return $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('r')
             ->from(Review::class, 'r')
             ->andWhere('r.Product = :product')
@@ -646,9 +659,13 @@ class ProductRepository extends HintedRepositoryBase
             ->setParameter('product', $product)
             ->setParameter('isApproved', true)
             ->orderBy('r.date', 'DESC')
-            ->getQuery()
-            ->getResult()
         ;
+
+        if ($limit !== null) {
+            $qb->setMaxResults($limit);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     public function mainProductsFilter(array $filters, bool $count = false): QueryBuilder
@@ -804,7 +821,41 @@ class ProductRepository extends HintedRepositoryBase
             ->getResult();
 
         return $products;
+    }
 
+    public function findCategoryProductsOrdered(Category $category, int $limit, int $offset = 0): array
+    {
+        $filters = [
+            'categoryId'  => $category->getId(),
+            'orderBy'     => ['id' => null, 'direction' => null],
+            'isStockOnly' => true,
+        ];
+
+        $allIds = $this->mainProductsFilter($filters)->getQuery()->getSingleColumnResult();
+        $pagedIds = array_slice($allIds, $offset, $limit);
+
+        if (empty($pagedIds)) {
+            return [];
+        }
+
+        $unordered = $this->createQueryBuilder('p')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $pagedIds)
+            ->getQuery()
+            ->getResult();
+
+        $map = [];
+        foreach ($unordered as $product) {
+            $map[$product->getId()] = $product;
+        }
+        $ordered = [];
+        foreach ($pagedIds as $id) {
+            if (isset($map[$id])) {
+                $ordered[] = $map[$id];
+            }
+        }
+
+        return $ordered;
     }
 
 }

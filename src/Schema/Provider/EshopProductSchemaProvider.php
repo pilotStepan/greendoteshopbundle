@@ -24,13 +24,18 @@ class EshopProductSchemaProvider implements SchemaProviderInterface
 
     public function provide(mixed $object): ProductSchema
     {
-        if (!$object instanceof ProductEntity) {
+        if (!$this->supports($object)) {
             throw new UnsupportedSchemaSubjectException();
         }
 
+        /** @var ProductEntity $object */
+        $variant = $object->getProductVariants()->first();
+
         return $this->builder
-            ->forProduct($object)
+            ->forProductWithVariant($object, $variant)
             ->withAggregateRating()
+            ->withReviews()
+            ->withProductRelationships()
             ->build()
         ;
     }

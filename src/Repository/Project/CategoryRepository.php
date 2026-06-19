@@ -390,6 +390,7 @@ class CategoryRepository extends HintedRepositoryBase
         $query = $this->createQueryBuilder('category')
             ->leftJoin('category.categorySubCategories', 'sub_categories')
             ->andWhere('sub_categories.category_super = :cat')
+            ->andWhere('category.isActive = 1')
             ->setParameter('cat', $category)
             ->orderBy('sub_categories.sequence', 'ASC')
             ->getQuery();
@@ -555,7 +556,7 @@ class CategoryRepository extends HintedRepositoryBase
         $sql = "
         WITH RECURSIVE category_tree AS (
             -- Anchor member: start with the requested parent
-            SELECT :parentId AS id
+            SELECT CAST(:parentId AS UNSIGNED) AS id
             UNION ALL
             -- Recursive member: join the mapping table to the tree
             SELECT cc.category_sub_id

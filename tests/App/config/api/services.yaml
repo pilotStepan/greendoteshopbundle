@@ -1,0 +1,101 @@
+parameters:
+    greendot_eshop.global.absolute_url: 'https://test.example.com'
+    greendot_eshop.blog.has_landing: true
+    greendot_eshop.blog.slug: 'blog'
+    greendot_eshop.blog.items_per_page: 10
+    greendot_eshop.shop.default_vat_type: 'Price including VAT'
+    greendot_eshop.shop.default_discount_type: 'Price including conventional discounts'
+    greendot_eshop.mail.order.send_proforma: false
+    greendot_eshop.shop.secondary_currency_name: 'EUR'
+    greendot_eshop.shop.price.extension.discount_combination_strategy: 'sum'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Greendot\EshopBundle\Affiliate\:
+        resource: '../../../../src/Affiliate/*'
+
+    Greendot\EshopBundle\ApiResource\:
+        resource: '../../../../src/ApiResource/*'
+
+    Greendot\EshopBundle\DataFixtures\:
+        resource: '../../../../src/DataFixtures/*'
+
+    Greendot\EshopBundle\DataLayer\:
+        resource: '../../../../src/DataLayer/*'
+
+    Greendot\EshopBundle\Doctrine\:
+        resource: '../../../../src/Doctrine/*'
+
+    Greendot\EshopBundle\Dto\:
+        resource: '../../../../src/Dto/*'
+
+    Greendot\EshopBundle\EventSubscriber\:
+        resource: '../../../../src/EventSubscriber/*'
+        exclude:
+            - '../../../../src/EventSubscriber/PurchaseStateSubscriber.php'
+
+    Greendot\EshopBundle\Factory\:
+        resource: '../../../../src/Factory/*'
+
+    Greendot\EshopBundle\Form\:
+        resource: '../../../../src/Form/*'
+
+    Greendot\EshopBundle\Logging\:
+        resource: '../../../../src/Logging/*'
+
+    Greendot\EshopBundle\Message\:
+        resource: '../../../../src/Message/*'
+
+    Greendot\EshopBundle\MessageHandler\:
+        resource: '../../../../src/MessageHandler/*'
+        exclude:
+            - '../../../../src/MessageHandler/Export'
+            - '../../../../src/MessageHandler/Notification'
+            - '../../../../src/MessageHandler/Parcel'
+            - '../../../../src/MessageHandler/Watchdog'
+
+    Greendot\EshopBundle\Normalizer\:
+        resource: '../../../../src/Normalizer/*'
+
+    Greendot\EshopBundle\Parcel\:
+        resource: '../../../../src/Parcel/*'
+        exclude:
+            - '../../../../src/Parcel/Integration'
+
+    Greendot\EshopBundle\Payment\:
+        resource: '../../../../src/Payment/*'
+
+    Greendot\EshopBundle\Repository\:
+        resource: '../../../../src/Repository/*'
+
+    Greendot\EshopBundle\Schema\:
+        resource: '../../../../src/Schema/*'
+
+    Greendot\EshopBundle\Service\:
+        resource: '../../../../src/Service/*'
+        exclude:
+            - '../../../../src/Service/ManageMails.php'
+            - '../../../../src/Service/WishlistService.php'
+            - '../../../../src/Service/Imports'
+
+    Greendot\EshopBundle\StateProcessor\:
+        resource: '../../../../src/StateProcessor/*'
+        exclude:
+            - '../../../../src/StateProcessor/PurchaseCheckoutProcessor.php'
+
+    Greendot\EshopBundle\StateProvider\:
+        resource: '../../../../src/StateProvider/*'
+        exclude:
+            - '../../../../src/StateProvider/PurchaseWishlistStateProvider.php'
+
+    Greendot\EshopBundle\Utils\:
+        resource: '../../../../src/Utils/*'
+
+    Greendot\EshopBundle\Validator\:
+        resource: '../../../../src/Validator/*'
+
+    Greendot\EshopBundle\Workflow\:
+        resource: '../../../../src/Workflow/*'

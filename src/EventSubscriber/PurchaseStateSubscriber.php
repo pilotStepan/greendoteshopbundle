@@ -19,6 +19,7 @@ use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
@@ -133,7 +134,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
 
-
         try {
             $this->eventDispatcher->dispatch(new PurchaseEvent($purchase));
         } catch (Exception $exception) {
@@ -166,9 +166,6 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment');
-
-        //? We don't want automatic invoice issue on payment
-        // $this->managePurchase->issueInvoice($purchase); 
     }
 
     public function onPaymentIssue(Event $event): void

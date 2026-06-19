@@ -345,6 +345,59 @@ class PurchasePriceDataProvider
     }
 
 
+    public static function ppvCustomPrice(): array
+    {
+        return [
+            'P1: single item, 10% discount on custom price' => [
+                'ppv' => [
+                    [
+                        'amount'      => 1,
+                        'customPrice' => FactoryUtil::makePrice(100, 21, 1, 10),
+                        'prices'      => [],
+                    ],
+                ],
+                'vatCalc'              => VatCalc::WithVAT,
+                'discCalc'             => DiscCalc::WithDiscount,
+                'currency'             => FactoryUtil::czk(),
+                'clientDiscount'       => null,
+                'expectedPurchasePrice' => 108.9, // 100 * 0.9 * 1.21
+            ],
+            'P2: two items, 20% discount on custom price' => [
+                'ppv' => [
+                    [
+                        'amount'      => 2,
+                        'customPrice' => FactoryUtil::makePrice(100, 21, 1, 20),
+                        'prices'      => [],
+                    ],
+                ],
+                'vatCalc'              => VatCalc::WithVAT,
+                'discCalc'             => DiscCalc::WithDiscount,
+                'currency'             => FactoryUtil::czk(),
+                'clientDiscount'       => null,
+                'expectedPurchasePrice' => 193.6, // 2 * 100 * 0.8 * 1.21
+            ],
+            'P3: two PPVs with different custom prices and discounts' => [
+                'ppv' => [
+                    [
+                        'amount'      => 1,
+                        'customPrice' => FactoryUtil::makePrice(100, 21, 1, 10),
+                        'prices'      => [],
+                    ],
+                    [
+                        'amount'      => 2,
+                        'customPrice' => FactoryUtil::makePrice(50, 21, 1, 20),
+                        'prices'      => [],
+                    ],
+                ],
+                'vatCalc'              => VatCalc::WithVAT,
+                'discCalc'             => DiscCalc::WithDiscount,
+                'currency'             => FactoryUtil::czk(),
+                'clientDiscount'       => null,
+                'expectedPurchasePrice' => 205.7, // 108.9 + (2*50*0.8*1.21=96.8) = 205.7
+            ],
+        ];
+    }
+
     public static function comboUseCase(): array
     {
         $comboPpv = [

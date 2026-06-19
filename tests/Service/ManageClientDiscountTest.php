@@ -2,170 +2,179 @@
 
 namespace Greendot\EshopBundle\Tests\Service;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\DiscountType;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
+use LogicException;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 
 class ManageClientDiscountTest extends TestCase
 {
+    private EntityManagerInterface&MockObject $entityManager;
     private ManageClientDiscount $manageClientDiscount;
     private Client $client;
     private Client $otherClient;
 
     protected function setUp(): void
     {
-        $this->manageClientDiscount = new ManageClientDiscount();
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->entityManager->method('wrapInTransaction')
+            ->willReturnCallback(function (callable $func) { return $func(); });
+
+        $this->manageClientDiscount = new ManageClientDiscount($this->entityManager);
         $this->client = new Client();
         $this->otherClient = new Client();
     }
 
-    public function testIsValidWhenUsed(): void
+    public function testGuardUseThrowsWhenDiscountIsUsed(): void
     {
-        // Discount flagged as used should be invalid.
         $discount = new ClientDiscount();
         $discount->setIsUsed(true);
 
-        $this->assertFalse($this->manageClientDiscount->isValid($discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->guardUse($discount, new Purchase());
     }
 
-    public function testIsValidWithActiveDates(): void
+    public function testGuardUseDoesNotThrowWithActiveDates(): void
     {
-        // Discount with dates covering the current time should be valid.
         $discount = new ClientDiscount();
         $discount->setDateStart(new \DateTime('-1 day'))
             ->setDateEnd(new \DateTime('+1 day'));
 
-        $this->assertTrue($this->manageClientDiscount->isValid($discount));
+        $this->manageClientDiscount->guardUse($discount, new Purchase());
+        $this->addToAssertionCount(1);
     }
 
-    public function testIsValidWithPastEndDate(): void
+    public function testGuardUseThrowsWithPastEndDate(): void
     {
-        // Discount whose end date is past should be invalid.
         $discount = new ClientDiscount();
         $discount->setDateStart(new \DateTime('-2 days'))
             ->setDateEnd(new \DateTime('-1 day'));
 
-        $this->assertFalse($this->manageClientDiscount->isValid($discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->guardUse($discount, new Purchase());
     }
 
-    public function testIsValidWithFutureStartDate(): void
+    public function testGuardUseThrowsWithFutureStartDate(): void
     {
-        // Discount that hasn't started yet should be invalid.
         $discount = new ClientDiscount();
         $discount->setDateStart(new \DateTime('+1 day'))
             ->setDateEnd(new \DateTime('+2 days'));
 
-        $this->assertFalse($this->manageClientDiscount->isValid($discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->guardUse($discount, new Purchase());
     }
 
-    public function testIsAvailableWithoutDiscount(): void
+    public function testGuardUseThrowsForInvalidDiscount(): void
     {
-        // No discount provided should return false.
-        $purchase = new Purchase();
-        $this->assertFalse($this->manageClientDiscount->isAvailable($purchase, null));
-    }
-
-    public function testIsAvailableWithInvalidDiscount(): void
-    {
-        // A discount already used is invalid and not available.
         $discount = new ClientDiscount();
         $discount->setIsUsed(true);
-        $purchase = new Purchase();
 
-        $this->assertFalse($this->manageClientDiscount->isAvailable($purchase, $discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->guardUse($discount, new Purchase());
     }
 
-    public function testIsAvailableWithClientSpecificValid(): void
+    public function testGuardUseDoesNotThrowForClientSpecificValid(): void
     {
-        // A client-specific discount is available when the purchase client matches.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::SingleClient)
             ->setClient($this->client);
 
         $purchase = (new Purchase())->setClient($this->client);
 
-        $this->assertTrue($this->manageClientDiscount->isAvailable($purchase, $discount));
+        $this->manageClientDiscount->guardUse($discount, $purchase);
+        $this->addToAssertionCount(1);
     }
 
-    public function testIsAvailableWithClientSpecificInvalid(): void
+    public function testGuardUseThrowsForWrongClient(): void
     {
-        // A client-specific discount is unavailable when clients don't match.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::SingleUseClient)
             ->setClient($this->client);
 
         $purchase = (new Purchase())->setClient($this->otherClient);
 
-        $this->assertFalse($this->manageClientDiscount->isAvailable($purchase, $discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->guardUse($discount, $purchase);
     }
 
-    public function testIsAvailableWithNonClientSpecific(): void
+    public function testGuardUseDoesNotThrowForNonClientSpecific(): void
     {
-        // A non-client-specific (multi-use) discount is available regardless of client.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::MultiUse);
-        $purchase = new Purchase();
 
-        $this->assertTrue($this->manageClientDiscount->isAvailable($purchase, $discount));
+        $this->manageClientDiscount->guardUse($discount, new Purchase());
+        $this->addToAssertionCount(1);
     }
 
-    public function testUseFailsWhenInvalid(): void
+    public function testUseThrowsWhenInvalid(): void
     {
-        // Using an invalid discount should fail.
         $discount = new ClientDiscount();
         $discount->setIsUsed(true);
-        $purchase = new Purchase();
 
-        $this->assertFalse($this->manageClientDiscount->use($purchase, $discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->use($discount, new Purchase());
     }
 
     public function testUseMarksSingleUseAsUsed(): void
     {
-        // Applying a single-use discount marks it as used.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::SingleUse);
         $purchase = new Purchase();
 
-        $this->assertTrue($this->manageClientDiscount->use($purchase, $discount));
+        $this->manageClientDiscount->use($discount, $purchase);
+
         $this->assertTrue($discount->isIsUsed());
     }
 
     public function testUseMarksSingleUseClientAsUsed(): void
     {
-        // Applying a single-use client discount marks it as used when client matches.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::SingleUseClient)
             ->setClient($this->client);
         $purchase = (new Purchase())->setClient($this->client);
 
-        $this->assertTrue($this->manageClientDiscount->use($purchase, $discount));
+        $this->manageClientDiscount->use($discount, $purchase);
+
         $this->assertTrue($discount->isIsUsed());
     }
 
     public function testUseDoesNotMarkMultiUseAsUsed(): void
     {
-        // Using a multi-use discount should not mark it as used.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::MultiUse);
         $discount->setIsUsed(false);
         $purchase = new Purchase();
 
-        $this->assertTrue($this->manageClientDiscount->use($purchase, $discount));
+        $this->manageClientDiscount->use($discount, $purchase);
+
         $this->assertFalse($discount->isIsUsed());
     }
 
-    public function testUseFailsWithWrongClient(): void
+    public function testUseThrowsWithWrongClient(): void
     {
-        // Using a client-specific discount fails if the purchase client doesn't match.
         $discount = new ClientDiscount();
         $discount->setType(DiscountType::SingleUseClient)
             ->setClient($this->client);
         $purchase = (new Purchase())->setClient($this->otherClient);
 
-        $this->assertFalse($this->manageClientDiscount->use($purchase, $discount));
+        $this->expectException(LogicException::class);
+        $this->manageClientDiscount->use($discount, $purchase);
+    }
+
+    public function testUseSetsClientDiscountOnPurchase(): void
+    {
+        $discount = new ClientDiscount();
+        $discount->setType(DiscountType::MultiUse);
+        $purchase = new Purchase();
+
+        $this->manageClientDiscount->use($discount, $purchase);
+
+        $this->assertSame($discount, $purchase->getClientDiscount());
     }
 }

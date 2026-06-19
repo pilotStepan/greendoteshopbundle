@@ -10,7 +10,7 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 
-readonly class PurchasePriceFactory
+class PurchasePriceFactory
 {
     public function __construct(
         private ProductVariantPriceFactory $productVariantPriceFactory,

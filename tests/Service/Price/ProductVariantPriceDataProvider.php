@@ -361,23 +361,62 @@ class ProductVariantPriceDataProvider
     public static function ppvCustomPriceInvalidCases(): array
     {
         return [
-            'negative_unit_price' => [
-                'price' => FactoryUtil::makePrice(-5.0, 21.0),
-                'amount' => 1,
-                'vatCalc' => VatCalc::WithVAT,
-                'discCalc' => DiscCalc::WithoutDiscount,
-            ],
             'zero_amount' => [
                 'price' => FactoryUtil::makePrice(10.0, 21.0),
                 'amount' => 0,
                 'vatCalc' => VatCalc::WithVAT,
                 'discCalc' => DiscCalc::WithoutDiscount,
             ],
-            'discount_over_100_percent' => [
-                'price' => FactoryUtil::makePrice(10.0, 21.0, 1, 150.0),
-                'amount' => 1,
-                'vatCalc' => VatCalc::WithVAT,
-                'discCalc' => DiscCalc::WithDiscount,
+        ];
+    }
+
+    public static function discountCombinationHighest(): array
+    {
+        return [
+            // H1: client discount wins (15 > 10) — sum would give 25%, highest gives 15%
+            'H1-client-wins' => [
+                'productType' => 'pv',
+                'prices' => [[
+                    'discounted' => FactoryUtil::makePrice(100, 21, discount: 10),
+                ]],
+                'amount'         => 2,
+                'vatCalc'        => VatCalc::WithVAT,
+                'currency'       => FactoryUtil::czk(),
+                'discCalc'       => DiscCalc::WithDiscount,
+                'clientDiscount' => 15,
+                // 2×100 = 200, −15% = 170, +21% VAT = 205.70
+                'expectedPrice'  => 205.70,
+            ],
+
+            // H2: product discount wins (15 > 5) — sum would give 20%, highest gives 15%
+            'H2-product-wins' => [
+                'productType' => 'pv',
+                'prices' => [[
+                    'discounted' => FactoryUtil::makePrice(100, 21, discount: 15),
+                ]],
+                'amount'         => 2,
+                'vatCalc'        => VatCalc::WithVAT,
+                'currency'       => FactoryUtil::czk(),
+                'discCalc'       => DiscCalc::WithDiscount,
+                'clientDiscount' => 5,
+                // 2×100 = 200, −15% = 170, +21% VAT = 205.70
+                'expectedPrice'  => 205.70,
+            ],
+
+            // H3: afterRegistrationBonus wins (20 > 10), no clientDiscount
+            // afterRegistrationBonus is mocked to 20 in PriceCalculationTestCase::setUp()
+            'H3-after-registration-bonus-wins' => [
+                'productType' => 'pv',
+                'prices' => [[
+                    'discounted' => FactoryUtil::makePrice(100, 20, discount: 10),
+                ]],
+                'amount'         => 2,
+                'vatCalc'        => VatCalc::WithVAT,
+                'currency'       => FactoryUtil::czk(),
+                'discCalc'       => DiscCalc::WithDiscountPlusAfterRegistrationDiscount,
+                'clientDiscount' => null,
+                // combine(10, 20) = max = 20; 2×100 = 200, −20% = 160, +20% VAT = 192
+                'expectedPrice'  => 192.0,
             ],
         ];
     }

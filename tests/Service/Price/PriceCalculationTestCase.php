@@ -27,6 +27,9 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
 use Greendot\EshopBundle\Enum\VoucherCalculationType as VouchCalc;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\DiscountCombinationStrategyInterface;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
@@ -85,13 +88,20 @@ abstract class PriceCalculationTestCase extends TestCase
             ->willReturn(FactoryUtil::czk())
         ;
 
+        $discountLocator = new \Symfony\Component\DependencyInjection\ServiceLocator([
+            'sum'     => fn() => new SumDiscountStrategy(),
+            'highest' => fn() => new HighestDiscountStrategy(),
+        ]);
+
         $this->productVariantPriceFactory = new ProductVariantPriceFactory(
             $this->security,
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
             $this->settingsRepository,
-            $this->productProductRepository
+            $this->productProductRepository,
+            $discountLocator,
+            'sum',
         );
         $this->parameterBag = $this->createMock(ParameterBagInterface::class);
         $this->parameterBag->method('get')->willReturn(false);
@@ -114,11 +124,12 @@ abstract class PriceCalculationTestCase extends TestCase
      * Create a ProductVariantPrice instance with all dependencies
      */
     protected function createProductVariantPrice(
-        ProductVariant|PurchaseProductVariant $variant,
-        Currency                              $currency,
-        VatCalc                               $vatType,
-        DiscCalc                              $discCalc,
-        ?int                                  $amount,
+        ProductVariant|PurchaseProductVariant    $variant,
+        Currency                                 $currency,
+        VatCalc                                  $vatType,
+        DiscCalc                                 $discCalc,
+        ?int                                     $amount,
+        ?DiscountCombinationStrategyInterface    $combinationStrategy = null,
     ): ProductVariantPrice
     {
         $afterRegistrationBonus = $this->settingsRepository->findParameterValueWithName('after_registration_discount') ?? 0;
@@ -134,7 +145,8 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->priceRepository,
             $this->discountService,
             $this->priceUtils,
-            $this->productProductRepository
+            $this->productProductRepository,
+            $combinationStrategy ?? new SumDiscountStrategy(),
         );
     }
 
@@ -175,18 +187,24 @@ abstract class PriceCalculationTestCase extends TestCase
             $purchaseProductVariant->method('getProductVariant')->willReturn($productVariantMock);
             $purchaseProductVariant->method('getPurchase')->willReturn($purchase);
 
+            if (isset($variant['customPrice'])) {
+                $purchaseProductVariant->method('getPrice')->willReturn($variant['customPrice']);
+            }
+
             $purchaseProductVariants[] = $purchaseProductVariant;
-            $variantPrices[$index] = $variant['prices'];
+            if (isset($variant['prices'])) {
+                $variantPrices[$index] = $variant['prices'];
+            }
         }
 
         $purchase->method('getProductVariants')->willReturn(new ArrayCollection($purchaseProductVariants));
 
         $this->priceRepository->method('findPricesByDateAndProductVariantNew')
             ->willReturnCallback(function ($productVariant) use ($variantPrices) {
-                if (isset($productVariant->_index)) {
+                if (isset($productVariant->_index) && isset($variantPrices[$productVariant->_index])) {
                     return $variantPrices[$productVariant->_index];
                 }
-                return null;
+                return [];
             })
         ;
 

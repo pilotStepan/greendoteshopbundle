@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\DiscountCombinationStrategyInterface;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -60,13 +61,14 @@ class ProductVariantPrice
         private ConversionRate                $conversionRate,
         VatCalculationType                    $vatCalculationType,
         DiscountCalculationType               $discountCalculationType,
-        private readonly int $afterRegistrationBonus,
+        private readonly int                  $afterRegistrationBonus,
         private readonly Security             $security,
         private readonly PriceRepository      $priceRepository,
         private readonly DiscountService      $discountService,
         private readonly PriceUtils           $priceUtils,
-        private readonly ProductProductRepository $productProductRepository,
-        private readonly ?Price                $priceEntity = null
+        private readonly ProductProductRepository      $productProductRepository,
+        private readonly DiscountCombinationStrategyInterface $discountCombinationStrategy,
+        private readonly ?Price               $priceEntity = null
     )
     {
         if ($productVariant instanceof PurchaseProductVariant and !is_null($setAmount)) {
@@ -126,12 +128,15 @@ class ProductVariantPrice
     public function getDiscountPercentage(): ?float
     {
         switch ($this->discountCalculationType) {
-            case DiscountCalculationType::WithDiscount:
-            case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $clientDiscount = $this->clientDiscount ?? $this->afterRegistrationBonus;
-                return $this->discountPercentage + $this->parentProductDiscountPercentage + $clientDiscount;
             case DiscountCalculationType::WithoutDiscount:
                 return null;
+            case DiscountCalculationType::WithDiscount:
+                return $this->discountCombinationStrategy->combine($this->discountPercentage ?? 0.0, $this->clientDiscount)
+                    + ($this->parentProductDiscountPercentage ?? 0.0);
+            case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
+                $clientDiscount = $this->clientDiscount ?? $this->afterRegistrationBonus;
+                return $this->discountCombinationStrategy->combine($this->discountPercentage ?? 0.0, $clientDiscount)
+                    + ($this->parentProductDiscountPercentage ?? 0.0);
             case DiscountCalculationType::OnlyProductDiscount:
                 return $this->discountPercentage;
             case DiscountCalculationType::OnlyComplementDiscount:
@@ -237,29 +242,7 @@ class ProductVariantPrice
     {
         if (!$this->price) return;
 
-        $totalDiscountedPercentage = 0;
-        switch ($this->discountCalculationType) {
-            case DiscountCalculationType::WithoutDiscount:
-                break;
-            case DiscountCalculationType::WithDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage + $this->clientDiscount + $this->parentProductDiscountPercentage;
-                break;
-            case DiscountCalculationType::OnlyProductDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage;
-                break;
-            case DiscountCalculationType::OnlyComplementDiscount:
-                $totalDiscountedPercentage = $this->parentProductDiscountPercentage;
-                break;
-            case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->discountPercentage + $this->parentProductDiscountPercentage;
-                if (!$this->clientDiscount) {
-                    $totalDiscountedPercentage += $this->afterRegistrationBonus;
-                }
-                break;
-            case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                $totalDiscountedPercentage = $this->clientDiscount ?? $this->afterRegistrationBonus;
-                break;
-        }
+        $totalDiscountedPercentage = $this->getDiscountPercentage();
 
         $fullDiscountValue = $this->priceUtils->calculatePercentage($this->price, $totalDiscountedPercentage);
         $price = $this->price - $fullDiscountValue;

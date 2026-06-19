@@ -52,18 +52,22 @@ class PaymentType implements Translatable
     #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'PaymentType')]
     private $purchases;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
     private $description;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'text')]
     #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
     private $descrition_mail;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
     private $description_duration;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'text')]
     #[Groups(['payment:read', 'payment:write', 'purchase:read', 'purchase:write'])]
     private $html;
@@ -315,7 +319,10 @@ class PaymentType implements Translatable
         return $this;
     }
 
-    public function setTranslatableLocale($locale)
+    #[Gedmo\Locale]
+    private $locale;
+
+    public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
     }

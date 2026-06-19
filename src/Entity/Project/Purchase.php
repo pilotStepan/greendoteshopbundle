@@ -34,9 +34,13 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     operations: [
         new Get(
+            security: "is_granted('ROLE_ADMIN') or object.getClient() == user",
             provider: PurchaseItemStateProvider::class,
+            requirements: ['id' => '\d+'],
         ),
-        new GetCollection(),
+        new GetCollection(
+            security: "is_granted('ROLE_ADMIN')",
+        ),
         new GetCollection(
             uriTemplate: '/purchases/session',
             provider: PurchaseStateProvider::class,
@@ -57,7 +61,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
             denormalizationContext: ['groups' => ['default']],
             provider: PurchaseWishlistStateProvider::class,
         ),
-        new Post(),
+        new Post(
+            security: "is_granted('ROLE_ADMIN')",
+        ),
         new Post(
             uriTemplate: '/purchases/session/checkout',
             status: 200,
@@ -89,7 +95,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['purchase:write']],
     paginationEnabled: false
 )]
-#[Get(provider: PurchaseStateProvider::class)]
 #[ApiFilter(PurchaseSession::class)]
 #[TransportationPaymentAvailability]
 class Purchase
@@ -180,7 +185,7 @@ class Purchase
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
-    private ?Client $client;
+    private ?Client $client = null;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     /**
@@ -251,7 +256,7 @@ class Purchase
     #[ORM\JoinColumn(nullable: true)]
     #[ClientDiscountAvailability]
     #[Groups(['purchase:read', 'purchase:write'])]
-    private ?ClientDiscount $clientDiscount;
+    private ?ClientDiscount $clientDiscount = null;
 
     #[ORM\ManyToMany(targetEntity: Consent::class, mappedBy: 'purchases')]
     private Collection $Consents;
@@ -335,7 +340,7 @@ class Purchase
         return $this->id;
     }
 
-    public function getDateIssue(): ?\DateTimeInterface
+    public function getDateIssue(): \DateTimeInterface
     {
         return $this->date_issue;
     }

@@ -1,0 +1,7 @@
+framework:
+    secret: 'test-secret-key'
+    test: true
+    http_method_override: false
+    router:
+        resource: '%kernel.project_dir%/tests/App/config/routing.yaml'
+        utf8: true

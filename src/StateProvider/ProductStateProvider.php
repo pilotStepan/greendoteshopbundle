@@ -96,12 +96,11 @@ readonly class ProductStateProvider implements ProviderInterface
 
 
         foreach ($products as $product) {
-            $this->calculatedPricesService->makeCalculatedPricesForProduct(
-                product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$product->getId()] ?? null);
-
-            $product->setAvailability($availabilityMap[$product->getId()]);
+            $productId = $product->getId();
+            if  (array_key_exists($productId,$cheapestPriceMap)) $this->calculatedPricesService->makeCalculatedPricesForProduct(product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$product->getId()] ?? null);
+            if  (array_key_exists($productId, $availabilityMap)) $product->setAvailability($availabilityMap[$product->getId()]);
+            if  (array_key_exists($productId, $parametersMap)) $product->setParameters($parametersMap[$product->getId()]);  
             $product->setCurrencySymbol = $currency->getSymbol();
-            if(array_key_exists($product->getId(), $parametersMap)) $product->setParameters($parametersMap[$product->getId()]);
         }
 
         $products = new \ArrayIterator($products);

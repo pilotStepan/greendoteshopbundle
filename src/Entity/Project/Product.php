@@ -29,7 +29,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
-use Greendot\EshopBundle\Entity\Interface\PagableInterface;
+use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Greendot\EshopBundle\StateProvider\ProductItemStateProvider;
 use Greendot\EshopBundle\StateProvider\ProductStateProvider;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -75,7 +75,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiFilter(ProductFilterByReviews::class)]
 #[ApiFilter(ProductFilterByDiscount::class)]
 //#[ApiFilter(ProductPriceRangeFilter::class)]
-class Product implements Translatable, PagableInterface
+class Product implements Translatable, PageableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -109,7 +109,7 @@ class Product implements Translatable, PagableInterface
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'search_result', 'purchase:read', 'comment:read', 'purchase:wishlist'])]
-    private $slug;
+    private string $slug;
 
     /**
      * @var boolean $isActive If true, then it can be viewed through direct URL
@@ -330,7 +330,7 @@ class Product implements Translatable, PagableInterface
         return $this;
     }
 
-    public function getSlug(): ?string
+    public function getSlug(): string
     {
         return $this->slug;
     }
@@ -900,5 +900,9 @@ class Product implements Translatable, PagableInterface
     {
         $this->isDeleted = $isDeleted;
         return $this;
+    }
+
+    public function getControllerName(): string {
+        return 'shop_product';
     }
 }

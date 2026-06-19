@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
  * Keeps selection in session and allows resetting it based on locale changes.
  * Sets currency automatically on each request via LocaleListener, unless manually overridden.
  */
-readonly class CurrencyManager implements LocaleAwareInterface
+class CurrencyManager implements LocaleAwareInterface
 {
     private const SESSION_KEY_CURRENCY_ID = 'selectedCurrencyId';
     private const SESSION_KEY_LOCALE = 'selectedCurrencyLocale';

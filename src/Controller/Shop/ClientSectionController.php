@@ -145,8 +145,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             true,
         );
 
-        $dueDate = $purchase->getDateIssue()->modify('+14 days');
-        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
+        $qrCodePath = $qrCodeGenerator->getUri($purchase);
 
         return $this->render('client-section/payment.html.twig', [
             'client' => $client,
@@ -212,8 +211,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency);
         $managePurchase->preparePrices($purchase);
 
-        $dueDate = (clone $purchase->getDateIssue())->modify('+14 days');
-        $qrCodePath = $qrCodeGenerator->getUri($purchase, $dueDate);
+        $qrCodePath = $qrCodeGenerator->getUri($purchase);
 
         $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
         $paylink = $paymentGateway->getPayLink($purchase);

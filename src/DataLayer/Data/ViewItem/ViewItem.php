@@ -10,6 +10,8 @@ class ViewItem
         public string $currency,
         public float  $priceVat,
         public float  $priceNoVat,
+        public float  $valueVat,
+        public float  $valueNoVat,
         /**
          * @var DataLayerItem[]
          */

@@ -4,8 +4,8 @@ namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Product;
 use Greendot\EshopBundle\Enum\ProductViewTypeEnum;
-use Greendot\EshopBundle\Schema\Builder\ProductSchemaBuilder;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
+use Greendot\EshopBundle\Schema\Builder\ProductSchemaBuilder;
 use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
@@ -24,7 +24,7 @@ class CatalogProductSchemaProvider implements SchemaProviderInterface
 
     public function provide(mixed $object): Product
     {
-        if (!$object instanceof ProductEntity) {
+        if (!$this->supports($object)) {
             throw new UnsupportedSchemaSubjectException();
         }
 

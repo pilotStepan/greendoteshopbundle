@@ -40,7 +40,10 @@ class CategorySitemap implements SitemapProviderInterface
     {
         $xml = $this->blankUrlSet();
         $categoryQB = $this->sitemapCategoryQB();
-        $categories = $categoryQB->select('category.id as id, category.slug as slug, IDENTITY(category.categoryType) as categoryType')
+        $categories = $categoryQB
+            ->select('category.id as id, category.slug as slug, IDENTITY(category.categoryType) as categoryType')
+            ->andWhere('category.id NOT IN (:noIndexCategoryIds)')
+            ->setParameter('noIndexCategoryIds', [ReservedCategoryIds::NOT_FOUND->value])
             ->getQuery()->getArrayResult();
 
         foreach ($categories as ['id' => $id, 'slug' => $slug, 'categoryType' => $categoryType]) {

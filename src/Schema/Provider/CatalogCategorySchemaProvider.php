@@ -2,20 +2,25 @@
 
 namespace Greendot\EshopBundle\Schema\Provider;
 
-use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\ItemList;
 use Spatie\SchemaOrg\ListItem;
+use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\Schema\Builder\ProductSchemaBuilder;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Greendot\EshopBundle\Schema\Context\ItemListSchemaContext;
 use Greendot\EshopBundle\Entity\Project\Product as ProductEntity;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
-use Greendot\EshopBundle\Entity\Project\Category as CategoryEntity;
 
 
 class CatalogCategorySchemaProvider implements SchemaProviderInterface
 {
+    private const SUPPORTED_TYPES = [
+        CategoryTypeEnum::CATEGORY->value,
+        CategoryTypeEnum::SUB_CATEGORY->value,
+    ];
+
     public function __construct(
         private readonly ProductRepository    $productRepository,
         private readonly ProductSchemaBuilder $productSchemaBuilder,
@@ -23,26 +28,32 @@ class CatalogCategorySchemaProvider implements SchemaProviderInterface
 
     public function supports(mixed $object): bool
     {
-        return $object instanceof CategoryEntity
-            && $object->getCategoryType()->getId() === CategoryTypeEnum::CATEGORY->value;
+        return $object instanceof ItemListSchemaContext
+            && in_array($object->category->getCategoryType()->getId(), self::SUPPORTED_TYPES, true);
     }
 
     public function provide(mixed $object): ItemList
     {
-        if (!$object instanceof CategoryEntity) {
+        if (!$this->supports($object)) {
             throw new UnsupportedSchemaSubjectException();
         }
 
-        $products = $this->productRepository->findCategoryProducts($object, 20); // TODO: pagination?
+        /** @var ItemListSchemaContext $object */
+
+        $category = $object->category;
+        $offset = $object->getOffset();
+        $limit = $object->itemsPerPage;
+
+        $products = $this->productRepository->findCategoryProductsOrdered($category, $limit, $offset);
 
         $elements = array_map(
-            fn($p, $index) => $this->mapToListItem($p, $index + 1),
+            fn($p, $index) => $this->mapToListItem($p, $offset + $index + 1),
             $products,
             array_keys($products),
         );
 
         return Schema::itemList()
-            ->name($object->getName())
+            ->name($category->getName())
             ->itemListElement($elements)
         ;
     }
@@ -56,10 +67,7 @@ class CatalogCategorySchemaProvider implements SchemaProviderInterface
     {
         return Schema::listItem()
             ->position($position)
-            ->item($this->productSchemaBuilder
-                ->forProduct($product)
-                ->build(),
-            )
+            ->item($this->productSchemaBuilder->buildForListing($product))
         ;
     }
 }

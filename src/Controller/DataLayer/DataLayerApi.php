@@ -3,6 +3,8 @@
 namespace Greendot\EshopBundle\Controller\DataLayer;
 
 use Greendot\EshopBundle\DataLayer\Event\CheckoutFunnelEvent;
+use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
+use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,6 +12,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[Route('/gtm', name: 'gtm_')]
 class DataLayerApi extends AbstractController
 {
     public function __construct(
@@ -17,14 +20,14 @@ class DataLayerApi extends AbstractController
         private readonly DataLayerManager $dataLayerManager
     ){}
 
-    #[Route('/gtm/read/all', name:'gtm_read_all')]
+    #[Route('/read/all', name:'read_all')]
     public function getAll(): JsonResponse
     {
         return new JsonResponse($this->dataLayerManager->all(), 200);
     }
 
 
-    #[Route('/gtm/checkout-funnel/{type}', name:'gtm_checkout_funnel')]
+    #[Route('/checkout-funnel/{type}', name:'checkout_funnel')]
     public function checkoutFunnel(string $type, PurchaseRepository $purchaseRepository): JsonResponse
     {
         if (!in_array($type, [CheckoutFunnelEvent::ViewCart, CheckoutFunnelEvent::BeginCheckout, CheckoutFunnelEvent::AddPaymentInfo,CheckoutFunnelEvent::AddShippingInfo])){
@@ -32,6 +35,15 @@ class DataLayerApi extends AbstractController
         }
 
         $this->eventDispatcher->dispatch(new CheckoutFunnelEvent($purchaseRepository->findOneBySession(), $type));
+        return new JsonResponse('ok', 200);
+    }
+
+    #[Route('/view-item/{id}', name: 'view_item')]
+    public function viewItem(
+        ProductVariant $productVariant,
+    ): JsonResponse
+    {
+        $this->eventDispatcher->dispatch(new ViewItemEvent($productVariant));
         return new JsonResponse('ok', 200);
     }
 

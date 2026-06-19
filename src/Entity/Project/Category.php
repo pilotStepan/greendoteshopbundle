@@ -20,8 +20,9 @@ use Exception;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
-use Greendot\EshopBundle\Entity\Interface\PagableInterface;
+use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Greendot\EshopBundle\Enum\SpecialCategoryEnum;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\MaxDepth;
 use Symfony\Component\Validator\Constraints\Existence;
 
@@ -29,6 +30,7 @@ use Symfony\Component\Validator\Constraints\Existence;
  * @Gedmo\Loggable()
  */
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
+#[UniqueEntity(fields: ['specialCategoryCode'])]
 #[ORM\Table(name: 'p_category')]
 #[ApiResource(
     operations: [
@@ -54,7 +56,7 @@ use Symfony\Component\Validator\Constraints\Existence;
 #[ApiFilter(OrderFilter::class, strategy: OrderFilter::NULLS_ALWAYS_LAST, properties: ['published_at'])]
 #[ApiFilter(CategorySuperFilter::class, properties: ['category_most_super'])]
 #[ApiFilter(CategoryHasProductsFilter::class, properties: ['has_products'])]
-class Category implements Translatable, PagableInterface
+class Category implements Translatable, PageableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -120,7 +122,7 @@ class Category implements Translatable, PagableInterface
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
     #[Groups(['category:stripped:read','category_with_parents:read','category_default', 'category:read', 'category:write', 'product_item:read', 'comment:read'])]
-    private $slug;
+    private ?string $slug = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private $javascript;
@@ -421,9 +423,9 @@ class Category implements Translatable, PagableInterface
         return $this;
     }
 
-    public function getSlug(): ?string
+    public function getSlug(): string
     {
-        return $this->slug;
+        return $this->slug ?? '';
     }
 
     public function setSlug(string $slug): self
@@ -857,5 +859,9 @@ class Category implements Translatable, PagableInterface
         $this->additionalData = $additionalData;
 
         return $this;
+    }
+
+    public function getControllerName(): string {
+        return 'app_master';
     }
 }

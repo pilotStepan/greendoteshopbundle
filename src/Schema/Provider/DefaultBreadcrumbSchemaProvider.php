@@ -24,9 +24,11 @@ class DefaultBreadcrumbSchemaProvider implements SchemaProviderInterface
      */
     public function provide(mixed $object): BreadcrumbList
     {
-        if (!$object instanceof BreadcrumbSchemaContext) {
+        if (!$this->supports($object)) {
             throw new UnsupportedSchemaSubjectException();
         }
+
+        /** @var BreadcrumbSchemaContext $object */
 
         $elements = array_map(
             fn($p, $index) => $this->mapToListItem($p, $index + 1),

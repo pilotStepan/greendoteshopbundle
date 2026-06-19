@@ -19,6 +19,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\ApiResource\ProductWithVariantsUploads;
 use Greendot\EshopBundle\StateProvider\UploadProductWithVariantsProvider;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -45,13 +47,14 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiFilter(ProductUploads::class)]
 #[ApiFilter(ProductVariantUploads::class)]
 #[ApiFilter(ProductWithVariantsUploads::class)]
-class Upload
+class Upload implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255)]
     #[Groups(['upload:read', 'upload_product_with_variants:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
     private ?string $name = null;
@@ -64,14 +67,17 @@ class Upload
     #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $mime = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $title = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $shortDescription = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $description = null;
@@ -132,6 +138,9 @@ class Upload
     #[ORM\OneToMany(mappedBy: 'upload', targetEntity: InformationBlock::class)]
     private Collection $informationBlocks;
 
+    #[Gedmo\Locale]
+    private $locale;
+
     public function __construct()
     {
         $this->products = new ArrayCollection();
@@ -140,6 +149,11 @@ class Upload
         $this->categories = new ArrayCollection();
         $this->people = new ArrayCollection();
         $this->informationBlocks = new ArrayCollection();
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 
     public function getId(): ?int

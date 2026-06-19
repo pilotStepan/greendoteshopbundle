@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Mail\Factory;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Throwable;
 use RuntimeException;
 use DateTimeImmutable;
+use Psr\Log\LoggerInterface;
 use Greendot\EshopBundle\Utils\PriceHelper;
 use Greendot\EshopBundle\Mail\Data\OrderData;
 use Greendot\EshopBundle\Entity\Project\Purchase;
@@ -42,6 +44,9 @@ class OrderDataFactory
         private QRcodeGenerator            $qrGenerator,
         private PaymentGatewayProvider     $gatewayProvider,
         private PurchaseUrlGenerator       $purchaseUrlGenerator,
+        private readonly LoggerInterface   $logger,
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
+        private string $secondaryCurrencyName,
     ) {}
 
     public function create(Purchase $purchase): OrderData
@@ -84,7 +89,7 @@ class OrderDataFactory
     private function loadCurrencies(): array
     {
         $czk = $this->currencyRepository->findOneBy(['isDefault' => true]);
-        $eur = $this->currencyRepository->findOneBy(['name' => 'Euro']);
+        $eur = $this->currencyRepository->findOneBy(['name' => $this->secondaryCurrencyName]);
 
         if (!$czk || !$eur) {
             throw new RuntimeException('Missing CZK or EUR currency in DB.');
@@ -101,9 +106,9 @@ class OrderDataFactory
         }
 
         try {
-            $dueDate = new DateTimeImmutable('+14 days');
-            return $this->qrGenerator->getFullUrl($purchase, $dueDate);
-        } catch (Throwable) {
+            return $this->qrGenerator->getFullUrl($purchase);
+        } catch (Throwable $e) {
+            $this->logger->error('Failed to generate QR code for purchase {purchaseId}', ['purchaseId' => $purchase->getId(), 'exception' => $e]);
             return null;
         }
     }
@@ -125,7 +130,7 @@ class OrderDataFactory
     }
 
     /** @return OrderItemData[] */
-    public function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
+    private function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
     {
         $items = [];
 
@@ -162,8 +167,8 @@ class OrderDataFactory
             country: $transportation->getCountry(),
             name: $transportation->getName(),
             description: $transportation->getDescription(),
-            priceCzk: PriceHelper::formatPrice($priceCzk, $czk),
-            priceEur: PriceHelper::formatPrice($priceEur, $eur),
+            priceCzk: PriceHelper::formatPrice($priceCzk, $czk, freeLabel: 'Bez poplatku'),
+            priceEur: PriceHelper::formatPrice($priceEur, $eur, freeLabel: 'Bez poplatku'),
             branchName: $purchase->getBranch()?->getName(),
             mailDescription: $transportation->getDescriptionMail(),
         );
@@ -183,8 +188,8 @@ class OrderDataFactory
             name: $paymentType->getName(),
             description: $paymentType->getDescription(),
             mailDescription: $paymentType->getDescritionMail(),
-            priceCzk: PriceHelper::formatPrice($priceCzk, $czk),
-            priceEur: PriceHelper::formatPrice($priceEur, $eur),
+            priceCzk: PriceHelper::formatPrice($priceCzk, $czk, freeLabel: 'Bez poplatku'),
+            priceEur: PriceHelper::formatPrice($priceEur, $eur, freeLabel: 'Bez poplatku'),
             bankNumber: $paymentType->getBankNumber(),
             bankAccount: $paymentType->getAccount(),
             bankName: $paymentType->getBankName(),
@@ -202,18 +207,21 @@ class OrderDataFactory
             street: $addr->getStreet(),
             city: $addr->getCity(),
             zip: $addr->getZip(),
+            company: $addr->getCompany(),
+            ic: $addr->getIc(),
+            dic: $addr->getDic(),
         );
 
         $shipping = null;
         if ($addr->getShipStreet() && $addr->getShipCity() && $addr->getShipZip()) {
-            $shippingFullName = trim(($addr->getShipName() ?? '') . ' ' . ($addr->getShipSurname() ?? ''))
-                ?: $purchase->getClient()->getFullname();
-
             $shipping = new OrderAddressData(
-                fullName: $shippingFullName,
+                fullName: trim(($addr->getShipName() ?? '') . ' ' . ($addr->getShipSurname() ?? '')),
                 street: $addr->getShipStreet(),
                 city: $addr->getShipCity(),
                 zip: $addr->getShipZip(),
+                company: $addr->getShipCompany(),
+                ic: $addr->getShipIc(),
+                dic: $addr->getShipDic(),
             );
         }
 

@@ -97,7 +97,12 @@ class BlogController extends AbstractController
     }
 
     #[TranslatableRoute(class: Category::class, property: 'slug')]
-    #[Route(path: '/{slug}', name: 'web_blog_detail', priority: 2)]
+    #[Route(
+        path: '/{slug}', 
+        name: 'web_blog_detail', 
+        priority: 2, 
+        options: ['expose' => true]
+    )]
     public function blogDetail(
         Category $category,
         LabelRepository $labelRepository,

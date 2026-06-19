@@ -9,5 +9,8 @@ class OrderAddressData
         public string $street,
         public string $city,
         public string $zip,
+        public ?string $company = null,
+        public ?string $ic = null,
+        public ?string $dic = null,
     ) {}
 }

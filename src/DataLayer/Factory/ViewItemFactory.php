@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\DataLayer\Factory;
 
 use Greendot\EshopBundle\DataLayer\Data\ViewItem\ViewItem;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
@@ -22,20 +21,15 @@ class ViewItemFactory
         $this->currency = $currencyManager->get();
     }
 
-    public function create(Product $product, ?array $selectedVariants = null): ViewItem
+    public function create(ProductVariant $productVariant): ViewItem
     {
-        $items = [];
-        foreach ($product->getProductVariants() as $variant) {
-            if ($selectedVariants !== null && !in_array($variant->getId(), $selectedVariants)) {
-                continue;
-            }
-            $items[] = $this->dataLayerItemFactory->createFromVariant(
-                variant: $variant,
-                currency: $this->currency,
-                item_variant: $this->getVariantNameSafe($variant),
-                parameters: $this->getFormatedParameters($variant),
-            );
-        }
+        $items[] = $this->dataLayerItemFactory->createFromVariant(
+            variant: $productVariant,
+            currency: $this->currency,
+            item_variant: $this->getVariantNameSafe($productVariant),
+            parameters: $this->getFormatedParameters($productVariant),
+        );
+
 
         $lowestPriceItem = null;
         foreach ($items as $item) {
@@ -58,6 +52,8 @@ class ViewItemFactory
             currency: $this->currency->getName(),
             priceVat: $lowestPriceItem->priceVat,
             priceNoVat: $lowestPriceItem->priceNoVat,
+            valueVat: $lowestPriceItem->priceVat,
+            valueNoVat: $lowestPriceItem->priceNoVat,
             items: $items
         );
     }

@@ -2,27 +2,26 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Patch;
+use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use Greendot\EshopBundle\Enum\TransportationAction;
-use Greendot\EshopBundle\Repository\Project\TransportationRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Translatable\Translatable;
-use Greendot\EshopBundle\Enum\TransportationAPI;
-use Greendot\EshopBundle\StateProvider\CheapTransportationStateProvider;
-
+use ApiPlatform\Metadata\ApiResource;
+use Gedmo\Mapping\Annotation as Gedmo;
+use ApiPlatform\Metadata\GetCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
+use Greendot\EshopBundle\Enum\TransportationAction;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\Repository\Project\TransportationRepository;
+use Greendot\EshopBundle\StateProvider\CheapTransportationStateProvider;
 
 #[ORM\Entity(repositoryClass: TransportationRepository::class)]
 #[ApiResource(
@@ -59,10 +58,12 @@ class Transportation implements Translatable
     private $purchases;
 
     #[ORM\Column(type: 'text')]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description;
 
     #[ORM\Column(type: 'text')]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $description_mail;
 
@@ -71,6 +72,7 @@ class Transportation implements Translatable
     private $description_duration;
 
     #[ORM\Column(type: 'text')]
+    #[Gedmo\Translatable]
     #[Groups(['transportation_group:read', 'transportation_group:write', 'transportation:read', 'transportation:write', 'purchase:read', 'purchase:write'])]
     private $html;
 

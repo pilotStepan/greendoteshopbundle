@@ -11,25 +11,32 @@ use InvalidArgumentException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 
 readonly class ManagePurchase
 {
     public function __construct(
-        private CurrencyManager            $currencyManager,
-        private PurchasePriceFactory       $purchasePriceFactory,
-        private ProductVariantPriceFactory $productVariantPriceFactory,
-        private PurchaseRepository         $purchaseRepository,
-        private ManageVies                 $manageVies,
-        private MessageBusInterface        $bus,
-        private ParcelServiceProvider      $parcelServiceProvider,
+        private CurrencyManager                $currencyManager,
+        private PurchasePriceFactory           $purchasePriceFactory,
+        private ProductVariantPriceFactory     $productVariantPriceFactory,
+        private PurchaseRepository             $purchaseRepository,
+        private ManageVies                     $manageVies,
+        private MessageBusInterface            $bus,
+        private ParcelServiceProviderInterface $parcelServiceProvider,
+        #[Target(PWC::NAME->value)]
+        private WorkflowInterface              $purchaseFlow,
     ) {}
 
     public function addProductVariantToPurchase(Purchase $purchase, ProductVariant $productVariant, $amount = 1): Purchase
@@ -77,17 +84,36 @@ readonly class ManagePurchase
 
     public function generateTransportData(Purchase $purchase): void
     {
-        // If purchase does not have a parcel service, we do not create a parcel
-        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
-        if (!$parcelService) return;
+        try {
+            $this->parcelServiceProvider->getByPurchase($purchase);
+        } catch (ParcelServiceNotFoundException) {
+            return;
+        }
 
         $this->bus->dispatch(
             new CreateParcelMessage($purchase->getId()),
         );
     }
 
+    /**
+     * @throws \Throwable
+     */
+    public function applyBankTransferPayment(Purchase $purchase, PaymentType $paymentType): void
+    {
+        if ($purchase->isPaid()) {
+            return;
+        }
+
+        $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value);
+        $purchase->setPaymentType($paymentType);
+    }
+
     public function issueInvoice(Purchase $purchase): void
     {
+        if ($purchase->getInvoiceNumber() !== null) {
+            return;
+        }
+
         $invoiceNumber = $this->purchaseRepository->findNextInvoiceNumber();
         $purchase->setInvoiceNumber($invoiceNumber);
         $purchase->setDateInvoiced(new DateTime());

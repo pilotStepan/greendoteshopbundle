@@ -8,10 +8,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
 
-final readonly class PurchaseUrlGenerator
+readonly class PurchaseUrlGenerator
 {
     public function __construct(
-        private UrlGeneratorInterface     $router,
+        protected UrlGeneratorInterface   $router,
         #[Autowire(service: 'security.authenticator.login_link_handler.main')]
         private LoginLinkHandlerInterface $loginLinkHandler,
         private WishlistService           $wishlistService,
