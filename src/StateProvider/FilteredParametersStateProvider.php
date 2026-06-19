@@ -37,7 +37,7 @@ class FilteredParametersStateProvider implements ProviderInterface
 
 
         
-        $filters = $context['filters']; 
+        $filters = $context['filters'] ?? [];
 
         $vatCalculationTypeValue = $this->parameterBag->get('greendot_eshop.shop.default_vat_type');
         $vatCalculationType = VatCalculationType::from($vatCalculationTypeValue);

@@ -1,0 +1,59 @@
+framework:
+    secret: 'api-test-secret-key'
+    test: true
+    http_method_override: false
+    router:
+        resource: '%kernel.project_dir%/tests/App/config/api/routing.yaml'
+        utf8: true
+    session:
+        enabled: true
+        storage_factory_id: session.storage.factory.mock_file
+    workflows:
+        purchase_flow:
+            type: state_machine
+            marking_store:
+                type: method
+                property: marking
+            supports:
+                - Greendot\EshopBundle\Entity\Project\Purchase
+            initial_marking: draft
+            places:
+                - draft
+                - wishlist
+                - cart
+                - cancelled
+                - completed
+            transitions:
+                init_wishlist:
+                    from: draft
+                    to: wishlist
+                init_cart:
+                    from: [draft, wishlist]
+                    to: cart
+                checkout:
+                    from: cart
+                    to: completed
+                pay_pay:
+                    from: completed
+                    to: completed
+                pay_fail:
+                    from: completed
+                    to: completed
+                pay_refund:
+                    from: completed
+                    to: completed
+                log_send:
+                    from: completed
+                    to: completed
+                log_deliver:
+                    from: completed
+                    to: completed
+                log_pickup_done:
+                    from: completed
+                    to: completed
+                cancel:
+                    from: [draft, wishlist, cart, completed]
+                    to: cancelled
+                complete:
+                    from: completed
+                    to: completed

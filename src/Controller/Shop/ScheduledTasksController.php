@@ -6,19 +6,19 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Greendot\EshopBundle\Service\PaymentService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Greendot\EshopBundle\Service\Imports\Branch\ManageBranch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
+use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class ScheduledTasksController extends AbstractController
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly ProductRepository      $productRepository,
-        private readonly PaymentService         $paymentService,
-        private readonly ManageBranch           $manageBranch,
+        private readonly EntityManagerInterface     $entityManager,
+        private readonly ProductRepository           $productRepository,
+        private readonly RbBankPaymentImportService  $rbBankPaymentImportService,
+        private readonly ManageBranch                $manageBranch,
     ) {}
 
     #[CustomApiEndpoint]
@@ -58,7 +58,7 @@ class ScheduledTasksController extends AbstractController
             return $this->json(['error' => 'Invalid date format'], Response::HTTP_BAD_REQUEST);
         }
 
-        $this->paymentService->downloadAndProcessPayments($date);
+        $this->rbBankPaymentImportService->downloadAndProcessPayments($date);
 
         return $this->json(['message' => 'Payments processed successfully']);
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Greendot\EshopBundle\Message\Parcel;
+namespace Greendot\EshopBundle\Parcel\Message;
 
 class CreateParcelMessage
 {

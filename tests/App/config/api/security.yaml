@@ -1,0 +1,17 @@
+security:
+    password_hashers:
+        Greendot\EshopBundle\Entity\Project\Client: 'auto'
+
+    providers:
+        clients_provider:
+            entity:
+                class: Greendot\EshopBundle\Entity\Project\Client
+                property: id
+
+    firewalls:
+        main:
+            stateless: false
+            provider: clients_provider
+            security: true
+
+    access_control: []

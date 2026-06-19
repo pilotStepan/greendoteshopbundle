@@ -23,9 +23,10 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Symfony\Component\DependencyInjection\Attribute\Target;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -164,13 +165,17 @@ class PurchaseController extends AbstractController
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
     public function createParcel(
-        Purchase               $purchase,
-        ParcelServiceProvider  $provider,
-        EntityManagerInterface $entityManager,
+        Purchase                       $purchase,
+        ParcelServiceProviderInterface $provider,
+        EntityManagerInterface         $entityManager,
     ): JsonResponse
     {
-        $parcelService = $provider->getByPurchase($purchase);
-        $parcelId = $parcelService?->createParcel($purchase);
+        try {
+            $parcelService = $provider->getByPurchase($purchase);
+            $parcelId = $parcelService->createParcel($purchase);
+        } catch (ParcelServiceNotFoundException) {
+            return new JsonResponse(['message' => 'No parcel service configured'], 400);
+        }
 
         if (!$parcelId) {
             return new JsonResponse(['message' => 'Failed to create parcel'], 500);
@@ -188,15 +193,15 @@ class PurchaseController extends AbstractController
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
     public function getParcelStatus(
-        Purchase              $purchase,
-        ParcelServiceProvider $provider,
+        Purchase                       $purchase,
+        ParcelServiceProviderInterface $provider,
     ): JsonResponse
     {
-        $parcelService = $provider->getByPurchase($purchase);
-        $status = $parcelService->getParcelStatus($purchase);
-
-        if (!$status) {
-            return new JsonResponse(['message' => 'Failed to get parcel status'], 500);
+        try {
+            $parcelService = $provider->getByPurchase($purchase);
+            $status = $parcelService->getParcelStatus($purchase);
+        } catch (ParcelServiceNotFoundException) {
+            return new JsonResponse(['message' => 'No parcel service configured'], 400);
         }
 
         return new JsonResponse($status);

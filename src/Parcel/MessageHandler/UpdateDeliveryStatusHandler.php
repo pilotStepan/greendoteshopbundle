@@ -1,23 +1,27 @@
 <?php
 
-namespace Greendot\EshopBundle\MessageHandler\Parcel;
+namespace Greendot\EshopBundle\Parcel\MessageHandler;
 
 use Throwable;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Workflow\Registry;
 use Monolog\Attribute\WithMonologChannel;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Enum\ParcelDeliveryState;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Entity\Project\TransportationEvent;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Message\Parcel\UpdateDeliveryStatusMessage;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
@@ -26,15 +30,17 @@ use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 readonly class UpdateDeliveryStatusHandler
 {
     private const MAX_POLL_DAYS = 14;
-    private const REFRESH_INTERVAL = 4 * 60 * 60 * 1000; // 4h
+    private const REFRESH_INTERVAL = 1 * 60 * 60 * 1000; // 1h
 
     public function __construct(
-        private ParcelServiceProvider  $parcelServiceProvider,
-        private PurchaseRepository     $purchaseRepository,
-        private EntityManagerInterface $em,
-        private MessageBusInterface    $bus,
-        private LoggerInterface        $logger,
-        private Registry               $registry,
+        private ParcelServiceProviderInterface $parcelServiceProvider,
+        private PurchaseRepository             $purchaseRepository,
+        private TransportationEventRepository  $transportationEventRepository,
+        private EntityManagerInterface         $em,
+        private MessageBusInterface            $bus,
+        private LoggerInterface                $logger,
+        #[Target(PWC::NAME->value)]
+        private WorkflowInterface              $purchaseFlow,
     ) {}
 
     /**
@@ -46,19 +52,17 @@ readonly class UpdateDeliveryStatusHandler
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
-            // Permanent: do not retry
             $this->logger->error('Purchase not found', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
-        $lastEvent = $purchase->getLatestTransportationEvent();
+        $lastEvent = $this->transportationEventRepository->findLatestByPurchase($purchase);
         if ($lastEvent?->getState()->isFinal()) {
             $this->logger->info('Delivery final; skipping further checks', ['purchaseId' => $purchaseId]);
             return;
         }
 
-        $createdAt = $purchase->getDateIssue();
-        $ageDays = $createdAt->diff(new DateTimeImmutable())->days;
+        $ageDays = $purchase->getDateIssue()->diff(new DateTimeImmutable())->days;
         if ($ageDays >= self::MAX_POLL_DAYS) {
             $this->logger->warning('Polling window expired; giving up', [
                 'purchaseId' => $purchaseId,
@@ -69,6 +73,12 @@ readonly class UpdateDeliveryStatusHandler
 
         try {
             $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
+        } catch (ParcelServiceNotFoundException $e) {
+            $this->logger->error('No parcel service found; stopping polling', ['purchaseId' => $purchaseId]);
+            throw new UnrecoverableMessageHandlingException('No parcel service available', 0, $e);
+        }
+
+        try {
             $statusInfo = $parcelService->getParcelStatus($purchase);
         } catch (Throwable $e) {
             $this->logger->error('Parcel provider failed; will retry', [
@@ -78,10 +88,10 @@ readonly class UpdateDeliveryStatusHandler
             throw new RecoverableMessageHandlingException('Transient parcel provider error', 0, $e);
         }
 
-        // Skip writing if nothing changed
+        // Skip writing if nothing changed (use == for value equality on DateTimeInterface)
         if ($lastEvent &&
             $lastEvent->getState() === $statusInfo->state &&
-            $lastEvent->getOccurredAt() === $statusInfo->occurredAt
+            $lastEvent->getOccurredAt() == $statusInfo->occurredAt
         ) {
             $this->logger->info('No change in status; not persisting', ['purchaseId' => $purchaseId]);
         } else {
@@ -96,13 +106,18 @@ readonly class UpdateDeliveryStatusHandler
             $this->em->flush();
         }
 
-        $latest = $purchase->getLatestTransportationEvent(); // refresh latest event
-
-        if ($latest?->getState() === ParcelDeliveryState::SUBMITTED) {
-            $this->prepareForSending($purchase);
+        if ($statusInfo->state === ParcelDeliveryStateEnum::IN_TRANSIT) {
+            $this->applyTransitionIfPossible($purchase, PWC::T_LOG_SEND->value);
+        } else if (in_array($statusInfo->state, [
+            ParcelDeliveryStateEnum::DELIVERED,
+            ParcelDeliveryStateEnum::READY_FOR_PICKUP,
+        ])) {
+            $this->applyTransitionIfPossible($purchase, PWC::T_LOG_DELIVER->value);
         }
 
-        if ($latest?->getState()->isFinal()) {
+        $this->em->flush();
+
+        if ($statusInfo->state->isFinal()) {
             $this->logger->info('Status reached final; not rescheduling', ['purchaseId' => $purchaseId]);
             return;
         }
@@ -117,21 +132,20 @@ readonly class UpdateDeliveryStatusHandler
         ]);
     }
 
-    private function prepareForSending(Purchase $purchase): void
+    private function applyTransitionIfPossible(Purchase $purchase, string $transition): void
     {
-        $workflow = $this->registry->get($purchase);
-        if ($workflow->can($purchase, 'prepare_for_sending')) {
-            $workflow->apply($purchase, 'prepare_for_sending');
+        if ($this->purchaseFlow->can($purchase, $transition)) {
+            $this->purchaseFlow->apply($purchase, $transition);
         } else {
             $errors = array_map(
                 static fn($b) => $b->getMessage(),
-                iterator_to_array($workflow->buildTransitionBlockerList($purchase, 'prepare_for_sending')),
+                iterator_to_array($this->purchaseFlow->buildTransitionBlockerList($purchase, $transition)),
             );
-            $this->logger->error('Cannot apply transition to prepare for sending', [
+            $this->logger->warning('Cannot apply workflow transition', [
                 'purchaseId' => $purchase->getId(),
+                'transition' => $transition,
                 'errors' => $errors,
             ]);
-            throw new UnrecoverableMessageHandlingException("Cannot apply transition to prepare for sending (Purchase ID: {$purchase->getId()}");
         }
     }
 }
