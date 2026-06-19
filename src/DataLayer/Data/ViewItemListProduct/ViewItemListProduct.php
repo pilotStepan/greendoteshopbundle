@@ -1,10 +1,10 @@
 <?php
 
-namespace Greendot\EshopBundle\DataLayer\Data\ViewItem;
+namespace Greendot\EshopBundle\DataLayer\Data\ViewItemListProduct;
 
 use Greendot\EshopBundle\DataLayer\Data\DataLayerItem;
 
-class ViewItem
+class ViewItemListProduct
 {
     public function __construct(
         public string $currency,

@@ -187,18 +187,24 @@ abstract class PriceCalculationTestCase extends TestCase
             $purchaseProductVariant->method('getProductVariant')->willReturn($productVariantMock);
             $purchaseProductVariant->method('getPurchase')->willReturn($purchase);
 
+            if (isset($variant['customPrice'])) {
+                $purchaseProductVariant->method('getPrice')->willReturn($variant['customPrice']);
+            }
+
             $purchaseProductVariants[] = $purchaseProductVariant;
-            $variantPrices[$index] = $variant['prices'];
+            if (isset($variant['prices'])) {
+                $variantPrices[$index] = $variant['prices'];
+            }
         }
 
         $purchase->method('getProductVariants')->willReturn(new ArrayCollection($purchaseProductVariants));
 
         $this->priceRepository->method('findPricesByDateAndProductVariantNew')
             ->willReturnCallback(function ($productVariant) use ($variantPrices) {
-                if (isset($productVariant->_index)) {
+                if (isset($productVariant->_index) && isset($variantPrices[$productVariant->_index])) {
                     return $variantPrices[$productVariant->_index];
                 }
-                return null;
+                return [];
             })
         ;
 

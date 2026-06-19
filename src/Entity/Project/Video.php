@@ -4,10 +4,12 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\VideoRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Translatable\Translatable;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: VideoRepository::class)]
-class Video
+class Video implements Translatable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -15,6 +17,7 @@ class Video
     #[Groups(["SearchProductResultApiModel"])]
     private $id;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(["SearchProductResultApiModel"])]
     private $name;
@@ -38,9 +41,17 @@ class Video
     #[ORM\ManyToOne(targetEntity: ProductVariant::class, inversedBy: 'video')]
     private $productVariant;
 
+    #[Gedmo\Locale]
+    private $locale;
+
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setTranslatableLocale($locale): void
+    {
+        $this->locale = $locale;
     }
 
     public function getName(): ?string

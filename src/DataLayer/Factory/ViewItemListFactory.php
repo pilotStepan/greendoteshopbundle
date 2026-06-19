@@ -42,13 +42,20 @@ class ViewItemListFactory
     {
         $products = $this->getProducts($productsUri, $productIds);
         $items = [];
+        $valueVat = 0;
+        $valueNoVat = 0;
         foreach ($products as $index => $product) {
-            $items [] = $this->createListItem($product, $index);
+            $item = $this->createListItem($product, $index);
+            $valueVat += $item->priceVat;
+            $valueNoVat += $item->priceNoVat;
+            $items [] = $item;
         }
 
         return new ViewItemList(
             item_list_id: $category->getId(),
             item_list_name: $category->getName(),
+            valueVat: $valueVat,
+            valueNoVat: $valueNoVat,
             items: $items
         );
     }

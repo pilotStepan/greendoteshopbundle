@@ -201,6 +201,13 @@ class ProductRepository extends HintedRepositoryBase
         if ($offset > 0) {
             $qb->setFirstResult($offset);
         }
+
+        // filter availability
+        $qb ->innerJoin('p.productVariants', 'pv')
+            ->innerJoin('pv.availability', 'a')
+            ->andWhere('pv.isActive = 1')
+            ->andWhere('a.isPurchasable = 1');
+
         return $qb->getQuery()->getResult();
     }
 

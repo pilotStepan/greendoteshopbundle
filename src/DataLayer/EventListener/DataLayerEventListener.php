@@ -8,11 +8,13 @@ use Greendot\EshopBundle\DataLayer\Event\ModifyCart;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemListEvent;
+use Greendot\EshopBundle\DataLayer\Event\ViewItemListProductEvent;
 use Greendot\EshopBundle\DataLayer\Factory\CartFactory;
 use Greendot\EshopBundle\DataLayer\Factory\CheckoutFunnelFactory;
 use Greendot\EshopBundle\DataLayer\Factory\PurchaseFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemListFactory;
+use Greendot\EshopBundle\DataLayer\Factory\ViewItemListProductFactory;
 use Greendot\EshopBundle\DataLayer\Factory\WishlistFactory;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -22,6 +24,7 @@ class DataLayerEventListener
     public function __construct(
         private readonly DataLayerManager      $dataLayerManager,
         private readonly ViewItemListFactory   $viewItemListFactory,
+        private readonly ViewItemListProductFactory $viewItemListProductFactory,
         private readonly ViewItemFactory       $viewItemFactory,
         private readonly PurchaseFactory       $purchaseFactory,
         private readonly CartFactory           $cartFactory,
@@ -36,10 +39,17 @@ class DataLayerEventListener
         $this->dataLayerManager->push(['event' => 'view_item_list', 'ecommerce' => $eventData], true);
     }
 
+    #[AsEventListener(event: ViewItemListProductEvent::class)]
+    public function onViewItemListProduct(ViewItemListProductEvent $viewItemListProductEvent): void
+    {
+        $eventData = $this->viewItemListProductFactory->create($viewItemListProductEvent->getProduct());
+        $this->dataLayerManager->push(['event' => 'view_item_list_product', 'ecommerce' => $eventData], true);
+    }
+
     #[AsEventListener(event: ViewItemEvent::class)]
     public function onViewItem(ViewItemEvent $viewItemList): void
     {
-        $eventData = $this->viewItemFactory->create($viewItemList->getProduct(), $viewItemList->getSelectedVariants());
+        $eventData = $this->viewItemFactory->create($viewItemList->getProductVariant());
         $this->dataLayerManager->push(['event' => 'view_item', 'ecommerce' => $eventData], true);
     }
 
