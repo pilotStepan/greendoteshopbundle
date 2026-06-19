@@ -89,6 +89,9 @@ class ClientDiscount
     #[ORM\Column]
     private ?bool $is_used = null;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $extra = null;
+
     public function __construct()
     {
         $this->purchases = new ArrayCollection();
@@ -210,6 +213,18 @@ class ClientDiscount
     public function setHash(string $hash): static
     {
         $this->hash = $hash;
+
+        return $this;
+    }
+
+    public function getExtra(): ?array
+    {
+        return $this->extra;
+    }
+
+    public function setExtra(?array $extra): static
+    {
+        $this->extra = $extra;
 
         return $this;
     }

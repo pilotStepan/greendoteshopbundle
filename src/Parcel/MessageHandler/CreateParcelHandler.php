@@ -1,20 +1,25 @@
 <?php
 
-namespace Greendot\EshopBundle\MessageHandler\Parcel;
+namespace Greendot\EshopBundle\Parcel\MessageHandler;
 
 use Throwable;
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
-use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\TransportationEvent;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
-use Greendot\EshopBundle\Message\Parcel\UpdateDeliveryStatusMessage;
+use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
+use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
@@ -25,12 +30,12 @@ readonly class CreateParcelHandler
     private const INITIAL_STATUS_DELAY_MS = 8 * 60 * 60 * 1000; // 8h
 
     public function __construct(
-        private ParcelServiceProvider  $parcelServiceProvider,
-        private PurchaseRepository     $purchaseRepository,
-        private ManagePurchase         $managePurchase,
-        private EntityManagerInterface $em,
-        private MessageBusInterface    $bus,
-        private LoggerInterface        $logger,
+        private ParcelServiceProviderInterface $parcelServiceProvider,
+        private PurchaseRepository             $purchaseRepository,
+        private TransportationEventRepository  $transportationEventRepository,
+        private EntityManagerInterface         $em,
+        private MessageBusInterface            $bus,
+        private LoggerInterface                $logger,
     ) {}
 
     /**
@@ -42,7 +47,6 @@ readonly class CreateParcelHandler
         $purchase = $this->purchaseRepository->find($purchaseId);
 
         if (!$purchase) {
-            // Permanent: do not retry
             $this->logger->error('Purchase not found', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
@@ -57,18 +61,17 @@ readonly class CreateParcelHandler
             return;
         }
 
-        // Resolve service
-        $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
-        if (!$parcelService) {
+        try {
+            $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
+        } catch (ParcelServiceNotFoundException $e) {
             $this->logger->error('No parcel service available', ['purchaseId' => $purchaseId]);
-            throw new UnrecoverableMessageHandlingException("No parcel service available (Purchase ID: $purchaseId)");
+            throw new UnrecoverableMessageHandlingException("No parcel service available (Purchase ID: $purchaseId)", 0, $e);
         }
 
-        // Create parcel
         try {
-            $this->managePurchase->preparePrices($purchase);
             $parcelId = $parcelService->createParcel($purchase);
             $purchase->setTransportNumber($parcelId);
+            $this->recordReceivedDataEvent($purchase);
             $this->em->flush();
         } catch (Throwable $e) {
             $this->logger->error('Creating parcel failed; will retry', [
@@ -84,6 +87,21 @@ readonly class CreateParcelHandler
         ]);
 
         $this->scheduleFirstStatusCheck($purchaseId);
+    }
+
+    private function recordReceivedDataEvent(Purchase $purchase): void
+    {
+        if ($this->transportationEventRepository->findLatestByPurchase($purchase)) {
+            return;
+        }
+
+        $event = (new TransportationEvent())
+            ->setState(ParcelDeliveryStateEnum::RECEIVED_DATA)
+            ->setOccurredAt(new DateTimeImmutable())
+            ->setPurchase($purchase)
+        ;
+
+        $this->em->persist($event);
     }
 
     /**

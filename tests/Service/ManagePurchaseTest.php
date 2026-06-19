@@ -2,39 +2,42 @@
 
 namespace Greendot\EshopBundle\Tests\Service;
 
+use Psr\Log\LoggerInterface;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Bundle\SecurityBundle\Security;
+use PHPUnit\Framework\MockObject\MockObject;
 use Doctrine\Common\Collections\ArrayCollection;
+use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\DiscountService;
+use Greendot\EshopBundle\Service\Vies\ManageVies;
+use Symfony\Component\Workflow\WorkflowInterface;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
-use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Enum\TransportationAPI;
-use Greendot\EshopBundle\Message\Parcel\CreateParcelMessage;
-use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
-use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
+use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
-use Greendot\EshopBundle\Service\CurrencyManager;
-use Greendot\EshopBundle\Service\DiscountService;
-use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceInterface;
-use Greendot\EshopBundle\Service\Parcel\ParcelServiceProvider;
-use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy;
-use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PriceUtils;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
-use Greendot\EshopBundle\Service\Vies\ManageVies;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\MessageBusInterface;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
+use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDiscountStrategy;
 
 class ManagePurchaseTest extends TestCase
 {
@@ -52,6 +55,34 @@ class ManagePurchaseTest extends TestCase
             $this->bus,
             new ParcelServiceProvider([]),
         );
+    }
+
+    public function testConfirmBankTransferPaymentDoesNothingWhenAlreadyPaid(): void
+    {
+        $purchase = new Purchase();
+        $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
+
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->expects($this->never())->method('apply');
+
+        $managePurchase = $this->createManagePurchase($this->purchaseRepository, $this->bus, new ParcelServiceProvider([]), $purchaseFlow);
+
+        $managePurchase->applyBankTransferPayment($purchase, new PaymentType());
+    }
+
+    public function testConfirmBankTransferPaymentAppliesTransitionAndSwitchesPaymentType(): void
+    {
+        $purchase = new Purchase();
+        $paymentType = new PaymentType();
+
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->expects($this->once())->method('apply')->with($purchase, PWC::T_PAY_PAY->value);
+
+        $managePurchase = $this->createManagePurchase($this->purchaseRepository, $this->bus, new ParcelServiceProvider([]), $purchaseFlow);
+
+        $managePurchase->applyBankTransferPayment($purchase, $paymentType);
+
+        $this->assertSame($paymentType, $purchase->getPaymentType());
     }
 
     public function testAddProductVariantToPurchaseNewItem(): void
@@ -179,6 +210,7 @@ class ManagePurchaseTest extends TestCase
         PurchaseRepository $purchaseRepository,
         MessageBusInterface $bus,
         ParcelServiceProvider $parcelServiceProvider,
+        ?WorkflowInterface $purchaseFlow = null,
     ): ManagePurchase {
         $conversionRateRepository = $this->createMock(ConversionRateRepository::class);
         $priceRepository = $this->createMock(PriceRepository::class);
@@ -225,6 +257,7 @@ class ManagePurchaseTest extends TestCase
             $manageVies,
             $bus,
             $parcelServiceProvider,
+            $purchaseFlow ?? $this->createMock(WorkflowInterface::class),
         );
     }
 }

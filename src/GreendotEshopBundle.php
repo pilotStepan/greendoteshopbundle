@@ -63,6 +63,41 @@ class GreendotEshopBundle extends AbstractBundle
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('payment')
+                    ->children()
+                        ->arrayNode('rb_bank')
+                            ->children()
+                                ->booleanNode('enabled')->defaultValue(false)->end()
+                                ->stringNode('shopname')->defaultValue('')->end()
+                                ->stringNode('account')->defaultValue('')->end()
+                                ->stringNode('bank_code')->defaultValue('')->end()
+                                ->stringNode('password')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('parcel')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('packeta')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->booleanNode('enabled')->defaultValue(false)->end()
+                                ->stringNode('eshop_name')->defaultValue('')->end()
+                                ->stringNode('api_password')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('dpd')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->booleanNode('enabled')->defaultValue(false)->end()
+                                ->stringNode('bu_code')->defaultValue('')->end()
+                                ->stringNode('customer_id')->defaultValue('')->end()
+                                ->stringNode('sender_address_id')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('shop')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -176,6 +211,13 @@ class GreendotEshopBundle extends AbstractBundle
             $sendProforma
         );
 
+        $rbBankConfig = $config['payment']['rb_bank'] ?? [];
+        $builder->setParameter('greendot_eshop.payment.rb_bank.enabled', $rbBankConfig['enabled'] ?? false);
+        $builder->setParameter('greendot_eshop.payment.rb_bank.shopname', $rbBankConfig['shopname'] ?? '');
+        $builder->setParameter('greendot_eshop.payment.rb_bank.account', $rbBankConfig['account'] ?? '');
+        $builder->setParameter('greendot_eshop.payment.rb_bank.bank_code', $rbBankConfig['bank_code'] ?? '');
+        $builder->setParameter('greendot_eshop.payment.rb_bank.password', $rbBankConfig['password'] ?? '');
+
         $secondaryCurrencyName = $config['shop']['secondary_currency_name'] ?? 'EUR';
         $builder->setParameter(
             'greendot_eshop.shop.secondary_currency_name',
@@ -187,9 +229,15 @@ class GreendotEshopBundle extends AbstractBundle
             $config['shop']['price']['extension']['discount_combination_strategy'],
         );
 
-//        $builder->setParameter(
-//            'greendot_eshop.transportation.dpd.sender_data',
-//            $config['transportation']['dpd'] ?? []
-//        );
+        $packetaConfig = $config['parcel']['packeta'] ?? [];
+        $builder->setParameter('greendot_eshop.parcel.packeta.enabled',      $packetaConfig['enabled']       ?? false);
+        $builder->setParameter('greendot_eshop.parcel.packeta.eshop_name',   $packetaConfig['eshop_name']   ?? '');
+        $builder->setParameter('greendot_eshop.parcel.packeta.api_password',  $packetaConfig['api_password']  ?? '');
+
+        $dpdConfig = $config['parcel']['dpd'] ?? [];
+        $builder->setParameter('greendot_eshop.parcel.dpd.enabled',            $dpdConfig['enabled']            ?? false);
+        $builder->setParameter('greendot_eshop.parcel.dpd.bu_code',            $dpdConfig['bu_code']            ?? '');
+        $builder->setParameter('greendot_eshop.parcel.dpd.customer_id',        $dpdConfig['customer_id']        ?? '');
+        $builder->setParameter('greendot_eshop.parcel.dpd.sender_address_id',  $dpdConfig['sender_address_id']  ?? '');
     }
 }
