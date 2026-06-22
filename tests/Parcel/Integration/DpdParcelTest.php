@@ -40,7 +40,7 @@ class DpdParcelTest extends TestCase
         $a->method('getShipCompany')->willReturn(null);
         $a->method('getShipStreet')->willReturn('Testovací 123');
         $a->method('getShipCity')->willReturn('Praha');
-        $a->method('getShipZip')->willReturn('10000');
+        $a->method('getShipZip')->willReturn('100 00');
         return $a;
     }
 
@@ -232,7 +232,10 @@ class DpdParcelTest extends TestCase
 
         $decoded = json_decode($capturedBody, true);
         $this->assertArrayHasKey('service', $decoded['shipments'][0]);
+        $this->assertSame('101', $decoded['shipments'][0]['service']['mainServiceCode']);
         $this->assertSame('CZK', $decoded['shipments'][0]['service']['additionalService']['cod']['currency']);
+        $this->assertSame('123', $decoded['shipments'][0]['service']['additionalService']['cod']['reference']);
+        $this->assertSame('Even', $decoded['shipments'][0]['service']['additionalService']['cod']['split']);
     }
 
     public function testCreateParcel_codOrder_sendsCodAmountIncludingVatAndShipping(): void
@@ -252,7 +255,7 @@ class DpdParcelTest extends TestCase
         $this->assertEquals('353.94', $decoded['shipments'][0]['service']['additionalService']['cod']['amount']);
     }
 
-    public function testCreateParcel_nonCodOrder_excludesService(): void
+    public function testCreateParcel_nonCodOrder_sendsMainServiceCodeWithoutAdditionalService(): void
     {
         $capturedBody = null;
         $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
@@ -265,7 +268,8 @@ class DpdParcelTest extends TestCase
         );
 
         $decoded = json_decode($capturedBody, true);
-        $this->assertArrayNotHasKey('service', $decoded['shipments'][0]);
+        $this->assertSame('101', $decoded['shipments'][0]['service']['mainServiceCode']);
+        $this->assertArrayNotHasKey('additionalService', $decoded['shipments'][0]['service']);
     }
 
     public function testCreateParcel_missingShipmentId_throwsRuntimeException(): void

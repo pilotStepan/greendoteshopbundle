@@ -314,7 +314,7 @@ class CzechPostParcel implements ParcelServiceInterface
         $signature = hash_hmac('sha256', $stringToSign, $secretKey, true);
         $signatureBase64 = base64_encode($signature);
 
-        return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";
+        return "CP-HMAC-SHA256 nonce=\"$nonce\",signature=\"$signatureBase64\"";
     }
 
     /**

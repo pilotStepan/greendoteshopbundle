@@ -31,6 +31,7 @@ class DpdParcel implements ParcelServiceInterface
 {
     private const PROD_URL = 'https://shipping.dpdgroup.com/api/v1.1/';
     private const SANDBOX_URL = 'https://nst-preprod.dpsin.dpdgroup.com/api/v1.1/';
+    private const MAIN_SERVICE_CODE = '101';
 
     private readonly string $baseUrl;
 
@@ -60,7 +61,7 @@ class DpdParcel implements ParcelServiceInterface
             throw new InvalidArgumentException('No transportation set for purchase');
         }
 
-        $body = $this->prepareShipmentData($purchase, $transportation);
+        $body = $this->prepareShipmentData($purchase);
 
         try {
             $response = $this->httpClient->request('POST', $this->baseUrl . 'shipments', [
@@ -142,7 +143,7 @@ class DpdParcel implements ParcelServiceInterface
         return $this->enabled && $transportationAPI === TransportationAPI::DPD;
     }
 
-    private function prepareShipmentData(Purchase $purchase, Transportation $transportation): array
+    private function prepareShipmentData(Purchase $purchase): array
     {
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
@@ -174,7 +175,7 @@ class DpdParcel implements ParcelServiceInterface
             'companyName' => $address->getShipCompany(),
             'street' => $address->getShipStreet(),
             'city' => $address->getShipCity(),
-            'zipCode' => $address->getShipZip(),
+            'zipCode' => preg_replace('/\s+/', '', (string)$address->getShipZip()),
             'countryCode' => strtoupper((string)$country),
             'contactName' => trim(($client->getName() ?? '') . ' ' . ($client->getSurname() ?? '')),
             'contactEmail' => $client->getMail(),
@@ -199,15 +200,18 @@ class DpdParcel implements ParcelServiceInterface
             'printFormat' => 'PDF',
         ];
 
+        $shipment['service'] = [
+            'mainServiceCode' => self::MAIN_SERVICE_CODE,
+        ];
+
         if ($codAmount !== null) {
-            $shipment['service'] = [
-                'additionalService' => [
-                    'cod' => [
-                        'amount' => (string)$codAmount,
-                        'currency' => $currency,
-                        'paymentType' => 'Cash',
-                        'split' => false,
-                    ],
+            $shipment['service']['additionalService'] = [
+                'cod' => [
+                    'amount' => (string)$codAmount,
+                    'currency' => $currency,
+                    'paymentType' => 'Cash',
+                    'reference' => (string)$purchase->getId(),
+                    'split' => 'Even',
                 ],
             ];
         }
