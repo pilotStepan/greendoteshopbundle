@@ -80,7 +80,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
         }
 
         try {
-            $settings = Settings::createForTest(
+            $settings = Settings::createForProduction(
                 $this->private_key,
                 $this->private_pass,
                 $this->public_key,
@@ -121,7 +121,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
     public function verifyLink(): CardPayResponse
     {
         try {
-            $settings = Settings::createForTest(
+            $settings = Settings::createForProduction(
                 $this->private_key,
                 $this->private_pass,
                 $this->public_key,
