@@ -111,6 +111,38 @@ class CzechPostParcelTest extends TestCase
         );
     }
 
+    /**
+     * Returns 214.0 when called without services included (the buggy, VAT-exclusive,
+     * shipping-exclusive price) and 353.94 when called with services included (the
+     * correct, VAT-inclusive price + shipping the courier should actually collect).
+     */
+    private function makeCodAwarePriceFactory(): PurchasePriceFactory
+    {
+        $calculator = $this->createMock(PurchasePrice::class);
+        $calculator->method('setVatCalculationType')->willReturnSelf();
+        $calculator->method('setDiscountCalculationType')->willReturnSelf();
+        $calculator->method('setVoucherCalculationType')->willReturnSelf();
+        $calculator->method('getPrice')->willReturnCallback(
+            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0
+        );
+
+        $factory = $this->createMock(PurchasePriceFactory::class);
+        $factory->method('create')->willReturn($calculator);
+        return $factory;
+    }
+
+    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, bool $enabled = true, string $environment = 'test'): CzechPostParcel
+    {
+        return new CzechPostParcel(
+            $httpClient,
+            new NullLogger(),
+            $this->makeCodAwarePriceFactory(),
+            $this->makeCurrencyRepo(),
+            $environment,
+            $enabled,
+        );
+    }
+
     private static function successResponse(string $parcelCode = 'BA1234567890A'): string
     {
         return json_encode([
@@ -263,6 +295,26 @@ class CzechPostParcelTest extends TestCase
         $this->assertEquals(500.0, $parcelParams['amount']);
         $this->assertSame('123', $parcelParams['vsVoucher']);
         $this->assertContains('41', $decoded['parcelServiceData']['parcelServices']);
+    }
+
+    public function testCreateParcel_codOrder_sendsCodAmountIncludingVatAndShipping(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $this->makeServiceWithCodAwarePricing($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, isCod: true)
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $parcelParams = $decoded['parcelServiceData']['parcelParams'];
+
+        $this->assertEquals(353.94, $parcelParams['amount']);
+        // Declared/insured value must stay VAT-and-shipping-exclusive (goods value only).
+        $this->assertEquals(214.0, $parcelParams['insuredValue']);
     }
 
     public function testCreateParcel_nonCodOrder_excludesCodAmountAndServiceCode(): void

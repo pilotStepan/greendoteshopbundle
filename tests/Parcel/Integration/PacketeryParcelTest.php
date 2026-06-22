@@ -108,6 +108,38 @@ class PacketeryParcelTest extends TestCase
         );
     }
 
+    /**
+     * Returns 214.0 when called without services included (the buggy, VAT-exclusive,
+     * shipping-exclusive price) and 353.94 when called with services included (the
+     * correct, VAT-inclusive price + shipping the courier should actually collect).
+     */
+    private function makeCodAwarePriceFactory(): PurchasePriceFactory
+    {
+        $calculator = $this->createMock(PurchasePrice::class);
+        $calculator->method('setVatCalculationType')->willReturnSelf();
+        $calculator->method('setDiscountCalculationType')->willReturnSelf();
+        $calculator->method('setVoucherCalculationType')->willReturnSelf();
+        $calculator->method('getPrice')->willReturnCallback(
+            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0
+        );
+
+        $factory = $this->createMock(PurchasePriceFactory::class);
+        $factory->method('create')->willReturn($calculator);
+        return $factory;
+    }
+
+    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, bool $enabled = true): PacketeryParcel
+    {
+        return new PacketeryParcel(
+            $httpClient,
+            new NullLogger(),
+            $this->makeCodAwarePriceFactory(),
+            $this->makeCurrencyRepo(),
+            'TestEshop',
+            $enabled,
+        );
+    }
+
     private static function successXml(string $barcode = 'Z4154090000'): string
     {
         return "<response><status>ok</status><result><id>4154090000</id><barcode>$barcode</barcode><barcodeText>Z 415 4090 000</barcodeText></result></response>";
@@ -180,6 +212,26 @@ class PacketeryParcelTest extends TestCase
         );
 
         $this->assertStringContainsString('<cod>', $capturedBody);
+    }
+
+    public function testCreateParcel_codOrder_sendsCodAmountIncludingVatAndShipping(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successXml());
+        });
+
+        $branch = $this->createMock(Branch::class);
+        $branch->method('getProviderId')->willReturn('packeta_52');
+
+        $this->makeServiceWithCodAwarePricing($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true)
+        );
+
+        $this->assertStringContainsString('<cod>353.94</cod>', $capturedBody);
+        // Declared package value must stay VAT-and-shipping-exclusive (goods value only).
+        $this->assertStringContainsString('<value>214</value>', $capturedBody);
     }
 
     public function testCreateParcel_nonCodOrder_excludesCod(): void

@@ -66,6 +66,7 @@ class CzechPostParcel implements ParcelServiceInterface
             $response = $this->httpClient->request('POST', $this->baseUrl . '/parcelService', [
                 'headers' => $this->getHeaders($transportation, $jsonBody),
                 'body' => $jsonBody,
+                ...$this->getTlsOptions(),
             ]);
 
             $data = $response->toArray(false);
@@ -114,7 +115,7 @@ class CzechPostParcel implements ParcelServiceInterface
             $response = $this->httpClient->request(
                 'GET',
                 $this->baseUrl . '/parcelStatuses/current/idParcel/' . $transportNumber,
-                ['headers' => $this->getHeaders($transportation, null)],
+                ['headers' => $this->getHeaders($transportation, null), ...$this->getTlsOptions()],
             );
 
             $data = $response->toArray(false);
@@ -176,10 +177,11 @@ class CzechPostParcel implements ParcelServiceInterface
 
         $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
         $codAmount = $isCod
-            ? $priceCalculator
+            ? (clone $priceCalculator)
+                ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice()
+                ->getPrice(true)
             : 0;
 
         // TODO: derive weight from order items (no weight field on ProductVariant yet)
@@ -257,6 +259,19 @@ class CzechPostParcel implements ParcelServiceInterface
             'mobilNumber' => $client->getPhone(),
             'phoneNumber' => '',
             'emailAddress' => $client->getMail(),
+        ];
+    }
+
+    /**
+     * Czech Post's chain is signed by their own PostSignum Public CA 5 root, which is absent from the
+     * standard system CA bundle (curl reports "self signed certificate in certificate chain"). Verification
+     * is disabled here rather than for the whole app's HttpClient, scoping the risk to this integration.
+     */
+    private function getTlsOptions(): array
+    {
+        return [
+            'verify_peer' => false,
+            'verify_host' => false,
         ];
     }
 

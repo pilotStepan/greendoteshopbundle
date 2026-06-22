@@ -165,7 +165,7 @@ class DpdParcel implements ParcelServiceInterface
                 ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice()
+                ->getPrice(true)
             : null;
 
         $receiver = [
@@ -206,6 +206,7 @@ class DpdParcel implements ParcelServiceInterface
                         'amount' => (string)$codAmount,
                         'currency' => $currency,
                         'paymentType' => 'Cash',
+                        'split' => false,
                     ],
                 ],
             ];

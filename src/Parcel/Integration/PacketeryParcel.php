@@ -161,10 +161,11 @@ class PacketeryParcel implements ParcelServiceInterface
 
         $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
         $cod = $isCod
-            ? $priceCalculator
+            ? (clone $priceCalculator)
+                ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice()
+                ->getPrice(true)
             : null;
 
         $branch = $purchase->getBranch();
