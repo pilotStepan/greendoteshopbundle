@@ -215,7 +215,7 @@ class PacketeryParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('pw'), $branch)
         );
 
-        $this->assertStringContainsString('<eshop>TestEshop</eshop>', $capturedBody);
+        $this->assertStringContainsString('<eshop_id>TestEshop</eshop_id>', $capturedBody);
     }
 
     public function testCreateParcel_apiError_throwsRuntimeException(): void

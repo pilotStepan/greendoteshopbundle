@@ -39,10 +39,6 @@ class CzechPostParcel implements ParcelServiceInterface
         private readonly LoggerInterface      $logger,
         private readonly PurchasePriceFactory $purchasePriceFactory,
         private readonly CurrencyRepository   $currencyRepository,
-        #[Autowire(param: 'greendot_eshop.parcel.czech_post.customer_id')]
-        private readonly string               $customerId,
-        #[Autowire(param: 'greendot_eshop.parcel.czech_post.post_code')]
-        private readonly string               $postCode,
         #[Autowire(param: 'kernel.environment')]
         string                                $environment,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.enabled')]
@@ -76,11 +72,13 @@ class CzechPostParcel implements ParcelServiceInterface
 
             $parcelCode = $data['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;
             if ($parcelCode === null) {
+                $rawResponse = $response->getContent(false);
                 $this->logger->error('Failed to create parcel', [
                     'purchaseId' => $purchase->getId(),
-                    'response' => $data,
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $rawResponse,
                 ]);
-                throw new RuntimeException('Failed to create parcel: parcelCode not returned from API');
+                throw new RuntimeException("Failed to create parcel: $rawResponse");
             }
 
             return (string)$parcelCode;
@@ -122,7 +120,14 @@ class CzechPostParcel implements ParcelServiceInterface
             $data = $response->toArray(false);
             $status = $data['parcelStatus'] ?? null;
             if ($status === null) {
-                throw new RuntimeException('Czech Post getParcelStatus failed: parcelStatus not found in response');
+                $rawResponse = $response->getContent(false);
+                $this->logger->error('Failed to get parcel status', [
+                    'purchaseId' => $purchase->getId(),
+                    'transportNumber' => $transportNumber,
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $rawResponse,
+                ]);
+                throw new RuntimeException("Czech Post getParcelStatus failed: $rawResponse");
             }
 
             $statusId = (string)($status['statusID'] ?? '');
@@ -184,8 +189,6 @@ class CzechPostParcel implements ParcelServiceInterface
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
                     'transmissionDate' => $purchase->getDateIssue()->format('Y-m-d'),
-                    'customerID' => $this->customerId,
-                    'postCode' => $this->postCode,
                     'locationNumber' => 1,
                 ],
                 'printParams' => [
@@ -222,6 +225,7 @@ class CzechPostParcel implements ParcelServiceInterface
     {
         $client = $purchase->getClient();
 
+        // Intentional: Czech Post's AddressCOMMON/ParcelAddress schema has no pickup-point/location-ID field (unlike Packeta's addressId) — pickup points are addressed by street/city/zip only.
         $address = $branch !== null
             ? [
                 'street' => $branch->getStreet(),
@@ -239,7 +243,7 @@ class CzechPostParcel implements ParcelServiceInterface
                 'cityPart' => '',
                 'city' => $purchase->getPurchaseAddress()->getCity(),
                 'zipCode' => $purchase->getPurchaseAddress()->getZip(),
-                'isoCountry' => $purchase->getPurchaseAddress()->getCountry(),
+                'isoCountry' => $this->normalizeIsoCountry($purchase->getPurchaseAddress()->getCountry()),
             ];
 
         return [
@@ -296,6 +300,16 @@ class CzechPostParcel implements ParcelServiceInterface
         $signatureBase64 = base64_encode($signature);
 
         return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";
+    }
+
+    /**
+     * Spec requires a 2-char ISO country code defaulting to 'CZ'; PurchaseAddress::getCountry() is a free-form
+     * nullable string with no format constraint, so normalize defensively.
+     */
+    private function normalizeIsoCountry(?string $country): string
+    {
+        $normalized = $country !== null ? strtoupper(trim($country)) : '';
+        return $normalized !== '' ? $normalized : 'CZ';
     }
 
     /**

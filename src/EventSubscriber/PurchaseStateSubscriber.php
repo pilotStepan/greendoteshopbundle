@@ -150,7 +150,8 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->initiateVouchers($purchase);
-        $this->managePurchase->generateTransportData($purchase);
+        // transport data is generated on `log_prepare_to_ship` event instead
+        // $this->managePurchase->generateTransportData($purchase);
         $this->dateService->calculatePurchaseDeliveryDate($purchase);
     }
 

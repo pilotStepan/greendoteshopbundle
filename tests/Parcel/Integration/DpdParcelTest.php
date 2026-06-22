@@ -103,7 +103,6 @@ class DpdParcelTest extends TestCase
             new NullLogger(),
             $this->makePriceFactory(),
             $this->makeCurrencyRepo(),
-            '021',
             'TestCustomer',
             '56',
             $environment,
@@ -164,7 +163,7 @@ class DpdParcelTest extends TestCase
         $this->assertContains('Authorization: Bearer jwt-secret', $capturedHeaders);
     }
 
-    public function testCreateParcel_sendsBuCodeCustomerIdAndSenderAddressId(): void
+    public function testCreateParcel_sendsCustomerIdAndSenderAddressId(): void
     {
         $capturedBody = null;
         $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
@@ -177,7 +176,7 @@ class DpdParcelTest extends TestCase
         );
 
         $decoded = json_decode($capturedBody, true);
-        $this->assertSame('021', $decoded['buCode']);
+        $this->assertArrayNotHasKey('buCode', $decoded);
         $this->assertSame('TestCustomer', $decoded['customerId']);
         $this->assertSame(56, $decoded['shipments'][0]['senderAddressId']);
         $this->assertSame('Praha', $decoded['shipments'][0]['receiver']['city']);

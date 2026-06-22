@@ -84,6 +84,7 @@ readonly class ManagePurchase
 
     public function generateTransportData(Purchase $purchase): void
     {
+        // dispatch only if corresponding parcel service exists
         try {
             $this->parcelServiceProvider->getByPurchase($purchase);
         } catch (ParcelServiceNotFoundException) {
@@ -108,6 +109,7 @@ readonly class ManagePurchase
         $purchase->setPaymentType($paymentType);
     }
 
+    // Don't delete, used from consumer app
     public function issueInvoice(Purchase $purchase): void
     {
         if ($purchase->getInvoiceNumber() !== null) {

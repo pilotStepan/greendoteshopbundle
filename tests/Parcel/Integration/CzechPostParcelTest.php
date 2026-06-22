@@ -106,8 +106,6 @@ class CzechPostParcelTest extends TestCase
             new NullLogger(),
             $this->makePriceFactory(),
             $this->makeCurrencyRepo(),
-            'CP-CUSTOMER-1',
-            '11000',
             $environment,
             $enabled,
         );
@@ -198,6 +196,25 @@ class CzechPostParcelTest extends TestCase
         $this->assertSame('Testovací 123', $address['street']);
         $this->assertSame('Praha', $address['city']);
         $this->assertSame('10000', $address['zipCode']);
+    }
+
+    public function testCreateParcel_handDelivery_normalizesLowercaseCountryToUppercaseIso(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        // makeAddress() mocks getCountry() returning lowercase 'cz'.
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $address = $decoded['parcelServiceData']['parcelAddress']['address'];
+
+        $this->assertSame('CZ', $address['isoCountry']);
     }
 
     public function testCreateParcel_balikovna_usesPrefixNbAndBranchAddress(): void
@@ -333,6 +350,50 @@ class CzechPostParcelTest extends TestCase
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
         );
+    }
+
+    public function testCreateParcel_apiErrorResponse_throwsRuntimeExceptionWithRawResponseBody(): void
+    {
+        $rawErrorBody = json_encode([[
+            'code' => -5,
+            'status' => '401',
+            'message' => 'Not found any record for provided Api-Token;',
+            'date' => '22-06-2026 11:54:41',
+            'x-request-id' => '62688e30bbcc1e55',
+        ]]);
+        $httpClient = new MockHttpClient(new MockResponse($rawErrorBody, ['http_code' => 401]));
+
+        try {
+            $this->makeService($httpClient)->createParcel(
+                $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            );
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('Not found any record for provided Api-Token', $e->getMessage());
+            $this->assertStringContainsString('401', $e->getMessage());
+        }
+    }
+
+    public function testGetParcelStatus_apiErrorResponse_throwsRuntimeExceptionWithRawResponseBody(): void
+    {
+        $rawErrorBody = json_encode([[
+            'code' => -5,
+            'status' => '401',
+            'message' => 'Not found any record for provided Api-Token;',
+            'date' => '22-06-2026 11:54:41',
+            'x-request-id' => '62688e30bbcc1e55',
+        ]]);
+        $httpClient = new MockHttpClient(new MockResponse($rawErrorBody, ['http_code' => 401]));
+
+        try {
+            $this->makeService($httpClient)->getParcelStatus(
+                $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            );
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('Not found any record for provided Api-Token', $e->getMessage());
+            $this->assertStringContainsString('401', $e->getMessage());
+        }
     }
 
     public function testGetParcelStatus_sendsGetRequestToIdParcelEndpoint(): void

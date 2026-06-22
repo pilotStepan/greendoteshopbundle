@@ -91,7 +91,6 @@ class GreendotEshopBundle extends AbstractBundle
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
-                                ->stringNode('bu_code')->defaultValue('')->end()
                                 ->stringNode('customer_id')->defaultValue('')->end()
                                 ->stringNode('sender_address_id')->defaultValue('')->end()
                             ->end()
@@ -100,8 +99,6 @@ class GreendotEshopBundle extends AbstractBundle
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
-                                ->stringNode('customer_id')->defaultValue('')->end()
-                                ->stringNode('post_code')->defaultValue('')->end()
                             ->end()
                         ->end()
                     ->end()
@@ -244,13 +241,10 @@ class GreendotEshopBundle extends AbstractBundle
 
         $dpdConfig = $config['parcel']['dpd'] ?? [];
         $builder->setParameter('greendot_eshop.parcel.dpd.enabled',            $dpdConfig['enabled']            ?? false);
-        $builder->setParameter('greendot_eshop.parcel.dpd.bu_code',            $dpdConfig['bu_code']            ?? '');
         $builder->setParameter('greendot_eshop.parcel.dpd.customer_id',        $dpdConfig['customer_id']        ?? '');
         $builder->setParameter('greendot_eshop.parcel.dpd.sender_address_id',  $dpdConfig['sender_address_id']  ?? '');
 
         $czechPostConfig = $config['parcel']['czech_post'] ?? [];
         $builder->setParameter('greendot_eshop.parcel.czech_post.enabled',     $czechPostConfig['enabled']      ?? false);
-        $builder->setParameter('greendot_eshop.parcel.czech_post.customer_id', $czechPostConfig['customer_id']  ?? '');
-        $builder->setParameter('greendot_eshop.parcel.czech_post.post_code',   $czechPostConfig['post_code']    ?? '');
     }
 }

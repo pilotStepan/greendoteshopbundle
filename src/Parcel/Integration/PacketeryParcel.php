@@ -56,15 +56,15 @@ class PacketeryParcel implements ParcelServiceInterface
                 'body' => $xmlBody,
             ]);
 
-            $xml = simplexml_load_string($response->getContent());
+            $xml = simplexml_load_string($response->getContent(false));
 
             if ((string)$xml->status !== 'ok') {
-                $message = (string)($xml->fault->message ?? 'unknown error');
+                $rawResponse = $response->getContent(false);
                 $this->logger->error('Packeta API error on createPacket', [
                     'purchaseId' => $purchase->getId(),
-                    'message' => $message,
+                    'response' => $rawResponse,
                 ]);
-                throw new RuntimeException("Packeta createPacket failed: $message");
+                throw new RuntimeException("Packeta createPacket failed: $rawResponse");
             }
 
             return (string)$xml->result->barcode;
@@ -96,11 +96,15 @@ class PacketeryParcel implements ParcelServiceInterface
                 'body' => $xmlBody,
             ]);
 
-            $xml = simplexml_load_string($response->getContent());
+            $xml = simplexml_load_string($response->getContent(false));
 
             if ((string)$xml->status !== 'ok') {
-                $message = (string)($xml->fault->message ?? 'unknown error');
-                throw new RuntimeException("Packeta packetStatus failed: $message");
+                $rawResponse = $response->getContent(false);
+                $this->logger->error('Packeta API error on packetStatus', [
+                    'purchaseId' => $purchase->getId(),
+                    'response' => $rawResponse,
+                ]);
+                throw new RuntimeException("Packeta packetStatus failed: $rawResponse");
             }
 
             $statusCode = (int)$xml->result->statusCode;
@@ -181,7 +185,7 @@ class PacketeryParcel implements ParcelServiceInterface
             'value' => $value,
             'currency' => $currency,
             'weight' => $weight,
-            'eshop' => $this->eshopName,
+            'eshop_id' => $this->eshopName,
         ];
 
         if ($cod !== null) {

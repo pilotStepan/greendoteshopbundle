@@ -39,8 +39,6 @@ class DpdParcel implements ParcelServiceInterface
         private readonly LoggerInterface      $logger,
         private readonly PurchasePriceFactory $purchasePriceFactory,
         private readonly CurrencyRepository   $currencyRepository,
-        #[Autowire(param: 'greendot_eshop.parcel.dpd.bu_code')]
-        private readonly string               $buCode,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.customer_id')]
         private readonly string               $customerId,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.sender_address_id')]
@@ -51,8 +49,7 @@ class DpdParcel implements ParcelServiceInterface
         private readonly bool                 $enabled = false,
     )
     {
-        // $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
-        $this->baseUrl = self::PROD_URL;
+        $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
     }
 
     public function createParcel(Purchase $purchase): string
@@ -215,7 +212,6 @@ class DpdParcel implements ParcelServiceInterface
         }
 
         return [
-            'buCode' => $this->buCode,
             'customerId' => $this->customerId,
             'shipments' => [$shipment],
         ];

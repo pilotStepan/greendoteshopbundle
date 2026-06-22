@@ -54,7 +54,7 @@ final class PacketaBranchImporter implements ProviderImporterInterface
                 $d = new ProviderBranchData();
                 $d->provider = self::PROVIDER_KEY;
                 $d->providerId = self::PROVIDER_KEY . '_' . $b->id;
-                $d->branchTypeName = 'Packeta';
+                $d->branchTypeName = 'Zásilkovna';
                 $d->country = (string)$b->country;
                 $d->zip = str_pad(preg_replace('/\D/', '', (string)$b->zip), 5, '0', STR_PAD_LEFT);
                 $d->name = (string)$b->name;
