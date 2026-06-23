@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Export\Data\Model\GoogleProductFeedModel;
+use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\ProductInfoGetter;
@@ -25,6 +26,7 @@ class GoogleProductFeedFactory
         private readonly CurrencyManager $currencyManager,
         private readonly SluggerInterface $slugger,
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
+        private readonly UploadRepository $uploadRepository,
         ParameterBagInterface $parameterBag
     ){
         $this->url = $parameterBag->get('greendot_eshop.global.absolute_url') ?? 'https://www.example.com';
@@ -45,7 +47,21 @@ class GoogleProductFeedFactory
             $slug = $this->slugger->slug($product->getSlug() ?? $product->getName())->lower()->toString();
             $link = $this->url . $this->urlGenerator->generate('shop_product', ['slug' => $slug, 'variant' => $productVariant->getId()]);
         }
-        $imageLink = $productVariant?->getUpload()?->getPath();
+
+
+        $imageLink = null;
+        if ($productVariant?->getUpload()?->getPath()){
+            $imageLink = $productVariant->getUpload()->getPath();
+        }elseif ($product?->getUpload()?->getPath()){
+            $imageLink = $product->getUpload()->getPath();
+        }else{
+            $qb = $this->uploadRepository->createQueryBuilder('upload');
+            $qb = $this->uploadRepository->getProductWithVariantsUploadsQB($product->getId(), $qb);
+            $upload = $qb->select('upload')->setMaxResults(1)->getQuery()->getOneOrNullResult();
+            $imageLink = $upload?->getPath();
+        }
+
+
         if ($imageLink){
             $imageLink = $this->url.$imageLink;
         }
