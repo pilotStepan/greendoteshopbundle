@@ -13,7 +13,6 @@ use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Transportation;
-use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -77,9 +76,8 @@ class CzechPostParcelTest extends TestCase
 
     private function makePurchase(
         Transportation $transportation,
-        ?Branch $branch,
         bool $isCod = false,
-        string $transportNumber = 'BA1234567890A',
+        string $transportNumber = 'DR0639135725M',
         ?PurchaseAddress $address = null,
     ): Purchase {
         $client = $this->createMock(Client::class);
@@ -93,7 +91,6 @@ class CzechPostParcelTest extends TestCase
         $purchase->method('getId')->willReturn(123);
         $purchase->method('getDateIssue')->willReturn(new DateTimeImmutable('2024-01-15'));
         $purchase->method('getTransportation')->willReturn($transportation);
-        $purchase->method('getBranch')->willReturn($branch);
         $purchase->method('getClient')->willReturn($client);
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress());
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
@@ -129,6 +126,8 @@ class CzechPostParcelTest extends TestCase
             new NullLogger(),
             $this->makePriceFactory(),
             $this->makeCurrencyRepo(),
+            'M06391',
+            '18000',
             $environment,
             $enabled,
         );
@@ -161,12 +160,14 @@ class CzechPostParcelTest extends TestCase
             new NullLogger(),
             $this->makeCodAwarePriceFactory(),
             $this->makeCurrencyRepo(),
+            'M06391',
+            '18000',
             $environment,
             $enabled,
         );
     }
 
-    private static function successResponse(string $parcelCode = 'BA1234567890A'): string
+    private static function successResponse(string $parcelCode = 'DR0639135725M'): string
     {
         return json_encode([
             'responseHeader' => [
@@ -180,7 +181,7 @@ class CzechPostParcelTest extends TestCase
     private static function statusResponse(string $statusId, string $reasonId = '1', string $date = '2024-01-16T10:00:00+01:00'): string
     {
         return json_encode([
-            'idParcel' => 'BA1234567890A',
+            'idParcel' => 'DR0639135725M',
             'parcelStatus' => [
                 'statusID' => $statusId,
                 'reasonID' => $reasonId,
@@ -192,13 +193,13 @@ class CzechPostParcelTest extends TestCase
 
     public function testCreateParcel_handDelivery_returnsParcelCode(): void
     {
-        $httpClient = new MockHttpClient(new MockResponse(self::successResponse('BA1234567890A')));
+        $httpClient = new MockHttpClient(new MockResponse(self::successResponse('DR0639135725M')));
 
         $result = $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
-        $this->assertSame('BA1234567890A', $result);
+        $this->assertSame('DR0639135725M', $result);
     }
 
     public function testCreateParcel_shipOverride_usesShippingAddressNotBillingAddress(): void
@@ -210,7 +211,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, address: $this->makeAddressWithShipOverride())
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), address: $this->makeAddressWithShipOverride())
         );
 
         $decoded = json_decode($capturedBody, true);
@@ -233,7 +234,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient, environment: 'test')->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $this->assertStringStartsWith('https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1/', $capturedUrl);
@@ -248,7 +249,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient, environment: 'prod')->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $this->assertStringStartsWith('https://b2b.postaonline.cz:444/restservices/ZSKService/v1/', $capturedUrl);
@@ -263,7 +264,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $decoded = json_decode($capturedBody, true);
@@ -276,6 +277,25 @@ class CzechPostParcelTest extends TestCase
         $this->assertSame('10000', $address['zipCode']);
     }
 
+    public function testCreateParcel_sendsCustomerIdAndPostCode(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $headerCom = $decoded['parcelServiceHeader']['parcelServiceHeaderCom'];
+
+        $this->assertSame('M06391', $headerCom['customerID']);
+        $this->assertSame('18000', $headerCom['postCode']);
+    }
+
     public function testCreateParcel_handDelivery_normalizesLowercaseCountryToUppercaseIso(): void
     {
         $capturedBody = null;
@@ -286,41 +306,13 @@ class CzechPostParcelTest extends TestCase
 
         // makeAddress() mocks getCountry() returning lowercase 'cz'.
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $decoded = json_decode($capturedBody, true);
         $address = $decoded['parcelServiceData']['parcelAddress']['address'];
 
         $this->assertSame('CZ', $address['isoCountry']);
-    }
-
-    public function testCreateParcel_balikovna_usesPrefixNbAndBranchAddress(): void
-    {
-        $capturedBody = null;
-        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
-            $capturedBody = $options['body'];
-            return new MockResponse(self::successResponse());
-        });
-
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('czechpost_10000');
-        $branch->method('getStreet')->willReturn('Balíkovna ulice 5');
-        $branch->method('getCity')->willReturn('Brno');
-        $branch->method('getZip')->willReturn('60200');
-
-        $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $branch)
-        );
-
-        $decoded = json_decode($capturedBody, true);
-        $parcelParams = $decoded['parcelServiceData']['parcelParams'];
-        $address = $decoded['parcelServiceData']['parcelAddress']['address'];
-
-        $this->assertSame('NB', $parcelParams['prefixParcelCode']);
-        $this->assertSame('Balíkovna ulice 5', $address['street']);
-        $this->assertSame('Brno', $address['city']);
-        $this->assertSame('60200', $address['zipCode']);
     }
 
     public function testCreateParcel_codOrder_includesCodAmountAndServiceCode(): void
@@ -332,7 +324,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, isCod: true)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), isCod: true)
         );
 
         $decoded = json_decode($capturedBody, true);
@@ -352,7 +344,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeServiceWithCodAwarePricing($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, isCod: true)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), isCod: true)
         );
 
         $decoded = json_decode($capturedBody, true);
@@ -372,7 +364,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, isCod: false)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), isCod: false)
         );
 
         $decoded = json_decode($capturedBody, true);
@@ -392,7 +384,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $flat = is_array($capturedHeaders) ? implode("\n", array_map(
@@ -419,7 +411,7 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation($secretKeyBase64), null)
+            $this->makePurchase($this->makeTransportation($secretKeyBase64))
         );
 
         $headerMap = [];
@@ -432,10 +424,10 @@ class CzechPostParcelTest extends TestCase
         $contentSha256 = $headerMap['Authorization-Content-SHA256'];
         $this->assertSame(hash('sha256', $capturedBody), $contentSha256);
 
-        preg_match('/nonce="([^"]+)" signature="([^"]+)"/', $headerMap['Authorization'], $m);
+        preg_match('/nonce="([^"]+)", signature="([^"]+)"/', $headerMap['Authorization'], $m);
         [, $nonce, $signature] = $m;
 
-        $expected = base64_encode(hash_hmac('sha256', "$contentSha256;$timestamp;$nonce", $secretKeyPlain, true));
+        $expected = base64_encode(hash_hmac('sha256', "$contentSha256;$timestamp;$nonce", $secretKeyBase64, true));
         $this->assertSame($expected, $signature);
     }
 
@@ -446,7 +438,7 @@ class CzechPostParcelTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
     }
 
@@ -463,7 +455,7 @@ class CzechPostParcelTest extends TestCase
 
         try {
             $this->makeService($httpClient)->createParcel(
-                $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+                $this->makePurchase($this->makeTransportation('c2VjcmV0'))
             );
             $this->fail('Expected RuntimeException was not thrown');
         } catch (RuntimeException $e) {
@@ -485,7 +477,7 @@ class CzechPostParcelTest extends TestCase
 
         try {
             $this->makeService($httpClient)->getParcelStatus(
-                $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+                $this->makePurchase($this->makeTransportation('c2VjcmV0'))
             );
             $this->fail('Expected RuntimeException was not thrown');
         } catch (RuntimeException $e) {
@@ -505,11 +497,11 @@ class CzechPostParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, transportNumber: 'BA1234567890A')
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), transportNumber: 'DR0639135725M')
         );
 
         $this->assertSame('GET', $capturedMethod);
-        $this->assertStringEndsWith('/parcelStatuses/current/idParcel/BA1234567890A', $capturedUrl);
+        $this->assertStringEndsWith('/parcelStatuses/current/idParcel/DR0639135725M', $capturedUrl);
     }
 
     public function testGetParcelStatus_statusId2_returnsInTransit(): void
@@ -517,7 +509,7 @@ class CzechPostParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('2')));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
@@ -529,7 +521,7 @@ class CzechPostParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('4')));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::DELIVERED, $result->state);
@@ -541,19 +533,19 @@ class CzechPostParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('999')));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null)
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::RECEIVED_DATA, $result->state);
         $this->assertFalse($result->state->isFinal());
     }
 
-    public function testSupports_whenEnabled_returnsTrueForBothCzechPostServices(): void
+    public function testSupports_whenEnabled_returnsTrueForDoRukyOnly(): void
     {
         $service = $this->makeService(new MockHttpClient(), enabled: true);
 
         $this->assertTrue($service->supports(TransportationAPI::CP_DO_RUKY));
-        $this->assertTrue($service->supports(TransportationAPI::CP_BALIKOVNA));
+        $this->assertFalse($service->supports(TransportationAPI::CP_BALIKOVNA));
     }
 
     public function testSupports_whenDisabled_returnsFalse(): void
@@ -561,7 +553,6 @@ class CzechPostParcelTest extends TestCase
         $service = $this->makeService(new MockHttpClient(), enabled: false);
 
         $this->assertFalse($service->supports(TransportationAPI::CP_DO_RUKY));
-        $this->assertFalse($service->supports(TransportationAPI::CP_BALIKOVNA));
     }
 
     public function testSupports_neverMatchesOtherCarrier(): void

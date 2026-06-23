@@ -7,6 +7,7 @@ use RuntimeException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
@@ -24,14 +25,11 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 /**
  * Integrates Czech Post's B2B-ZSKService REST API (https://www.postaonline.cz/dokumentaceapi/b2b/api/B2B3-ZSKService/B2B-ZSKService-1.5.0.yaml).
- * Handles CP_DO_RUKY (hand delivery, prefixParcelCode "DR") only — CP_BALIKOVNA (pickup point) requires a
- * separate contract-routing ("spádování") API and is handled by CzechPostBalikovnaParcel instead.
+ * Handles both CP_DO_RUKY (hand delivery, prefixParcelCode "DR") and CP_BALIKOVNA (pickup point, prefixParcelCode "NB") in one service.
  */
 #[WithMonologChannel('api.parcel.czech_post')]
 class CzechPostParcel implements ParcelServiceInterface
 {
-    use CzechPostHmacAuthTrait;
-
     private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
     private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
     private readonly string $baseUrl;
@@ -41,10 +39,6 @@ class CzechPostParcel implements ParcelServiceInterface
         private readonly LoggerInterface      $logger,
         private readonly PurchasePriceFactory $purchasePriceFactory,
         private readonly CurrencyRepository   $currencyRepository,
-        #[Autowire(param: 'greendot_eshop.parcel.czech_post.customer_id')]
-        private readonly string               $customerId,
-        #[Autowire(param: 'greendot_eshop.parcel.czech_post.post_code')]
-        private readonly string               $postCode,
         #[Autowire(param: 'kernel.environment')]
         string                                $environment,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.enabled')]
@@ -164,11 +158,14 @@ class CzechPostParcel implements ParcelServiceInterface
 
     public function supports(TransportationAPI $transportationAPI): bool
     {
-        return $this->enabled && $transportationAPI === TransportationAPI::CP_DO_RUKY;
+        return $this->enabled && in_array($transportationAPI, [TransportationAPI::CP_DO_RUKY, TransportationAPI::CP_BALIKOVNA], true);
     }
 
     private function prepareParcelData(Purchase $purchase): array
     {
+        $client = $purchase->getClient();
+        $branch = $purchase->getBranch();
+
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $this->currencyRepository->findOneBy(['isDefault' => true]));
 
         $insuredValue = (clone $priceCalculator)
@@ -187,12 +184,12 @@ class CzechPostParcel implements ParcelServiceInterface
                 ->getPrice(true)
             : 0;
 
+        $weight = 1;
+
         return [
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
                     'transmissionDate' => $purchase->getDateIssue()->format('Y-m-d'),
-                    'customerID' => $this->customerId,
-                    'postCode' => $this->postCode,
                     'locationNumber' => 1,
                 ],
                 'printParams' => [
@@ -205,7 +202,8 @@ class CzechPostParcel implements ParcelServiceInterface
             'parcelServiceData' => [
                 'parcelParams' => [
                     'recordID' => (string)$purchase->getId(),
-                    'prefixParcelCode' => 'DR',
+                    'prefixParcelCode' => $branch !== null ? 'NB' : 'DR',
+                    'weight' => number_format($weight, 2),
                     'insuredValue' => $insuredValue,
                     'amount' => $codAmount,
                     'currency' => 'CZK',
@@ -215,7 +213,7 @@ class CzechPostParcel implements ParcelServiceInterface
                     'width' => 0,
                     'height' => 0,
                 ],
-                'parcelAddress' => $this->buildParcelAddress($purchase),
+                'parcelAddress' => $this->buildParcelAddress($purchase, $branch),
                 // (https://www.postaonline.cz/podanionline/ePOST-dokumentace/231standardniObsah.html):
                 // '7' = Udaná cena (declared/insured value) - always sent since insuredValue is always populated;
                 // '41' = Bezdokladová dobírka (document-less cash on delivery) - sent only for ON_DELIVERY orders.
@@ -224,20 +222,31 @@ class CzechPostParcel implements ParcelServiceInterface
         ];
     }
 
-    private function buildParcelAddress(Purchase $purchase): array
+    private function buildParcelAddress(Purchase $purchase, ?Branch $branch): array
     {
         $client = $purchase->getClient();
         $purchaseAddress = $purchase->getPurchaseAddress();
 
-        $address = [
-            'street' => $purchaseAddress->getShipStreet() ?? $purchaseAddress->getStreet(),
-            'houseNumber' => '',
-            'sequenceNumber' => '',
-            'cityPart' => '',
-            'city' => $purchaseAddress->getShipCity() ?? $purchaseAddress->getCity(),
-            'zipCode' => $purchaseAddress->getShipZip() ?? $purchaseAddress->getZip(),
-            'isoCountry' => $this->normalizeIsoCountry($purchaseAddress->getShipCountry() ?? $purchaseAddress->getCountry()),
-        ];
+        // Intentional: Czech Post's AddressCOMMON/ParcelAddress schema has no pickup-point/location-ID field (unlike Packeta's addressId) — pickup points are addressed by street/city/zip only.
+        $address = $branch !== null
+            ? [
+                'street' => $branch->getStreet(),
+                'houseNumber' => '',
+                'sequenceNumber' => '',
+                'cityPart' => '',
+                'city' => $branch->getCity(),
+                'zipCode' => $branch->getZip(),
+                'isoCountry' => 'CZ',
+            ]
+            : [
+                'street' => $purchaseAddress->getShipStreet() ?? $purchaseAddress->getStreet(),
+                'houseNumber' => '',
+                'sequenceNumber' => '',
+                'cityPart' => '',
+                'city' => $purchaseAddress->getShipCity() ?? $purchaseAddress->getCity(),
+                'zipCode' => $purchaseAddress->getShipZip() ?? $purchaseAddress->getZip(),
+                'isoCountry' => $this->normalizeIsoCountry($purchaseAddress->getShipCountry() ?? $purchaseAddress->getCountry()),
+            ];
 
         return [
             'recordID' => (string)$client->getId(),
@@ -253,12 +262,75 @@ class CzechPostParcel implements ParcelServiceInterface
         ];
     }
 
+    /**
+     * Czech Post's chain is signed by their own PostSignum Public CA 5 root, which is absent from the
+     * standard system CA bundle (curl reports "self signed certificate in certificate chain"). Verification
+     * is disabled here rather than for the whole app's HttpClient, scoping the risk to this integration.
+     */
+    private function getTlsOptions(): array
+    {
+        return [
+            'verify_peer' => false,
+            'verify_host' => false,
+        ];
+    }
+
+    private function getHeaders(Transportation $transportation, ?string $body): array
+    {
+        $timestamp = time();
+        $nonce = $this->generateNonce();
+
+        $headers = [
+            'Api-Token' => $transportation->getToken(),
+            'Authorization-Timestamp' => $timestamp,
+            'Authorization' => $this->generateHmacAuth($transportation, $timestamp, $nonce, $body),
+            'Content-Type' => 'application/json;charset=UTF-8',
+        ];
+
+        if ($body !== null) {
+            $headers['Authorization-Content-SHA256'] = hash('sha256', $body);
+        }
+
+        return $headers;
+    }
+
+    private function generateNonce(): string
+    {
+        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        );
+    }
+
+    private function generateHmacAuth(Transportation $transportation, int $timestamp, string $nonce, ?string $body): string
+    {
+        $contentSha256 = $body !== null ? hash('sha256', $body) : '';
+        $stringToSign = "$contentSha256;$timestamp;$nonce";
+
+        $secretKey = (string)$transportation->getSecretKey();
+        $signature = hash_hmac('sha256', $stringToSign, $secretKey, true);
+        $signatureBase64 = base64_encode($signature);
+
+        return "CP-HMAC-SHA256 nonce=\"$nonce\", signature=\"$signatureBase64\"";
+    }
+
+    /**
+     * Spec requires a 2-char ISO country code defaulting to 'CZ'; PurchaseAddress::getCountry() is a free-form
+     * nullable string with no format constraint, so normalize defensively.
+     */
     private function normalizeIsoCountry(?string $country): string
     {
         $normalized = $country !== null ? strtoupper(trim($country)) : '';
         return $normalized !== '' ? $normalized : 'CZ';
     }
 
+    /**
+     * Czech Post's spec doesn't publish an exhaustive statusID/reasonID code table, so unmapped codes are logged
+     * and treated as RECEIVED_DATA rather than crashing, matching DpdParcel/PacketeryParcel's defensive fallback.
+     */
     private function mapStatusCode(string $statusId, string $reasonId): ParcelDeliveryStateEnum
     {
         $state = match ($statusId) {
