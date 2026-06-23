@@ -184,8 +184,7 @@ class CzechPostParcel implements ParcelServiceInterface
                 ->getPrice(true)
             : 0;
 
-        // TODO: derive weight from order items (no weight field on ProductVariant yet)
-        $weight = 2;
+        $weight = 1;
 
         return [
             'parcelServiceHeader' => [
@@ -226,6 +225,7 @@ class CzechPostParcel implements ParcelServiceInterface
     private function buildParcelAddress(Purchase $purchase, ?Branch $branch): array
     {
         $client = $purchase->getClient();
+        $purchaseAddress = $purchase->getPurchaseAddress();
 
         // Intentional: Czech Post's AddressCOMMON/ParcelAddress schema has no pickup-point/location-ID field (unlike Packeta's addressId) — pickup points are addressed by street/city/zip only.
         $address = $branch !== null
@@ -239,20 +239,20 @@ class CzechPostParcel implements ParcelServiceInterface
                 'isoCountry' => 'CZ',
             ]
             : [
-                'street' => $purchase->getPurchaseAddress()->getStreet(),
+                'street' => $purchaseAddress->getShipStreet() ?? $purchaseAddress->getStreet(),
                 'houseNumber' => '',
                 'sequenceNumber' => '',
                 'cityPart' => '',
-                'city' => $purchase->getPurchaseAddress()->getCity(),
-                'zipCode' => $purchase->getPurchaseAddress()->getZip(),
-                'isoCountry' => $this->normalizeIsoCountry($purchase->getPurchaseAddress()->getCountry()),
+                'city' => $purchaseAddress->getShipCity() ?? $purchaseAddress->getCity(),
+                'zipCode' => $purchaseAddress->getShipZip() ?? $purchaseAddress->getZip(),
+                'isoCountry' => $this->normalizeIsoCountry($purchaseAddress->getShipCountry() ?? $purchaseAddress->getCountry()),
             ];
 
         return [
             'recordID' => (string)$client->getId(),
-            'firstName' => $client->getName(),
-            'surname' => $client->getSurname(),
-            'company' => $purchase->getPurchaseAddress()->getCompany() ?? '',
+            'firstName' => $purchaseAddress->getShipName() ?? $client->getName(),
+            'surname' => $purchaseAddress->getShipSurname() ?? $client->getSurname(),
+            'company' => $purchaseAddress->getShipCompany() ?? $purchaseAddress->getCompany() ?? '',
             'aditionAddress' => '',
             'subject' => 'F',
             'address' => $address,
@@ -314,7 +314,7 @@ class CzechPostParcel implements ParcelServiceInterface
         $signature = hash_hmac('sha256', $stringToSign, $secretKey, true);
         $signatureBase64 = base64_encode($signature);
 
-        return "CP-HMAC-SHA256 nonce=\"$nonce\",signature=\"$signatureBase64\"";
+        return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";
     }
 
     /**

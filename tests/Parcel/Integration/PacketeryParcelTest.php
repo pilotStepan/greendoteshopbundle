@@ -42,6 +42,25 @@ class PacketeryParcelTest extends TestCase
         return $a;
     }
 
+    /**
+     * Customer specified a separate shipping address (ship_* override fields) different
+     * from the billing address, so the packet must be addressed to the actual recipient.
+     */
+    private function makeAddressWithShipOverride(string $country = 'cz'): PurchaseAddress
+    {
+        $a = $this->createMock(PurchaseAddress::class);
+        $a->method('getCountry')->willReturn($country);
+        $a->method('getStreet')->willReturn('Testovací 123');
+        $a->method('getCity')->willReturn('Praha');
+        $a->method('getZip')->willReturn('10000');
+        $a->method('getShipName')->willReturn('Jane');
+        $a->method('getShipSurname')->willReturn('Smith');
+        $a->method('getShipStreet')->willReturn('Hlavní 1');
+        $a->method('getShipCity')->willReturn('Brno');
+        $a->method('getShipZip')->willReturn('60200');
+        return $a;
+    }
+
     private function makePaymentType(bool $isCod): PaymentType
     {
         $p = $this->createMock(PaymentType::class);
@@ -56,6 +75,7 @@ class PacketeryParcelTest extends TestCase
         ?Branch $branch,
         bool $isCod = false,
         string $country = 'cz',
+        ?PurchaseAddress $address = null,
     ): Purchase {
         $client = $this->createMock(Client::class);
         $client->method('getName')->willReturn('John');
@@ -68,7 +88,7 @@ class PacketeryParcelTest extends TestCase
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getBranch')->willReturn($branch);
         $purchase->method('getClient')->willReturn($client);
-        $purchase->method('getPurchaseAddress')->willReturn($this->makeAddress($country));
+        $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn('Z4154090000');
         $purchase->method('isVatExempted')->willReturn(false);
@@ -194,6 +214,27 @@ class PacketeryParcelTest extends TestCase
         $this->assertStringContainsString('<city>Praha</city>', $capturedBody);
         $this->assertStringContainsString('<zip>10000</zip>', $capturedBody);
         $this->assertStringContainsString('<street>Testovací 123</street>', $capturedBody);
+    }
+
+    public function testCreateParcel_shipOverride_addressesPacketToRecipientNotOrderer(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successXml());
+        });
+
+        $transportation = $this->makeTransportation('apiPw', '106');
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($transportation, null, address: $this->makeAddressWithShipOverride())
+        );
+
+        $this->assertStringContainsString('<name>Jane</name>', $capturedBody);
+        $this->assertStringContainsString('<surname>Smith</surname>', $capturedBody);
+        $this->assertStringContainsString('<street>Hlavní 1</street>', $capturedBody);
+        $this->assertStringContainsString('<city>Brno</city>', $capturedBody);
+        $this->assertStringContainsString('<zip>60200</zip>', $capturedBody);
     }
 
     public function testCreateParcel_codOrder_includesCod(): void

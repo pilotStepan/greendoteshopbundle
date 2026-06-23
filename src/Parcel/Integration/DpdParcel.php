@@ -74,7 +74,7 @@ class DpdParcel implements ParcelServiceInterface
 
             $data = $response->toArray(false);
 
-            $shipmentId = $data['shipmentResults'][0]['shipment']['shipmentId'] ?? null;
+            $shipmentId = $data['shipmentResults'][0]['shipmentId'] ?? null;
             if ($shipmentId === null) {
                 $this->logger->error('DPD API error on createParcel', [
                     'purchaseId' => $purchase->getId(),
@@ -172,18 +172,17 @@ class DpdParcel implements ParcelServiceInterface
         $receiver = [
             'name' => $address->getShipName() ?? $client->getName(),
             'name2' => $address->getShipSurname() ?? $client->getSurname(),
-            'companyName' => $address->getShipCompany(),
-            'street' => $address->getShipStreet(),
-            'city' => $address->getShipCity(),
-            'zipCode' => preg_replace('/\s+/', '', (string)$address->getShipZip()),
+            'companyName' => $address->getShipCompany() ?? $address->getCompany(),
+            'street' => $address->getShipStreet() ?? $address->getStreet(),
+            'city' => $address->getShipCity() ?? $address->getCity(),
+            'zipCode' => preg_replace('/\s+/', '', (string)($address->getShipZip() ?? $address->getZip())),
             'countryCode' => strtoupper((string)$country),
             'contactName' => trim(($client->getName() ?? '') . ' ' . ($client->getSurname() ?? '')),
             'contactEmail' => $client->getMail(),
             'contactPhone' => $client->getPhone(),
         ];
 
-        // TODO: derive weight from order items
-        $weight = 2;
+        $weight = 1;
 
         $shipment = [
             'numOrder' => 1,

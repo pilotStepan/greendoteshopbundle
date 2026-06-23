@@ -44,6 +44,28 @@ class CzechPostParcelTest extends TestCase
         return $a;
     }
 
+    /**
+     * Customer specified a separate shipping address (ship_* override fields) different
+     * from the billing address.
+     */
+    private function makeAddressWithShipOverride(): PurchaseAddress
+    {
+        $a = $this->createMock(PurchaseAddress::class);
+        $a->method('getCountry')->willReturn('cz');
+        $a->method('getStreet')->willReturn('Testovací 123');
+        $a->method('getCity')->willReturn('Praha');
+        $a->method('getZip')->willReturn('10000');
+        $a->method('getCompany')->willReturn(null);
+        $a->method('getShipName')->willReturn('Jane');
+        $a->method('getShipSurname')->willReturn('Smith');
+        $a->method('getShipCompany')->willReturn('Acme s.r.o.');
+        $a->method('getShipStreet')->willReturn('Hlavní 1');
+        $a->method('getShipCity')->willReturn('Brno');
+        $a->method('getShipZip')->willReturn('60200');
+        $a->method('getShipCountry')->willReturn('sk');
+        return $a;
+    }
+
     private function makePaymentType(bool $isCod): PaymentType
     {
         $p = $this->createMock(PaymentType::class);
@@ -58,6 +80,7 @@ class CzechPostParcelTest extends TestCase
         ?Branch $branch,
         bool $isCod = false,
         string $transportNumber = 'BA1234567890A',
+        ?PurchaseAddress $address = null,
     ): Purchase {
         $client = $this->createMock(Client::class);
         $client->method('getId')->willReturn(42);
@@ -72,7 +95,7 @@ class CzechPostParcelTest extends TestCase
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getBranch')->willReturn($branch);
         $purchase->method('getClient')->willReturn($client);
-        $purchase->method('getPurchaseAddress')->willReturn($this->makeAddress());
+        $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress());
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
         return $purchase;
@@ -176,6 +199,29 @@ class CzechPostParcelTest extends TestCase
         );
 
         $this->assertSame('BA1234567890A', $result);
+    }
+
+    public function testCreateParcel_shipOverride_usesShippingAddressNotBillingAddress(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), null, address: $this->makeAddressWithShipOverride())
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $parcelData = $decoded['parcelServiceData'];
+        $this->assertSame('Jane', $parcelData['parcelAddress']['firstName']);
+        $this->assertSame('Smith', $parcelData['parcelAddress']['surname']);
+        $this->assertSame('Acme s.r.o.', $parcelData['parcelAddress']['company']);
+        $this->assertSame('Hlavní 1', $parcelData['parcelAddress']['address']['street']);
+        $this->assertSame('Brno', $parcelData['parcelAddress']['address']['city']);
+        $this->assertSame('60200', $parcelData['parcelAddress']['address']['zipCode']);
+        $this->assertSame('SK', $parcelData['parcelAddress']['address']['isoCountry']);
     }
 
     public function testCreateParcel_usesSandboxUrlInTestEnvironment(): void
