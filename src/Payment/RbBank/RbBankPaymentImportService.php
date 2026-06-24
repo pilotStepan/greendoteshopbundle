@@ -9,8 +9,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
-use Greendot\EshopBundle\Entity\Project\PaymentAction;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
@@ -30,6 +31,7 @@ readonly class RbBankPaymentImportService
         private PurchaseRepository     $purchaseRepository,
         private PaymentTypeRepository  $paymentTypeRepository,
         private ManagePurchase         $managePurchase,
+        private PaymentActionLogger    $paymentActionLogger,
         private LoggerInterface        $logger,
         #[Autowire(param: 'greendot_eshop.payment.rb_bank.enabled')]
         private bool                   $enabled,
@@ -103,42 +105,29 @@ readonly class RbBankPaymentImportService
         }
 
         try {
-            $this->managePurchase->applyBankTransferPayment($purchase, $paymentType);
+            $this->managePurchase->applyBankTransferPayment($purchase, $paymentType, [
+                'performed_by' => 'system',
+                'source' => 'rb_bank',
+                'variableSymbol' => $record->variableSymbol,
+                'transactionId' => $record->transactionId,
+                'amount' => $record->transferredAmount,
+                'currency' => $record->currencyCode,
+            ]);
         } catch (\Throwable $e) {
-            $this->logOutcome('failure', sprintf(
-                'Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit. Error: %s',
-                $purchase->getId(),
-                $record->variableSymbol,
-                $e->getMessage(),
-            ), $record);
+            $this->paymentActionLogger->log($purchase, PaymentActionType::FAILURE->value, 'system',
+                sprintf('Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit. Error: %s', $purchase->getId(), $record->variableSymbol, $e->getMessage()),
+                [
+                    'source' => 'rb_bank',
+                    'variableSymbol' => $record->variableSymbol,
+                    'transactionId' => $record->transactionId,
+                    'amount' => $record->transferredAmount,
+                    'currency' => $record->currencyCode,
+                ],
+            );
             return;
         }
 
         $this->entityManager->persist($purchase);
-        $this->logOutcome('success', sprintf(
-            'Objednávka #%d (VS %s) byla potvrzena jako zaplacená bankovním převodem.',
-            $purchase->getId(),
-            $record->variableSymbol,
-        ), $record);
-    }
-
-    private function logOutcome(string $name, string $description, RbBankPaymentRecord $record): void
-    {
-        $paymentAction = (new PaymentAction())
-            ->setName($name)
-            ->setDescription($description)
-            ->setDate(new \DateTime())
-            ->setPerformedBy('system')
-            ->setData(sprintf(
-                'VS=%s; transactionId=%s; amount=%.2f %s',
-                $record->variableSymbol,
-                $record->transactionId ?? '',
-                $record->transferredAmount,
-                $record->currencyCode,
-            ))
-        ;
-
-        $this->entityManager->persist($paymentAction);
     }
 
     private function fetchPaymentsList(\DateTimeInterface $startDate): string

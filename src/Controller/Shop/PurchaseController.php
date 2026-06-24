@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -26,6 +27,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Enum\PaymentActionType;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -36,7 +39,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PurchaseController extends AbstractController
 {
-
     #[Route('/order/verify', name: 'shop_order_verify', methods: ['GET'])]
     public function verifyOrder(
         Request                $request,
@@ -46,6 +48,7 @@ class PurchaseController extends AbstractController
         WorkflowInterface      $purchaseWorkflow,
         PurchaseUrlGenerator   $urlGenerator,
         LoggerInterface        $logger,
+        PaymentActionLogger    $paymentActionLogger,
     ): Response
     {
         $purchase = null;
@@ -56,7 +59,17 @@ class PurchaseController extends AbstractController
                 throw $this->createNotFoundException('ORDERNUMBER not found');
             }
 
-            $purchase = $entityManager->getRepository(Purchase::class)->findByPaymentId($paymentId);
+            $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
+            $purchase = $payment->getPurchase();
+
+            $paymentActionLogger->log(
+                $purchase,
+                PaymentActionType::GPW_RETURN->value,
+                'client',
+                null,
+                $request->query->all(),
+                $payment,
+            );
 
             // Verify via gateway
             $gatewayResponse = $gpWebpay->verifyLink();
@@ -64,7 +77,7 @@ class PurchaseController extends AbstractController
 
             // Update workflow state
             $transition = $isOk ? PWC::T_PAY_PAY->value : PWC::T_PAY_FAIL->value;
-            $purchaseWorkflow->apply($purchase, $transition);
+            $purchaseWorkflow->apply($purchase, $transition, ['performed_by' => 'client', 'source' => 'gpw', 'paymentId' => $paymentId]);
             $entityManager->flush();
 
             return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
@@ -78,7 +91,11 @@ class PurchaseController extends AbstractController
 
             if ($purchase) {
                 try {
-                    $purchaseWorkflow->apply($purchase, PWC::T_PAY_FAIL->value);
+                    $purchaseWorkflow->apply($purchase, PWC::T_PAY_FAIL->value, [
+                        'performed_by' => 'client',
+                        'source' => 'gpw',
+                        'paymentId' => $paymentId,
+                    ]);
                     $entityManager->flush();
                 } catch (Throwable $inner) {
                     $logger->error('Failed to apply pay_fail transition after verification error', [

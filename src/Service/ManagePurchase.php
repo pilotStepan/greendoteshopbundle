@@ -99,13 +99,13 @@ readonly class ManagePurchase
     /**
      * @throws \Throwable
      */
-    public function applyBankTransferPayment(Purchase $purchase, PaymentType $paymentType): void
+    public function applyBankTransferPayment(Purchase $purchase, PaymentType $paymentType, array $context = []): void
     {
         if ($purchase->isPaid()) {
             return;
         }
 
-        $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value);
+        $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value, $context);
         $purchase->setPaymentType($paymentType);
     }
 

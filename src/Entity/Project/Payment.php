@@ -2,13 +2,12 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 
 /**
- *
- * This entity is for storing payment activity for Purchase - eq each try for Card payment, each recorded bank account payment
+ * USAGE: Payment is created per each card payment attempt
+ * before redirecting to the bank payment gateway
  */
 #[ORM\Entity(repositoryClass: PaymentRepository::class)]
 class Payment
@@ -27,10 +26,6 @@ class Payment
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'payments')]
     #[ORM\JoinColumn(nullable: false)]
     private $purchase;
-
-    #[ORM\ManyToOne(targetEntity: PaymentAction::class, inversedBy: 'payments')]
-    #[ORM\JoinColumn(nullable: true)]
-    private $action;
 
     public function getId(): ?int
     {
@@ -70,17 +65,6 @@ class Payment
     {
         $this->purchase = $purchase;
 
-        return $this;
-    }
-
-    public function getAction(): ?PaymentAction
-    {
-        return $this->action;
-    }
-
-    public function setAction(?PaymentAction $action): self
-    {
-        $this->action = $action;
         return $this;
     }
 }

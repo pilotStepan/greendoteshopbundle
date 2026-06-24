@@ -17,7 +17,9 @@ use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -44,6 +46,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
         private LoggerInterface        $logger,
         private ManagePurchase         $managePurchase,
         private CurrencyManager        $currencyManager,
+        private PaymentActionLogger    $paymentActionLogger,
         #[Autowire(param: 'kernel.environment')]
         private string                 $environment,
     ) {}
@@ -100,8 +103,25 @@ readonly class GPWebpay implements PaymentGatewayInterface
             ], $currencyCodes);
 
             $cardPayRequest = new CardPayRequest($requestValues, $settings, $digestSigner);
+            $redirectUrl = $cardPayRequest->getRequestUrlWithGetParameters();
 
-            return $cardPayRequest->getRequestUrlWithGetParameters();
+            $this->paymentActionLogger->log(
+                $purchase,
+                PaymentActionType::GPW_REDIRECT->value,
+                'client',
+                null,
+                [
+                    'url' => $redirectUrl,
+                    'ORDERNUMBER' => $payment->getId(),
+                    'AMOUNT' => $purchase->getTotalPrice(),
+                    'CURRENCY' => $currencyNumeric,
+                    'DEPOSITFLAG' => true,
+                    'MERORDERNUM' => $purchase->getId(),
+                ],
+                $payment,
+            );
+
+            return $redirectUrl;
         } catch (Throwable $e) {
             $this->logger->error('GPW failed to create payment request', [
                 'purchaseId' => $purchase->getId(),

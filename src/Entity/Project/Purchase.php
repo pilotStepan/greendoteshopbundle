@@ -263,6 +263,11 @@ class Purchase
     #[ORM\OneToMany(targetEntity: Payment::class, mappedBy: 'purchase', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $payments;
 
+    #[ORM\OneToMany(targetEntity: PaymentAction::class, mappedBy: 'purchase', cascade: ['persist'])]
+    #[ORM\OrderBy(['date' => 'DESC'])]
+    #[Groups(['purchase:read'])]
+    private Collection $paymentActions;
+
     #[ORM\OneToMany(targetEntity: PurchaseDiscussion::class, mappedBy: 'purchase')]
     #[ORM\OrderBy(['createdAt' => 'DESC'])]
     #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
@@ -303,6 +308,7 @@ class Purchase
         $this->vouchersUsed = new ArrayCollection();
         $this->Consents = new ArrayCollection();
         $this->payments = new ArrayCollection();
+        $this->paymentActions = new ArrayCollection();
         $this->purchaseDiscussions = new ArrayCollection();
         $this->transportationEvents = new ArrayCollection();
     }
@@ -805,6 +811,21 @@ class Purchase
             if ($payment->getPurchase() === $this) {
                 $payment->setPurchase(null);
             }
+        }
+
+        return $this;
+    }
+
+    public function getPaymentActions(): Collection
+    {
+        return $this->paymentActions;
+    }
+
+    public function addPaymentAction(PaymentAction $paymentAction): self
+    {
+        if (!$this->paymentActions->contains($paymentAction)) {
+            $this->paymentActions->add($paymentAction);
+            $paymentAction->setPurchase($this);
         }
 
         return $this;
