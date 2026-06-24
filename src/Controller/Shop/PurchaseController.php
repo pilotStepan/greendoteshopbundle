@@ -67,7 +67,7 @@ class PurchaseController extends AbstractController
             $purchaseWorkflow->apply($purchase, $transition);
             $entityManager->flush();
 
-            return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
+            return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
         } catch (Throwable $e) {
             $logger->error('Error during order verification', [
                 'purchaseId' => $purchase?->getId(),
@@ -89,7 +89,7 @@ class PurchaseController extends AbstractController
                     ]);
                 }
                 // TODO?: Create endscreen for failed payment
-                return $this->redirectToRoute($urlGenerator->buildOrderEndscreenUrl($purchase));
+                return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
             } else {
                 // TODO?: Create endscreen for failed payment
                 return $this->redirectToRoute('web_homepage');

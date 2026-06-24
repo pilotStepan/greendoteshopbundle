@@ -79,7 +79,8 @@ class DpdParcelTest extends TestCase
         Transportation $transportation,
         bool $isCod = false,
         string $country = 'cz',
-        string $transportNumber = '52172',
+        string $transportNumber = '13955081839853',
+        string $shipmentId = '52172',
         ?PurchaseAddress $address = null,
     ): Purchase {
         $client = $this->createMock(Client::class);
@@ -95,6 +96,7 @@ class DpdParcelTest extends TestCase
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
+        $purchase->method('getShipmentId')->willReturn($shipmentId);
         return $purchase;
     }
 
@@ -193,7 +195,7 @@ class DpdParcelTest extends TestCase
         ]);
     }
 
-    public function testCreateParcel_returnsShipmentId(): void
+    public function testCreateParcel_returnsMpsIdAsCustomerFacingTrackingNumber(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::successResponse(52172)));
 
@@ -201,7 +203,17 @@ class DpdParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('jwt123'))
         );
 
-        $this->assertSame('52172', $result);
+        $this->assertSame('13955081839853', $result);
+    }
+
+    public function testCreateParcel_storesShipmentIdViaAdditionalInfo(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(self::successResponse(52172)));
+
+        $purchase = $this->makePurchase($this->makeTransportation('jwt123'));
+        $purchase->expects($this->once())->method('setShipmentId')->with('52172');
+
+        $this->makeService($httpClient)->createParcel($purchase);
     }
 
     public function testCreateParcel_sendsBearerAuthorizationHeader(): void
@@ -423,7 +435,7 @@ class DpdParcelTest extends TestCase
         });
 
         $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('jwt123'), transportNumber: '52172')
+            $this->makePurchase($this->makeTransportation('jwt123'), shipmentId: '52172')
         );
 
         $this->assertSame('GET', $capturedMethod);

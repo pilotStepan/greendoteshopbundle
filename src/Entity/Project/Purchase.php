@@ -91,6 +91,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[TransportationPaymentAvailability]
 class Purchase
 {
+    private const SHIPMENT_ID = 'shipment_id';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -450,6 +452,21 @@ class Purchase
     public function setTransportNumber(?string $transport_number): self
     {
         $this->transport_number = $transport_number;
+
+        return $this;
+    }
+
+    public function getShipmentId(): ?string
+    {
+        return $this->additionalInfo[self::SHIPMENT_ID] ?? null;
+    }
+
+    public function setShipmentId(?string $shipmentId): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::SHIPMENT_ID => $shipmentId],
+            static fn($v) => $v !== null
+        );
 
         return $this;
     }

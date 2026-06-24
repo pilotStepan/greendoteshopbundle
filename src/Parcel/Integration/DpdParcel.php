@@ -75,15 +75,18 @@ class DpdParcel implements ParcelServiceInterface
             $data = $response->toArray(false);
 
             $shipmentId = $data['shipmentResults'][0]['shipmentId'] ?? null;
-            if ($shipmentId === null) {
+            $mpsId = $data['shipmentResults'][0]['mpsId'] ?? null;
+            if ($shipmentId === null || $mpsId === null) {
                 $this->logger->error('DPD API error on createParcel', [
                     'purchaseId' => $purchase->getId(),
                     'response' => $data,
                 ]);
-                throw new RuntimeException('DPD createParcel failed: no shipmentId in response');
+                throw new RuntimeException('DPD createParcel failed: no shipmentId/mpsId in response');
             }
 
-            return (string)$shipmentId;
+            $purchase->setShipmentId((string)$shipmentId);
+
+            return (string)$mpsId;
         } catch (RuntimeException $e) {
             throw $e;
         } catch (Throwable $e) {
@@ -99,7 +102,7 @@ class DpdParcel implements ParcelServiceInterface
     {
         $transportation = $purchase->getTransportation();
         $jwt = $transportation?->getSecretKey() ?? '';
-        $shipmentId = (int)$purchase->getTransportNumber();
+        $shipmentId = (int)$purchase->getShipmentId();
 
         try {
             $response = $this->httpClient->request('GET', $this->baseUrl . 'shipments/' . $shipmentId, [
