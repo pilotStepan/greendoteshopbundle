@@ -65,13 +65,14 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         return new UpdateDeliveryStatusMessage($id);
     }
 
-    private function makePurchase(int $daysOld = 0): Purchase
+    private function makePurchase(int $daysOld = 0, bool $isEndState = false): Purchase
     {
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(1);
         $purchase->method('getDateIssue')->willReturn(
             new DateTimeImmutable("-$daysOld days")
         );
+        $purchase->method('hasAnyPlace')->willReturn($isEndState);
         return $purchase;
     }
 
@@ -98,6 +99,19 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
     {
         $this->purchaseRepo->method('find')->willReturn(null);
         $this->expectException(UnrecoverableMessageHandlingException::class);
+        ($this->handler)($this->makeMsg());
+    }
+
+    // --- Guard: purchase already in an end state ---
+
+    public function testEndStatePurchase_returnsEarlyWithoutDispatch(): void
+    {
+        $purchase = $this->makePurchase(isEndState: true);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $this->bus->expects($this->never())->method('dispatch');
+        $this->em->expects($this->never())->method('persist');
+
         ($this->handler)($this->makeMsg());
     }
 

@@ -47,11 +47,12 @@ class CreateParcelHandlerTest extends TestCase
         );
     }
 
-    private function makePurchase(?string $transportNumber = null): Purchase
+    private function makePurchase(?string $transportNumber = null, bool $isEndState = false): Purchase
     {
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(42);
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
+        $purchase->method('hasAnyPlace')->willReturn($isEndState);
         return $purchase;
     }
 
@@ -59,6 +60,17 @@ class CreateParcelHandlerTest extends TestCase
     {
         $this->purchaseRepo->method('find')->willReturn(null);
         $this->expectException(UnrecoverableMessageHandlingException::class);
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
+    public function testEndStatePurchase_skipsCreateAndDoesNotSchedule(): void
+    {
+        $purchase = $this->makePurchase(isEndState: true);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $this->provider->expects($this->never())->method('getByPurchase');
+        $this->bus->expects($this->never())->method('dispatch');
+
         ($this->handler)(new CreateParcelMessage(42));
     }
 

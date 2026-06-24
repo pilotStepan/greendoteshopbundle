@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
@@ -49,6 +50,11 @@ readonly class CreateParcelHandler
         if (!$purchase) {
             $this->logger->error('Purchase not found', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
+        }
+
+        if ($purchase->hasAnyPlace(PWC::S_CANCELLED->value, PWC::S_COMPLETED->value)) {
+            $this->logger->info('Purchase reached an end state; skipping parcel creation', ['purchaseId' => $purchaseId]);
+            return;
         }
 
         // If a parcel already exists, skip creation but schedule status tracking
