@@ -12,8 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Payment;
+use Greendot\EshopBundle\Enum\PaymentActionType;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -23,19 +24,19 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
+use Granam\GpWebPay\Exceptions\GpWebPayErrorResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
-use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
-use Greendot\EshopBundle\Enum\PaymentActionType;
-use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Target;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 
 class PurchaseController extends AbstractController
 {
@@ -53,6 +54,7 @@ class PurchaseController extends AbstractController
     {
         $purchase = null;
         $paymentId = (string)$request->query->get('ORDERNUMBER', '');
+        $context = ['performed_by' => 'client', 'source' => 'gpw', 'paymentId' => $paymentId];
 
         try {
             if ($paymentId === '') {
@@ -61,6 +63,15 @@ class PurchaseController extends AbstractController
 
             $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
             $purchase = $payment->getPurchase();
+
+            if ($purchase->isPaid()) {
+                $logger->info('Ignoring order verification for an already-paid purchase', [
+                    'purchaseId' => $purchase->getId(),
+                    'paymentId' => $paymentId,
+                ]);
+
+                return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+            }
 
             $paymentActionLogger->log(
                 $purchase,
@@ -77,12 +88,31 @@ class PurchaseController extends AbstractController
 
             // Update workflow state
             $transition = $isOk ? PWC::T_PAY_PAY->value : PWC::T_PAY_FAIL->value;
-            $purchaseWorkflow->apply($purchase, $transition, ['performed_by' => 'client', 'source' => 'gpw', 'paymentId' => $paymentId]);
+            $this->applyTransitionIfPossible($purchaseWorkflow, $purchase, $transition, $logger, $context);
             $entityManager->flush();
 
             return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+        } catch (GpWebPayErrorResponse $declined) {
+            // The gateway positively told us this attempt was declined - we know the outcome.
+            $logger->info('GPW reported a declined payment', [
+                'purchaseId' => $purchase?->getId(),
+                'paymentId' => $paymentId,
+                'prCode' => $declined->getPrCode(),
+                'srCode' => $declined->getSrCode(),
+            ]);
+
+            if ($purchase && !$purchase->isPaid()) {
+                $this->applyTransitionIfPossible($purchaseWorkflow, $purchase, PWC::T_PAY_FAIL->value, $logger, $context);
+                $entityManager->flush();
+            }
+
+            if ($purchase) {
+                return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+            }
+
+            return $this->redirectToRoute('web_homepage');
         } catch (Throwable $e) {
-            $logger->error('Error during order verification', [
+            $logger->error('Error during order verification - payment outcome could not be determined', [
                 'purchaseId' => $purchase?->getId(),
                 'paymentId' => $paymentId,
                 'exception' => $e::class,
@@ -90,28 +120,27 @@ class PurchaseController extends AbstractController
             ]);
 
             if ($purchase) {
-                try {
-                    $purchaseWorkflow->apply($purchase, PWC::T_PAY_FAIL->value, [
-                        'performed_by' => 'client',
-                        'source' => 'gpw',
-                        'paymentId' => $paymentId,
-                    ]);
-                    $entityManager->flush();
-                } catch (Throwable $inner) {
-                    $logger->error('Failed to apply pay_fail transition after verification error', [
-                        'purchaseId' => $purchase->getId(),
-                        'paymentId' => $paymentId,
-                        'exception' => $inner::class,
-                        'message' => $inner->getMessage(),
-                    ]);
-                }
-                // TODO?: Create endscreen for failed payment
                 return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
-            } else {
-                // TODO?: Create endscreen for failed payment
-                return $this->redirectToRoute('web_homepage');
             }
+
+            return $this->redirectToRoute('web_homepage');
         }
+    }
+
+    private function applyTransitionIfPossible(
+        WorkflowInterface $purchaseWorkflow,
+        Purchase          $purchase,
+        string            $transition,
+        LoggerInterface   $logger,
+        array             $context,
+    ): void
+    {
+        if (!$purchaseWorkflow->can($purchase, $transition)) {
+            $logger->warning('Skipping order verification transition: not applicable to current purchase state', [...$context, 'transition' => $transition]);
+            return;
+        }
+
+        $purchaseWorkflow->apply($purchase, $transition, $context);
     }
 
 
@@ -296,7 +325,7 @@ class PurchaseController extends AbstractController
         ManagePurchase         $managePurchase,
         EntityManagerInterface $entityManager,
         #[Target(PWC::NAME->value)]
-        WorkflowInterface $purchaseFlow,
+        WorkflowInterface      $purchaseFlow,
     ): RedirectResponse
     {
         // Check user login and ownership
