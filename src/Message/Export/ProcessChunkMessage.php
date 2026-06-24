@@ -9,5 +9,6 @@ class ProcessChunkMessage
         public readonly string $alias,
         public readonly int $offset,
         public readonly int $limit,
+        public readonly ?string $locale = null,
     ){}
 }

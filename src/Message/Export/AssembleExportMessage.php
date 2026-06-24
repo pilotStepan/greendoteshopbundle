@@ -7,5 +7,6 @@ class AssembleExportMessage
     public function __construct(
         public readonly int $exportId,
         public readonly string $alias,
+        public readonly ?string $locale = null,
     ){}
 }

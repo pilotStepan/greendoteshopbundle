@@ -8,5 +8,6 @@ class InitializeExportMessage
         public readonly int $exportId,
         public readonly string $alias,
         public readonly int $chunkSize = 100,
+        public readonly ?string $locale = null,
     ){}
 }

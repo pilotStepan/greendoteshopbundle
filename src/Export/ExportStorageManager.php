@@ -49,9 +49,10 @@ class ExportStorageManager
         return $dir;
     }
 
-    public function getFinalFilePath(string $alias, string $extension): string
+    public function getFinalFilePath(string $alias, string $extension, ?string $locale = null): string
     {
-        return sprintf('%s/public/exports/%s%s', $this->projectDir, $alias, $extension);
+        $name = $locale ? $alias . '_' . $locale : $alias;
+        return sprintf('%s/public/exports/%s%s', $this->projectDir, $name, $extension);
     }
 
     public function getOldExportsDir(): string
@@ -63,15 +64,16 @@ class ExportStorageManager
         return $dir;
     }
 
-    public function archiveExistingFile(string $alias, string $extension): ?string
+    public function archiveExistingFile(string $alias, string $extension, ?string $locale = null): ?string
     {
-        $currentPath = $this->getFinalFilePath($alias, $extension);
+        $currentPath = $this->getFinalFilePath($alias, $extension, $locale);
 
         if(!$this->filesystem->exists($currentPath)) return null;
 
         $this->getOldExportsDir();
+        $name = $locale ? $alias . '_' . $locale : $alias;
         $timestamp = date('Ymd_His');
-        $archiveFilename = sprintf('%s_%s%s', $alias, $timestamp, $extension);
+        $archiveFilename = sprintf('%s_%s%s', $name, $timestamp, $extension);
         $archivePath = sprintf('%s/%s', $this->getOldExportsDir(), $archiveFilename);
 
         $this->filesystem->rename($currentPath, $archivePath);

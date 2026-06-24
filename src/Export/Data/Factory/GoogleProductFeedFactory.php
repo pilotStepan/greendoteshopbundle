@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Export\Data\Factory;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
@@ -27,14 +28,18 @@ class GoogleProductFeedFactory
         private readonly SluggerInterface $slugger,
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
         private readonly UploadRepository $uploadRepository,
+        private readonly EntityManagerInterface     $entityManager,
         ParameterBagInterface $parameterBag
     ){
         $this->url = $parameterBag->get('greendot_eshop.global.absolute_url') ?? 'https://www.example.com';
     }
 
-    public function create(ProductVariant $productVariant): GoogleProductFeedModel
+    public function create(ProductVariant $productVariant, ?string $locale = null): GoogleProductFeedModel
     {
         $product = $productVariant->getProduct();
+        if ($locale) {
+            $product->setTranslatableLocale($locale);
+        }
         $currency = $this->currencyManager->get();
 
         $description = htmlspecialchars(strip_tags($product->getTextGeneral()), ENT_XML1);
@@ -99,7 +104,7 @@ class GoogleProductFeedFactory
             identifier_exists: ($externalId or $brand),
             image_link: $imageLink,
             availability: 'in_stock',
-            productType: $this->googleFormattedBreadCrumbs($product),
+            productType: $this->googleFormattedBreadCrumbs($product, $locale),
             itemGroupId: $product->getId()
         );
     }
@@ -118,12 +123,16 @@ class GoogleProductFeedFactory
         return number_format($number, 2, '.', '');
     }
 
-    private function googleFormattedBreadCrumbs(Product $product): ?string
+    private function googleFormattedBreadCrumbs(Product $product, ?string $locale = null): ?string
     {
         $categoryBreadcrumbs = $this->productInfoGetter->getProductBreadCrumbsArray($product);
         if ($categoryBreadcrumbs) {
             $return = [];
             foreach ($categoryBreadcrumbs as $category) {
+                if ($locale) {
+                    $category->setTranslatableLocale($locale);
+                    $this->entityManager->refresh($category);
+                }
                 $return [] = $category->getName();
             }
             if ($return) {

@@ -8,22 +8,25 @@ use Greendot\EshopBundle\Entity\Project\ExportStatus;
 use Greendot\EshopBundle\Message\Export\InitializeExportMessage;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/dispatch/export', name: 'greendot_dispatch_export_')]
 class DefaultExportController extends AbstractController
 {
-    #[Route(path:'/{alias}', name: 'default')]
+    #[Route(path:'/{alias}/{locale?}', name: 'default')]
     public function googleProductFeed(
         string $alias,
         EntityManagerInterface $entityManager,
-        MessageBusInterface $messageBus
+        MessageBusInterface $messageBus,
+        ?string $locale = null
     ): JsonResponse
     {
         $export = new Export();
         $export->setDate(new \DateTime());
         $export->setType($alias);
+        $export->setLocale($locale);
         $export->setFilename(sprintf('generating_%s_%s.tmp', $alias, time()));
 
         $status = new ExportStatus();
@@ -38,9 +41,10 @@ class DefaultExportController extends AbstractController
 
         $messageBus->dispatch(new InitializeExportMessage(
             exportId: $export->getId(),
-            alias: $alias
+            alias: $alias,
+            locale: $locale
         ));
 
-        return new JsonResponse(sprintf('Export "%s" has been queued,', $alias));
+        return new JsonResponse(sprintf('Export "%s" (locale: %s) has been queued.', $alias, $locale ?? 'default'));
     }
 }
