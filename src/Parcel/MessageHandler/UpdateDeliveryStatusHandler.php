@@ -105,6 +105,7 @@ readonly class UpdateDeliveryStatusHandler
                 ->setDetails($statusInfo->details)
                 ->setOccurredAt($statusInfo->occurredAt)
                 ->setPurchase($purchase)
+                ->setTransportationAPI($purchase->getTransportation()->getTransportationAPI())
             ;
 
             $this->em->persist($event);

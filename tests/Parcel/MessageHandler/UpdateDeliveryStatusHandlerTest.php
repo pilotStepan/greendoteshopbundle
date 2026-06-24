@@ -12,8 +12,10 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Entity\Project\TransportationEvent;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
@@ -67,12 +69,16 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
 
     private function makePurchase(int $daysOld = 0, bool $isEndState = false): Purchase
     {
+        $transportation = $this->createMock(Transportation::class);
+        $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
+
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(1);
         $purchase->method('getDateIssue')->willReturn(
             new DateTimeImmutable("-$daysOld days")
         );
         $purchase->method('hasAnyPlace')->willReturn($isEndState);
+        $purchase->method('getTransportation')->willReturn($transportation);
         return $purchase;
     }
 

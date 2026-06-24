@@ -105,6 +105,7 @@ readonly class CreateParcelHandler
             ->setState(ParcelDeliveryStateEnum::RECEIVED_DATA)
             ->setOccurredAt(new DateTimeImmutable())
             ->setPurchase($purchase)
+            ->setTransportationAPI($purchase->getTransportation()->getTransportationAPI())
         ;
 
         $this->em->persist($event);
