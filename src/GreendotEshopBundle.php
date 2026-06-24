@@ -99,6 +99,9 @@ class GreendotEshopBundle extends AbstractBundle
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
+                                ->stringNode('customer_id')->defaultValue('')->end()
+                                ->stringNode('post_code')->defaultValue('')->end()
+                                ->stringNode('sender_company_name')->defaultValue('')->end()
                             ->end()
                         ->end()
                     ->end()
@@ -246,5 +249,8 @@ class GreendotEshopBundle extends AbstractBundle
 
         $czechPostConfig = $config['parcel']['czech_post'] ?? [];
         $builder->setParameter('greendot_eshop.parcel.czech_post.enabled',     $czechPostConfig['enabled']      ?? false);
+        $builder->setParameter('greendot_eshop.parcel.czech_post.customer_id', $czechPostConfig['customer_id']  ?? '');
+        $builder->setParameter('greendot_eshop.parcel.czech_post.post_code',   $czechPostConfig['post_code']    ?? '');
+        $builder->setParameter('greendot_eshop.parcel.czech_post.sender_company_name', $czechPostConfig['sender_company_name'] ?? '');
     }
 }

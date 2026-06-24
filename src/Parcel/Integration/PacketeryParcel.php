@@ -173,13 +173,12 @@ class PacketeryParcel implements ParcelServiceInterface
             ? (int)str_replace('packeta_', '', $branch->getProviderId())
             : (int)$transportation->getToken();
 
-        // TODO: derive weight from order items
-        $weight = 2;
+        $weight = 1;
 
         $packetAttributes = [
             'number' => (string)$purchase->getId(),
-            'name' => $client->getName(),
-            'surname' => $client->getSurname(),
+            'name' => $address->getShipName() ?? $client->getName(),
+            'surname' => $address->getShipSurname() ?? $client->getSurname(),
             'email' => $client->getMail(),
             'phone' => $client->getPhone(),
             'addressId' => $addressId,

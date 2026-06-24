@@ -44,6 +44,28 @@ class DpdParcelTest extends TestCase
         return $a;
     }
 
+    /**
+     * Most orders ship to the billing address, so the ship_* override fields are null
+     * and the DPD API call must fall back to the base street/city/zip/company fields.
+     */
+    private function makeAddressWithoutShipOverride(string $country = 'cz'): PurchaseAddress
+    {
+        $a = $this->createMock(PurchaseAddress::class);
+        $a->method('getCountry')->willReturn($country);
+        $a->method('getShipCountry')->willReturn(null);
+        $a->method('getShipName')->willReturn(null);
+        $a->method('getShipSurname')->willReturn(null);
+        $a->method('getShipCompany')->willReturn(null);
+        $a->method('getShipStreet')->willReturn(null);
+        $a->method('getShipCity')->willReturn(null);
+        $a->method('getShipZip')->willReturn(null);
+        $a->method('getCompany')->willReturn('Acme s.r.o.');
+        $a->method('getStreet')->willReturn('Hlavní 1');
+        $a->method('getCity')->willReturn('Brno');
+        $a->method('getZip')->willReturn('602 00');
+        return $a;
+    }
+
     private function makePaymentType(bool $isCod): PaymentType
     {
         $p = $this->createMock(PaymentType::class);
@@ -58,6 +80,7 @@ class DpdParcelTest extends TestCase
         bool $isCod = false,
         string $country = 'cz',
         string $transportNumber = '52172',
+        ?PurchaseAddress $address = null,
     ): Purchase {
         $client = $this->createMock(Client::class);
         $client->method('getName')->willReturn('John');
@@ -69,7 +92,7 @@ class DpdParcelTest extends TestCase
         $purchase->method('getId')->willReturn(123);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getClient')->willReturn($client);
-        $purchase->method('getPurchaseAddress')->willReturn($this->makeAddress($country));
+        $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
         return $purchase;
@@ -144,17 +167,16 @@ class DpdParcelTest extends TestCase
         );
     }
 
-    private static function successResponse(int $shipmentId = 52172, int $status = 2): string
+    private static function successResponse(int $shipmentId = 52172): string
     {
         return json_encode([
             'transactionId' => 4383,
             'shipmentResults' => [
                 [
                     'numOrder' => 1,
-                    'shipment' => [
-                        'shipmentId' => $shipmentId,
-                        'status' => $status,
-                    ],
+                    'shipmentId' => $shipmentId,
+                    'mpsId' => '13955081839853',
+                    'labelFile' => 'data:application/pdf;base64,',
                 ],
             ],
         ]);
@@ -216,6 +238,25 @@ class DpdParcelTest extends TestCase
         $this->assertSame('Praha', $decoded['shipments'][0]['receiver']['city']);
         $this->assertSame('10000', $decoded['shipments'][0]['receiver']['zipCode']);
         $this->assertSame('Testovací 123', $decoded['shipments'][0]['receiver']['street']);
+    }
+
+    public function testCreateParcel_noShipOverride_fallsBackToBaseAddressFields(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'), address: $this->makeAddressWithoutShipOverride())
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $this->assertSame('Hlavní 1', $decoded['shipments'][0]['receiver']['street']);
+        $this->assertSame('Brno', $decoded['shipments'][0]['receiver']['city']);
+        $this->assertSame('60200', $decoded['shipments'][0]['receiver']['zipCode']);
+        $this->assertSame('Acme s.r.o.', $decoded['shipments'][0]['receiver']['companyName']);
     }
 
     public function testCreateParcel_codOrder_includesCod(): void
