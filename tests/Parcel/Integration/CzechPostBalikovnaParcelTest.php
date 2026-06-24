@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Tests\Parcel\Integration;
 
+use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -79,6 +80,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getDateIssue')->willReturn(new DateTimeImmutable('2024-01-15'));
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getBranch')->willReturn($branch);
         $purchase->method('getClient')->willReturn($client);
@@ -118,7 +120,6 @@ class CzechPostBalikovnaParcelTest extends TestCase
             $this->makeCurrencyRepo(),
             'M06391',
             '18000',
-            'Jana Smažíková',
             $environment,
             $enabled,
         );
@@ -159,7 +160,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $this->assertSame('NB1234567890A', $result);
     }
 
-    public function testCreateParcel_postsToCzParcelsEndpoint(): void
+    public function testCreateParcel_postsToParcelServiceEndpoint(): void
     {
         $capturedUrl = null;
         $httpClient = new MockHttpClient(function (string $method, string $url) use (&$capturedUrl) {
@@ -171,7 +172,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
         );
 
-        $this->assertSame('https://b2b.postaonline.cz:444/restservices/ZSKSService/v1/cz/parcels', $capturedUrl);
+        $this->assertSame('https://b2b.postaonline.cz:444/restservices/ZSKService/v1/parcelService', $capturedUrl);
     }
 
     public function testCreateParcel_usesSandboxUrlInTestEnvironment(): void
@@ -186,10 +187,10 @@ class CzechPostBalikovnaParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
         );
 
-        $this->assertStringStartsWith('https://b2b-test.postaonline.cz:444/restservices/ZSKSService/v1/', $capturedUrl);
+        $this->assertStringStartsWith('https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1/', $capturedUrl);
     }
 
-    public function testCreateParcel_usesPrefixNbAndBranchAddress(): void
+    public function testCreateParcel_usesPrefixNbAndFixedBalikovnaAddress(): void
     {
         $capturedBody = null;
         $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
@@ -202,16 +203,14 @@ class CzechPostBalikovnaParcelTest extends TestCase
         );
 
         $decoded = json_decode($capturedBody, true);
-        $parcelParam = $decoded['parcelData']['parcelParams'][0];
-        $address = $decoded['parcelData']['parcelAddress']['address'];
+        $parcelParam = $decoded['parcelServiceData']['parcelParams'];
+        $address = $decoded['parcelServiceData']['parcelAddress']['address'];
 
         $this->assertSame('NB', $parcelParam['prefixParcelCode']);
-        $this->assertSame('Balíkovna ulice 5', $address['street']);
-        $this->assertSame('Brno', $address['city']);
-        $this->assertSame('60200', $address['zipCode']);
+        $this->assertSame(['street' => 'Balíkovna', 'zipCode' => '10000'], $address);
     }
 
-    public function testCreateParcel_sendsCustomerIdPostCodeAndSenderCompanyName(): void
+    public function testCreateParcel_sendsCustomerIdAndPostCode(): void
     {
         $capturedBody = null;
         $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
@@ -224,11 +223,10 @@ class CzechPostBalikovnaParcelTest extends TestCase
         );
 
         $decoded = json_decode($capturedBody, true);
-        $header = $decoded['parcelHeader'];
+        $header = $decoded['parcelServiceHeader']['parcelServiceHeaderCom'];
 
-        $this->assertSame('M06391', $header['customerId']);
+        $this->assertSame('M06391', $header['customerID']);
         $this->assertSame('18000', $header['postCode']);
-        $this->assertSame('Jana Smažíková', $header['sender']['companyName']);
     }
 
     public function testCreateParcel_codOrder_includesCodServiceCode(): void
@@ -244,11 +242,11 @@ class CzechPostBalikovnaParcelTest extends TestCase
         );
 
         $decoded = json_decode($capturedBody, true);
-        $parcelParam = $decoded['parcelData']['parcelParams'][0];
+        $parcelParam = $decoded['parcelServiceData']['parcelParams'];
 
         $this->assertEquals(500.0, $parcelParam['amount']);
         $this->assertSame('123', $parcelParam['vsVoucher']);
-        $this->assertContains(['service' => '41'], $parcelParam['services']);
+        $this->assertContains('41', $decoded['parcelServiceData']['parcelServices']);
     }
 
     public function testCreateParcel_nonCodOrder_excludesCodServiceCode(): void
@@ -264,11 +262,11 @@ class CzechPostBalikovnaParcelTest extends TestCase
         );
 
         $decoded = json_decode($capturedBody, true);
-        $parcelParam = $decoded['parcelData']['parcelParams'][0];
+        $parcelParam = $decoded['parcelServiceData']['parcelParams'];
 
         $this->assertSame(0, $parcelParam['amount']);
         $this->assertSame('', $parcelParam['vsVoucher']);
-        $this->assertNotContains(['service' => '41'], $parcelParam['services']);
+        $this->assertNotContains('41', $decoded['parcelServiceData']['parcelServices']);
     }
 
     public function testCreateParcel_noBranch_throwsInvalidArgumentException(): void

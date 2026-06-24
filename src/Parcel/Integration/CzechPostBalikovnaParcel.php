@@ -24,25 +24,18 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 /**
- * Integrates Czech Post's B2B-ZSKSService REST API
- * (https://www.postaonline.cz/dokumentaceapi/b2b/api/B2B3-ZSKSService/B2B-ZSKSService-1.0.1.yaml) — the
- * separate contract-routing ("spádování") service required for CP_BALIKOVNA (pickup point,
- * prefixParcelCode "NB"). This is NOT the same API as ZSKService's /parcelService used by CzechPostParcel
- * for CP_DO_RUKY: different host path, different request/response body shape, and even different field
- * casing (customerId vs customerID). Sending NB through /parcelService is rejected with BAD_PREFIX.
+ * Integrates Czech Post's B2B-ZSKService REST API (https://www.postaonline.cz/dokumentaceapi/b2b/api/B2B3-ZSKService/B2B-ZSKService-1.5.0.yaml).
+ * Handles CP_BALIKOVNA (pickup point, prefixParcelCode "NB") through the same /parcelService endpoint
+ * used by CzechPostParcel for CP_DO_RUKY.
  */
 #[WithMonologChannel('api.parcel.czech_post')]
 class CzechPostBalikovnaParcel implements ParcelServiceInterface
 {
     use CzechPostHmacAuthTrait;
 
-    private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKSService/v1';
-    private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKSService/v1';
-    // Parcel status is unified across both Czech Post services and is only exposed by ZSKService.
-    private const STATUS_PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
-    private const STATUS_SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
+    private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
+    private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
     private readonly string $baseUrl;
-    private readonly string $statusBaseUrl;
 
     public function __construct(
         private readonly HttpClientInterface  $httpClient,
@@ -53,17 +46,13 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
         private readonly string               $customerId,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.post_code')]
         private readonly string               $postCode,
-        #[Autowire(param: 'greendot_eshop.parcel.czech_post.sender_company_name')]
-        private readonly string               $senderCompanyName,
         #[Autowire(param: 'kernel.environment')]
         string                                $environment,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.enabled')]
         private readonly bool                 $enabled = false,
     )
     {
-        $isSandbox = in_array($environment, ['test', 'dev'], true);
-        $this->baseUrl = $isSandbox ? self::SANDBOX_URL : self::PROD_URL;
-        $this->statusBaseUrl = $isSandbox ? self::STATUS_SANDBOX_URL : self::STATUS_PROD_URL;
+        $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
     }
 
     /**
@@ -87,7 +76,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
         $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
 
         try {
-            $response = $this->httpClient->request('POST', $this->baseUrl . '/cz/parcels', [
+            $response = $this->httpClient->request('POST', $this->baseUrl . '/parcelService', [
                 'headers' => $this->getHeaders($transportation, $jsonBody),
                 'body' => $jsonBody,
                 ...$this->getTlsOptions(),
@@ -138,7 +127,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
         try {
             $response = $this->httpClient->request(
                 'GET',
-                $this->statusBaseUrl . '/parcelStatuses/current/idParcel/' . $transportNumber,
+                $this->baseUrl . '/parcelStatuses/current/idParcel/' . $transportNumber,
                 ['headers' => $this->getHeaders($transportation, null), ...$this->getTlsOptions()],
             );
 
@@ -187,9 +176,6 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
 
     private function prepareParcelData(Purchase $purchase, Branch $branch): array
     {
-        $client = $purchase->getClient();
-        $purchaseAddress = $purchase->getPurchaseAddress();
-
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $this->currencyRepository->findOneBy(['isDefault' => true]));
 
         $insuredValue = (clone $priceCalculator)
@@ -209,56 +195,63 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             : 0;
 
         return [
-            'printParams' => [
-                'idForm' => 101,
-                'shiftHorizontal' => 0,
-                'shiftVertical' => 0,
+            'parcelServiceHeader' => [
+                'parcelServiceHeaderCom' => [
+                    'transmissionDate' => $purchase->getDateIssue()->format('Y-m-d'),
+                    'customerID' => $this->customerId,
+                    'postCode' => $this->postCode,
+                    'locationNumber' => 1,
+                ],
+                'printParams' => [
+                    'idForm' => 101,
+                    'shiftHorizontal' => 0,
+                    'shiftVertical' => 0,
+                ],
                 'position' => 1,
             ],
-            'parcelHeader' => [
-                'customerId' => $this->customerId,
-                'postCode' => $this->postCode,
-                'sender' => [
-                    'companyName' => $this->senderCompanyName,
-                ],
-            ],
-            'parcelData' => [
-                'parcelAddress' => [
-                    'recordID' => (string)$client->getId(),
-                    'firstName' => $purchaseAddress->getShipName() ?? $client->getName(),
-                    'surname' => $purchaseAddress->getShipSurname() ?? $client->getSurname(),
-                    'companyName' => $purchaseAddress->getShipCompany() ?? $purchaseAddress->getCompany() ?? '',
-                    'subject' => 'F',
-                    // Pickup-point delivery is addressed by the chosen Balíkovna box's own physical
-                    // street/city/zip, not the recipient's home address.
-                    'address' => [
-                        'street' => $branch->getStreet(),
-                        'city' => $branch->getCity(),
-                        'zipCode' => $branch->getZip(),
-                    ],
-                    'contacts' => [
-                        'mobileNumber' => $client->getPhone(),
-                        'emailAddress' => $client->getMail(),
-                    ],
-                ],
+            'parcelServiceData' => [
                 'parcelParams' => [
-                    [
-                        'recordID' => (string)$purchase->getId(),
-                        'prefixParcelCode' => 'NB',
-                        'insuredValue' => $insuredValue,
-                        'amount' => $codAmount,
-                        'currency' => 'CZK',
-                        'vsVoucher' => $isCod ? (string)$purchase->getId() : '',
-                        'vsParcel' => (string)$purchase->getId(),
-                        // (https://www.postaonline.cz/podanionline/ePOST-dokumentace/231standardniObsah.html):
-                        // '7' = Udaná cena (declared/insured value) - always sent since insuredValue is always populated;
-                        // '41' = Bezdokladová dobírka (document-less cash on delivery) - sent only for ON_DELIVERY orders.
-                        'services' => $isCod
-                            ? [['service' => '7'], ['service' => '41']]
-                            : [['service' => '7']],
-                    ],
+                    'recordID' => (string)$purchase->getId(),
+                    'prefixParcelCode' => 'NB',
+                    'insuredValue' => $insuredValue,
+                    'amount' => $codAmount,
+                    'currency' => 'CZK',
+                    'vsVoucher' => $isCod ? (string)$purchase->getId() : '',
+                    'vsParcel' => (string)$purchase->getId(),
+                    'length' => 0,
+                    'width' => 0,
+                    'height' => 0,
                 ],
+                'parcelAddress' => $this->buildParcelAddress($purchase, $branch),
+                // (https://www.postaonline.cz/podanionline/ePOST-dokumentace/231standardniObsah.html):
+                // '7' = Udaná cena (declared/insured value) - always sent since insuredValue is always populated;
+                // '41' = Bezdokladová dobírka (document-less cash on delivery) - sent only for ON_DELIVERY orders.
+                'parcelServices' => $isCod ? ['7', '41'] : ['7'],
             ],
+        ];
+    }
+
+    private function buildParcelAddress(Purchase $purchase, Branch $branch): array
+    {
+        $client = $purchase->getClient();
+        $purchaseAddress = $purchase->getPurchaseAddress();
+
+        return [
+            'recordID' => (string)$client->getId(),
+            'firstName' => $purchaseAddress->getShipName() ?? $client->getName(),
+            'surname' => $purchaseAddress->getShipSurname() ?? $client->getSurname(),
+            'company' => $purchaseAddress->getShipCompany() ?? $purchaseAddress->getCompany() ?? '',
+            'aditionAddress' => '',
+            'subject' => 'F',
+            // NB (pickup point) parcels carry only a fixed 'Balíkovna'
+            // street and the pickup point's own ID as 'zipCode'
+            'address' => [
+                'street' => 'Balíkovna',
+                'zipCode' => str_replace('czechpost_', '', (string)$branch->getProviderId()),
+            ],
+            'mobilNumber' => $client->getPhone(),
+            'phoneNumber' => '',
+            'emailAddress' => $client->getMail(),
         ];
     }
 
