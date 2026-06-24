@@ -39,6 +39,10 @@ class CzechPostParcel implements ParcelServiceInterface
         private readonly LoggerInterface      $logger,
         private readonly PurchasePriceFactory $purchasePriceFactory,
         private readonly CurrencyRepository   $currencyRepository,
+        #[Autowire(param: 'greendot_eshop.parcel.czech_post.customer_id')]
+        private readonly string               $customerId,
+        #[Autowire(param: 'greendot_eshop.parcel.czech_post.post_code')]
+        private readonly string               $postCode,
         #[Autowire(param: 'kernel.environment')]
         string                                $environment,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.enabled')]
