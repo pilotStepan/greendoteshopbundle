@@ -194,6 +194,8 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
                 ->getPrice(true)
             : 0;
 
+        $weight = 1;
+
         return [
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
@@ -213,6 +215,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
                 'parcelParams' => [
                     'recordID' => (string)$purchase->getId(),
                     'prefixParcelCode' => 'NB',
+                    'weight' => number_format($weight, 2),
                     'insuredValue' => $insuredValue,
                     'amount' => $codAmount,
                     'currency' => 'CZK',
