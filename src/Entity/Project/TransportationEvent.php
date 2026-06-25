@@ -11,7 +11,7 @@ use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 
 #[ORM\Entity(repositoryClass: TransportationEventRepository::class)]
-#[ApiResource]
+//#[ApiResource]
 class TransportationEvent
 {
     #[ORM\Id]

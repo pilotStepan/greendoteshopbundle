@@ -14,18 +14,18 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PaymentActionRepository::class)]
-#[ApiResource(
-    operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(security: "is_granted('ROLE_ADMIN')"),
-        new Put(security: "is_granted('ROLE_ADMIN')"),
-        new Patch(security: "is_granted('ROLE_ADMIN')"),
-        new Delete(security: "is_granted('ROLE_ADMIN')"),
-    ],
-    normalizationContext: ['groups' => ['payment_action:read']],
-    denormalizationContext: ['groups' => ['payment_action:write']],
-)]
+//#[ApiResource(
+//    operations: [
+//        new GetCollection(),
+//        new Get(),
+//        new Post(security: "is_granted('ROLE_ADMIN')"),
+//        new Put(security: "is_granted('ROLE_ADMIN')"),
+//        new Patch(security: "is_granted('ROLE_ADMIN')"),
+//        new Delete(security: "is_granted('ROLE_ADMIN')"),
+//    ],
+//    normalizationContext: ['groups' => ['payment_action:read']],
+//    denormalizationContext: ['groups' => ['payment_action:write']],
+//)]
 class PaymentAction
 {
     #[ORM\Id]
