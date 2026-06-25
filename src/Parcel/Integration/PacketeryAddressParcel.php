@@ -14,8 +14,13 @@ use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
+/**
+ * Packeta home/address delivery via an external carrier (addressId = carrier ID, not a branch ID).
+ * The carrier ID, and whether it requires the courier-number/label follow-up calls, is project-specific
+ * configuration (Transportation.token) — this class must stay carrier-agnostic.
+ */
 #[WithMonologChannel('api.parcel.packetery')]
-class PacketeryParcel implements ParcelServiceInterface
+class PacketeryAddressParcel implements ParcelServiceInterface
 {
     use PacketeryApiTrait;
 
@@ -39,6 +44,9 @@ class PacketeryParcel implements ParcelServiceInterface
         }
 
         $xml = $this->callPacketeryApi('createPacket', $this->prepareParcelData($purchase), 'createPacket', $purchase);
+        $packetId = (string)$xml->result->id;
+
+        $this->fetchCourierTrackingAndLabel($purchase, $transportation, $packetId);
 
         return (string)$xml->result->barcode;
     }
@@ -49,12 +57,6 @@ class PacketeryParcel implements ParcelServiceInterface
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
         $country = $address->getShipCountry() ?? $address->getCountry();
-
-        $branch = $purchase->getBranch();
-        if ($branch === null) {
-            $this->logger->error('No pickup branch set for Packeta pickup-point purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No pickup branch set for purchase');
-        }
 
         $currency = match ($country) {
             'sk'    => 'EUR',
@@ -69,7 +71,10 @@ class PacketeryParcel implements ParcelServiceInterface
             'surname' => $address->getShipSurname() ?? $client->getSurname(),
             'email' => $client->getMail(),
             'phone' => $client->getPhone(),
-            'addressId' => (int)str_replace('packeta_', '', $branch->getProviderId()),
+            'addressId' => (int)$transportation->getToken(),
+            'street' => $address->getShipStreet() ?? $address->getStreet(),
+            'city' => $address->getShipCity() ?? $address->getCity(),
+            'zip' => $address->getShipZip() ?? $address->getZip(),
             'value' => $value,
             'currency' => $currency,
             'weight' => 1,
@@ -86,8 +91,39 @@ class PacketeryParcel implements ParcelServiceInterface
         ];
     }
 
+    /**
+     * External-carrier delivery (addressId is a carrier, not a Packeta branch) requires obtaining
+     * the carrier's own tracking number and shipping label after the packet is created in Packeta's
+     * system, otherwise the parcel must be relabeled in depot, delaying delivery.
+     */
+    private function fetchCourierTrackingAndLabel(Purchase $purchase, Transportation $transportation, string $packetId): void
+    {
+        $apiPassword = $transportation->getSecretKey();
+
+        $numberXml = $this->callPacketeryApi('packetCourierNumber', [
+            'apiPassword' => $apiPassword,
+            'packetId' => $packetId,
+        ], 'packetCourierNumber', $purchase);
+
+        $courierNumber = (string)$numberXml->result->courierNumber;
+        $purchase->setCourierNumber($courierNumber);
+
+        $labelXml = $this->callPacketeryApi('packetCourierLabelPdf', [
+            'apiPassword' => $apiPassword,
+            'packetId' => $packetId,
+            'courierNumber' => $courierNumber,
+        ], 'packetCourierLabelPdf', $purchase);
+
+        $this->logger->info('Fetched Packeta courier tracking number for address delivery', [
+            'purchaseId' => $purchase->getId(),
+            'packetId' => $packetId,
+            'courierNumber' => $courierNumber,
+            'labelReceived' => isset($labelXml->result) && (string)$labelXml->result !== '',
+        ]);
+    }
+
     public function supports(TransportationAPI $transportationAPI): bool
     {
-        return $this->enabled && $transportationAPI === TransportationAPI::PACKETA;
+        return $this->enabled && $transportationAPI === TransportationAPI::PACKETA_ADDRESS;
     }
 }

@@ -2,97 +2,57 @@
 
 namespace Greendot\EshopBundle\Tests\Parcel\Integration;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 use RuntimeException;
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Component\HttpClient\Response\MockResponse;
-use Greendot\EshopBundle\Parcel\Integration\PacketeryParcel;
-use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
-use Greendot\EshopBundle\Parcel\TransportationAPI;
-use Greendot\EshopBundle\Entity\Project\Purchase;
-use Greendot\EshopBundle\Entity\Project\Transportation;
+use Psr\Log\NullLogger;
+use InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Client;
-use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
-use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
+use Symfony\Component\HttpClient\Response\MockResponse;
+use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
+use Greendot\EshopBundle\Parcel\Integration\PacketeryParcel;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 class PacketeryParcelTest extends TestCase
 {
-    private function makeTransportation(string $secretKey, ?string $token = null): Transportation
+    public function testCreateParcel_pickupPoint_returnsBarcode(): void
     {
-        $t = $this->createMock(Transportation::class);
-        $t->method('getSecretKey')->willReturn($secretKey);
-        $t->method('getToken')->willReturn($token);
-        return $t;
-    }
+        $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
+        $branch = $this->createMock(Branch::class);
+        $branch->method('getProviderId')->willReturn('packeta_52');
 
-    private function makeAddress(string $country = 'cz'): PurchaseAddress
-    {
-        $a = $this->createMock(PurchaseAddress::class);
-        $a->method('getCountry')->willReturn($country);
-        $a->method('getStreet')->willReturn('Testovací 123');
-        $a->method('getCity')->willReturn('Praha');
-        $a->method('getZip')->willReturn('10000');
-        return $a;
-    }
-
-    /**
-     * Customer specified a separate shipping address (ship_* override fields) different
-     * from the billing address, so the packet must be addressed to the actual recipient.
-     */
-    private function makeAddressWithShipOverride(string $country = 'cz'): PurchaseAddress
-    {
-        $a = $this->createMock(PurchaseAddress::class);
-        $a->method('getCountry')->willReturn($country);
-        $a->method('getStreet')->willReturn('Testovací 123');
-        $a->method('getCity')->willReturn('Praha');
-        $a->method('getZip')->willReturn('10000');
-        $a->method('getShipName')->willReturn('Jane');
-        $a->method('getShipSurname')->willReturn('Smith');
-        $a->method('getShipStreet')->willReturn('Hlavní 1');
-        $a->method('getShipCity')->willReturn('Brno');
-        $a->method('getShipZip')->willReturn('60200');
-        return $a;
-    }
-
-    private function makePaymentType(bool $isCod): PaymentType
-    {
-        $p = $this->createMock(PaymentType::class);
-        $p->method('getActionGroup')->willReturn(
-            $isCod ? PaymentTypeActionGroup::ON_DELIVERY : PaymentTypeActionGroup::CARD_PAYMENT
+        $result = $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('secret123'), $branch),
         );
-        return $p;
+
+        $this->assertSame('Z4154090000', $result);
     }
 
-    private function makePurchase(
-        Transportation $transportation,
-        ?Branch $branch,
-        bool $isCod = false,
-        string $country = 'cz',
-        ?PurchaseAddress $address = null,
-    ): Purchase {
-        $client = $this->createMock(Client::class);
-        $client->method('getName')->willReturn('John');
-        $client->method('getSurname')->willReturn('Doe');
-        $client->method('getMail')->willReturn('john@example.com');
-        $client->method('getPhone')->willReturn('+420777123456');
+    private static function successXml(string $barcode = 'Z4154090000'): string
+    {
+        return "<response><status>ok</status><result><id>4154090000</id><barcode>$barcode</barcode><barcodeText>Z 415 4090 000</barcodeText></result></response>";
+    }
 
-        $purchase = $this->createMock(Purchase::class);
-        $purchase->method('getId')->willReturn(123);
-        $purchase->method('getTransportation')->willReturn($transportation);
-        $purchase->method('getBranch')->willReturn($branch);
-        $purchase->method('getClient')->willReturn($client);
-        $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
-        $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
-        $purchase->method('getTransportNumber')->willReturn('Z4154090000');
-        $purchase->method('isVatExempted')->willReturn(false);
-        return $purchase;
+    private function makeService(MockHttpClient $httpClient, float $price = 500.0, bool $enabled = true): PacketeryParcel
+    {
+        return new PacketeryParcel(
+            $httpClient,
+            new NullLogger(),
+            $this->makePriceFactory($price),
+            $this->makeCurrencyRepo(),
+            'TestEshop',
+            $enabled,
+        );
     }
 
     private function makePriceFactory(float $price = 500.0): PurchasePriceFactory
@@ -116,66 +76,57 @@ class PacketeryParcelTest extends TestCase
         return $repo;
     }
 
-    private function makeService(MockHttpClient $httpClient, float $price = 500.0, bool $enabled = true): PacketeryParcel
+    private function makePurchase(
+        Transportation   $transportation,
+        ?Branch          $branch,
+        bool             $isCod = false,
+        string           $country = 'cz',
+        ?PurchaseAddress $address = null,
+    ): Purchase
     {
-        return new PacketeryParcel(
-            $httpClient,
-            new NullLogger(),
-            $this->makePriceFactory($price),
-            $this->makeCurrencyRepo(),
-            'TestEshop',
-            $enabled,
-        );
+        $client = $this->createMock(Client::class);
+        $client->method('getName')->willReturn('John');
+        $client->method('getSurname')->willReturn('Doe');
+        $client->method('getMail')->willReturn('john@example.com');
+        $client->method('getPhone')->willReturn('+420777123456');
+
+        $purchase = $this->createMock(Purchase::class);
+        $purchase->method('getId')->willReturn(123);
+        $purchase->method('getTransportation')->willReturn($transportation);
+        $purchase->method('getBranch')->willReturn($branch);
+        $purchase->method('getClient')->willReturn($client);
+        $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
+        $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
+        $purchase->method('getTransportNumber')->willReturn('Z4154090000');
+        $purchase->method('isVatExempted')->willReturn(false);
+        return $purchase;
     }
 
-    /**
-     * Returns 214.0 when called without services included (the buggy, VAT-exclusive,
-     * shipping-exclusive price) and 353.94 when called with services included (the
-     * correct, VAT-inclusive price + shipping the courier should actually collect).
-     */
-    private function makeCodAwarePriceFactory(): PurchasePriceFactory
+    private function makeAddress(string $country = 'cz'): PurchaseAddress
     {
-        $calculator = $this->createMock(PurchasePrice::class);
-        $calculator->method('setVatCalculationType')->willReturnSelf();
-        $calculator->method('setDiscountCalculationType')->willReturnSelf();
-        $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturnCallback(
-            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0
-        );
-
-        $factory = $this->createMock(PurchasePriceFactory::class);
-        $factory->method('create')->willReturn($calculator);
-        return $factory;
+        $a = $this->createMock(PurchaseAddress::class);
+        $a->method('getCountry')->willReturn($country);
+        $a->method('getStreet')->willReturn('Testovací 123');
+        $a->method('getCity')->willReturn('Praha');
+        $a->method('getZip')->willReturn('10000');
+        return $a;
     }
 
-    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, bool $enabled = true): PacketeryParcel
+    private function makePaymentType(bool $isCod): PaymentType
     {
-        return new PacketeryParcel(
-            $httpClient,
-            new NullLogger(),
-            $this->makeCodAwarePriceFactory(),
-            $this->makeCurrencyRepo(),
-            'TestEshop',
-            $enabled,
+        $p = $this->createMock(PaymentType::class);
+        $p->method('getActionGroup')->willReturn(
+            $isCod ? PaymentTypeActionGroup::ON_DELIVERY : PaymentTypeActionGroup::CARD_PAYMENT,
         );
+        return $p;
     }
 
-    private static function successXml(string $barcode = 'Z4154090000'): string
+    private function makeTransportation(string $secretKey, ?string $token = null): Transportation
     {
-        return "<response><status>ok</status><result><id>4154090000</id><barcode>$barcode</barcode><barcodeText>Z 415 4090 000</barcodeText></result></response>";
-    }
-
-    public function testCreateParcel_pickupPoint_returnsBarcode(): void
-    {
-        $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
-
-        $result = $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('secret123'), $branch)
-        );
-
-        $this->assertSame('Z4154090000', $result);
+        $t = $this->createMock(Transportation::class);
+        $t->method('getSecretKey')->willReturn($secretKey);
+        $t->method('getToken')->willReturn($token);
+        return $t;
     }
 
     public function testCreateParcel_pickupPoint_usesStrippedAddressId(): void
@@ -190,51 +141,21 @@ class PacketeryParcelTest extends TestCase
         $branch->method('getProviderId')->willReturn('packeta_99');
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('pw'), $branch)
+            $this->makePurchase($this->makeTransportation('pw'), $branch),
         );
 
         $this->assertStringContainsString('<addressId>99</addressId>', $capturedBody);
     }
 
-    public function testCreateParcel_homeDelivery_usesTokenAsAddressIdAndSendsAddress(): void
+    public function testCreateParcel_noBranch_throwsInvalidArgumentException(): void
     {
-        $capturedBody = null;
-        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
-            $capturedBody = $options['body'];
-            return new MockResponse(self::successXml());
-        });
+        $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
 
-        $transportation = $this->makeTransportation('apiPw', '106');
+        $this->expectException(InvalidArgumentException::class);
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($transportation, null)
+            $this->makePurchase($this->makeTransportation('apiPw', '106'), null),
         );
-
-        $this->assertStringContainsString('<addressId>106</addressId>', $capturedBody);
-        $this->assertStringContainsString('<city>Praha</city>', $capturedBody);
-        $this->assertStringContainsString('<zip>10000</zip>', $capturedBody);
-        $this->assertStringContainsString('<street>Testovací 123</street>', $capturedBody);
-    }
-
-    public function testCreateParcel_shipOverride_addressesPacketToRecipientNotOrderer(): void
-    {
-        $capturedBody = null;
-        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
-            $capturedBody = $options['body'];
-            return new MockResponse(self::successXml());
-        });
-
-        $transportation = $this->makeTransportation('apiPw', '106');
-
-        $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($transportation, null, address: $this->makeAddressWithShipOverride())
-        );
-
-        $this->assertStringContainsString('<name>Jane</name>', $capturedBody);
-        $this->assertStringContainsString('<surname>Smith</surname>', $capturedBody);
-        $this->assertStringContainsString('<street>Hlavní 1</street>', $capturedBody);
-        $this->assertStringContainsString('<city>Brno</city>', $capturedBody);
-        $this->assertStringContainsString('<zip>60200</zip>', $capturedBody);
     }
 
     public function testCreateParcel_codOrder_includesCod(): void
@@ -249,7 +170,7 @@ class PacketeryParcelTest extends TestCase
         $branch->method('getProviderId')->willReturn('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true)
+            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true),
         );
 
         $this->assertStringContainsString('<cod>', $capturedBody);
@@ -267,12 +188,39 @@ class PacketeryParcelTest extends TestCase
         $branch->method('getProviderId')->willReturn('packeta_52');
 
         $this->makeServiceWithCodAwarePricing($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true)
+            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true),
         );
 
         $this->assertStringContainsString('<cod>353.94</cod>', $capturedBody);
         // Declared package value must stay VAT-and-shipping-exclusive (goods value only).
         $this->assertStringContainsString('<value>214</value>', $capturedBody);
+    }
+
+    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, bool $enabled = true): PacketeryParcel
+    {
+        return new PacketeryParcel(
+            $httpClient,
+            new NullLogger(),
+            $this->makeCodAwarePriceFactory(),
+            $this->makeCurrencyRepo(),
+            'TestEshop',
+            $enabled,
+        );
+    }
+
+    private function makeCodAwarePriceFactory(): PurchasePriceFactory
+    {
+        $calculator = $this->createMock(PurchasePrice::class);
+        $calculator->method('setVatCalculationType')->willReturnSelf();
+        $calculator->method('setDiscountCalculationType')->willReturnSelf();
+        $calculator->method('setVoucherCalculationType')->willReturnSelf();
+        $calculator->method('getPrice')->willReturnCallback(
+            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0,
+        );
+
+        $factory = $this->createMock(PurchasePriceFactory::class);
+        $factory->method('create')->willReturn($calculator);
+        return $factory;
     }
 
     public function testCreateParcel_nonCodOrder_excludesCod(): void
@@ -287,7 +235,7 @@ class PacketeryParcelTest extends TestCase
         $branch->method('getProviderId')->willReturn('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: false)
+            $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: false),
         );
 
         $this->assertStringNotContainsString('<cod>', $capturedBody);
@@ -305,7 +253,7 @@ class PacketeryParcelTest extends TestCase
         $branch->method('getProviderId')->willReturn('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('pw'), $branch)
+            $this->makePurchase($this->makeTransportation('pw'), $branch),
         );
 
         $this->assertStringContainsString('<eshop_id>TestEshop</eshop_id>', $capturedBody);
@@ -321,7 +269,7 @@ class PacketeryParcelTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->makeService($httpClient)->createParcel(
-            $this->makePurchase($this->makeTransportation('badpw'), $branch)
+            $this->makePurchase($this->makeTransportation('badpw'), $branch),
         );
     }
 
@@ -331,7 +279,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::RECEIVED_DATA, $result->state);
@@ -344,7 +292,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
@@ -357,7 +305,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
@@ -370,7 +318,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
@@ -383,7 +331,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::READY_FOR_PICKUP, $result->state);
@@ -396,7 +344,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::DELIVERED, $result->state);
@@ -409,7 +357,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::NOT_PICKED_UP, $result->state);
@@ -422,7 +370,7 @@ class PacketeryParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse($xml));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
-            $this->makePurchase($this->makeTransportation('pw'), null)
+            $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
         $this->assertSame(ParcelDeliveryStateEnum::CANCELLED, $result->state);

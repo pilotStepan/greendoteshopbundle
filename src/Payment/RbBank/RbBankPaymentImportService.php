@@ -169,6 +169,12 @@ readonly class RbBankPaymentImportService
         return $records;
     }
 
+    private function parseDate(string $value): ?\DateTimeImmutable
+    {
+        $date = \DateTimeImmutable::createFromFormat('d.m.Y', trim($value));
+        return $date !== false ? $date : null;
+    }
+
     private function parseLine(string $line): ?RbBankPaymentRecord
     {
         $columns = str_getcsv($line, ';');
@@ -183,13 +189,21 @@ readonly class RbBankPaymentImportService
             return null;
         }
 
+        $validFrom = $this->parseDate($columns[0]);
+        $validTo = $this->parseDate($columns[1]);
+        $transferDate = $this->parseDate($columns[5]);
+        if ($validFrom === null || $validTo === null || $transferDate === null) {
+            $this->logger->warning('Skipping RB bank payment row with unparsable date', ['line' => $line]);
+            return null;
+        }
+
         return new RbBankPaymentRecord(
-            validFrom: \DateTimeImmutable::createFromFormat('d.m.Y', trim($columns[0])),
-            validTo: \DateTimeImmutable::createFromFormat('d.m.Y', trim($columns[1])),
+            validFrom: $validFrom,
+            validTo: $validTo,
             prescribedAmount: (float)$columns[2],
             currencyCode: trim($columns[3]),
             transferredAmount: (float)$columns[4],
-            transferDate: \DateTimeImmutable::createFromFormat('d.m.Y', trim($columns[5])),
+            transferDate: $transferDate,
             debitAccountNumber: trim($columns[6]),
             debitBankCode: trim($columns[7]),
             creditAccountNumber: trim($columns[8]),

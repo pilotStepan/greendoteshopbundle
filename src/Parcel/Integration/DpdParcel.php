@@ -11,6 +11,7 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
@@ -72,14 +73,15 @@ class DpdParcel implements ParcelServiceInterface
                 'json' => $body,
             ]);
 
-            $data = $response->toArray(false);
+            $data = $this->decodeResponse($response, 'createParcel', $purchase->getId());
 
             $shipmentId = $data['shipmentResults'][0]['shipmentId'] ?? null;
             $mpsId = $data['shipmentResults'][0]['mpsId'] ?? null;
             if ($shipmentId === null || $mpsId === null) {
-                $this->logger->error('DPD API error on createParcel', [
+                $this->logger->error('DPD API error on createParcel: no shipmentId/mpsId in response', [
                     'purchaseId' => $purchase->getId(),
-                    'response' => $data,
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $response->getContent(false),
                 ]);
                 throw new RuntimeException('DPD createParcel failed: no shipmentId/mpsId in response');
             }
@@ -93,6 +95,8 @@ class DpdParcel implements ParcelServiceInterface
             $this->logger->error('DPD HTTP exception on createParcel', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
+                'httpStatusCode' => $this->safeStatusCode($response ?? null),
+                'response' => $this->safeContent($response ?? null),
             ]);
             throw $e;
         }
@@ -112,9 +116,14 @@ class DpdParcel implements ParcelServiceInterface
                 ],
             ]);
 
-            $data = $response->toArray(false);
+            $data = $this->decodeResponse($response, 'getParcelStatus', $purchase->getId());
             $shipment = $data['shipment'] ?? null;
             if ($shipment === null) {
+                $this->logger->error('DPD API error on getParcelStatus: shipment not found in response', [
+                    'purchaseId' => $purchase->getId(),
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $response->getContent(false),
+                ]);
                 throw new RuntimeException('DPD getParcelStatus failed: shipment not found in response');
             }
 
@@ -136,8 +145,56 @@ class DpdParcel implements ParcelServiceInterface
             $this->logger->error('DPD HTTP exception on getParcelStatus', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
+                'httpStatusCode' => $this->safeStatusCode($response ?? null),
+                'response' => $this->safeContent($response ?? null),
             ]);
             throw $e;
+        }
+    }
+
+    private function decodeResponse(ResponseInterface $response, string $operation, int $purchaseId): array
+    {
+        $statusCode = $this->safeStatusCode($response);
+        $rawContent = $this->safeContent($response);
+
+        try {
+            $data = json_decode((string)$rawContent, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            $this->logger->error("DPD API error on $operation: non-JSON response", [
+                'purchaseId' => $purchaseId,
+                'httpStatusCode' => $statusCode,
+                'response' => $rawContent,
+            ]);
+            throw new RuntimeException("DPD $operation failed: non-JSON response (HTTP $statusCode)", 0, $e);
+        }
+
+        if (!is_array($data)) {
+            $this->logger->error("DPD API error on $operation: unexpected response shape", [
+                'purchaseId' => $purchaseId,
+                'httpStatusCode' => $statusCode,
+                'response' => $rawContent,
+            ]);
+            throw new RuntimeException("DPD $operation failed: unexpected response shape (HTTP $statusCode)");
+        }
+
+        return $data;
+    }
+
+    private function safeStatusCode(?ResponseInterface $response): ?int
+    {
+        try {
+            return $response?->getStatusCode();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function safeContent(?ResponseInterface $response): ?string
+    {
+        try {
+            return $response?->getContent(false);
+        } catch (Throwable) {
+            return null;
         }
     }
 

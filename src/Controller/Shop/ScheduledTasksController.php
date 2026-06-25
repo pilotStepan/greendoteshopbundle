@@ -51,7 +51,7 @@ class ScheduledTasksController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/scheduled/bank', name: 'scheduled_bank', methods: ['GET'])]
-    public function scheduleBank(string $startDate): JsonResponse
+    public function scheduleBank(): JsonResponse
     {
         $date = new \DateTime();
         $date->modify("-3 days");

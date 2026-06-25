@@ -336,6 +336,29 @@ class DpdParcelTest extends TestCase
         );
     }
 
+    public function testCreateParcel_nonJsonResponse_throwsRuntimeException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse('<html>Bad Gateway</html>', ['http_code' => 502]));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('non-JSON response (HTTP 502)');
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    public function testCreateParcel_emptyResponseBody_throwsRuntimeException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(''));
+
+        $this->expectException(RuntimeException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
     public function testCreateParcel_usesProdUrlInProdEnvironment(): void
     {
         $capturedUrl = null;
@@ -414,6 +437,29 @@ class DpdParcelTest extends TestCase
     public function testGetParcelStatus_shipmentNotFound_throwsRuntimeException(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(json_encode(['transactionId' => 1])));
+
+        $this->expectException(RuntimeException::class);
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    public function testGetParcelStatus_nonJsonResponse_throwsRuntimeExceptionWithStatusCode(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse('Not Found', ['http_code' => 404]));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('non-JSON response (HTTP 404)');
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    public function testGetParcelStatus_emptyResponseBody_throwsRuntimeException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(''));
 
         $this->expectException(RuntimeException::class);
 

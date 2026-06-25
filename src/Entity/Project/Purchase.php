@@ -92,6 +92,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Purchase
 {
     private const SHIPMENT_ID = 'shipment_id';
+    private const COURIER_NUMBER = 'courier_number';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -471,6 +472,21 @@ class Purchase
     {
         $this->additionalInfo = array_filter(
             [...($this->additionalInfo ?? []), self::SHIPMENT_ID => $shipmentId],
+            static fn($v) => $v !== null
+        );
+
+        return $this;
+    }
+
+    public function getCourierNumber(): ?string
+    {
+        return $this->additionalInfo[self::COURIER_NUMBER] ?? null;
+    }
+
+    public function setCourierNumber(?string $courierNumber): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::COURIER_NUMBER => $courierNumber],
             static fn($v) => $v !== null
         );
 

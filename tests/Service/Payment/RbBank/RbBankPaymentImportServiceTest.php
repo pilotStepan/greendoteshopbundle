@@ -159,6 +159,19 @@ class RbBankPaymentImportServiceTest extends TestCase
         ;
     }
 
+    public function testRowWithUnparsableDateIsSkipped(): void
+    {
+        $this->purchaseRepository->expects($this->never())->method('find');
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+        $this->logger->expects($this->atLeastOnce())->method('warning');
+
+        $line = sprintf(self::ROW, '100.00', 'not-a-date', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+    }
+
     public function testMultipleCompletedRecordsAreAllProcessedInOneBatch(): void
     {
         $purchase1 = new Purchase();

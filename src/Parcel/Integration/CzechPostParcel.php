@@ -189,6 +189,24 @@ class CzechPostParcel implements ParcelServiceInterface
 
         $weight = 1;
 
+        $parcelParams = [
+            'recordID' => (string)$purchase->getId(),
+            'prefixParcelCode' => 'DR',
+            'weight' => number_format($weight, 2),
+            'insuredValue' => $insuredValue,
+            'amount' => $codAmount,
+            'currency' => 'CZK',
+            'vsParcel' => (string)$purchase->getId(),
+            'length' => 0,
+            'width' => 0,
+            'height' => 0,
+        ];
+        // vsVoucher must match ^\d{1,10}$ on Czech Post's side; omit it entirely for non-COD parcels
+        // rather than sending an empty string, which the API rejects with a 400.
+        if ($isCod) {
+            $parcelParams['vsVoucher'] = (string)$purchase->getId();
+        }
+
         return [
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
@@ -205,19 +223,7 @@ class CzechPostParcel implements ParcelServiceInterface
                 'position' => 1,
             ],
             'parcelServiceData' => [
-                'parcelParams' => [
-                    'recordID' => (string)$purchase->getId(),
-                    'prefixParcelCode' => 'DR',
-                    'weight' => number_format($weight, 2),
-                    'insuredValue' => $insuredValue,
-                    'amount' => $codAmount,
-                    'currency' => 'CZK',
-                    'vsVoucher' => $isCod ? (string)$purchase->getId() : '',
-                    'vsParcel' => (string)$purchase->getId(),
-                    'length' => 0,
-                    'width' => 0,
-                    'height' => 0,
-                ],
+                'parcelParams' => $parcelParams,
                 'parcelAddress' => $this->buildParcelAddress($purchase),
                 // (https://www.postaonline.cz/podanionline/ePOST-dokumentace/231standardniObsah.html):
                 // '7' = Udaná cena (declared/insured value) - always sent since insuredValue is always populated;

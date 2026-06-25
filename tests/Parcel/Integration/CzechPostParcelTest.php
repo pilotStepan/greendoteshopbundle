@@ -371,7 +371,7 @@ class CzechPostParcelTest extends TestCase
         $parcelParams = $decoded['parcelServiceData']['parcelParams'];
 
         $this->assertSame(0, $parcelParams['amount']);
-        $this->assertSame('', $parcelParams['vsVoucher']);
+        $this->assertArrayNotHasKey('vsVoucher', $parcelParams);
         $this->assertNotContains('41', $decoded['parcelServiceData']['parcelServices']);
     }
 
