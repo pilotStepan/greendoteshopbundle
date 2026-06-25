@@ -112,6 +112,20 @@ class ParameterRepository extends ServiceEntityRepository
 
     }
 
+    public function getVariantParametersLabel(ProductVariant $productVariant, string $separator = ', '): string
+    {
+        $queryBuilder = $this->createQueryBuilder('parameter');
+        $queryBuilder->select("CASE WHEN format.name = 'color' THEN color.name ELSE parameter.data END as data");
+        $variantDataQB = $this->findProductParameterGroupsParametersQB($productVariant, $queryBuilder);
+        $results = $variantDataQB->getQuery()->getResult();
+
+        if (!$results) {
+            return '';
+        }
+
+        return implode($separator, array_column($results, 'data'));
+    }
+
     public function add(Parameter $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);

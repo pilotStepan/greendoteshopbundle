@@ -23,6 +23,7 @@ use Greendot\EshopBundle\Invoice\Data\VatCategoryData;
 use Greendot\EshopBundle\Repository\Project\CountryRepository;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 
 /**
@@ -40,6 +41,7 @@ final class InvoiceDataFactory
         private ProductVariantPriceFactory  $productVariantPriceFactory,
         private CurrencyRepository          $currencyRepository,
         private CountryRepository           $countryRepository,
+        private ParameterRepository         $parameterRepository,
         private QRcodeGenerator             $qrGenerator,
         #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
         private string $secondaryCurrencyName,
@@ -196,7 +198,8 @@ final class InvoiceDataFactory
                 priceNoVatNoDiscount:           $priceNoVatNoDiscount,
                 priceNoVatNoDiscountSecondary:  $priceNoVatNoDiscountSecondary,
                 priceVatNoDiscount:             $priceVatNoDiscount,
-                priceVatNoDiscountSecondary:    $priceVatNoDiscountSecondary
+                priceVatNoDiscountSecondary:    $priceVatNoDiscountSecondary,
+                parametersLabel:                $this->parameterRepository->getVariantParametersLabel($variant),
             );
         }
         return $items;
