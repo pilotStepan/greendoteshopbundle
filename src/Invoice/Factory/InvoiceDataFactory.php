@@ -54,9 +54,9 @@ final class InvoiceDataFactory
 
         $invoiceNumber = $purchase->getInvoiceNumber();
         $isInvoice = $invoiceNumber !== null;
-    
 
-       $dateInvoiced = new \DateTime(
+
+        $dateInvoiced = new \DateTime(
             ($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue())->format('Y-m-d H:i:s')
         );
         $dateDue = (new \DateTime($dateInvoiced->format('Y-m-d H:i:s')))->modify('+10 days');
@@ -69,7 +69,15 @@ final class InvoiceDataFactory
         $items = $this->buildItems($purchase, $czk, $eur);
         $vatCategories = $this->buildVatCategories($purchase, $czk, $eur);
         [$discountPercentage, $discountValueCzk, $discountValueEur] = array_values($this->buildDiscount($czk, $eur));
-        [$totalPriceNoVatCzk, $totalPriceNoVatEur, $totalPriceVatCzk, $totalPriceVatEur, $totalPriceNoVatNoDiscountCzk, $totalPriceNoVatNoDiscountEur, $totalPriceVatNoDiscountCzk, $totalPriceVatNoDiscountEur] = array_values($this->buildPrices($czk, $eur));
+        [
+            $totalPriceNoVatCzk, $totalPriceNoVatEur,
+            $totalPriceVatCzk, $totalPriceVatEur,
+            $totalPriceNoVatNoDiscountCzk, $totalPriceNoVatNoDiscountEur,
+            $totalPriceVatNoDiscountCzk, $totalPriceVatNoDiscountEur,
+            $toPayVatCzk, $toPayVatEur,
+            $toPayNoVatCzk, $toPayNoVatEur
+        ] = array_values($this->buildPrices($czk, $eur));
+
         [$vouchersUsed, $voucherValueCzk, $voucherValueEur] = array_values($this->buildVoucher($czk, $eur));
 
         $purchaseDiscount = $purchase->getClientDiscount();
@@ -106,6 +114,10 @@ final class InvoiceDataFactory
             vouchersUsed:                           $vouchersUsed,
             voucherValue:                           $voucherValueCzk,
             voucherValueSecondary:                  $voucherValueEur,
+            toPayVatCzk:                            $toPayVatCzk,
+            toPayVatEur:                            $toPayVatEur,
+            toPayNoVatCzk:                          $toPayNoVatCzk,
+            toPayNoVatEur:                          $toPayNoVatEur
         );
     }
 
@@ -208,10 +220,10 @@ final class InvoiceDataFactory
     private function buildTransportation(Purchase $purchase, Currency $currencyPrimary, Currency $currencySecondary) : InvoiceTransportationData
     {
         $transportation = $purchase->getTransportation();
-        
-        
+
+
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
-                            ->setVatCalculationType(VatCalculationType::WithVAT);
+            ->setVatCalculationType(VatCalculationType::WithVAT);
         $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getTransportationPrice() ?? 0.0;
         $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getTransportationPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($currencyPrimary);
@@ -237,7 +249,7 @@ final class InvoiceDataFactory
         $paymentType = $purchase->getPaymentType();
 
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
-                            ->setVatCalculationType(VatCalculationType::WithVAT);
+            ->setVatCalculationType(VatCalculationType::WithVAT);
         $priceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPaymentPrice() ?? 0;
         $priceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPaymentPrice() ?? 0;
         $this->purchasePrice->setCurrency($currencyPrimary);
@@ -267,8 +279,8 @@ final class InvoiceDataFactory
     {
 
         $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
-                            ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
-                            ->setVatCalculationType(VatCalculationType::WithoutVAT);
+            ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
+            ->setVatCalculationType(VatCalculationType::WithoutVAT);
         $totalPriceNoVatNoDiscountPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
         $totalPriceNoVatNoDiscountSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
@@ -276,14 +288,21 @@ final class InvoiceDataFactory
         $totalPriceVatNoDiscountPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
         $totalPriceVatNoDiscountSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
-        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
-                            ->setVoucherCalculationType(VoucherCalculationType::WithVoucher);
+        $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
         $totalPriceVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
         $totalPriceVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
 
         $this->purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT);
         $totalPriceNoVatPrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
         $totalPriceNoVatSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
+
+        $this->purchasePrice->setVoucherCalculationType(VoucherCalculationType::WithVoucher);
+        $toPayNoVatCzk = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
+        $toPayNoVatEur = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
+        $this->purchasePrice->setVatCalculationType(VatCalculationType::WithVAT);
+        $toPayVatCzk = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true) ?? 0;
+        $toPayVatEur = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true) ?? 0;
+
 
 
         return [
@@ -295,12 +314,16 @@ final class InvoiceDataFactory
             $totalPriceNoVatNoDiscountSecondary,
             $totalPriceVatNoDiscountPrimary,
             $totalPriceVatNoDiscountSecondary,
+            $toPayVatCzk,
+            $toPayVatEur,
+            $toPayNoVatCzk,
+            $toPayNoVatEur
         ];
     }
 
     // private function buildContractor() : InvoicePersonData
     // {
-    //     // TODO   
+    //     // TODO
     // }
 
     private function buildCustomer(Purchase $purchase) : InvoicePersonData
@@ -384,14 +407,14 @@ final class InvoiceDataFactory
         foreach($vatPercentages as $vatPercentage)
         {
             // check for null values
-            if(!is_float($vatPercentage)) 
+            if(!is_float($vatPercentage))
             {
                 continue;
             }
-            
+
             $this->purchasePrice->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
-                                ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
-                                ->setVatCalculationType(VatCalculationType::WithoutVAT);
+                ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
+                ->setVatCalculationType(VatCalculationType::WithoutVAT);
             $basePrimary = $this->purchasePrice->setCurrency($currencyPrimary)->getPrice(true, $vatPercentage);
             $baseSecondary = $this->purchasePrice->setCurrency($currencySecondary)->getPrice(true, $vatPercentage);
 

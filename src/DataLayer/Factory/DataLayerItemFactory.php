@@ -36,8 +36,8 @@ class DataLayerItemFactory
         if (!$quantity){
             $quantity = $productVariantPrice->getMinimalAmount() ?? 1;
         }
-        $priceNoVat = $productVariantPrice->getPrice();
-        $priceVat = $productVariantPrice->setVatCalculationType(VatCalculationType::WithVAT)->getPrice();
+        $priceNoVat = $productVariantPrice->getPrice() ?? 0.0;
+        $priceVat = $productVariantPrice->setVatCalculationType(VatCalculationType::WithVAT)->getPrice() ?? 0.0;
 
         return new DataLayerItem(
             item_id: $variant->getId(),

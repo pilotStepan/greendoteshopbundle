@@ -76,6 +76,6 @@ class CheckoutFunnelFactory
 
     private function getValue(Purchase $purchase, Currency $currency): float
     {
-        return $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT)->getPrice(true);
+        return $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT)->getPrice(true) ?? 0.0;
     }
 }

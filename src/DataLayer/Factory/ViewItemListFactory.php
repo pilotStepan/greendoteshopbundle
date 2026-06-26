@@ -100,7 +100,7 @@ class ViewItemListFactory
 
         foreach ($products as $product){
             $this->calculatedPricesService->makeCalculatedPricesForProduct(
-                product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$product->getId()]);
+                product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$product->getId()] ?? null);
         }
 
         return $products;
@@ -125,6 +125,6 @@ class ViewItemListFactory
         if (isset($response['member'])) {
             return $response['member'];
         }
-        return $response;
+        return $response ?? [];
     }
 }
