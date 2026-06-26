@@ -209,6 +209,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
 
         $this->assertSame('NB', $parcelParam['prefixParcelCode']);
         $this->assertSame('1.00', $parcelParam['weight']);
+        $this->assertSame('VS 123', $parcelParam['note']);
         $this->assertSame(['street' => 'Balíkovna', 'zipCode' => '10000'], $address);
     }
 

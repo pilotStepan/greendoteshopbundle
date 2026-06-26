@@ -272,6 +272,7 @@ class CzechPostParcelTest extends TestCase
         $address = $decoded['parcelServiceData']['parcelAddress']['address'];
 
         $this->assertSame('DR', $parcelParams['prefixParcelCode']);
+        $this->assertSame('VS 123', $parcelParams['note']);
         $this->assertSame('Testovací 123', $address['street']);
         $this->assertSame('Praha', $address['city']);
         $this->assertSame('10000', $address['zipCode']);

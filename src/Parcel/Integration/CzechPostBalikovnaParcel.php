@@ -204,6 +204,8 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             'amount' => $codAmount,
             'currency' => 'CZK',
             'vsParcel' => (string)$purchase->getId(),
+            'note' => 'VS ' . $purchase->getId(),
+            'notePrint' => 'VS ' . $purchase->getId(),
             'length' => 0,
             'width' => 0,
             'height' => 0,
