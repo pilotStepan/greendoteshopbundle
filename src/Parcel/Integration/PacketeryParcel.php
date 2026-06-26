@@ -3,8 +3,8 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -35,7 +35,7 @@ class PacketeryParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         $xml = $this->callPacketeryApi('createPacket', $this->prepareParcelData($purchase), 'createPacket', $purchase);
@@ -53,7 +53,7 @@ class PacketeryParcel implements ParcelServiceInterface
         $branch = $purchase->getBranch();
         if ($branch === null) {
             $this->logger->error('No pickup branch set for Packeta pickup-point purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No pickup branch set for purchase');
+            throw new PermanentParcelException('No pickup branch set for purchase');
         }
 
         $currency = match ($country) {

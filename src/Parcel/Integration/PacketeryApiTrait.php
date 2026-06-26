@@ -13,6 +13,8 @@ use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 
 
 trait PacketeryApiTrait
@@ -57,14 +59,20 @@ trait PacketeryApiTrait
 
             if ((string)$xml->status !== 'ok') {
                 $rawResponse = $response->getContent(false);
+                $fault = isset($xml->fault) ? (string)$xml->fault : '';
                 $this->logger->error("Packeta API error on $logContext", [
                     'purchaseId' => $purchase->getId(),
                     'response' => $rawResponse,
                 ]);
-                throw new RuntimeException("Packeta $logContext failed: $rawResponse");
+                if (in_array($fault, ['PacketAttributesFault', 'InvalidCourierNumber', 'InvalidApiPassword', 'SenderNotExists'], true)) {
+                    throw new PermanentParcelException("Packeta $logContext failed (permanent/$fault): $rawResponse");
+                }
+                throw new TransientParcelException("Packeta $logContext failed: $rawResponse");
             }
 
             return $xml;
+        } catch (PermanentParcelException | TransientParcelException $e) {
+            throw $e;
         } catch (RuntimeException $e) {
             throw $e;
         } catch (Throwable $e) {

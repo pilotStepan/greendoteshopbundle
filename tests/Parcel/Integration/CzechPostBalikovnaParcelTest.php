@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use Symfony\Component\HttpClient\MockHttpClient;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Parcel\Integration\CzechPostBalikovnaParcel;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
@@ -270,14 +271,14 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $this->assertNotContains('41', $decoded['parcelServiceData']['parcelServices']);
     }
 
-    public function testCreateParcel_noBranch_throwsInvalidArgumentException(): void
+    public function testCreateParcel_noBranch_throwsPermanentParcelException(): void
     {
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getTransportation')->willReturn($this->makeTransportation('c2VjcmV0'));
         $purchase->method('getBranch')->willReturn(null);
         $purchase->method('getId')->willReturn(123);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(PermanentParcelException::class);
 
         $this->makeService(new MockHttpClient())->createParcel($purchase);
     }

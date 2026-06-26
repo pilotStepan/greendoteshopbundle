@@ -4,8 +4,8 @@ namespace Greendot\EshopBundle\Tests\Parcel\Integration;
 
 use RuntimeException;
 use Psr\Log\NullLogger;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -147,11 +147,11 @@ class PacketeryParcelTest extends TestCase
         $this->assertStringContainsString('<addressId>99</addressId>', $capturedBody);
     }
 
-    public function testCreateParcel_noBranch_throwsInvalidArgumentException(): void
+    public function testCreateParcel_noBranch_throwsPermanentParcelException(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(PermanentParcelException::class);
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('apiPw', '106'), null),

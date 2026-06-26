@@ -3,10 +3,10 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Throwable;
-use RuntimeException;
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -63,13 +63,13 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         $branch = $purchase->getBranch();
         if (!$branch instanceof Branch) {
             $this->logger->error('No branch (pickup point) set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No branch set for purchase');
+            throw new PermanentParcelException('No branch set for purchase');
         }
 
         $body = $this->prepareParcelData($purchase, $branch);
@@ -92,11 +92,11 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
                     'httpStatusCode' => $response->getStatusCode(),
                     'response' => $rawResponse,
                 ]);
-                throw new RuntimeException("Failed to create Balikovna parcel: $rawResponse");
+                throw new TransientParcelException("Failed to create Balikovna parcel: $rawResponse");
             }
 
             return (string)$parcelCode;
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('Czech Post HTTP exception on createParcel', [
@@ -115,13 +115,13 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
         $transportNumber = $purchase->getTransportNumber();
         if (!$transportNumber) {
             $this->logger->error('No transport number for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transport number for purchase');
+            throw new PermanentParcelException('No transport number for purchase');
         }
 
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         try {
@@ -141,7 +141,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
                     'httpStatusCode' => $response->getStatusCode(),
                     'response' => $rawResponse,
                 ]);
-                throw new RuntimeException("Czech Post getParcelStatus failed: $rawResponse");
+                throw new TransientParcelException("Czech Post getParcelStatus failed: $rawResponse");
             }
 
             $statusId = (string)($status['statusID'] ?? '');
@@ -157,7 +157,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
                 ],
                 occurredAt: $occurredAt,
             );
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('Czech Post HTTP exception on getParcelStatus', [
@@ -208,8 +208,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             'width' => 0,
             'height' => 0,
         ];
-        // vsVoucher must match ^\d{1,10}$ on Czech Post's side; omit it entirely for non-COD parcels
-        // rather than sending an empty string, which the API rejects with a 400.
+
         if ($isCod) {
             $parcelParams['vsVoucher'] = (string)$purchase->getId();
         }

@@ -3,13 +3,13 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
@@ -40,13 +40,13 @@ class PacketeryAddressParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         $xml = $this->callPacketeryApi('createPacket', $this->prepareParcelData($purchase), 'createPacket', $purchase);
         $packetId = (string)$xml->result->id;
 
-        $this->fetchCourierTrackingAndLabel($purchase, $transportation, $packetId);
+        // $this->fetchCourierTrackingAndLabel($purchase, $transportation, $packetId);
 
         return (string)$xml->result->barcode;
     }

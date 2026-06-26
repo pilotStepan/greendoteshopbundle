@@ -3,10 +3,10 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Throwable;
-use RuntimeException;
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
@@ -62,7 +62,7 @@ class CzechPostParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         $body = $this->prepareParcelData($purchase);
@@ -85,11 +85,11 @@ class CzechPostParcel implements ParcelServiceInterface
                     'httpStatusCode' => $response->getStatusCode(),
                     'response' => $rawResponse,
                 ]);
-                throw new RuntimeException("Failed to create parcel: $rawResponse");
+                throw new TransientParcelException("Failed to create parcel: $rawResponse");
             }
 
             return (string)$parcelCode;
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('Czech Post HTTP exception on createParcel', [
@@ -108,13 +108,13 @@ class CzechPostParcel implements ParcelServiceInterface
         $transportNumber = $purchase->getTransportNumber();
         if (!$transportNumber) {
             $this->logger->error('No transport number for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transport number for purchase');
+            throw new PermanentParcelException('No transport number for purchase');
         }
 
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         try {
@@ -134,7 +134,7 @@ class CzechPostParcel implements ParcelServiceInterface
                     'httpStatusCode' => $response->getStatusCode(),
                     'response' => $rawResponse,
                 ]);
-                throw new RuntimeException("Czech Post getParcelStatus failed: $rawResponse");
+                throw new TransientParcelException("Czech Post getParcelStatus failed: $rawResponse");
             }
 
             $statusId = (string)($status['statusID'] ?? '');
@@ -150,7 +150,7 @@ class CzechPostParcel implements ParcelServiceInterface
                 ],
                 occurredAt: $occurredAt,
             );
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('Czech Post HTTP exception on getParcelStatus', [

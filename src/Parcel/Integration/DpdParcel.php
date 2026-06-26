@@ -3,11 +3,11 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Throwable;
-use RuntimeException;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
@@ -59,7 +59,7 @@ class DpdParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         $body = $this->prepareShipmentData($purchase);
@@ -83,13 +83,13 @@ class DpdParcel implements ParcelServiceInterface
                     'httpStatusCode' => $response->getStatusCode(),
                     'response' => $response->getContent(false),
                 ]);
-                throw new RuntimeException('DPD createParcel failed: no shipmentId/mpsId in response');
+                throw new TransientParcelException('DPD createParcel failed: no shipmentId/mpsId in response');
             }
 
             $purchase->setShipmentId((string)$shipmentId);
 
             return (string)$mpsId;
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('DPD HTTP exception on createParcel', [
@@ -124,7 +124,7 @@ class DpdParcel implements ParcelServiceInterface
                     'httpStatusCode' => $response->getStatusCode(),
                     'response' => $response->getContent(false),
                 ]);
-                throw new RuntimeException('DPD getParcelStatus failed: shipment not found in response');
+                throw new TransientParcelException('DPD getParcelStatus failed: shipment not found in response');
             }
 
             $statusCode = (int)($shipment['status'] ?? 0);
@@ -139,7 +139,7 @@ class DpdParcel implements ParcelServiceInterface
                 details: ['status' => $statusCode],
                 occurredAt: $occurredAt,
             );
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('DPD HTTP exception on getParcelStatus', [
@@ -165,7 +165,7 @@ class DpdParcel implements ParcelServiceInterface
                 'httpStatusCode' => $statusCode,
                 'response' => $rawContent,
             ]);
-            throw new RuntimeException("DPD $operation failed: non-JSON response (HTTP $statusCode)", 0, $e);
+            throw new TransientParcelException("DPD $operation failed: non-JSON response (HTTP $statusCode)", 0, $e);
         }
 
         if (!is_array($data)) {
@@ -174,7 +174,7 @@ class DpdParcel implements ParcelServiceInterface
                 'httpStatusCode' => $statusCode,
                 'response' => $rawContent,
             ]);
-            throw new RuntimeException("DPD $operation failed: unexpected response shape (HTTP $statusCode)");
+            throw new TransientParcelException("DPD $operation failed: unexpected response shape (HTTP $statusCode)");
         }
 
         return $data;

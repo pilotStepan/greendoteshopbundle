@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Tests\Parcel\Integration;
 
 use RuntimeException;
 use Psr\Log\NullLogger;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use PHPUnit\Framework\TestCase;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -44,14 +45,14 @@ class PacketeryAddressParcelTest extends TestCase
     }
 
     /**
-     * Sequenced MockHttpClient: createPacket, then packetCourierNumber, then packetCourierLabelPdf.
+     * MockHttpClient that serves a successful createPacket response.
+     * The courier-number / label follow-up calls are disabled (fetchCourierTrackingAndLabel
+     * commented out), so only one request is made per createParcel call.
      */
     private function makeFullFlowHttpClient(?callable $onEachRequest = null): MockHttpClient
     {
         $responses = [
             new MockResponse(self::successCreateXml()),
-            new MockResponse(self::successCourierNumberXml()),
-            new MockResponse(self::successCourierLabelXml()),
         ];
 
         return new MockHttpClient(function (string $method, string $url, array $options) use (&$responses, $onEachRequest) {
@@ -200,7 +201,7 @@ class PacketeryAddressParcelTest extends TestCase
         return $a;
     }
 
-    public function testCreateParcel_fetchesCourierNumberAndLabelAfterCreatingPacket(): void
+    public function testCreateParcel_onlyCallsCreatePacket_courierFollowUpDisabled(): void
     {
         $capturedBodies = [];
         $httpClient = $this->makeFullFlowHttpClient(function (string $body) use (&$capturedBodies) {
@@ -211,20 +212,31 @@ class PacketeryAddressParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('apiPw', '131')),
         );
 
-        $this->assertCount(3, $capturedBodies);
-        $this->assertStringContainsString('<packetId>4154090000</packetId>', $capturedBodies[1]);
-        $this->assertStringContainsString('<packetId>4154090000</packetId>', $capturedBodies[2]);
-        $this->assertStringContainsString('<courierNumber>CN123456</courierNumber>', $capturedBodies[2]);
+        // Only createPacket — courier-number/label follow-up is disabled.
+        $this->assertCount(1, $capturedBodies);
+        $this->assertStringContainsString('<createPacket>', $capturedBodies[0]);
     }
 
-    public function testCreateParcel_persistsCourierNumberOnPurchase(): void
+    public function testCreateParcel_doesNotSetCourierNumber_followUpDisabled(): void
     {
         $httpClient = $this->makeFullFlowHttpClient();
         $purchase = $this->makePurchase($this->makeTransportation('apiPw', '131'));
 
-        $purchase->expects($this->once())->method('setCourierNumber')->with('CN123456');
+        $purchase->expects($this->never())->method('setCourierNumber');
 
         $this->makeService($httpClient)->createParcel($purchase);
+    }
+
+    public function testCreateParcel_packetAttributesFault_throwsPermanentParcelException(): void
+    {
+        $xml = '<response><status>fault</status><fault>PacketAttributesFault</fault><string>Failed to validate attributes. See detail.</string><detail><attributes><fault><name>addressId</name><fault>Invalid branch.</fault></fault></attributes></detail></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('pw', '131')),
+        );
     }
 
     public function testCreateParcel_codOrder_includesCod(): void

@@ -15,6 +15,7 @@ use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -79,6 +80,12 @@ readonly class CreateParcelHandler
             $purchase->setTransportNumber($parcelId);
             $this->recordReceivedDataEvent($purchase);
             $this->em->flush();
+        } catch (PermanentParcelException $e) {
+            $this->logger->error('Parcel creation rejected by carrier; manual action required', [
+                'purchaseId' => $purchaseId,
+                'error' => $e->getMessage(),
+            ]);
+            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
         } catch (Throwable $e) {
             $this->logger->error('Creating parcel failed; will retry', [
                 'purchaseId' => $purchaseId,
