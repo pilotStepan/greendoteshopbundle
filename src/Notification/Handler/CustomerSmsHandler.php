@@ -37,7 +37,7 @@ final readonly class CustomerSmsHandler implements PurchaseNotificationHandlerIn
                 'transition' => $transition,
                 'exception' => $e,
             ]);
-            // throw $e;
+            throw $e;
         }
     }
 }

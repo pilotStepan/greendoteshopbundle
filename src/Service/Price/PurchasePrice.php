@@ -58,7 +58,7 @@ class PurchasePrice
         $dConversionRate->setRate(1);
 
         $this->defaultConversionRate = $dConversionRate;
-        $doesFreeFromPriceIncludesVat = $settingsRepository->findOneBy(['value' => 'free_from_price_includes_vat']);
+        $doesFreeFromPriceIncludesVat = $settingsRepository->findOneBy(['name' => 'free_from_price_includes_vat']);
         if ($doesFreeFromPriceIncludesVat instanceof Settings){
             $doesFreeFromPriceIncludesVat = filter_var($doesFreeFromPriceIncludesVat->getValue(), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
         }else{

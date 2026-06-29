@@ -74,8 +74,8 @@ abstract class PriceCalculationTestCase extends TestCase
         $this->security = $this->createMock(Security::class);
         $this->discountService = $this->createMock(DiscountService::class);
         $this->settingsRepository = $this->createMock(SettingsRepository::class);
-        $this->settingsRepository->method('findParameterValueWithName')->willReturn(20);
-        $this->settingsRepository->method('findOneBy')->willReturn((new Settings())->setName('free_from_price_includes_vat')->setValue(0));
+        $this->settingsRepository->method('findParameterValueWithName')->with('after_registration_discount')->willReturn(20);
+        $this->settingsRepository->method('findOneBy')->with(['name' => 'free_from_price_includes_vat'])->willReturn((new Settings())->setName('free_from_price_includes_vat')->setValue(0));
         $this->handlingPriceRepository = $this->createMock(HandlingPriceRepository::class);
         $this->serviceCalculationUtils = new ServiceCalculationUtils(
             $this->handlingPriceRepository,
@@ -117,7 +117,7 @@ abstract class PriceCalculationTestCase extends TestCase
 
         $clientDiscountObject->method('getDiscount')->willReturn($clientDiscount);
         $this->security->method('getUser')->willReturn($client);
-        $this->discountService->method('getValidClientDiscount')->willReturn($clientDiscountObject);
+        $this->discountService->method('getValidClientDiscount')->with($client)->willReturn($clientDiscountObject);
     }
 
     /**
@@ -178,10 +178,12 @@ abstract class PriceCalculationTestCase extends TestCase
         $purchaseProductVariants = [];
         $variantPrices = [];
 
+        $variantIndexMap = new \WeakMap();
+
         foreach ($ppv as $index => $variant) {
             $purchaseProductVariant = $this->createMock(PurchaseProductVariant::class);
             $productVariantMock = $this->createMock(ProductVariant::class);
-            $productVariantMock->_index = $index;
+            $variantIndexMap[$productVariantMock] = $index;
 
             $purchaseProductVariant->method('getAmount')->willReturn($variant['amount']);
             $purchaseProductVariant->method('getProductVariant')->willReturn($productVariantMock);
@@ -200,9 +202,9 @@ abstract class PriceCalculationTestCase extends TestCase
         $purchase->method('getProductVariants')->willReturn(new ArrayCollection($purchaseProductVariants));
 
         $this->priceRepository->method('findPricesByDateAndProductVariantNew')
-            ->willReturnCallback(function ($productVariant) use ($variantPrices) {
-                if (isset($productVariant->_index) && isset($variantPrices[$productVariant->_index])) {
-                    return $variantPrices[$productVariant->_index];
+            ->willReturnCallback(function ($productVariant) use ($variantPrices, $variantIndexMap) {
+                if (isset($variantIndexMap[$productVariant]) && isset($variantPrices[$variantIndexMap[$productVariant]])) {
+                    return $variantPrices[$variantIndexMap[$productVariant]];
                 }
                 return [];
             })

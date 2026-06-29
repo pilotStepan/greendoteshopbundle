@@ -18,6 +18,7 @@ use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -61,7 +62,18 @@ class RbBankPaymentImportServiceTest extends TestCase
         $purchase = new Purchase();
         $this->purchaseRepository->expects($this->once())->method('find')->with('42')->willReturn($purchase);
 
-        $this->entityManager->expects($this->exactly(2))->method('persist'); // Purchase + success PaymentAction
+        $this->purchaseFlow->expects($this->once())
+            ->method('apply')
+            ->with($purchase, PWC::T_PAY_PAY->value, $this->callback(function (array $context) {
+                $this->assertSame('system', $context['performed_by']);
+                $this->assertSame('rb_bank', $context['source']);
+                $this->assertSame('42', $context['variableSymbol']);
+                $this->assertSame('tx-1', $context['transactionId']);
+                return true;
+            }))
+        ;
+
+        $this->entityManager->expects($this->once())->method('persist'); // Purchase only; state row now comes from the workflow transition
         $this->entityManager->expects($this->once())->method('flush');
 
         $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
@@ -80,8 +92,8 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->purchaseRepository->method('find')->willReturn($purchase);
         $this->purchaseFlow->expects($this->never())->method('apply');
 
-        // applyBankTransferPayment returns silently → processRecord logs success and persists
-        $this->entityManager->expects($this->exactly(2))->method('persist'); // Purchase + success PaymentAction
+        // applyBankTransferPayment returns silently (already paid) → processRecord still persists the purchase
+        $this->entityManager->expects($this->once())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
         $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
@@ -147,6 +159,33 @@ class RbBankPaymentImportServiceTest extends TestCase
         ;
     }
 
+    public function testRowWithUnparsableDateIsSkipped(): void
+    {
+        $this->purchaseRepository->expects($this->never())->method('find');
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+        $this->logger->expects($this->atLeastOnce())->method('warning');
+
+        $line = sprintf(self::ROW, '100.00', 'not-a-date', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+    }
+
+    public function testCompletedPaymentWithDatetimeInTransferColumnIsProcessed(): void
+    {
+        $purchase = new Purchase();
+        $this->purchaseRepository->expects($this->once())->method('find')->with('93033')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->once())->method('apply');
+        $this->entityManager->expects($this->once())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line = '26.06.2026;26.06.2026;707.00;CZK;707.00;26.06.2026 01:39:09;160987123;0300;2583899001;5500;93033;;poznamka;2;6182739200';
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+    }
+
     public function testMultipleCompletedRecordsAreAllProcessedInOneBatch(): void
     {
         $purchase1 = new Purchase();
@@ -156,7 +195,7 @@ class RbBankPaymentImportServiceTest extends TestCase
             ->willReturnOnConsecutiveCalls($purchase1, $purchase2)
         ;
 
-        $this->entityManager->expects($this->exactly(4))->method('persist'); // 2× Purchase + 2× PaymentAction
+        $this->entityManager->expects($this->exactly(2))->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
         $line1 = sprintf(self::ROW, '50.00', '15.06.2026', '11', 2, 'tx-a');
@@ -269,6 +308,7 @@ class RbBankPaymentImportServiceTest extends TestCase
                 new ParcelServiceProvider([]),
                 $this->purchaseFlow,
             ),
+            new PaymentActionLogger($this->entityManager),
             $this->logger,
             $enabled,
             'SHOP',

@@ -112,6 +112,8 @@ class SimplePurchaseController extends AbstractController
             // Add a runtime “silent” flag if Simple sets it
             $pFlow->apply($purchase, $data['transition'], [
                 'silent' => $data['silent'] ?? false,
+                'performed_by' => 'admin',
+                'actor' => $this->getUser()?->getUserIdentifier(),
             ]);
 
             // no need for persist(), purchase is already managed

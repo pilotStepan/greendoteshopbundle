@@ -56,6 +56,11 @@ readonly class UpdateDeliveryStatusHandler
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
+        if ($purchase->hasAnyPlace(PWC::S_CANCELLED->value, PWC::S_COMPLETED->value)) {
+            $this->logger->info('Purchase reached an end state; stopping delivery status polling', ['purchaseId' => $purchaseId]);
+            return;
+        }
+
         $lastEvent = $this->transportationEventRepository->findLatestByPurchase($purchase);
         if ($lastEvent?->getState()->isFinal()) {
             $this->logger->info('Delivery final; skipping further checks', ['purchaseId' => $purchaseId]);
@@ -100,6 +105,7 @@ readonly class UpdateDeliveryStatusHandler
                 ->setDetails($statusInfo->details)
                 ->setOccurredAt($statusInfo->occurredAt)
                 ->setPurchase($purchase)
+                ->setTransportationAPI($purchase->getTransportation()->getTransportationAPI())
             ;
 
             $this->em->persist($event);

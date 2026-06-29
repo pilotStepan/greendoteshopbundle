@@ -15,10 +15,12 @@ use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
@@ -51,6 +53,11 @@ readonly class CreateParcelHandler
             throw new UnrecoverableMessageHandlingException("Purchase not found (ID: $purchaseId)");
         }
 
+        if ($purchase->hasAnyPlace(PWC::S_CANCELLED->value, PWC::S_COMPLETED->value)) {
+            $this->logger->info('Purchase reached an end state; skipping parcel creation', ['purchaseId' => $purchaseId]);
+            return;
+        }
+
         // If a parcel already exists, skip creation but schedule status tracking
         if ($purchase->getTransportNumber()) {
             $this->logger->info('Parcel already exists; skipping create', [
@@ -73,6 +80,12 @@ readonly class CreateParcelHandler
             $purchase->setTransportNumber($parcelId);
             $this->recordReceivedDataEvent($purchase);
             $this->em->flush();
+        } catch (PermanentParcelException $e) {
+            $this->logger->error('Parcel creation rejected by carrier; manual action required', [
+                'purchaseId' => $purchaseId,
+                'error' => $e->getMessage(),
+            ]);
+            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
         } catch (Throwable $e) {
             $this->logger->error('Creating parcel failed; will retry', [
                 'purchaseId' => $purchaseId,
@@ -99,6 +112,7 @@ readonly class CreateParcelHandler
             ->setState(ParcelDeliveryStateEnum::RECEIVED_DATA)
             ->setOccurredAt(new DateTimeImmutable())
             ->setPurchase($purchase)
+            ->setTransportationAPI($purchase->getTransportation()->getTransportationAPI())
         ;
 
         $this->em->persist($event);

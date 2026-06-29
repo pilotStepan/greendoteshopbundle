@@ -14,18 +14,20 @@ use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Symfony\Component\Workflow\Event\TransitionEvent;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
+use Greendot\EshopBundle\Enum\PaymentActionType;
+use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
-    public function __construct
-    (
+    public function __construct(
         private EntityManagerInterface   $entityManager,
         private ManageVoucher            $manageVoucher,
         private ManagePurchase           $managePurchase,
@@ -34,6 +36,8 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private EventDispatcherInterface $eventDispatcher,
         #[Target('purchase_flow')]
         private WorkflowInterface        $purchaseWorkflow,
+        private PaymentActionLogger      $paymentActionLogger,
+        private PaymentRepository        $paymentRepository,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -150,11 +154,12 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->initiateVouchers($purchase);
-        $this->managePurchase->generateTransportData($purchase);
+        // transport data is generated on `log_prepare_to_ship` event instead
+        // $this->managePurchase->generateTransportData($purchase);
         $this->dateService->calculatePurchaseDeliveryDate($purchase);
     }
 
-    public function onPayment(Event $event): void
+    public function onPayment(TransitionEvent $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -166,9 +171,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment');
+
+        $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_PAID);
     }
 
-    public function onPaymentIssue(Event $event): void
+    public function onPaymentIssue(TransitionEvent $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -179,9 +186,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_ERROR->value);
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
+
+        $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_FAILED);
     }
 
-    public function onRefund(Event $event): void
+    public function onRefund(TransitionEvent $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -192,9 +201,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->clearWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
+
+        $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_REFUNDED);
     }
 
-    public function onCancellation(Event $event): void
+    public function onCancellation(TransitionEvent $event): void
     {
         /** @var Purchase $purchase */
         $purchase = $event->getSubject();
@@ -203,6 +214,23 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         }
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment_issue');
+
+        $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_CANCELLED);
+    }
+
+    private function logPaymentAction(Purchase $purchase, TransitionEvent $event, PaymentActionType $name): void
+    {
+        $context = $event->getContext();
+        $performedBy = $context['performed_by'] ?? 'system';
+
+        $payment = null;
+        if (isset($context['paymentId'])) {
+            $payment = $this->paymentRepository->find($context['paymentId']);
+        }
+
+        unset($context['performed_by'], $context['paymentId']);
+
+        $this->paymentActionLogger->log($purchase, $name->value, $performedBy, null, $context, $payment);
     }
 
     public function onEnterCancelled(Event $event): void

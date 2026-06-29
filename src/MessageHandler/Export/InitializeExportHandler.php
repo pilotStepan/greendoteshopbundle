@@ -28,6 +28,7 @@ class InitializeExportHandler
         if (!$export || !$export->getExportStatus()) return;
 
         $type = $this->registry->get($initializeExportMessage->alias);
+        $type->setLocale($initializeExportMessage->locale);
         $totalItems = $type->getTotalCount();
 
         $totalChunks = (int)ceil($totalItems / $initializeExportMessage->chunkSize);
@@ -45,7 +46,8 @@ class InitializeExportHandler
                     exportId: $initializeExportMessage->exportId,
                     alias: $initializeExportMessage->alias,
                     offset: $offset,
-                    limit: $initializeExportMessage->chunkSize
+                    limit: $initializeExportMessage->chunkSize,
+                    locale: $initializeExportMessage->locale
                 ));
         }
     }

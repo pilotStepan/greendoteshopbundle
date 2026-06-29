@@ -3,14 +3,15 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Throwable;
-use RuntimeException;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
@@ -31,6 +32,7 @@ class DpdParcel implements ParcelServiceInterface
 {
     private const PROD_URL = 'https://shipping.dpdgroup.com/api/v1.1/';
     private const SANDBOX_URL = 'https://nst-preprod.dpsin.dpdgroup.com/api/v1.1/';
+    private const MAIN_SERVICE_CODE = '101';
 
     private readonly string $baseUrl;
 
@@ -39,17 +41,16 @@ class DpdParcel implements ParcelServiceInterface
         private readonly LoggerInterface      $logger,
         private readonly PurchasePriceFactory $purchasePriceFactory,
         private readonly CurrencyRepository   $currencyRepository,
-        #[Autowire(param: 'greendot_eshop.parcel.dpd.bu_code')]
-        private readonly string               $buCode,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.customer_id')]
         private readonly string               $customerId,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.sender_address_id')]
         private readonly string               $senderAddressId,
         #[Autowire(param: 'kernel.environment')]
-        string                                 $environment,
+        string                                $environment,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.enabled')]
-        private readonly bool                  $enabled = false,
-    ) {
+        private readonly bool                 $enabled = false,
+    )
+    {
         $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
     }
 
@@ -58,10 +59,10 @@ class DpdParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
-        $body = $this->prepareShipmentData($purchase, $transportation);
+        $body = $this->prepareShipmentData($purchase);
 
         try {
             $response = $this->httpClient->request('POST', $this->baseUrl . 'shipments', [
@@ -72,24 +73,30 @@ class DpdParcel implements ParcelServiceInterface
                 'json' => $body,
             ]);
 
-            $data = $response->toArray(false);
+            $data = $this->decodeResponse($response, 'createParcel', $purchase->getId());
 
-            $shipmentId = $data['shipmentResults'][0]['shipment']['shipmentId'] ?? null;
-            if ($shipmentId === null) {
-                $this->logger->error('DPD API error on createParcel', [
+            $shipmentId = $data['shipmentResults'][0]['shipmentId'] ?? null;
+            $mpsId = $data['shipmentResults'][0]['mpsId'] ?? null;
+            if ($shipmentId === null || $mpsId === null) {
+                $this->logger->error('DPD API error on createParcel: no shipmentId/mpsId in response', [
                     'purchaseId' => $purchase->getId(),
-                    'response' => $data,
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $response->getContent(false),
                 ]);
-                throw new RuntimeException('DPD createParcel failed: no shipmentId in response');
+                throw new TransientParcelException('DPD createParcel failed: no shipmentId/mpsId in response');
             }
 
-            return (string)$shipmentId;
-        } catch (RuntimeException $e) {
+            $purchase->setShipmentId((string)$shipmentId);
+
+            return (string)$mpsId;
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('DPD HTTP exception on createParcel', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
+                'httpStatusCode' => $this->safeStatusCode($response ?? null),
+                'response' => $this->safeContent($response ?? null),
             ]);
             throw $e;
         }
@@ -99,7 +106,7 @@ class DpdParcel implements ParcelServiceInterface
     {
         $transportation = $purchase->getTransportation();
         $jwt = $transportation?->getSecretKey() ?? '';
-        $shipmentId = (int)$purchase->getTransportNumber();
+        $shipmentId = (int)$purchase->getShipmentId();
 
         try {
             $response = $this->httpClient->request('GET', $this->baseUrl . 'shipments/' . $shipmentId, [
@@ -109,10 +116,15 @@ class DpdParcel implements ParcelServiceInterface
                 ],
             ]);
 
-            $data = $response->toArray(false);
+            $data = $this->decodeResponse($response, 'getParcelStatus', $purchase->getId());
             $shipment = $data['shipment'] ?? null;
             if ($shipment === null) {
-                throw new RuntimeException('DPD getParcelStatus failed: shipment not found in response');
+                $this->logger->error('DPD API error on getParcelStatus: shipment not found in response', [
+                    'purchaseId' => $purchase->getId(),
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $response->getContent(false),
+                ]);
+                throw new TransientParcelException('DPD getParcelStatus failed: shipment not found in response');
             }
 
             $statusCode = (int)($shipment['status'] ?? 0);
@@ -127,14 +139,62 @@ class DpdParcel implements ParcelServiceInterface
                 details: ['status' => $statusCode],
                 occurredAt: $occurredAt,
             );
-        } catch (RuntimeException $e) {
+        } catch (PermanentParcelException | TransientParcelException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logger->error('DPD HTTP exception on getParcelStatus', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
+                'httpStatusCode' => $this->safeStatusCode($response ?? null),
+                'response' => $this->safeContent($response ?? null),
             ]);
             throw $e;
+        }
+    }
+
+    private function decodeResponse(ResponseInterface $response, string $operation, int $purchaseId): array
+    {
+        $statusCode = $this->safeStatusCode($response);
+        $rawContent = $this->safeContent($response);
+
+        try {
+            $data = json_decode((string)$rawContent, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            $this->logger->error("DPD API error on $operation: non-JSON response", [
+                'purchaseId' => $purchaseId,
+                'httpStatusCode' => $statusCode,
+                'response' => $rawContent,
+            ]);
+            throw new TransientParcelException("DPD $operation failed: non-JSON response (HTTP $statusCode)", 0, $e);
+        }
+
+        if (!is_array($data)) {
+            $this->logger->error("DPD API error on $operation: unexpected response shape", [
+                'purchaseId' => $purchaseId,
+                'httpStatusCode' => $statusCode,
+                'response' => $rawContent,
+            ]);
+            throw new TransientParcelException("DPD $operation failed: unexpected response shape (HTTP $statusCode)");
+        }
+
+        return $data;
+    }
+
+    private function safeStatusCode(?ResponseInterface $response): ?int
+    {
+        try {
+            return $response?->getStatusCode();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function safeContent(?ResponseInterface $response): ?string
+    {
+        try {
+            return $response?->getContent(false);
+        } catch (Throwable) {
+            return null;
         }
     }
 
@@ -143,7 +203,7 @@ class DpdParcel implements ParcelServiceInterface
         return $this->enabled && $transportationAPI === TransportationAPI::DPD;
     }
 
-    private function prepareShipmentData(Purchase $purchase, Transportation $transportation): array
+    private function prepareShipmentData(Purchase $purchase): array
     {
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
@@ -166,24 +226,23 @@ class DpdParcel implements ParcelServiceInterface
                 ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice()
+                ->getPrice(true)
             : null;
 
         $receiver = [
             'name' => $address->getShipName() ?? $client->getName(),
             'name2' => $address->getShipSurname() ?? $client->getSurname(),
-            'companyName' => $address->getShipCompany(),
-            'street' => $address->getShipStreet(),
-            'city' => $address->getShipCity(),
-            'zipCode' => $address->getShipZip(),
+            'companyName' => $address->getShipCompany() ?? $address->getCompany(),
+            'street' => $address->getShipStreet() ?? $address->getStreet(),
+            'city' => $address->getShipCity() ?? $address->getCity(),
+            'zipCode' => preg_replace('/\s+/', '', (string)($address->getShipZip() ?? $address->getZip())),
             'countryCode' => strtoupper((string)$country),
             'contactName' => trim(($client->getName() ?? '') . ' ' . ($client->getSurname() ?? '')),
             'contactEmail' => $client->getMail(),
             'contactPhone' => $client->getPhone(),
         ];
 
-        // TODO: derive weight from order items
-        $weight = 2;
+        $weight = 1;
 
         $shipment = [
             'numOrder' => 1,
@@ -200,20 +259,23 @@ class DpdParcel implements ParcelServiceInterface
             'printFormat' => 'PDF',
         ];
 
+        $shipment['service'] = [
+            'mainServiceCode' => self::MAIN_SERVICE_CODE,
+        ];
+
         if ($codAmount !== null) {
-            $shipment['service'] = [
-                'additionalService' => [
-                    'cod' => [
-                        'amount' => (string)$codAmount,
-                        'currency' => $currency,
-                        'paymentType' => 'Cash',
-                    ],
+            $shipment['service']['additionalService'] = [
+                'cod' => [
+                    'amount' => (string)$codAmount,
+                    'currency' => $currency,
+                    'paymentType' => 'Cash',
+                    'reference' => (string)$purchase->getId(),
+                    'split' => 'Even',
                 ],
             ];
         }
 
         return [
-            'buCode' => $this->buCode,
             'customerId' => $this->customerId,
             'shipments' => [$shipment],
         ];

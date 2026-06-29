@@ -12,8 +12,10 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Entity\Project\TransportationEvent;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
@@ -65,13 +67,18 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         return new UpdateDeliveryStatusMessage($id);
     }
 
-    private function makePurchase(int $daysOld = 0): Purchase
+    private function makePurchase(int $daysOld = 0, bool $isEndState = false): Purchase
     {
+        $transportation = $this->createMock(Transportation::class);
+        $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
+
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(1);
         $purchase->method('getDateIssue')->willReturn(
             new DateTimeImmutable("-$daysOld days")
         );
+        $purchase->method('hasAnyPlace')->willReturn($isEndState);
+        $purchase->method('getTransportation')->willReturn($transportation);
         return $purchase;
     }
 
@@ -98,6 +105,19 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
     {
         $this->purchaseRepo->method('find')->willReturn(null);
         $this->expectException(UnrecoverableMessageHandlingException::class);
+        ($this->handler)($this->makeMsg());
+    }
+
+    // --- Guard: purchase already in an end state ---
+
+    public function testEndStatePurchase_returnsEarlyWithoutDispatch(): void
+    {
+        $purchase = $this->makePurchase(isEndState: true);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $this->bus->expects($this->never())->method('dispatch');
+        $this->em->expects($this->never())->method('persist');
+
         ($this->handler)($this->makeMsg());
     }
 
