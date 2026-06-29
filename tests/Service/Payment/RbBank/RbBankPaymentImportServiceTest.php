@@ -18,11 +18,11 @@ use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 
 class RbBankPaymentImportServiceTest extends TestCase
@@ -172,6 +172,20 @@ class RbBankPaymentImportServiceTest extends TestCase
         ;
     }
 
+    public function testCompletedPaymentWithDatetimeInTransferColumnIsProcessed(): void
+    {
+        $purchase = new Purchase();
+        $this->purchaseRepository->expects($this->once())->method('find')->with('93033')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->once())->method('apply');
+        $this->entityManager->expects($this->once())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line = '26.06.2026;26.06.2026;707.00;CZK;707.00;26.06.2026 01:39:09;160987123;0300;2583899001;5500;93033;;poznamka;2;6182739200';
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+    }
+
     public function testMultipleCompletedRecordsAreAllProcessedInOneBatch(): void
     {
         $purchase1 = new Purchase();
@@ -181,7 +195,7 @@ class RbBankPaymentImportServiceTest extends TestCase
             ->willReturnOnConsecutiveCalls($purchase1, $purchase2)
         ;
 
-        $this->entityManager->expects($this->exactly(2))->method('persist'); // 2× Purchase
+        $this->entityManager->expects($this->exactly(2))->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
         $line1 = sprintf(self::ROW, '50.00', '15.06.2026', '11', 2, 'tx-a');

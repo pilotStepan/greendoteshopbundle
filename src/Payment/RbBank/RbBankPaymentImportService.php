@@ -7,9 +7,9 @@ use RuntimeException;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -171,8 +171,14 @@ readonly class RbBankPaymentImportService
 
     private function parseDate(string $value): ?\DateTimeImmutable
     {
-        $date = \DateTimeImmutable::createFromFormat('d.m.Y', trim($value));
-        return $date !== false ? $date : null;
+        $value = ltrim(trim($value), "\u{FEFF}");
+        foreach (['d.m.Y H:i:s', 'd.m.Y'] as $format) {
+            $date = \DateTimeImmutable::createFromFormat($format, $value);
+            if ($date !== false) {
+                return $date;
+            }
+        }
+        return null;
     }
 
     private function parseLine(string $line): ?RbBankPaymentRecord
