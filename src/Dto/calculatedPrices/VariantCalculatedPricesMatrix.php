@@ -10,6 +10,8 @@ final class VariantCalculatedPricesMatrix
         public ?float $priceNoVat,
         public ?float $priceVatNoDiscount,
         public ?float $priceNoVatNoDiscount,
+        public ?float $discountPercentage,
+        public ?float $productDiscountPercentage,
     )
     { }
 }

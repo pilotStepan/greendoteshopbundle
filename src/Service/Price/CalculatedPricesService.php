@@ -173,6 +173,12 @@ class CalculatedPricesService
             ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
             ->getPiecePrice();
 
+        $discountPercentage = $productVariantPrice->getDiscountPercentage();
+
+        $productDiscountPercentage = $productVariantPrice
+            ->setDiscountCalculationType(DiscountCalculationType::OnlyProductDiscount)
+            ->getDiscountPercentage();
+
          $priceVatNoDiscount = $productVariantPrice
             ->setVatCalculationType(VatCalculationType::WithVAT)
             ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
@@ -184,11 +190,12 @@ class CalculatedPricesService
             ->getPiecePrice();
 
         return new VariantCalculatedPricesMatrix(
-            priceVat: $priceVat,
-            priceNoVat: $priceNoVat,
-            priceVatNoDiscount: $priceVatNoDiscount,
-            priceNoVatNoDiscount: $priceNoVatNoDiscount,
-
+            priceVat:                   $priceVat,
+            priceNoVat:                 $priceNoVat,
+            priceVatNoDiscount:         $priceVatNoDiscount,
+            priceNoVatNoDiscount:       $priceNoVatNoDiscount,
+            discountPercentage:         $discountPercentage,
+            productDiscountPercentage:  $productDiscountPercentage,
         );
     }
 
