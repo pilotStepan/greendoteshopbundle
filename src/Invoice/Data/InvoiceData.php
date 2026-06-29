@@ -50,5 +50,9 @@ class InvoiceData
         public array                        $vouchersUsed,
         public float                        $voucherValue,
         public float                        $voucherValueSecondary,
+        public float                        $toPayVatCzk,
+        public float                        $toPayVatEur,
+        public float                        $toPayNoVatCzk,
+        public float                        $toPayNoVatEur
     ) {}
 }

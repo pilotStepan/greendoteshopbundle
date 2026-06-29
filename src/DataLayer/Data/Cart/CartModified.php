@@ -8,7 +8,7 @@ class CartModified
 {
     public function __construct(
         public string $currency,
-        public string $value,
+        public float $value,
         /**
          * @var DataLayerItem[]
          */
