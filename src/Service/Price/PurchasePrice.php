@@ -75,7 +75,7 @@ class PurchasePrice
     public function getPrice(bool $includeServices = false, ?float $vat = null): ?float
     {
         $price = $this->purchasePrice;
-        if ($vat) {
+        if ($vat !== null) {
             $price = $this->getPriceByVat($vat);
         }
         if ($includeServices) {
