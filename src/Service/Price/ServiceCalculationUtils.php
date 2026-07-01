@@ -20,7 +20,7 @@ readonly class ServiceCalculationUtils
 
     public function getHandlingPriceForService(
         Transportation|PaymentType $service
-    ): HandlingPrice
+    ): ?HandlingPrice
     {
         return $this->handlingPriceRepository->getByDate($service);
     }

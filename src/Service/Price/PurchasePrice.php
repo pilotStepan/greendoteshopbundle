@@ -87,8 +87,8 @@ class PurchasePrice
                 $price += $this->paymentPrice;
             }else{
                 $vat = round($vat);
-                if ($this->transportationHandlingPrice->getVat() == $vat) $price += $this->transportationPrice;
-                if ($this->paymentHandlingPrice->getVat() == $vat) $price += $this->paymentPrice;
+                if ($this->transportationHandlingPrice && $this->transportationHandlingPrice->getVat() == $vat) $price += $this->transportationPrice;
+                if ($this->paymentHandlingPrice && $this->paymentHandlingPrice->getVat() == $vat) $price += $this->paymentPrice;
             }
         }
         $price = $this->applyVoucher($price);
@@ -261,6 +261,11 @@ class PurchasePrice
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
     {
         $handlingPrice = $this->serviceCalculationUtils->getHandlingPriceForService($paymentType);
+        if (!$handlingPrice){
+            $this->paymentHandlingPrice = null;
+            $this->paymentPrice = null;
+            return;
+        }
         $this->paymentHandlingPrice = $handlingPrice;
         $this->paymentPrice = $this->serviceCalculationUtils->calculateServicePrice(
             $handlingPrice,
@@ -274,6 +279,11 @@ class PurchasePrice
     private function setTransportationPrice(float $purchasePrice, Transportation $transportation): void
     {
         $handlingPrice = $this->serviceCalculationUtils->getHandlingPriceForService($transportation);
+        if (!$handlingPrice){
+            $this->transportationPrice = null;
+            $this->transportationHandlingPrice = null;
+            return;
+        }
         $this->transportationHandlingPrice = $handlingPrice;
         $this->transportationPrice = $this->serviceCalculationUtils->calculateServicePrice(
             $handlingPrice,
