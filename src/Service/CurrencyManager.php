@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service;
 
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
@@ -45,6 +46,11 @@ class CurrencyManager implements LocaleAwareInterface
         }
 
         return $this->currencyRepository->findOneBy(['isDefault' => true]);
+    }
+
+    public function getForPurchase(Purchase $purchase): Currency
+    {
+        return $purchase->getPaymentType()?->getCurrency() ?? $this->get();
     }
 
     /**

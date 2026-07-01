@@ -6,6 +6,7 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Service</directory>
+            <directory>tests/Messenger</directory>
             <directory>tests/EventSubscriber</directory>
             <directory>tests/MessageHandler</directory>
             <directory>tests/Entity</directory>

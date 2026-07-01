@@ -58,7 +58,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
     {
         $this->managePurchase->preparePrices($purchase);
 
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
         $currencyNumeric = (new ISO4217())->getByCode($currency->getName())['numeric'];
 
         $this->logger->info('GPW getPayLink initiated', [

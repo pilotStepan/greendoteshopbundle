@@ -117,6 +117,10 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['clientAddress:read', 'clientAddress:write'])]
     private Collection $purchases;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    #[Groups(['client:read', 'client:write'])]
+    private ?string $locale = null;
+
     public function __construct()
     {
         $this->comments = new ArrayCollection();
@@ -421,6 +425,18 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+        return $this;
+    }
+
+    public function getLocale(): ?string
+    {
+        return $this->locale;
+    }
+
+    public function setLocale(?string $locale): static
+    {
+        $this->locale = $locale;
+
         return $this;
     }
 }

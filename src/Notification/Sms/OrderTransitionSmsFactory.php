@@ -41,7 +41,7 @@ readonly class OrderTransitionSmsFactory implements OrderTransitionSmsFactoryInt
         $amount = $this->priceFactory
             ->create(
                 $purchase,
-                $this->currencyManager->get(),
+                $this->currencyManager->getForPurchase($purchase),
                 VatCalculationType::WithVAT,
             )
             ->getPrice(true)

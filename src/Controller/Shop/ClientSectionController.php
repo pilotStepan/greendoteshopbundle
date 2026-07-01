@@ -128,7 +128,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $client = $clientRepository->find($this->getUser());
 
         $purchase = $purchaseRepository->find($purchaseID);
-        $currency = $currencyManager->get();
+        $currency = $currencyManager->getForPurchase($purchase);
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
@@ -202,7 +202,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $this->denyAccessUnlessGranted('view', $purchase);
 
-        $currency = $currencyManager->get();
+        $currency = $currencyManager->getForPurchase($purchase);
 
         $created = $request->query->get('created');
 
@@ -343,7 +343,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     ): JsonResponse
     {
         $purchase = $purchaseRepository->find($purchaseID);
-        $currency = $currencyManager->get();
+        $currency = $currencyManager->getForPurchase($purchase);
 
         $purchasePrice = $priceCalculator->calculatePurchasePrice(
             $purchase,

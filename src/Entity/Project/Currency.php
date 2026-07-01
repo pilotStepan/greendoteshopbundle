@@ -144,6 +144,18 @@ class Currency implements SoftDeletedInterface
         return $this;
     }
 
+    public function getDefaultLocale(): ?string
+    {
+        return $this->defaultLocale;
+    }
+
+    public function setDefaultLocale(string $defaultLocale): self
+    {
+        $this->defaultLocale = $defaultLocale;
+
+        return $this;
+    }
+
     public function isSymbolLeft(): ?bool
     {
         return $this->is_symbol_left;
