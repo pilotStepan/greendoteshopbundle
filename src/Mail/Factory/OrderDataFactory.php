@@ -113,7 +113,7 @@ class OrderDataFactory
 
     private function buildPayLink(Purchase $purchase): ?string
     {
-        if (!$this->canBePaid($purchase)) {
+        if (!$this->canBePaid($purchase) || $purchase->isPaid()) {
             return null;
         }
 
