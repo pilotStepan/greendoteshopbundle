@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Service\Price;
 
 use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Settings;
@@ -22,7 +23,9 @@ class PurchasePrice
      */
     private array $productVariantPrices = [];
     private ?float $purchasePrice = null;
+    private ?HandlingPrice $transportationHandlingPrice = null;
     private ?float $transportationPrice = null;
+    private ?HandlingPrice $paymentHandlingPrice = null;
     private ?float $paymentPrice = null;
     private ConversionRate $defaultConversionRate;
 
@@ -79,8 +82,14 @@ class PurchasePrice
             $price = $this->getPriceByVat($vat);
         }
         if ($includeServices) {
-            $price += $this->transportationPrice;
-            $price += $this->paymentPrice;
+            if ($vat === null){
+                $price += $this->transportationPrice;
+                $price += $this->paymentPrice;
+            }else{
+                $vat = round($vat);
+                if ($this->transportationHandlingPrice->getVat() == $vat) $price += $this->transportationPrice;
+                if ($this->paymentHandlingPrice->getVat() == $vat) $price += $this->paymentPrice;
+            }
         }
         $price = $this->applyVoucher($price);
         return $this->priceUtils->convertCurrency($price, $this->conversionRate);
@@ -251,12 +260,28 @@ class PurchasePrice
 
     private function setPaymentPrice(float $purchasePrice, PaymentType $paymentType): void
     {
-        $this->paymentPrice = $this->serviceCalculationUtils->calculateServicePrice($paymentType, $this->conversionRate, $this->vatCalculationType, $purchasePrice, true);
+        $handlingPrice = $this->serviceCalculationUtils->getHandlingPriceForService($paymentType);
+        $this->paymentHandlingPrice = $handlingPrice;
+        $this->paymentPrice = $this->serviceCalculationUtils->calculateServicePrice(
+            $handlingPrice,
+            $this->conversionRate,
+            $this->vatCalculationType,
+            $purchasePrice,
+            true
+        );
     }
 
     private function setTransportationPrice(float $purchasePrice, Transportation $transportation): void
     {
-        $this->transportationPrice = $this->serviceCalculationUtils->calculateServicePrice($transportation,$this->conversionRate, $this->vatCalculationType, $purchasePrice, true);
+        $handlingPrice = $this->serviceCalculationUtils->getHandlingPriceForService($transportation);
+        $this->transportationHandlingPrice = $handlingPrice;
+        $this->transportationPrice = $this->serviceCalculationUtils->calculateServicePrice(
+            $handlingPrice,
+            $this->conversionRate,
+            $this->vatCalculationType,
+            $purchasePrice,
+            true
+        );
     }
 
     private function applyVoucher(?float $price): ?float
