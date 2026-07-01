@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Symfony\Component\Serializer\SerializerInterface;
 use Granam\GpWebPay\Exceptions\GpWebPayErrorResponse;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -54,7 +55,12 @@ class PurchaseController extends AbstractController
     {
         $purchase = null;
         $paymentId = (string)$request->query->get('ORDERNUMBER', '');
-        $context = ['performed_by' => 'client', 'source' => 'gpw', 'paymentId' => $paymentId];
+        $context = [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+            'performed_by' => 'client',
+            'source' => 'gpw',
+            'paymentId' => $paymentId,
+        ];
 
         try {
             if ($paymentId === '') {
@@ -89,6 +95,7 @@ class PurchaseController extends AbstractController
             // Update workflow state
             $transition = $isOk ? PWC::T_PAY_PAY->value : PWC::T_PAY_FAIL->value;
             $this->applyTransitionIfPossible($purchaseWorkflow, $purchase, $transition, $logger, $context);
+
             $entityManager->flush();
 
             return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
@@ -126,6 +133,47 @@ class PurchaseController extends AbstractController
             return $this->redirectToRoute('web_homepage');
         }
     }
+
+    #[CustomApiEndpoint]
+    #[Route('/api/purchase/{id}/pay', name: 'purchase_pay', methods: ['GET'])]
+    public function pay(
+        Purchase               $purchase,
+        GPWebpay               $gpWebpay,
+        PurchaseUrlGenerator   $urlGenerator,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
+        EntityManagerInterface $entityManager,
+        LoggerInterface        $logger,
+    ): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted('view', $purchase);
+
+        if ($purchase->isPaid()) {
+            return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+        }
+
+        try {
+            return $this->redirect($gpWebpay->getPayLink($purchase));
+        } catch (Throwable $e) {
+            $logger->error('Failed to get payment gateway link, falling back to endscreen', [
+                'purchaseId' => $purchase->getId(),
+                'exceptionClass' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            $this->applyTransitionIfPossible(
+                $purchaseWorkflow,
+                $purchase,
+                PWC::T_PAY_FAIL->value,
+                $logger,
+                ['performed_by' => 'client', 'source' => 'pay_endpoint'],
+            );
+            $entityManager->flush();
+
+            return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+        }
+    }
+
 
     private function applyTransitionIfPossible(
         WorkflowInterface $purchaseWorkflow,

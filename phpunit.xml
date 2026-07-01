@@ -11,6 +11,7 @@
             <directory>tests/Entity</directory>
             <directory>tests/Schema</directory>
             <directory>tests/Parcel</directory>
+            <directory>tests/Controller</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

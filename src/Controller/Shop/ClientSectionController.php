@@ -42,7 +42,6 @@ use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Controller\TurnOffIsActiveFilterController;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
-use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class ClientSectionController extends AbstractController implements TurnOffIsActiveFilterController
@@ -194,7 +193,6 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ProductVariantPriceFactory $productVariantPriceFactory,
         ManagePurchase             $managePurchase,
         Request                    $request,
-        PaymentGatewayProvider     $gatewayProvider,
         PurchaseUrlGenerator       $purchaseUrlGenerator,
         ClientRepository           $clientRepository,
         CurrencyManager            $currencyManager,
@@ -213,8 +211,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $qrCodePath = $qrCodeGenerator->getUri($purchase);
 
-        $paymentGateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
-        $paylink = $paymentGateway->getPayLink($purchase);
+        $paylink = $purchaseUrlGenerator->buildPayUrl($purchase);
         $trackingUrl = $purchaseUrlGenerator->buildTrackingUrl($purchase);
 
         $client = $clientRepository->find($this->getUser());

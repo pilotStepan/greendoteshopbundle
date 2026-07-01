@@ -25,7 +25,6 @@ use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 
 /**
  * Factory to create OrderData for email notifications.
@@ -42,7 +41,6 @@ class OrderDataFactory
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private CurrencyRepository         $currencyRepository,
         private QRcodeGenerator            $qrGenerator,
-        private PaymentGatewayProvider     $gatewayProvider,
         private PurchaseUrlGenerator       $purchaseUrlGenerator,
         private readonly LoggerInterface   $logger,
         #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
@@ -115,18 +113,11 @@ class OrderDataFactory
 
     private function buildPayLink(Purchase $purchase): ?string
     {
-        // Don't build if cant be paid or already paid
-        if (!$this->canBePaid($purchase) || $purchase->isPaid()) {
+        if (!$this->canBePaid($purchase)) {
             return null;
         }
 
-        try {
-            $paymentGateway = $this->gatewayProvider->getByPurchase($purchase)
-                ?? $this->gatewayProvider->getDefault();
-            return $paymentGateway->getPayLink($purchase);
-        } catch (Throwable $e) {
-            return null;
-        }
+        return $this->purchaseUrlGenerator->buildPayUrl($purchase);
     }
 
     /** @return OrderItemData[] */

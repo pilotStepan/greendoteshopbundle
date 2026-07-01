@@ -14,7 +14,9 @@ use Symfony\Component\Workflow\Event\GuardEvent;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\Event\CompletedEvent;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Component\Workflow\Event\TransitionEvent;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
@@ -171,6 +173,13 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
         $this->manageVoucher->handleVouchersTransition($purchase->getVouchersIssued(), 'payment');
+
+        $paymentTechnicalActionValue = $event->getContext()['payment_technical_action'] ?? null;
+        $paymentTechnicalAction = is_string($paymentTechnicalActionValue) ? PaymentTechnicalAction::tryFrom($paymentTechnicalActionValue) : null;
+        if ($paymentTechnicalAction) {
+            $paymentType = $this->entityManager->getRepository(PaymentType::class)->findOneBy(['paymentTechnicalAction' => $paymentTechnicalAction]);
+            $purchase->setPaymentType($paymentType);
+        }
 
         $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_PAID);
     }

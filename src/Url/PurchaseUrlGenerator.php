@@ -80,6 +80,22 @@ readonly class PurchaseUrlGenerator
         return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($invoiceUrl);
     }
 
+    public function buildPayUrl(Purchase $purchase): string
+    {
+        $url = $this->router->generate(
+            'purchase_pay',
+            ['id' => $purchase->getId()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        if (!$purchase->getClient()->isIsAnonymous()) return $url;
+
+        $client = $purchase->getClient();
+        $loginLinkDetails = $this->loginLinkHandler->createLoginLink($client);
+
+        return $loginLinkDetails->getUrl() . '&redirect=' . urlencode($url);
+    }
+
     public function buildTrackingUrl(Purchase $purchase): ?string
     {
         if (!$purchase->getTransportNumber() || !$purchase->getTransportation()?->getStateUrl()) {

@@ -13,6 +13,8 @@ use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\PaymentType;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -25,22 +27,25 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
 class PurchaseStateSubscriberPaymentLogTest extends TestCase
 {
+    private MockObject $entityManager;
     private RecordingPaymentActionLogger $paymentActionLogger;
     private MockObject $paymentRepository;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void
     {
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->paymentActionLogger = new RecordingPaymentActionLogger();
         $this->paymentRepository = $this->createMock(PaymentRepository::class);
 
         $this->subscriber = new PurchaseStateSubscriber(
-            $this->createMock(EntityManagerInterface::class),
+            $this->entityManager,
             $this->createMock(ManageVoucher::class),
             $this->buildManagePurchase(),
             new ManageClientDiscount($this->createMock(EntityManagerInterface::class)),
@@ -98,6 +103,96 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
             [$purchase, 'state_paid', 'system', null, [], null],
             $this->paymentActionLogger->calls[0],
         );
+    }
+
+    /**
+     * Regression test: ManagePurchase::applyBankTransferPayment() (called by
+     * RbBankPaymentImportService for RB bank statement matches) applies pay_pay
+     * without a 'payment_technical_action' key in the context. Previously this
+     * fed `null` straight into PaymentTechnicalAction::tryFrom(), which is typed
+     * `int|string` and does not accept null, fataling every bank-transfer payment.
+     */
+    public function testOnPaymentDoesNotCrashWhenTechnicalActionMissingFromContext(): void
+    {
+        $purchase = new Purchase();
+        $originalPaymentType = new PaymentType();
+        $purchase->setPaymentType($originalPaymentType);
+
+        $this->entityManager->expects($this->never())->method('getRepository');
+
+        $event = $this->createTransitionEvent($purchase, [
+            'performed_by' => 'system',
+            'source' => 'rb_bank',
+            'variableSymbol' => '123',
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertTrue($purchase->isPaid());
+        $this->assertSame($originalPaymentType, $purchase->getPaymentType(), 'Payment type must be left untouched when no technical action is given');
+    }
+
+    public function testOnPaymentDoesNotCrashWhenTechnicalActionIsUnknownString(): void
+    {
+        $purchase = new Purchase();
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->expects($this->never())->method('findOneBy');
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => 'not_a_real_gateway',
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertTrue($purchase->isPaid());
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    /**
+     * Defensive regression test: even if a caller passes a non-string, non-null
+     * value (e.g. an int or array) for 'payment_technical_action', onPayment must
+     * not pass it to tryFrom() and must not crash.
+     */
+    public function testOnPaymentDoesNotCrashWhenTechnicalActionIsNonStringType(): void
+    {
+        $purchase = new Purchase();
+
+        $this->entityManager->expects($this->never())->method('getRepository');
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => 123,
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertTrue($purchase->isPaid());
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    public function testOnPaymentSetsPaymentTypeMatchingValidTechnicalAction(): void
+    {
+        $purchase = new Purchase();
+        $matchingPaymentType = new PaymentType();
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->expects($this->once())
+            ->method('findOneBy')
+            ->with(['paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS])
+            ->willReturn($matchingPaymentType);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+            'performed_by' => 'client',
+            'source' => 'gpw',
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertTrue($purchase->isPaid());
+        $this->assertSame($matchingPaymentType, $purchase->getPaymentType());
     }
 
     public function testOnPaymentIssueLogsStateFailed(): void
