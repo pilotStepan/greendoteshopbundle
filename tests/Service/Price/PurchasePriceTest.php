@@ -253,5 +253,85 @@ class PurchasePriceTest extends PriceCalculationTestCase
         // ASSERT
         $this->assertEquals(0.0, $pp->getPrice(), "Empty purchase price should be zero");
         $this->assertEquals(0.0, $pp->getPrice(true), "Empty purchase price with services should be zero");
+        $this->assertNull($pp->getTransportationPrice(), "No transportation configured -> null, not 0");
+        $this->assertNull($pp->getPaymentPrice(), "No payment type configured -> null, not 0");
+    }
+
+    public function testVouchersUsedValueIsZeroWhenNoVouchersApplied(): void
+    {
+        $ppv = [['amount' => 1, 'prices' => [['price' => FactoryUtil::makePrice(100, 0), 'discounted' => null]]]];
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
+
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithoutVAT, DiscCalc::WithoutDiscount, FactoryUtil::czk());
+
+        $this->assertSame(0.0, $pp->getVouchersUsedValue());
+    }
+
+    public function testVouchersUsedValueReflectsAppliedVoucherAmount(): void
+    {
+        $ppv = [['amount' => 1, 'prices' => [['price' => FactoryUtil::makePrice(100, 0), 'discounted' => null]]]];
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: [FactoryUtil::makeVoucher(30)]);
+
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithoutVAT, DiscCalc::WithoutDiscount, FactoryUtil::czk());
+        $pp->setVoucherCalculationType(\Greendot\EshopBundle\Enum\VoucherCalculationType::WithVoucher);
+
+        $this->assertSame(30.0, $pp->getVouchersUsedValue());
+        $this->assertEqualsWithDelta(70.0, $pp->getPrice(), 0.01, 'voucher must actually reduce the price');
+    }
+
+    public function testSetVatCalculationTypeOnPurchasePriceRecalculatesVariantPrices(): void
+    {
+        // PurchasePrice::setVatCalculationType() must propagate down to each ProductVariantPrice,
+        // not just flip its own field — nothing in the suite called this method before.
+        $ppv = [['amount' => 1, 'prices' => [['price' => FactoryUtil::makePrice(100, 21), 'discounted' => null]]]];
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
+
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithVAT, DiscCalc::WithoutDiscount, FactoryUtil::czk());
+        $this->assertEqualsWithDelta(121.0, $pp->getPrice(), 0.01);
+
+        $pp->setVatCalculationType(VatCalc::WithoutVAT);
+        $this->assertEqualsWithDelta(100.0, $pp->getPrice(), 0.01);
+    }
+
+    public function testSetVatCalculationTypeOnPurchasePriceIsBlockedForVatExemptPurchaseUnlessForced(): void
+    {
+        // ProductVariantPriceFactory::create() already forces WithoutVAT at construction time
+        // for an exempt purchase (line 71), so the guard can only be observed by trying to move
+        // *away* from WithoutVAT afterwards, not by re-applying WithoutVAT.
+        $ppv = [['amount' => 1, 'prices' => [['price' => FactoryUtil::makePrice(100, 21), 'discounted' => null]]]];
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
+        $purchase->method('isVatExempted')->willReturn(true);
+
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithoutVAT, DiscCalc::WithoutDiscount, FactoryUtil::czk());
+        $this->assertEqualsWithDelta(100.0, $pp->getPrice(), 0.01);
+
+        $pp->setVatCalculationType(VatCalc::WithVAT);
+        $this->assertEqualsWithDelta(100.0, $pp->getPrice(), 0.01, 'VAT-exempt purchase must ignore an unforced VAT type change');
+
+        $pp->setVatCalculationType(VatCalc::WithVAT, force: true);
+        $this->assertEqualsWithDelta(121.0, $pp->getPrice(), 0.01, 'force: true must override VAT exemption');
+    }
+
+    public function testDiscountValueAndPercentageAggregateAcrossVariants(): void
+    {
+        // Neither getDiscountValue() nor getDiscountPercentage() was asserted anywhere before.
+        $ppv = [
+            ['amount' => 1, 'prices' => [1 => [
+                'price' => FactoryUtil::makePrice(100, 0, discount: 0),
+                'discounted' => FactoryUtil::makePrice(100, 0, discount: 20),
+            ]]],
+            ['amount' => 1, 'prices' => [1 => [
+                'price' => FactoryUtil::makePrice(100, 0, discount: 0),
+                'discounted' => FactoryUtil::makePrice(100, 0, discount: 40),
+            ]]],
+        ];
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
+
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithoutVAT, DiscCalc::OnlyProductDiscount, FactoryUtil::czk());
+
+        // discountValue: 20 (20% of 100) + 40 (40% of 100) = 60
+        $this->assertEqualsWithDelta(60.0, $pp->getDiscountValue(), 0.01);
+        // discountPercentage: average of the two variants' 20% and 40% = 30%
+        $this->assertEqualsWithDelta(30.0, $pp->getDiscountPercentage(), 0.01);
     }
 }

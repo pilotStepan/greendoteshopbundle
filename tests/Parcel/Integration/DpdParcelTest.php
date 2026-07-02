@@ -250,6 +250,12 @@ class DpdParcelTest extends TestCase
         $this->assertSame('Praha', $decoded['shipments'][0]['receiver']['city']);
         $this->assertSame('10000', $decoded['shipments'][0]['receiver']['zipCode']);
         $this->assertSame('Testovací 123', $decoded['shipments'][0]['receiver']['street']);
+        $this->assertSame('John Doe', $decoded['shipments'][0]['receiver']['contactName']);
+        $this->assertSame('john@example.com', $decoded['shipments'][0]['receiver']['contactEmail']);
+        $this->assertSame('+420777123456', $decoded['shipments'][0]['receiver']['contactPhone']);
+        $this->assertSame('123', $decoded['shipments'][0]['reference1']);
+        $this->assertSame('123', $decoded['shipments'][0]['parcels'][0]['reference1']);
+        $this->assertSame(1, $decoded['shipments'][0]['parcels'][0]['weight']);
     }
 
     public function testCreateParcel_noShipOverride_fallsBackToBaseAddressFields(): void
@@ -325,6 +331,56 @@ class DpdParcelTest extends TestCase
         $this->assertArrayNotHasKey('additionalService', $decoded['shipments'][0]['service']);
     }
 
+    public function testCreateParcel_slovakDestination_usesEurCurrencyAndLooksUpNonDefaultCurrency(): void
+    {
+        // Only 'cz' (-> CZK, isDefault: true) is exercised elsewhere; 'sk' must select EUR
+        // and query the *non*-default currency, not just "some currency".
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $currency = $this->createMock(Currency::class);
+        $currencyRepo = $this->createMock(CurrencyRepository::class);
+        $currencyRepo->expects($this->once())->method('findOneBy')->with(['isDefault' => false])->willReturn($currency);
+
+        $service = new DpdParcel(
+            $httpClient,
+            new NullLogger(),
+            $this->makeCodAwarePriceFactory(),
+            $currencyRepo,
+            'TestCustomer',
+            '56',
+            'test',
+            true,
+        );
+
+        $service->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'), isCod: true, country: 'sk')
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $this->assertSame('EUR', $decoded['shipments'][0]['service']['additionalService']['cod']['currency']);
+        $this->assertSame('SK', $decoded['shipments'][0]['receiver']['countryCode']);
+    }
+
+    public function testCreateParcel_defaultEnabledConstructorArgumentIsFalse(): void
+    {
+        $service = new DpdParcel(
+            new MockHttpClient(),
+            new NullLogger(),
+            $this->makePriceFactory(),
+            $this->makeCurrencyRepo(),
+            'TestCustomer',
+            '56',
+            'test',
+            // $enabled omitted -> must default to false
+        );
+
+        $this->assertFalse($service->supports(TransportationAPI::DPD));
+    }
+
     public function testCreateParcel_missingShipmentId_throwsRuntimeException(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(json_encode(['transactionId' => 1, 'shipmentResults' => []])));
@@ -334,6 +390,57 @@ class DpdParcelTest extends TestCase
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('jwt123'))
         );
+    }
+
+    public function testCreateParcel_shipmentIdPresentButMpsIdMissing_throwsRuntimeException(): void
+    {
+        // Isolates the `mpsId === null` half of the `||` check from `shipmentId === null`.
+        $httpClient = new MockHttpClient(new MockResponse(json_encode([
+            'transactionId' => 1,
+            'shipmentResults' => [['numOrder' => 1, 'shipmentId' => 52172]],
+        ])));
+
+        $this->expectException(RuntimeException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    public function testCreateParcel_mpsIdPresentButShipmentIdMissing_throwsRuntimeException(): void
+    {
+        // Isolates the `shipmentId === null` half of the `||` check from `mpsId === null`.
+        $httpClient = new MockHttpClient(new MockResponse(json_encode([
+            'transactionId' => 1,
+            'shipmentResults' => [['numOrder' => 1, 'mpsId' => '13955081839853']],
+        ])));
+
+        $this->expectException(RuntimeException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    public function testCreateParcel_storesShipmentIdAsStringNotInt(): void
+    {
+        // JSON decodes shipmentId as an int; setShipmentId((string)$shipmentId) must actually
+        // cast it — a loose ->with('52172') match wouldn't catch a missing (string) cast.
+        $httpClient = new MockHttpClient(new MockResponse(self::successResponse(52172)));
+
+        $capturedArg = null;
+        $purchase = $this->makePurchase($this->makeTransportation('jwt123'));
+        $purchase->expects($this->once())->method('setShipmentId')
+            ->with($this->callback(function ($arg) use (&$capturedArg) {
+                $capturedArg = $arg;
+                return true;
+            }))
+        ;
+
+        $this->makeService($httpClient)->createParcel($purchase);
+
+        $this->assertIsString($capturedArg);
+        $this->assertSame('52172', $capturedArg);
     }
 
     public function testCreateParcel_nonJsonResponse_throwsRuntimeException(): void
@@ -432,6 +539,102 @@ class DpdParcelTest extends TestCase
 
         $this->assertSame(ParcelDeliveryStateEnum::RECEIVED_DATA, $result->state);
         $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_updateDateAndTimePresent_parsesOccurredAt(): void
+    {
+        // occurredAt was never asserted anywhere before this.
+        $response = json_encode([
+            'transactionId' => 4399,
+            'shipment' => ['shipmentId' => 52172, 'status' => 2, 'updateDate' => '20260615', 'updateTime' => '143000'],
+        ]);
+        $httpClient = new MockHttpClient(new MockResponse($response));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+
+        $this->assertNotNull($result->occurredAt);
+        $this->assertSame('2026-06-15 14:30:00', $result->occurredAt->format('Y-m-d H:i:s'));
+    }
+
+    public function testGetParcelStatus_updateDateMissing_occurredAtIsNull(): void
+    {
+        $response = json_encode([
+            'transactionId' => 4399,
+            'shipment' => ['shipmentId' => 52172, 'status' => 2, 'updateTime' => '143000'],
+        ]);
+        $httpClient = new MockHttpClient(new MockResponse($response));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+
+        $this->assertNull($result->occurredAt);
+    }
+
+    public function testGetParcelStatus_updateTimeMissing_occurredAtIsNull(): void
+    {
+        $response = json_encode([
+            'transactionId' => 4399,
+            'shipment' => ['shipmentId' => 52172, 'status' => 2, 'updateDate' => '20260615'],
+        ]);
+        $httpClient = new MockHttpClient(new MockResponse($response));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+
+        $this->assertNull($result->occurredAt);
+    }
+
+    public function testGetParcelStatus_unparsableUpdateDate_occurredAtIsNullNotException(): void
+    {
+        $response = json_encode([
+            'transactionId' => 4399,
+            'shipment' => ['shipmentId' => 52172, 'status' => 2, 'updateDate' => 'not-a-date', 'updateTime' => '143000'],
+        ]);
+        $httpClient = new MockHttpClient(new MockResponse($response));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+
+        $this->assertNull($result->occurredAt);
+    }
+
+    public function testGetParcelStatus_statusIsReadAsInteger(): void
+    {
+        // (int)($shipment['status'] ?? 0) — verify a numeric-string status still maps correctly.
+        $response = json_encode([
+            'transactionId' => 4399,
+            'shipment' => ['shipmentId' => 52172, 'status' => '2'],
+        ]);
+        $httpClient = new MockHttpClient(new MockResponse($response));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+    }
+
+    public function testGetParcelStatus_missingTransportation_fallsBackToEmptyJwt(): void
+    {
+        $capturedHeaders = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedHeaders) {
+            $capturedHeaders = $options['headers'] ?? [];
+            return new MockResponse(self::statusResponse(52172, 2));
+        });
+
+        $purchase = $this->createMock(Purchase::class);
+        $purchase->method('getId')->willReturn(123);
+        $purchase->method('getTransportation')->willReturn(null);
+        $purchase->method('getShipmentId')->willReturn('52172');
+
+        $this->makeService($httpClient)->getParcelStatus($purchase);
+
+        $this->assertContains('Authorization: Bearer ', $capturedHeaders);
     }
 
     public function testGetParcelStatus_shipmentNotFound_throwsRuntimeException(): void

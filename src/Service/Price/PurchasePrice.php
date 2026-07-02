@@ -166,7 +166,7 @@ class PurchasePrice
     {
         if (!$this->purchase->isVatExempted() or $force){
             $this->vatCalculationType = $vatCalculationType;
-            $this->recalculatePrices();
+            $this->recalculatePrices($force);
         }
         return $this;
     }
@@ -195,10 +195,10 @@ class PurchasePrice
         $this->loadPrice();
     }
 
-    private function recalculatePrices(): void
+    private function recalculatePrices(bool $forceVatCalculationType = false): void
     {
         foreach ($this->productVariantPrices as $productVariantPrice) {
-            $productVariantPrice->setVatCalculationType($this->vatCalculationType);
+            $productVariantPrice->setVatCalculationType($this->vatCalculationType, $forceVatCalculationType);
             $productVariantPrice->setCurrency($this->currency);
             $productVariantPrice->setDiscountCalculationType($this->discountCalculationType);
         }

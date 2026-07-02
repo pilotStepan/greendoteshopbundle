@@ -1,0 +1,26 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src"
+        ],
+        "excludes": [
+            "Entity",
+            "DependencyInjection",
+            "Migrations",
+            "DataFixtures",
+            "OpenApi",
+            "Kernel.php",
+            "GreendotEshopBundle.php"
+        ]
+    },
+    "logs": {
+        "text": "infection.log",
+        "summary": "infection-summary.log"
+    },
+    "mutators": {
+        "@default": true
+    },
+    "testFramework": "phpunit",
+    "testFrameworkOptions": "--testsuite Unit"
+}

@@ -6,3 +6,6 @@ CLAUDE.md
 .claude
 AGENTS.md
 *.cache
+infection.log
+infection-summary.log
+.infection-cache/
