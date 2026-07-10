@@ -1,0 +1,95 @@
+{% form_theme form '@GreendotEshop/forms/gd_form_theme.html.twig' %}
+
+{{ form_start(form, {
+    action: action|default(''),
+    attr: { class: 'gd-form', novalidate: 'novalidate', 'data-async-form': '' }
+}) }}
+    {{ form_widget(form) }}
+    <div class="gd-form__errors" data-form-errors></div>
+    <div class="gd-form__loading" data-form-loading hidden>Odesílání...</div>
+{{ form_end(form) }}
+<div class="gd-form__success" data-form-success hidden>Odesláno</div>
+
+<script{% if form.vars.script_nonce_csp is defined and form.vars.script_nonce_csp %} nonce="{{ form.vars.script_nonce_csp }}"{% endif %}>
+(function () {
+    document.querySelectorAll('form[data-async-form]').forEach(function (form) {
+        if (form.dataset.asyncFormBound) {
+            return;
+        }
+        form.dataset.asyncFormBound = '1';
+
+        var submitBtn = form.querySelector('button[type=submit], input[type=submit]');
+        var loadingEl = form.querySelector('[data-form-loading]');
+        var errorsEl = form.querySelector('[data-form-errors]');
+        var successEl = form.nextElementSibling && form.nextElementSibling.hasAttribute('data-form-success')
+            ? form.nextElementSibling
+            : form.parentElement.querySelector('[data-form-success]');
+
+        function setBusy(busy) {
+            if (submitBtn) {
+                submitBtn.disabled = busy;
+            }
+            if (loadingEl) {
+                loadingEl.hidden = !busy;
+            }
+        }
+
+        function renderErrors(messages) {
+            if (!errorsEl) {
+                return;
+            }
+            errorsEl.innerHTML = '';
+            if (!messages || !messages.length) {
+                return;
+            }
+            var list = document.createElement('ul');
+            messages.forEach(function (message) {
+                var item = document.createElement('li');
+                item.textContent = message;
+                list.appendChild(item);
+            });
+            errorsEl.appendChild(list);
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            if (errorsEl) {
+                errorsEl.innerHTML = '';
+            }
+            setBusy(true);
+
+            fetch(form.getAttribute('action'), {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            })
+                .then(function (response) {
+                    return response.json().then(function (json) {
+                        return { ok: response.ok, json: json };
+                    });
+                })
+                .then(function (result) {
+                    setBusy(false);
+
+                    if (result.ok && result.json && result.json.success) {
+                        form.hidden = true;
+                        if (successEl) {
+                            successEl.hidden = false;
+                        }
+                        return;
+                    }
+
+                    renderErrors((result.json && result.json.errors) || ['Odeslání se nezdařilo. Prosím zkuste to znovu.']);
+                })
+                .catch(function () {
+                    setBusy(false);
+                    renderErrors(['Odeslání se nezdařilo. Prosím zkuste to znovu.']);
+                });
+        });
+    });
+})();
+</script>

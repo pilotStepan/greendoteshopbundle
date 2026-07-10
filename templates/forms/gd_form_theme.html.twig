@@ -1,0 +1,32 @@
+{# Generic reusable form theme for bundle-rendered forms. #}
+{% use 'form_div_layout.html.twig' %}
+
+{%- block form_row -%}
+    <div class="gd-form__field">
+        {{- form_label(form) -}}
+        {{- form_widget(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock form_row -%}
+
+{%- block form_label -%}
+    {%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' gd-form__label')|trim}) -%}
+    {{- parent() -}}
+{%- endblock form_label -%}
+
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        <div class="gd-form__errors">
+            <ul>
+                {%- for error in errors -%}
+                    <li id="{{ id ~ '_error' ~ loop.index }}">{{ error.message }}</li>
+                {%- endfor -%}
+            </ul>
+        </div>
+    {%- endif -%}
+{%- endblock form_errors -%}
+
+{%- block submit_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' gd-form__submit')|trim}) -%}
+    {{- parent() -}}
+{%- endblock submit_widget -%}
