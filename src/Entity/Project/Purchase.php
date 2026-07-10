@@ -75,6 +75,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Patch(
             uriTemplate: '/purchases/session',
             denormalizationContext: ['groups' => ['purchase:write']],
+            collectDenormalizationErrors: true,
             read: true,
             provider: PurchaseStateProvider::class,
             processor: CartStateProcessor::class,

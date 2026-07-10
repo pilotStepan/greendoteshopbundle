@@ -1,6 +1,14 @@
 {# Generic reusable form theme for bundle-rendered forms. #}
 {% use 'form_div_layout.html.twig' %}
 
+{%- block form_widget_compound -%}
+    {%- if form is rootform -%}
+        {{ form_errors(form) }}
+    {%- endif -%}
+    {{- block('form_rows') -}}
+    {{- form_rest(form) -}}
+{%- endblock form_widget_compound -%}
+
 {%- block form_row -%}
     <div class="gd-form__field">
         {{- form_label(form) -}}
