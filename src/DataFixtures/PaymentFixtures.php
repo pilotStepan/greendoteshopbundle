@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\DataFixtures;
 
-use Greendot\EshopBundle\Entity\Project\PaymentAction;
 use Greendot\EshopBundle\Factory\Project\PaymentFactory;
 use Greendot\EshopBundle\Factory\Project\PurchaseFactory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -19,14 +18,12 @@ class PaymentFixtures extends Fixture implements DependentFixtureInterface, Fixt
     public function load(ObjectManager $manager): void
     {
         $purchases = PurchaseFactory::all();
-        $paymentAction = $this->entityManager->getRepository(PaymentAction::class)->findOneBy(['name' => 'platba převodem']);
 
         foreach ($purchases as $purchase) {
             $payment = PaymentFactory::createOne([
                 'externalId' => $purchase->getId(),
                 'purchase' => $purchase,
                 'date' => $purchase->getDateInvoiced(),
-                'action' => $paymentAction,
             ]);
         }
     }
@@ -35,7 +32,6 @@ class PaymentFixtures extends Fixture implements DependentFixtureInterface, Fixt
     {
         return [
             PurchaseFixtures::class,
-            PaymentActionFixtures::class,
         ];
     }
     public static function getGroups(): array

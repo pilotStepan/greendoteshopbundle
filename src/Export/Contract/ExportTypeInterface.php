@@ -23,4 +23,8 @@ interface ExportTypeInterface
 
     /** e.g., '.xml' or '.csv' */
     public function getFileExtension(): string;
+
+    public function setLocale(?string $locale): void;
+
+    public function getLocale(): ?string;
 }

@@ -41,6 +41,8 @@ use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
+use Greendot\EshopBundle\Repository\Project\PaymentRepository;
+use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
@@ -57,6 +59,8 @@ class PurchaseStateSubscriberTest extends TestCase
     private MockObject $dateService;
     private MockObject $eventDispatcher;
     private MockObject $purchaseWorkflow;
+    private RecordingPaymentActionLogger $paymentActionLogger;
+    private MockObject $paymentRepository;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void
@@ -67,6 +71,8 @@ class PurchaseStateSubscriberTest extends TestCase
         $this->dateService = $this->createMock(DateService::class);
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->purchaseWorkflow = $this->createMock(WorkflowInterface::class);
+        $this->paymentActionLogger = new RecordingPaymentActionLogger();
+        $this->paymentRepository = $this->createMock(PaymentRepository::class);
 
         $this->subscriber = new PurchaseStateSubscriber(
             $this->entityManager,
@@ -76,6 +82,8 @@ class PurchaseStateSubscriberTest extends TestCase
             $this->dateService,
             $this->eventDispatcher,
             $this->purchaseWorkflow,
+            $this->paymentActionLogger,
+            $this->paymentRepository,
         );
     }
 

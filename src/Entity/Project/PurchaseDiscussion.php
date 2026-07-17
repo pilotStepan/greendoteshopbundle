@@ -26,8 +26,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class PurchaseDiscussion extends Message
 {
     #[ORM\Column(type: Types::BOOLEAN)]
-    #[Groups(["purchase_discussion:read", "purchase_discussion:write", 'purchase:read', 'purchase:write'])]
-    private bool $isAdmin;
+    #[Groups(["purchase_discussion:read", 'purchase:read',])]
+    private bool $isAdmin = false;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Groups(["purchase_discussion:read", "purchase_discussion:write", 'purchase:read', 'purchase:write'])]

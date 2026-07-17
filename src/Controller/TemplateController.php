@@ -6,6 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[Route(env: 'dev')]
 class TemplateController extends AbstractController
 {
     #[Route('/template/{name}', name: 'template')]

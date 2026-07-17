@@ -25,6 +25,7 @@ class ProcessChunkHandler
     public function __invoke(ProcessChunkMessage $processChunkMessage)
     {
         $type = $this->registry->get($processChunkMessage->alias);
+        $type->setLocale($processChunkMessage->locale);
         $items = $type->getItems($processChunkMessage->offset, $processChunkMessage->limit);
 
         $filePath = $this->exportStorageManager->getChunkFilePath($processChunkMessage->exportId, $processChunkMessage->offset);
@@ -65,7 +66,8 @@ class ProcessChunkHandler
         if ($totalProcessed >= $statusData['total_messages']){
             $this->messageBus->dispatch(new AssembleExportMessage(
                 exportId: $processChunkMessage->exportId,
-                alias: $processChunkMessage->alias
+                alias: $processChunkMessage->alias,
+                locale: $processChunkMessage->locale
             ));
         }
     }

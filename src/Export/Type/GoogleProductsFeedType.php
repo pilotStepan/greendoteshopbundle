@@ -2,13 +2,17 @@
 
 namespace Greendot\EshopBundle\Export\Type;
 
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
+use Gedmo\Translatable\Query\TreeWalker\TranslationWalker;
+use Gedmo\Translatable\TranslatableListener;
 use Greendot\EshopBundle\Export\Contract\ExportTypeInterface;
 use Greendot\EshopBundle\Export\Data\Factory\GoogleProductFeedFactory;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 
 class GoogleProductsFeedType implements ExportTypeInterface
 {
+    private ?string $locale = null;
 
     public function __construct(
         private readonly ProductVariantRepository $productVariantRepository,
@@ -40,10 +44,18 @@ class GoogleProductsFeedType implements ExportTypeInterface
      */
     public function getItems(int $offset, int $limit): iterable
     {
-        return $this->getQueryBase()
+        $query = $this->getQueryBase()
+            ->addSelect('product')
             ->setMaxResults($limit)
             ->setFirstResult($offset)
-            ->getQuery()->getResult();
+            ->getQuery();
+
+        if ($this->locale) {
+            $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, TranslationWalker::class);
+            $query->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $this->locale);
+        }
+
+        return $query->getResult();
     }
 
     private function getQueryBase(): QueryBuilder
@@ -77,9 +89,19 @@ class GoogleProductsFeedType implements ExportTypeInterface
     }
 
 
+    public function setLocale(?string $locale): void
+    {
+        $this->locale = $locale;
+    }
+
+    public function getLocale(): ?string
+    {
+        return $this->locale;
+    }
+
     public function generateItem(mixed $item): string
     {
-        $model = $this->googleProductFeedFactory->create($item);
+        $model = $this->googleProductFeedFactory->create($item, $this->locale);
 
         $xml = '<item>'. PHP_EOL;
         $xml .= sprintf('<g:id>%s</g:id>', htmlspecialchars($model->id)) . PHP_EOL;

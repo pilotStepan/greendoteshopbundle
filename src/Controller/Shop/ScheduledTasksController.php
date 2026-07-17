@@ -50,13 +50,11 @@ class ScheduledTasksController extends AbstractController
     }
 
     #[CustomApiEndpoint]
-    #[Route('/scheduled/bank/{startDate}', name: 'scheduled_bank', methods: ['GET'])]
-    public function scheduleBank(string $startDate): JsonResponse
+    #[Route('/scheduled/bank', name: 'scheduled_bank', methods: ['GET'])]
+    public function scheduleBank(): JsonResponse
     {
-        $date = \DateTime::createFromFormat('d.m.Y', $startDate);
-        if (!$date || $date->format('d.m.Y') !== $startDate) {
-            return $this->json(['error' => 'Invalid date format'], Response::HTTP_BAD_REQUEST);
-        }
+        $date = new \DateTime();
+        $date->modify("-3 days");
 
         $this->rbBankPaymentImportService->downloadAndProcessPayments($date);
 

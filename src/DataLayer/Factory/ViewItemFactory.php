@@ -77,16 +77,8 @@ class ViewItemFactory
 
     protected function getVariantNameSafe(ProductVariant $productVariant): string
     {
-        $queryBuilder = $this->parameterRepository->createQueryBuilder('parameter');
-        $queryBuilder->select("CASE WHEN format.name = 'color' THEN color.name ELSE parameter.data END as data");
-        $variantDataQB = $this->parameterRepository->findProductParameterGroupsParametersQB($productVariant, $queryBuilder);
-        $results = $variantDataQB->getQuery()->getResult();
+        $label = $this->parameterRepository->getVariantParametersLabel($productVariant, ' ');
 
-        if (!$results) {
-            return $productVariant->getName();
-        }
-
-        $names = array_column($results, 'data');
-        return implode(' ', $names);
+        return $label !== '' ? $label : $productVariant->getName();
     }
 }

@@ -16,7 +16,11 @@ use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 //    For tests against testing payment gateway, you can use payment card.
@@ -41,6 +45,10 @@ readonly class GPWebpay implements PaymentGatewayInterface
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
         private ManagePurchase         $managePurchase,
+        private CurrencyManager        $currencyManager,
+        private PaymentActionLogger    $paymentActionLogger,
+        #[Autowire(param: 'kernel.environment')]
+        private string                 $environment,
     ) {}
 
     /**
@@ -48,14 +56,15 @@ readonly class GPWebpay implements PaymentGatewayInterface
      */
     public function getPayLink(Purchase $purchase): string
     {
-        if (!$purchase->getTotalPrice()) {
-            $this->managePurchase->preparePrices($purchase);
-        }
+        $this->managePurchase->preparePrices($purchase);
+
+        $currency = $this->currencyManager->get();
+        $currencyNumeric = (new ISO4217())->getByCode($currency->getName())['numeric'];
 
         $this->logger->info('GPW getPayLink initiated', [
             'purchaseId' => $purchase->getId(),
             'totalPrice' => $purchase->getTotalPrice(),
-            'currency' => '203',
+            'currency' => $currencyNumeric,
         ]);
 
         $payment = new Payment();
@@ -80,17 +89,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
         }
 
         try {
-            $settings = Settings::createForTest(
-                $this->private_key,
-                $this->private_pass,
-                $this->public_key,
-                $this->merchant_id,
-                $this->urlGenerator->generate(
-                    'shop_order_verify',
-                    [],
-                    UrlGeneratorInterface::ABSOLUTE_URL,
-                ),
-            );
+            $settings = $this->createSettings();
 
             $currencyCodes = new CurrencyCodes(new ISO4217());
             $digestSigner = new DigestSigner($settings);
@@ -98,14 +97,31 @@ readonly class GPWebpay implements PaymentGatewayInterface
             $requestValues = CardPayRequestValues::createFromArray([
                 'ORDERNUMBER' => $payment->getId(),
                 'AMOUNT' => $purchase->getTotalPrice(),
-                'CURRENCY' => '203',
+                'CURRENCY' => $currencyNumeric,
                 'DEPOSITFLAG' => true,
                 'MERORDERNUM' => $purchase->getId(),
             ], $currencyCodes);
 
             $cardPayRequest = new CardPayRequest($requestValues, $settings, $digestSigner);
+            $redirectUrl = $cardPayRequest->getRequestUrlWithGetParameters();
 
-            return $cardPayRequest->getRequestUrlWithGetParameters();
+            $this->paymentActionLogger->log(
+                $purchase,
+                PaymentActionType::GPW_REDIRECT->value,
+                'client',
+                null,
+                [
+                    'url' => $redirectUrl,
+                    'ORDERNUMBER' => $payment->getId(),
+                    'AMOUNT' => $purchase->getTotalPrice(),
+                    'CURRENCY' => $currencyNumeric,
+                    'DEPOSITFLAG' => true,
+                    'MERORDERNUM' => $purchase->getId(),
+                ],
+                $payment,
+            );
+
+            return $redirectUrl;
         } catch (Throwable $e) {
             $this->logger->error('GPW failed to create payment request', [
                 'purchaseId' => $purchase->getId(),
@@ -121,17 +137,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
     public function verifyLink(): CardPayResponse
     {
         try {
-            $settings = Settings::createForTest(
-                $this->private_key,
-                $this->private_pass,
-                $this->public_key,
-                $this->merchant_id,
-                $this->urlGenerator->generate(
-                    'shop_order_verify',
-                    [],
-                    UrlGeneratorInterface::ABSOLUTE_URL,
-                ),
-            );
+            $settings = $this->createSettings();
 
             $currencyCodes = new CurrencyCodes(new ISO4217());
             $digestSigner = new DigestSigner($settings);
@@ -144,5 +150,24 @@ readonly class GPWebpay implements PaymentGatewayInterface
             ]);
             throw $e;
         }
+    }
+
+    private function createSettings(): Settings
+    {
+        $args = [
+            $this->private_key,
+            $this->private_pass,
+            $this->public_key,
+            $this->merchant_id,
+            $this->urlGenerator->generate(
+                'shop_order_verify',
+                [],
+                UrlGeneratorInterface::ABSOLUTE_URL,
+            ),
+        ];
+
+        return in_array($this->environment, ['test', 'dev'], true)
+            ? Settings::createForTest(...$args)
+            : Settings::createForProduction(...$args);
     }
 }

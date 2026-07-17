@@ -167,7 +167,8 @@ class PurchaseRepository extends ServiceEntityRepository
     public function findByPaymentId(string $paymentId): Purchase
     {
         return $this->createQueryBuilder('p')
-            ->andWhere('p.paymentId = :paymentId')
+            ->innerJoin('p.payments', 'payment')
+            ->andWhere('payment.id = :paymentId')
             ->setParameter('paymentId', $paymentId)
             ->getQuery()
             ->getSingleResult()

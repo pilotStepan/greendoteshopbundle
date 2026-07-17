@@ -12,7 +12,7 @@ use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-#[Route('/test', name: 'app_test_')]
+#[Route('/test', name: 'app_test_', env: 'dev')]
 class TestController extends AbstractController
 {
     #[Route('/', name: 'index', priority: '99')]

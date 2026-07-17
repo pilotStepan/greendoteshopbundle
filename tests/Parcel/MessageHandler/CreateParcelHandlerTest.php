@@ -9,8 +9,10 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
@@ -47,11 +49,16 @@ class CreateParcelHandlerTest extends TestCase
         );
     }
 
-    private function makePurchase(?string $transportNumber = null): Purchase
+    private function makePurchase(?string $transportNumber = null, bool $isEndState = false): Purchase
     {
+        $transportation = $this->createMock(Transportation::class);
+        $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
+
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(42);
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
+        $purchase->method('hasAnyPlace')->willReturn($isEndState);
+        $purchase->method('getTransportation')->willReturn($transportation);
         return $purchase;
     }
 
@@ -59,6 +66,17 @@ class CreateParcelHandlerTest extends TestCase
     {
         $this->purchaseRepo->method('find')->willReturn(null);
         $this->expectException(UnrecoverableMessageHandlingException::class);
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
+    public function testEndStatePurchase_skipsCreateAndDoesNotSchedule(): void
+    {
+        $purchase = $this->makePurchase(isEndState: true);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $this->provider->expects($this->never())->method('getByPurchase');
+        $this->bus->expects($this->never())->method('dispatch');
+
         ($this->handler)(new CreateParcelMessage(42));
     }
 

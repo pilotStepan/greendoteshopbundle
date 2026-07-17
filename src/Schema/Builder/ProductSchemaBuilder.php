@@ -19,6 +19,15 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant as ProductVariantEntity;
 
 class ProductSchemaBuilder
 {
+    public const CONDITION_NEW = 'https://schema.org/NewCondition';
+
+    public const SCHEMA_VARIES_BY_MAP = [
+        'velikost' => 'size',
+        'barva' => 'color',
+        'váha' => 'weight',
+        'šířka' => 'width',
+    ];
+
     private ?ProductEntity $product = null;
     private ?ProductVariantEntity $variant = null;
     private ?ProductSchema $schema = null;
@@ -88,7 +97,7 @@ class ProductSchemaBuilder
 
         $clone->schema
             ->name($variant->getName() ?? $variant->getProduct()->getName())
-            ->image($variant->getUpload()?->getPath() ? $this->absoluteUrl . $variant->getUpload()?->getPath() : null)
+            ->image($this->variantImageUrl($variant))
             ->offers(Schema::offer()
                 ->url($url)
                 ->price(
@@ -99,15 +108,8 @@ class ProductSchemaBuilder
                     )->getPrice(),
                 )
                 ->priceCurrency($this->getCurrencyCode())
-                ->availability(Schema::itemAvailability()
-                    ->identifier($variant->getAvailability()?->getIsPurchasable()
-                        ? 'https://schema.org/InStock'
-                        : 'https://schema.org/OutOfStock',
-                    ),
-                )
-                ->itemCondition(Schema::offerItemCondition()
-                    ->identifier('https://schema.org/NewCondition'),
-                ),
+                ->availability($this->availabilityUrl($variant))
+                ->itemCondition(self::CONDITION_NEW),
             )
         ;
 
@@ -125,11 +127,12 @@ class ProductSchemaBuilder
             'slug' => $product->getSlug(),
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        return Schema::product()
+        $schema = Schema::product()
             ->identifier(sprintf('%s#variant-%d', $url, $variant->getId() ?? 0))
             ->url($url)
             ->name($variant->getName() ?? $product->getName())
-            ->image($variant->getUpload()?->getPath() ? $this->absoluteUrl . $variant->getUpload()?->getPath() : null)
+            ->image($this->variantImageUrl($variant))
+            ->description($variant->getName() ?? $product->getTitle() ?? $product->getName())
             ->brand(Schema::brand()->name($product->getProducer()?->getName()))
             ->offers(Schema::offer()
                 ->url($url)
@@ -141,17 +144,45 @@ class ProductSchemaBuilder
                     )->getPrice(),
                 )
                 ->priceCurrency($this->getCurrencyCode())
-                ->availability(Schema::itemAvailability()
-                    ->identifier($variant->getAvailability()?->getIsPurchasable()
-                        ? 'https://schema.org/InStock'
-                        : 'https://schema.org/OutOfStock',
-                    ),
-                )
-                ->itemCondition(Schema::offerItemCondition()
-                    ->identifier('https://schema.org/NewCondition'),
-                ),
+                ->availability($this->availabilityUrl($variant))
+                ->itemCondition(self::CONDITION_NEW),
             )
         ;
+
+        $this->applyVariantProperties($schema, $variant);
+
+        return $schema;
+    }
+
+    private function variantImageUrl(ProductVariantEntity $variant): ?string
+    {
+        $path = $variant->getUpload()?->getPath() ?? $variant->getProduct()?->getUpload()?->getPath();
+
+        return $path ? $this->absoluteUrl . $path : null;
+    }
+
+    private function availabilityUrl(ProductVariantEntity $variant): string
+    {
+        return $variant->getAvailability()?->getIsPurchasable()
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock';
+    }
+
+    private function applyVariantProperties(ProductSchema $schema, ProductVariantEntity $variant): void
+    {
+        foreach ($variant->getParameters() as $parameter) {
+            $groupName = $parameter->getParameterGroup()?->getName();
+            if ($groupName === null) {
+                continue;
+            }
+
+            $property = self::SCHEMA_VARIES_BY_MAP[mb_strtolower($groupName)] ?? null;
+            $value = $parameter->getColorName() ?? $parameter->getData();
+
+            if ($property !== null && $value !== null && method_exists($schema, $property)) {
+                $schema->{$property}($value);
+            }
+        }
     }
 
     protected function getCurrencyCode(): string
@@ -165,10 +196,15 @@ class ProductSchemaBuilder
             throw new \LogicException('Call forProduct() before withAggregateRating().');
         }
 
+        $reviewCount = $this->reviewRepository->getReviewCountForProduct($this->product);
+        if ($reviewCount <= 0) {
+            return $this;
+        }
+
         $clone = clone $this;
         $clone->schema->aggregateRating(Schema::aggregateRating()
             ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($this->product))
-            ->reviewCount($this->reviewRepository->getReviewCountForProduct($this->product)),
+            ->reviewCount($reviewCount),
         );
 
         return $clone;
@@ -190,8 +226,7 @@ class ProductSchemaBuilder
         $clone->schema->reviews(array_map(
             fn($review) => Schema::review()
                 ->author(Schema::person()
-                    ->name($review->getReviewerName())
-                    ->email($review->getReviewerEmail()),
+                    ->name($review->getReviewerName()),
                 )
                 ->reviewRating(Schema::rating()
                     ->ratingValue($review->getStars()),
@@ -277,8 +312,15 @@ class ProductSchemaBuilder
             ->identifier(sprintf('%s#group', $url))
             ->url($url)
             ->name($product->getName())
+            ->productGroupID((string) $product->getId())
             ->brand(Schema::brand()->name($product->getProducer()?->getName()))
             ->image($this->absoluteUrl . $product->getUpload()?->getPath())
+            ->hasVariant(
+                array_map(
+                    fn($v) => $this->buildVariantReference($v),
+                    $variants,
+                ),
+            )
         ;
 
         if (!empty($prices)) {

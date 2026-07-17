@@ -18,13 +18,6 @@ use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 class EshopProductGroupSchemaProvider implements SchemaProviderInterface
 {
-    private const SCHEMA_VARIES_BY_MAP = [
-        'velikost' => 'size',
-        'barva' => 'color',
-        'váha' => 'weight',
-        'šířka' => 'width',
-    ];
-
     public function __construct(
         private readonly UrlGeneratorInterface      $urlGenerator,
         private readonly ProductRepository          $productRepository,
@@ -74,12 +67,13 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             ))
             ->name($object->getName())
             ->description($object->getDescription())
+            ->productGroupID($object->getExternalId() ?? (string) $object->getId())
             ->brand(Schema::brand()
                 ->name($object->getProducer()?->getName()),
             )
             ->variesBy(
                 array_map(
-                    fn($paramGroup) => self::SCHEMA_VARIES_BY_MAP[mb_strtolower($paramGroup->getName())] ?? $paramGroup->getName(),
+                    fn($paramGroup) => ProductSchemaBuilder::SCHEMA_VARIES_BY_MAP[mb_strtolower($paramGroup->getName())] ?? $paramGroup->getName(),
                     $this->productRepository->findVariantParameterGroupsByProduct($object),
                 ),
             )
@@ -90,27 +84,32 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
                 ),
             )
             ->offers($aggregateOffer)
-            ->aggregateRating(Schema::aggregateRating()
-                ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($object))
-                ->reviewCount($this->reviewRepository->getReviewCountForProduct($object)),
-            )
-            ->reviews(
-                array_map(
-                    fn($review) => Schema::review()
-                        ->author(
-                            Schema::person()
-                                ->name($review->getReviewerName())
-                                ->email($review->getReviewerEmail()),
-                        )
-                        ->reviewRating(
-                            Schema::rating()
-                                ->ratingValue($review->getStars()),
-                        )
-                        ->reviewBody($review->getContents()),
-                    $this->productRepository->findApprovedReviews($object, 10),
-                ),
-            )
         ;
+
+        $reviewCount = $this->reviewRepository->getReviewCountForProduct($object);
+        if ($reviewCount > 0) {
+            $schema
+                ->aggregateRating(Schema::aggregateRating()
+                    ->ratingValue($this->reviewRepository->getAvgRatingValueForProduct($object))
+                    ->reviewCount($reviewCount),
+                )
+                ->reviews(
+                    array_map(
+                        fn($review) => Schema::review()
+                            ->author(
+                                Schema::person()
+                                    ->name($review->getReviewerName()),
+                            )
+                            ->reviewRating(
+                                Schema::rating()
+                                    ->ratingValue($review->getStars()),
+                            )
+                            ->reviewBody($review->getContents()),
+                        $this->productRepository->findApprovedReviews($object, 10),
+                    ),
+                )
+            ;
+        }
 
         $this->builder->applyRelationships($schema, $object);
 

@@ -211,13 +211,20 @@ class ProductRepository extends HintedRepositoryBase
         return $qb->getQuery()->getResult();
     }
 
-    public function getProductsForEntity($entity, $onlyActive = true){
+    public function getProductsForEntity($entity, bool $onlyActive = true, bool $onlyVisible = true){
         $qb = $this->createQueryBuilder('p');
 
         if ($onlyActive){
-            $qb->andWhere('p.isActive = :val');
-            $qb->setParameter('val', 1);
+            $qb->andWhere('p.isVisible = :active');
+            $qb->setParameter('active', 1);
         }
+
+        if ($onlyVisible) {
+            $qb->andWhere('p.isActive = :visible');
+            $qb->setParameter('visible', 1);
+        }
+
+
 
         if ($entity instanceof Category){
             $qb->join('p.categoryProducts', 'c');
@@ -705,6 +712,7 @@ class ProductRepository extends HintedRepositoryBase
 
         $qb = $this->createQueryBuilder('p')
             ->select('p.id')
+            ->distinct()
             ->andWhere('p.isVisible = :visible')
             ->setParameter('visible', true)
         ;

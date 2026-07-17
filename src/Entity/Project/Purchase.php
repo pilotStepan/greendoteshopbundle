@@ -83,6 +83,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Patch(
             uriTemplate: '/purchases/session',
             denormalizationContext: ['groups' => ['purchase:write']],
+            collectDenormalizationErrors: true,
             read: true,
             provider: PurchaseStateProvider::class,
             processor: CartStateProcessor::class,
@@ -99,6 +100,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[TransportationPaymentAvailability]
 class Purchase
 {
+    private const SHIPMENT_ID = 'shipment_id';
+    private const COURIER_NUMBER = 'courier_number';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -269,6 +273,11 @@ class Purchase
     #[ORM\OneToMany(targetEntity: Payment::class, mappedBy: 'purchase', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $payments;
 
+    #[ORM\OneToMany(targetEntity: PaymentAction::class, mappedBy: 'purchase', cascade: ['persist'])]
+    #[ORM\OrderBy(['date' => 'DESC'])]
+    #[Groups(['purchase:read'])]
+    private Collection $paymentActions;
+
     #[ORM\OneToMany(targetEntity: PurchaseDiscussion::class, mappedBy: 'purchase')]
     #[ORM\OrderBy(['createdAt' => 'DESC'])]
     #[Groups(['purchase:read', 'purchase:write', 'event_purchase'])]
@@ -313,6 +322,7 @@ class Purchase
         $this->vouchersUsed = new ArrayCollection();
         $this->Consents = new ArrayCollection();
         $this->payments = new ArrayCollection();
+        $this->paymentActions = new ArrayCollection();
         $this->purchaseDiscussions = new ArrayCollection();
         $this->transportationEvents = new ArrayCollection();
         $this->additionalPurchaseCosts = new ArrayCollection();
@@ -463,6 +473,36 @@ class Purchase
     public function setTransportNumber(?string $transport_number): self
     {
         $this->transport_number = $transport_number;
+
+        return $this;
+    }
+
+    public function getShipmentId(): ?string
+    {
+        return $this->additionalInfo[self::SHIPMENT_ID] ?? null;
+    }
+
+    public function setShipmentId(?string $shipmentId): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::SHIPMENT_ID => $shipmentId],
+            static fn($v) => $v !== null
+        );
+
+        return $this;
+    }
+
+    public function getCourierNumber(): ?string
+    {
+        return $this->additionalInfo[self::COURIER_NUMBER] ?? null;
+    }
+
+    public function setCourierNumber(?string $courierNumber): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::COURIER_NUMBER => $courierNumber],
+            static fn($v) => $v !== null
+        );
 
         return $this;
     }
@@ -801,6 +841,21 @@ class Purchase
             if ($payment->getPurchase() === $this) {
                 $payment->setPurchase(null);
             }
+        }
+
+        return $this;
+    }
+
+    public function getPaymentActions(): Collection
+    {
+        return $this->paymentActions;
+    }
+
+    public function addPaymentAction(PaymentAction $paymentAction): self
+    {
+        if (!$this->paymentActions->contains($paymentAction)) {
+            $this->paymentActions->add($paymentAction);
+            $paymentAction->setPurchase($this);
         }
 
         return $this;

@@ -23,6 +23,9 @@ class Export
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $type = null;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $locale = null;
+
     #[ORM\OneToOne(mappedBy: 'export', cascade: ['persist', 'remove'])]
     private ?ExportStatus $exportStatus = null;
 
@@ -63,6 +66,18 @@ class Export
     public function setType(?string $type): static
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getLocale(): ?string
+    {
+        return $this->locale;
+    }
+
+    public function setLocale(?string $locale): static
+    {
+        $this->locale = $locale;
 
         return $this;
     }

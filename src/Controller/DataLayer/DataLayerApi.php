@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Controller\DataLayer;
 use Greendot\EshopBundle\DataLayer\Event\CheckoutFunnelEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,8 +35,13 @@ class DataLayerApi extends AbstractController
             return new JsonResponse(sprintf('Invalid type of: %s', $type), 400);
         }
 
-        $this->eventDispatcher->dispatch(new CheckoutFunnelEvent($purchaseRepository->findOneBySession(), $type));
-        return new JsonResponse('ok', 200);
+        $purchase = $purchaseRepository->findOneBySession();
+        if ($purchase instanceof Purchase){
+            $this->eventDispatcher->dispatch(new CheckoutFunnelEvent($purchase, $type));
+            return new JsonResponse('ok', 200);
+        }
+
+        return new JsonResponse('No purchase in session to assemble gtm object.', 400);
     }
 
     #[Route('/view-item/{id}', name: 'view_item')]

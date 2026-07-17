@@ -26,12 +26,14 @@ class AssembleExportHandler
     public function __invoke(AssembleExportMessage $assembleExportMessage): void
     {
         $type = $this->exportRegistry->get($assembleExportMessage->alias);
+        $type->setLocale($assembleExportMessage->locale);
         $currentExport = $this->entityManager->getRepository(Export::class)->find($assembleExportMessage->exportId);
         $hasFailed = $currentExport->getExportStatus()->getFailedCount() > 0;
+        $locale = $assembleExportMessage->locale;
 
         if (!$hasFailed){
             $this->handleArchive($type, $assembleExportMessage);
-            $finalFilePath = $this->exportStorageManager->getFinalFilePath($assembleExportMessage->alias, $type->getFileExtension());
+            $finalFilePath = $this->exportStorageManager->getFinalFilePath($assembleExportMessage->alias, $type->getFileExtension(), $locale);
         }else{
             $finalFilePath = $this->exportStorageManager->getFailedFilePath($assembleExportMessage->exportId, $type->getFileExtension());
         }
@@ -71,9 +73,11 @@ class AssembleExportHandler
     private function handleArchive(ExportTypeInterface $type, AssembleExportMessage $assembleExportMessage): void
     {
         $extension = $type->getFileExtension();
-        $standardFilename = $assembleExportMessage->alias. $extension;
+        $locale = $assembleExportMessage->locale;
+        $aliasWithLocale = $locale ? $assembleExportMessage->alias . '_' . $locale : $assembleExportMessage->alias;
+        $standardFilename = $aliasWithLocale . $extension;
 
-        $archiveRelativePath = $this->exportStorageManager->archiveExistingFile($assembleExportMessage->alias, $extension);
+        $archiveRelativePath = $this->exportStorageManager->archiveExistingFile($assembleExportMessage->alias, $extension, $locale);
         if ($archiveRelativePath){
             $oldExport = $this->entityManager->getRepository(Export::class)->findOneBy([
                 'filename' => $standardFilename

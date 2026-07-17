@@ -7,10 +7,11 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 
 #[ORM\Entity(repositoryClass: TransportationEventRepository::class)]
-#[ApiResource]
+//#[ApiResource]
 class TransportationEvent
 {
     #[ORM\Id]
@@ -29,6 +30,9 @@ class TransportationEvent
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $details = null;
+
+    #[ORM\Column(name: 'transportation_api', type: 'string', length: 255, nullable: true, enumType: TransportationAPI::class)]
+    private ?TransportationAPI $transportationAPI = null;
 
     #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'transportationEvents')]
     #[ORM\JoinColumn(nullable: false)]
@@ -79,6 +83,17 @@ class TransportationEvent
     public function setDetails(?array $details): static
     {
         $this->details = $details;
+        return $this;
+    }
+
+    public function getTransportationAPI(): ?TransportationAPI
+    {
+        return $this->transportationAPI;
+    }
+
+    public function setTransportationAPI(?TransportationAPI $transportationAPI): static
+    {
+        $this->transportationAPI = $transportationAPI;
         return $this;
     }
 

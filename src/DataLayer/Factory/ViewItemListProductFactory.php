@@ -61,8 +61,8 @@ class ViewItemListProductFactory
 
         return new ViewItemListProduct(
             currency: $this->currency->getName(),
-            priceVat: $lowestPriceItem->priceVat,
-            priceNoVat: $lowestPriceItem->priceNoVat,
+            priceVat: $lowestPriceItem?->priceVat ?? 0.0,
+            priceNoVat: $lowestPriceItem?->priceNoVat ?? 0.0,
             valueVat: $valueVat,
             valueNoVat: $valueNoVat,
             items: $items

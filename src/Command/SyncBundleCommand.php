@@ -104,65 +104,75 @@ class SyncBundleCommand extends Command
     }
 
     /**
-     * CLEAN SYNC (copy src/ fully, remove extras)
+     * CLEAN SYNC (copy src/ and templates/ fully, remove extras)
      */
     private function syncClean(string $bundlePath, string $projectVendorPath, SymfonyStyle $io, Filesystem $filesystem): int
     {
         $srcSourcePath = $bundlePath . '/src';
-        $srcTargetPath = $projectVendorPath . '/src';
-        $tmpTargetPath = $projectVendorPath . '/.sync_tmp_src';
 
         if (!is_dir($srcSourcePath)) {
             $io->error('Source src/ directory not found');
             return Command::FAILURE;
         }
 
-        // Remove temp dir if exists
-        if (is_dir($tmpTargetPath)) {
-            $filesystem->remove($tmpTargetPath);
+        if (!is_dir($projectVendorPath)) {
+            $filesystem->mkdir($projectVendorPath);
         }
 
-        try {
-            $changedFiles = $this->getAllFilesRelative($srcSourcePath);
-            $io->info(sprintf('Clean sync: copying all %d files from src/ to temp', count($changedFiles)));
-
-            // Copy all files to temp dir
-            foreach ($changedFiles as $file) {
-                $sourcePath = $srcSourcePath . '/' . $file;
-                $targetPath = $tmpTargetPath . '/' . $file;
-                $targetDir = dirname($targetPath);
-                if (!is_dir($targetDir)) {
-                    $filesystem->mkdir($targetDir);
-                }
-                $filesystem->copy($sourcePath, $targetPath, true);
+        $totalCount = 0;
+        foreach (['src', 'templates'] as $dir) {
+            $dirSourcePath = $bundlePath . '/' . $dir;
+            if (!is_dir($dirSourcePath)) {
+                continue;
             }
 
-            // Remove extra files in temp dir (to match source exactly)
-            $this->removeExtraFiles($tmpTargetPath, $srcSourcePath, $io, $filesystem);
+            $dirTargetPath = $projectVendorPath . '/' . $dir;
+            $tmpTargetPath = $projectVendorPath . '/.sync_tmp_' . $dir;
 
-            // Ensure vendor path exists
-            if (!is_dir($projectVendorPath)) {
-                $filesystem->mkdir($projectVendorPath);
-            }
-
-            // Remove old src (but keep .git etc. in parent)
-            if (is_dir($srcTargetPath)) {
-                $filesystem->remove($srcTargetPath);
-            }
-
-            // Move temp dir to src
-            $filesystem->rename($tmpTargetPath, $srcTargetPath, true);
-
-            $io->success(sprintf('Successfully synced %d files to vendor', count($changedFiles)));
-            return Command::SUCCESS;
-        } catch (\Throwable $e) {
-            // Cleanup temp dir
+            // Remove temp dir if exists
             if (is_dir($tmpTargetPath)) {
                 $filesystem->remove($tmpTargetPath);
             }
-            $io->error('Sync failed: ' . $e->getMessage());
-            return Command::FAILURE;
+
+            try {
+                $changedFiles = $this->getAllFilesRelative($dirSourcePath);
+                $io->info(sprintf('Clean sync: copying all %d files from %s/ to temp', count($changedFiles), $dir));
+
+                // Copy all files to temp dir
+                foreach ($changedFiles as $file) {
+                    $sourcePath = $dirSourcePath . '/' . $file;
+                    $targetPath = $tmpTargetPath . '/' . $file;
+                    $targetDir = dirname($targetPath);
+                    if (!is_dir($targetDir)) {
+                        $filesystem->mkdir($targetDir);
+                    }
+                    $filesystem->copy($sourcePath, $targetPath, true);
+                }
+
+                // Remove extra files in temp dir (to match source exactly)
+                $this->removeExtraFiles($tmpTargetPath, $dirSourcePath, $io, $filesystem);
+
+                // Remove old dir (but keep .git etc. in parent)
+                if (is_dir($dirTargetPath)) {
+                    $filesystem->remove($dirTargetPath);
+                }
+
+                // Move temp dir to target
+                $filesystem->rename($tmpTargetPath, $dirTargetPath, true);
+
+                $totalCount += count($changedFiles);
+            } catch (\Throwable $e) {
+                // Cleanup temp dir
+                if (is_dir($tmpTargetPath)) {
+                    $filesystem->remove($tmpTargetPath);
+                }
+                $io->error('Sync failed: ' . $e->getMessage());
+                return Command::FAILURE;
+            }
         }
+
+        $io->success(sprintf('Successfully synced %d files to vendor', $totalCount));
+        return Command::SUCCESS;
     }
 
     /**

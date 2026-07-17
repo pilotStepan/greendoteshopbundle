@@ -22,13 +22,14 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
 #[ApiResource(
     operations: [
         new GetCollection(),
         new Get(),
-        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Post(),
         new Put(security: "is_granted('ROLE_ADMIN')"),
         new Patch(security: "is_granted('ROLE_ADMIN')"),
         new Delete(security: "is_granted('ROLE_ADMIN')"),
@@ -53,10 +54,12 @@ class Comment implements PageableInterface
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['comment:read', 'comment:write'])]
+    #[Assert\NotBlank]
     private ?string $content = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['comment:read', 'comment:write'])]
+    #[Assert\NotBlank]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -68,7 +71,7 @@ class Comment implements PageableInterface
     private ?Client $client = null;
 
     #[ORM\Column]
-    #[Groups(['comment:read', 'comment:write'])]
+    #[Groups(['comment:read'])]
     private ?bool $isAdmin = false;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'comments')]
@@ -88,10 +91,13 @@ class Comment implements PageableInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['comment:read', 'comment:write'])]
+    #[Assert\NotBlank]
+    #[Assert\Email]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['comment:read', 'comment:write'])]
+    #[Assert\NotBlank]
     private ?string $name = null;
 
     #[ORM\ManyToMany(targetEntity: Product::class, inversedBy: 'comments')]

@@ -3,27 +3,56 @@
 namespace Greendot\EshopBundle\Parcel\Integration;
 
 use Throwable;
-use RuntimeException;
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
 use Monolog\Attribute\WithMonologChannel;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
+use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
+/**
+ * Integrates Czech Post's B2B-ZSKService REST API (https://www.postaonline.cz/dokumentaceapi/b2b/api/B2B3-ZSKService/B2B-ZSKService-1.5.0.yaml).
+ * Handles CP_DO_RUKY (hand delivery, prefixParcelCode "DR") only — CP_BALIKOVNA (pickup point) requires a
+ * separate contract-routing ("spádování") API and is handled by CzechPostBalikovnaParcel instead.
+ */
 #[WithMonologChannel('api.parcel.czech_post')]
 class CzechPostParcel implements ParcelServiceInterface
 {
-    private const API_BASE_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1/*';
+    use CzechPostHmacAuthTrait;
+
+    private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
+    private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
+    private readonly string $baseUrl;
 
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
-        private readonly LoggerInterface     $logger,
-    ) {}
+        private readonly HttpClientInterface  $httpClient,
+        private readonly LoggerInterface      $logger,
+        private readonly PurchasePriceFactory $purchasePriceFactory,
+        private readonly CurrencyRepository   $currencyRepository,
+        #[Autowire(param: 'greendot_eshop.parcel.czech_post.customer_id')]
+        private readonly string               $customerId,
+        #[Autowire(param: 'greendot_eshop.parcel.czech_post.post_code')]
+        private readonly string               $postCode,
+        #[Autowire(param: 'kernel.environment')]
+        string                                $environment,
+        #[Autowire(param: 'greendot_eshop.parcel.czech_post.enabled')]
+        private readonly bool                 $enabled = false,
+    )
+    {
+        $this->baseUrl = in_array($environment, ['test', 'dev'], true) ? self::SANDBOX_URL : self::PROD_URL;
+    }
 
     /**
      * @throws Throwable
@@ -33,30 +62,37 @@ class CzechPostParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
-        $requestData = $this->prepareParcelData($purchase);
+        $body = $this->prepareParcelData($purchase);
+        $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
 
         try {
-            $response = $this->httpClient->request('POST', self::API_BASE_URL . '/parcelService', [
-                'headers' => $this->getHeaders($transportation),
-                'json' => $requestData,
+            $response = $this->httpClient->request('POST', $this->baseUrl . '/parcelService', [
+                'headers' => $this->getHeaders($transportation, $jsonBody),
+                'body' => $jsonBody,
+                ...$this->getTlsOptions(),
             ]);
 
-            $data = $response->toArray();
+            $data = $response->toArray(false);
 
-            if (isset($data['resultParcelData']['parcelCode'])) {
-                return $data['resultParcelData']['parcelCode'];
+            $parcelCode = $data['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;
+            if ($parcelCode === null) {
+                $rawResponse = $response->getContent(false);
+                $this->logger->error('Failed to create parcel', [
+                    'purchaseId' => $purchase->getId(),
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $rawResponse,
+                ]);
+                throw new TransientParcelException("Failed to create parcel: $rawResponse");
             }
 
-            $this->logger->error('Failed to create parcel', [
-                'purchaseId' => $purchase->getId(),
-                'response' => $data,
-            ]);
-            throw new RuntimeException('Failed to create parcel: packetId not returned from API');
+            return (string)$parcelCode;
+        } catch (PermanentParcelException | TransientParcelException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            $this->logger->error('Parcel API exception', [
+            $this->logger->error('Czech Post HTTP exception on createParcel', [
                 'purchaseId' => $purchase->getId(),
                 'error' => $e->getMessage(),
             ]);
@@ -72,28 +108,52 @@ class CzechPostParcel implements ParcelServiceInterface
         $transportNumber = $purchase->getTransportNumber();
         if (!$transportNumber) {
             $this->logger->error('No transport number for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transport number for purchase');
+            throw new PermanentParcelException('No transport number for purchase');
         }
 
         $transportation = $purchase->getTransportation();
         if (!$transportation instanceof Transportation) {
             $this->logger->error('No transportation set for purchase', ['purchaseId' => $purchase->getId()]);
-            throw new InvalidArgumentException('No transportation set for purchase');
+            throw new PermanentParcelException('No transportation set for purchase');
         }
 
         try {
-            $response = $this->httpClient->request('GET', self::API_BASE_URL . '/parcelStatus', [
-                'headers' => $this->getHeaders($transportation),
-                'query' => ['parcelIds' => $transportNumber],
-            ]);
-
-            // TODO: Implement proper status mapping
-            return new ParcelStatusInfoDto(
-                ParcelDeliveryStateEnum::DELIVERED,
-                $response->toArray(),
+            $response = $this->httpClient->request(
+                'GET',
+                $this->baseUrl . '/parcelStatuses/current/idParcel/' . $transportNumber,
+                ['headers' => $this->getHeaders($transportation, null), ...$this->getTlsOptions()],
             );
+
+            $data = $response->toArray(false);
+            $status = $data['parcelStatus'] ?? null;
+            if ($status === null) {
+                $rawResponse = $response->getContent(false);
+                $this->logger->error('Failed to get parcel status', [
+                    'purchaseId' => $purchase->getId(),
+                    'transportNumber' => $transportNumber,
+                    'httpStatusCode' => $response->getStatusCode(),
+                    'response' => $rawResponse,
+                ]);
+                throw new TransientParcelException("Czech Post getParcelStatus failed: $rawResponse");
+            }
+
+            $statusId = (string)($status['statusID'] ?? '');
+            $reasonId = (string)($status['reasonID'] ?? '');
+            $occurredAt = isset($status['date']) ? new \DateTimeImmutable((string)$status['date']) : null;
+
+            return new ParcelStatusInfoDto(
+                state: $this->mapStatusCode($statusId, $reasonId),
+                details: [
+                    'statusID' => $statusId,
+                    'reasonID' => $reasonId,
+                    'statusDescription' => $status['statusDescription'] ?? null,
+                ],
+                occurredAt: $occurredAt,
+            );
+        } catch (PermanentParcelException | TransientParcelException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            $this->logger->error('Exception when fetching parcel status', [
+            $this->logger->error('Czech Post HTTP exception on getParcelStatus', [
                 'purchaseId' => $purchase->getId(),
                 'transportNumber' => $transportNumber,
                 'error' => $e->getMessage(),
@@ -102,18 +162,59 @@ class CzechPostParcel implements ParcelServiceInterface
         }
     }
 
+    public function supports(TransportationAPI $transportationAPI): bool
+    {
+        return $this->enabled && $transportationAPI === TransportationAPI::CP_DO_RUKY;
+    }
+
     private function prepareParcelData(Purchase $purchase): array
     {
-        $client = $purchase->getClient();
-        $totalWeight = 20;
+        $priceCalculator = $this->purchasePriceFactory->create($purchase, $this->currencyRepository->findOneBy(['isDefault' => true]));
 
-        // TODO: přidání požadovaných služeb - dobírka, pojištění a podobně
+        $insuredValue = (clone $priceCalculator)
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
+            ->getPrice()
+        ;
+
+        $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
+        $codAmount = $isCod
+            ? (clone $priceCalculator)
+                ->setVatCalculationType(VatCalculationType::WithVAT)
+                ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+                ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
+                ->getPrice(true)
+            : 0;
+
+        $weight = 1;
+
+        $parcelParams = [
+            'recordID' => (string)$purchase->getId(),
+            'prefixParcelCode' => 'DR',
+            'weight' => number_format($weight, 2),
+            'insuredValue' => $insuredValue,
+            'amount' => $codAmount,
+            'currency' => 'CZK',
+            'vsParcel' => (string)$purchase->getId(),
+            'note' => 'VS ' . $purchase->getId(),
+            'notePrint' => 'VS ' . $purchase->getId(),
+            'length' => 0,
+            'width' => 0,
+            'height' => 0,
+        ];
+        // vsVoucher must match ^\d{1,10}$ on Czech Post's side; omit it entirely for non-COD parcels
+        // rather than sending an empty string, which the API rejects with a 400.
+        if ($isCod) {
+            $parcelParams['vsVoucher'] = (string)$purchase->getId();
+        }
+
         return [
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
                     'transmissionDate' => $purchase->getDateIssue()->format('Y-m-d'),
-                    'customerID' => $client->getId(),
-                    'postCode' => $purchase->getPurchaseAddress()->getZip(),
+                    'customerID' => $this->customerId,
+                    'postCode' => $this->postCode,
                     'locationNumber' => 1,
                 ],
                 'printParams' => [
@@ -124,82 +225,68 @@ class CzechPostParcel implements ParcelServiceInterface
                 'position' => 1,
             ],
             'parcelServiceData' => [
-                'parcelParams' => [
-                    'recordID' => (string)$purchase->getId(),
-                    'prefixParcelCode' => 'DR',//TODO upravit podle služby - Balíkovna = NB, do ruky = DR
-                    'weight' => number_format($totalWeight, 2),
-                    'insuredValue' => 0,//TODO vypsat cenu s DPH bez dopravy a platby, bez odečtení dárkového certifikatu
-                    'amount' => $purchase->getTotalPrice(),//TODO pokud je dobírka (paymen_type_action_group ON_DELIVERY), vypsat, jinak 0
-                    'currency' => 'CZK',
-                    'vsVoucher' => '',//TODO pokud je dobírka (paymen_type_action_group ON_DELIVERY), vypsat sem číslo objednávky
-                    'vsParcel' => '',
-                    'length' => 0,
-                    'width' => 0,
-                    'height' => 0,
-                ],
-                'parcelAddress' => [
-                    'recordID' => (string)$client->getId(),
-                    'firstName' => $client->getName(),
-                    'surname' => $client->getSurname(),
-                    'company' => $purchase->getPurchaseAddress()->getCompany() ?? '',
-                    'aditionAddress' => '',
-                    'subject' => 'F',
-                    'address' => [//TODO pokud je balíkovna, vypsat adresu vybrané balíkovny
-                        'street' => $purchase->getPurchaseAddress()->getStreet(),
-                        'houseNumber' => 1,
-                        'sequenceNumber' => '',
-                        'cityPart' => '',
-                        'city' => $purchase->getPurchaseAddress()->getCity(),
-                        'zipCode' => $purchase->getPurchaseAddress()->getZip(),
-                        'isoCountry' => $purchase->getPurchaseAddress()->getCountry(),
-                    ],
-                    'mobilNumber' => $client->getPhone(),
-                    'phoneNumber' => $client->getPhone() ?? '',
-                    'emailAddress' => $client->getMail(),
-                ],
-                'parcelServices' => '',//TODO upravit podle toho zda chceme i dobírku  (paymen_type_action_group ON_DELIVERY), pak přidat služby 41+7, jinak 3+7
+                'parcelParams' => $parcelParams,
+                'parcelAddress' => $this->buildParcelAddress($purchase),
+                // (https://www.postaonline.cz/podanionline/ePOST-dokumentace/231standardniObsah.html):
+                // '7' = Udaná cena (declared/insured value) - always sent since insuredValue is always populated;
+                // '41' = Bezdokladová dobírka (document-less cash on delivery) - sent only for ON_DELIVERY orders.
+                'parcelServices' => $isCod ? ['7', '41'] : ['7'],
             ],
         ];
     }
 
-
-    private function getHeaders(Transportation $transportation): array
+    private function buildParcelAddress(Purchase $purchase): array
     {
-        $timestamp = time();
-        $nonce = $this->generateNonce();
+        $client = $purchase->getClient();
+        $purchaseAddress = $purchase->getPurchaseAddress();
+
+        $address = [
+            'street' => $purchaseAddress->getShipStreet() ?? $purchaseAddress->getStreet(),
+            'houseNumber' => '',
+            'sequenceNumber' => '',
+            'cityPart' => '',
+            'city' => $purchaseAddress->getShipCity() ?? $purchaseAddress->getCity(),
+            'zipCode' => $purchaseAddress->getShipZip() ?? $purchaseAddress->getZip(),
+            'isoCountry' => $this->normalizeIsoCountry($purchaseAddress->getShipCountry() ?? $purchaseAddress->getCountry()),
+        ];
 
         return [
-            'Api-Token' => $transportation->getToken(),
-            'Authorization-Timestamp' => $timestamp,
-            'Authorization-Content-SHA256' => hash('sha256', ''),
-            'Authorization' => $this->generateHmacAuth($transportation, $timestamp, $nonce),
-            'Content-Type' => 'application/json;charset=UTF-8',
+            'recordID' => (string)$client->getId(),
+            'firstName' => $purchaseAddress->getShipName() ?? $client->getName(),
+            'surname' => $purchaseAddress->getShipSurname() ?? $client->getSurname(),
+            'company' => $purchaseAddress->getShipCompany() ?? $purchaseAddress->getCompany() ?? '',
+            'aditionAddress' => '',
+            'subject' => 'F',
+            'address' => $address,
+            'mobilNumber' => $client->getPhone(),
+            'phoneNumber' => '',
+            'emailAddress' => $client->getMail(),
         ];
     }
 
-    private function generateNonce(): string
+    private function normalizeIsoCountry(?string $country): string
     {
-        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-        );
+        $normalized = $country !== null ? strtoupper(trim($country)) : '';
+        return $normalized !== '' ? $normalized : 'CZ';
     }
 
-    private function generateHmacAuth(Transportation $transportation, int $timestamp, string $nonce): string
+    private function mapStatusCode(string $statusId, string $reasonId): ParcelDeliveryStateEnum
     {
-        $signature = hash_hmac('sha256', "Authorization-Timestamp;$nonce", $transportation->getSecretKey(), true);
-        $signatureBase64 = base64_encode($signature);
+        $state = match ($statusId) {
+            '1'     => ParcelDeliveryStateEnum::RECEIVED_DATA,
+            '2'     => ParcelDeliveryStateEnum::IN_TRANSIT,
+            '3'     => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
+            '4'     => ParcelDeliveryStateEnum::DELIVERED,
+            '5'     => ParcelDeliveryStateEnum::NOT_PICKED_UP,
+            '6'     => ParcelDeliveryStateEnum::CANCELLED,
+            default => null,
+        };
 
-        return "CP-HMAC-SHA256 nonce=\"$nonce\" signature=\"$signatureBase64\"";
-    }
+        if ($state === null) {
+            $this->logger->warning('Unmapped Czech Post parcel status code', ['statusID' => $statusId, 'reasonID' => $reasonId]);
+            return ParcelDeliveryStateEnum::RECEIVED_DATA;
+        }
 
-    public function supports(TransportationAPI $transportationAPI): bool
-    {
-        // TODO: make two services
-        return $transportationAPI === TransportationAPI::CP_DO_RUKY || 
-               $transportationAPI === TransportationAPI::CP_BALIKOVNA;
+        return $state;
     }
 }

@@ -115,6 +115,90 @@ class EshopProductGroupSchemaProviderTest extends TestCase
         $this->assertSame(30.0, $offer['highPrice']);
         $this->assertSame('CZK', $offer['priceCurrency']);
         $this->assertSame(2, $offer['offerCount']);
+
+        $this->assertArrayNotHasKey('aggregateRating', $array);
+        $this->assertArrayNotHasKey('reviews', $array);
+    }
+
+    public function testProvideSetsProductGroupIdFallingBackToInternalId(): void
+    {
+        $variantA = $this->createMock(ProductVariantEntity::class);
+        $variantB = $this->createMock(ProductVariantEntity::class);
+        $product = $this->createProductMock(ProductViewTypeEnum::ESHOP, variantCount: 2, variants: [$variantA, $variantB]);
+
+        $currency = $this->createMock(Currency::class);
+        $currency->method('getName')->willReturn('CZK');
+        $this->currencyManager->method('get')->willReturn($currency);
+
+        $price = $this->createMock(ProductVariantPrice::class);
+        $price->method('getPrice')->willReturn(10.0);
+        $this->priceFactory->method('create')->willReturn($price);
+
+        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([]);
+        $this->productRepository->method('findApprovedReviews')->willReturn([]);
+        $this->reviewRepository->method('getReviewCountForProduct')->willReturn(0);
+
+        $this->builder->method('buildVariantReference')->willReturn(new ProductSchema());
+        $this->builder->method('applyRelationships');
+
+        $this->urlGenerator->method('generate')->willReturn('https://example.com/product');
+
+        $product->method('getName')->willReturn('Test Product');
+        $product->method('getDescription')->willReturn('Description');
+        $product->method('getSlug')->willReturn('test-product');
+        $product->method('getControllerName')->willReturn('product_show');
+        $product->method('getProducer')->willReturn(null);
+        $product->method('getExternalId')->willReturn(null);
+        $product->method('getId')->willReturn(42);
+
+        $array = $this->provider->provide($product)->toArray();
+
+        $this->assertSame('42', $array['productGroupID']);
+    }
+
+    public function testProvideIncludesAggregateRatingAndReviewsWhenReviewsExist(): void
+    {
+        $variantA = $this->createMock(ProductVariantEntity::class);
+        $variantB = $this->createMock(ProductVariantEntity::class);
+        $product = $this->createProductMock(ProductViewTypeEnum::ESHOP, variantCount: 2, variants: [$variantA, $variantB]);
+
+        $currency = $this->createMock(Currency::class);
+        $currency->method('getName')->willReturn('CZK');
+        $this->currencyManager->method('get')->willReturn($currency);
+
+        $price = $this->createMock(ProductVariantPrice::class);
+        $price->method('getPrice')->willReturn(10.0);
+        $this->priceFactory->method('create')->willReturn($price);
+
+        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([]);
+
+        $review = $this->createMock(\Greendot\EshopBundle\Entity\Project\Review::class);
+        $review->method('getReviewerName')->willReturn('Petr');
+        $review->method('getReviewerEmail')->willReturn('petr@example.com');
+        $review->method('getStars')->willReturn(4);
+        $review->method('getContents')->willReturn('Good.');
+        $this->productRepository->method('findApprovedReviews')->willReturn([$review]);
+
+        $this->reviewRepository->method('getAvgRatingValueForProduct')->willReturn(4.0);
+        $this->reviewRepository->method('getReviewCountForProduct')->willReturn(1);
+
+        $this->builder->method('buildVariantReference')->willReturn(new ProductSchema());
+        $this->builder->method('applyRelationships');
+
+        $this->urlGenerator->method('generate')->willReturn('https://example.com/product');
+
+        $product->method('getName')->willReturn('Test Product');
+        $product->method('getDescription')->willReturn('Description');
+        $product->method('getSlug')->willReturn('test-product');
+        $product->method('getControllerName')->willReturn('product_show');
+        $product->method('getProducer')->willReturn(null);
+
+        $array = $this->provider->provide($product)->toArray();
+
+        $this->assertSame(1, $array['aggregateRating']['reviewCount']);
+        $this->assertSame(4.0, $array['aggregateRating']['ratingValue']);
+        $this->assertSame('Petr', $array['reviews'][0]['author']['name']);
+        $this->assertArrayNotHasKey('email', $array['reviews'][0]['author']);
     }
 
     private function createProductMock(

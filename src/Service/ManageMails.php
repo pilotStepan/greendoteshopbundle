@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Service;
 use Symfony\Component\Mime\Address;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
+use Greendot\EshopBundle\Dto\WithdrawalData;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
@@ -98,5 +99,31 @@ class ManageMails
             'application/pdf',
         );
         $this->mailer->send($email);
+    }
+
+    public function sendWithdrawalConfirmation(WithdrawalData $data, string $shopEmail): void
+    {
+        $customerEmail = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($data->email)
+            ->subject($this->translator->trans('Požadavek k odstoupení od smlouvy'))
+            ->htmlTemplate('email/withdrawal/customer.html.twig')
+            ->context(['data' => $data])
+        ;
+        $this->mailer->send($customerEmail);
+
+        $shopSubject = sprintf('%s #%s',
+            $this->translator->trans('Odstoupení od smlouvy - objednávka'),
+            $data->orderNumber,
+        );
+
+        $shopEmailMessage = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($shopEmail)
+            ->subject($shopSubject)
+            ->htmlTemplate('email/withdrawal/admin.html.twig')
+            ->context(['data' => $data])
+        ;
+        $this->mailer->send($shopEmailMessage);
     }
 }

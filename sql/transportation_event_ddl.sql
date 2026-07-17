@@ -2,6 +2,7 @@ CREATE TABLE `transportation_event`
 (
     `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `purchase_id` INT         NOT NULL,
+    `transportation_api` VARCHAR(255) NULL,
     `occurred_at` DATETIME(6) NULL,
     `recorded_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     `state`       VARCHAR(64) NOT NULL,

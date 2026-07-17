@@ -22,5 +22,7 @@ class InvoiceItemData
         
         public float    $priceVatNoDiscount,
         public float    $priceVatNoDiscountSecondary,
+
+        public string   $parametersLabel = '',
     ) { }
 }

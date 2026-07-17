@@ -148,6 +148,7 @@ class CalculatedPricesService
             return $purchaseProductVariant;
         }
         $context = $this->resolveVariantContext($context);
+        // $context->amount = $context->amount ?? $purchaseProductVariant->getAmount();
 
         $variantPrice = $this->productVariantPriceFactory->createFromContext($purchaseProductVariant, $context);
         $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($variantPrice);
@@ -202,12 +203,48 @@ class CalculatedPricesService
             ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
             ->getPiecePrice();
 
-        return new VariantCalculatedPricesMatrix(
-            priceVat: $priceVat,
-            priceNoVat: $priceNoVat,
-            priceVatNoDiscount: $priceVatNoDiscount,
-            priceNoVatNoDiscount: $priceNoVatNoDiscount,
 
+        $totalPriceVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getPrice();
+
+        $totalPriceNoVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getPrice();
+
+
+        $totalPriceVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getPrice();
+
+        $totalPriceNoVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getPrice();
+
+        
+        $discountPercentage = $productVariantPrice
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getDiscountPercentage();
+
+        $productDiscountPercentage = $productVariantPrice
+            ->setDiscountCalculationType(DiscountCalculationType::OnlyProductDiscount)
+            ->getDiscountPercentage();
+
+        return new VariantCalculatedPricesMatrix(
+            priceVat:                   $priceVat,
+            priceNoVat:                 $priceNoVat,
+            priceVatNoDiscount:         $priceVatNoDiscount,
+            priceNoVatNoDiscount:       $priceNoVatNoDiscount,
+            totalPriceVat:              $totalPriceVat,
+            totalPriceNoVat:            $totalPriceNoVat,
+            totalPriceVatNoDiscount:    $totalPriceVatNoDiscount,
+            totalPriceNoVatNoDiscount:  $totalPriceNoVatNoDiscount,
+            discountPercentage:         $discountPercentage,
+            productDiscountPercentage:  $productDiscountPercentage,
         );
     }
 

@@ -19,18 +19,29 @@ readonly class ServiceCalculationUtils
         private PriceUtils              $priceUtils,
     ) {}
 
+    public function getHandlingPriceForService(
+        Transportation|PaymentType $service
+    ): ?HandlingPrice
+    {
+        return $this->handlingPriceRepository->getByDate($service);
+    }
+
     /**
      * Calculate handling (service) price
      */
     public function calculateServicePrice(
-        Transportation|PaymentType|AdditionalPurchaseCost $service,
+        Transportation|PaymentType|HandlingPrice|AdditionalPurchaseCost $service,
         Currency|ConversionRate    $currencyOrConversionRate,
         VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
         float                      $theoreticalAmount = 0.0,
         bool                       $returnRaw = false,
     ): float
     {
-        $handlingPrice = $this->handlingPriceRepository->getByDate($service);
+        if (!$service instanceof HandlingPrice){
+            $handlingPrice = $this->handlingPriceRepository->getByDate($service);
+        }else{
+            $handlingPrice = $service;
+        }
 
         if ($this->isFreeHandling($handlingPrice, $theoreticalAmount)) return 0.0;
 

@@ -126,6 +126,9 @@ class PaymentType implements Translatable
     #[ORM\Column(type: 'string', nullable: true, enumType: PaymentTechnicalAction::class)]
     private ?PaymentTechnicalAction $paymentTechnicalAction = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?array $exportNames = null;
+
     #[ApiProperty]
     #[Groups(['payment:read', 'purchase:read'])]
     private array $calculatedPrices = [];
@@ -447,6 +450,18 @@ class PaymentType implements Translatable
     public function setPaymentTechnicalAction(?PaymentTechnicalAction $action): self
     {
         $this->paymentTechnicalAction = $action;
+        return $this;
+    }
+
+    public function getExportNames(): ?array
+    {
+        return $this->exportNames;
+    }
+
+    public function setExportNames(?array $exportNames): static
+    {
+        $this->exportNames = $exportNames;
+
         return $this;
     }
 

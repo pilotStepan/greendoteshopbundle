@@ -85,6 +85,20 @@ class ManagePurchaseTest extends TestCase
         $this->assertSame($paymentType, $purchase->getPaymentType());
     }
 
+    public function testConfirmBankTransferPaymentForwardsContextToWorkflow(): void
+    {
+        $purchase = new Purchase();
+        $paymentType = new PaymentType();
+        $context = ['performed_by' => 'system', 'source' => 'rb_bank', 'variableSymbol' => '123'];
+
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->expects($this->once())->method('apply')->with($purchase, PWC::T_PAY_PAY->value, $context);
+
+        $managePurchase = $this->createManagePurchase($this->purchaseRepository, $this->bus, new ParcelServiceProvider([]), $purchaseFlow);
+
+        $managePurchase->applyBankTransferPayment($purchase, $paymentType, $context);
+    }
+
     public function testAddProductVariantToPurchaseNewItem(): void
     {
         $purchase = $this->createMock(Purchase::class);

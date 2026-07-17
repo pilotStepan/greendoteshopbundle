@@ -80,6 +80,7 @@ services:
             - '../../../../src/Service/ManageMails.php'
             - '../../../../src/Service/WishlistService.php'
             - '../../../../src/Service/Imports'
+            - '../../../../src/Service/ShortCodes/WithdrawalForm.php'
 
     Greendot\EshopBundle\StateProcessor\:
         resource: '../../../../src/StateProcessor/*'

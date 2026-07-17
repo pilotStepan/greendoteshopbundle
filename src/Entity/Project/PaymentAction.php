@@ -10,24 +10,22 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\Repository\Project\PaymentActionRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PaymentActionRepository::class)]
-#[ApiResource(
-    operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(security: "is_granted('ROLE_ADMIN')"),
-        new Put(security: "is_granted('ROLE_ADMIN')"),
-        new Patch(security: "is_granted('ROLE_ADMIN')"),
-        new Delete(security: "is_granted('ROLE_ADMIN')"),
-    ],
-    normalizationContext: ['groups' => ['payment_action:read']],
-    denormalizationContext: ['groups' => ['payment_action:write']],
-)]
+//#[ApiResource(
+//    operations: [
+//        new GetCollection(),
+//        new Get(),
+//        new Post(security: "is_granted('ROLE_ADMIN')"),
+//        new Put(security: "is_granted('ROLE_ADMIN')"),
+//        new Patch(security: "is_granted('ROLE_ADMIN')"),
+//        new Delete(security: "is_granted('ROLE_ADMIN')"),
+//    ],
+//    normalizationContext: ['groups' => ['payment_action:read']],
+//    denormalizationContext: ['groups' => ['payment_action:write']],
+//)]
 class PaymentAction
 {
     #[ORM\Id]
@@ -56,13 +54,18 @@ class PaymentAction
     #[Groups(['payment_action:read', 'payment_action:write'])]
     private ?string $performed_by; // client, admin, system
 
-    /* @var Collection<int, Payment> */
-    #[ORM\OneToMany(targetEntity: Payment::class, mappedBy: 'action')]
-    private Collection $payments;
+    #[ORM\ManyToOne(targetEntity: Purchase::class, inversedBy: 'paymentActions')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['payment_action:read'])]
+    private ?Purchase $purchase = null;
+
+    #[ORM\ManyToOne(targetEntity: Payment::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['payment_action:read'])]
+    private ?Payment $payment = null;
 
     public function __construct()
     {
-        $this->payments = new ArrayCollection();
         $this->date = new \DateTime();
     }
 
@@ -130,31 +133,26 @@ class PaymentAction
         return $this;
     }
 
-    /**
-     * @return Collection|Payment[]
-     */
-    public function getPayments(): Collection
+    public function getPurchase(): ?Purchase
     {
-        return $this->payments;
+        return $this->purchase;
     }
 
-    public function addPayment(Payment $payment): self
+    public function setPurchase(?Purchase $purchase): self
     {
-        if (!$this->payments->contains($payment)) {
-            $this->payments[] = $payment;
-            $payment->setAction($this);
-        }
+        $this->purchase = $purchase;
 
         return $this;
     }
 
-    public function removePayment(Payment $payment): self
+    public function getPayment(): ?Payment
     {
-        if ($this->payments->removeElement($payment)) {
-            if ($payment->getAction() === $this) {
-                $payment->setAction(null);
-            }
-        }
+        return $this->payment;
+    }
+
+    public function setPayment(?Payment $payment): self
+    {
+        $this->payment = $payment;
 
         return $this;
     }
