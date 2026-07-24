@@ -17,7 +17,7 @@ class PriceHelper
         );
 
         return $currency->isSymbolLeft()
-            ? sprintf('%s %s', $currency->getSymbol(), $formattedPrice)
-            : sprintf('%s %s', $formattedPrice, $currency->getSymbol());
+            ? sprintf("%s\u{00A0}%s", $currency->getSymbol(), $formattedPrice)
+            : sprintf("%s\u{00A0}%s", $formattedPrice, $currency->getSymbol());
     }
 }

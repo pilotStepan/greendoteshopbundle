@@ -23,8 +23,10 @@ use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Attribute\DisableListeners;
 use Symfony\Component\Serializer\SerializerInterface;
 use Granam\GpWebPay\Exceptions\GpWebPayErrorResponse;
+use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
@@ -41,6 +43,7 @@ use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 
 class PurchaseController extends AbstractController
 {
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
     #[Route('/order/verify', name: 'shop_order_verify', methods: ['GET'])]
     public function verifyOrder(
         Request                $request,

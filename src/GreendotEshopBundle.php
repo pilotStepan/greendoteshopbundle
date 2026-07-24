@@ -48,6 +48,7 @@ class GreendotEshopBundle extends AbstractBundle
                     ->end()
                 ->end()
                 ->arrayNode('blog')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->stringNode('slug')->defaultValue('blog')->end()
                         ->integerNode('items_per_page')->defaultValue(10)->end()
