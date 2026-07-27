@@ -422,7 +422,7 @@ class DpdParcelTest extends TestCase
         $this->assertFalse($result->state->isFinal());
     }
 
-    public function testGetParcelStatus_unmappedCode_fallsBackToReceivedData(): void
+    public function testGetParcelStatus_unmappedCode_fallsBackToUnknown(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::statusResponse(52172, 99)));
 
@@ -430,7 +430,7 @@ class DpdParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('jwt123'))
         );
 
-        $this->assertSame(ParcelDeliveryStateEnum::RECEIVED_DATA, $result->state);
+        $this->assertSame(ParcelDeliveryStateEnum::UNKNOWN, $result->state);
         $this->assertFalse($result->state->isFinal());
     }
 

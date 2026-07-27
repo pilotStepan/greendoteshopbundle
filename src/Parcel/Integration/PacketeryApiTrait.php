@@ -106,13 +106,19 @@ trait PacketeryApiTrait
     private function mapStatusCode(int $code): ParcelDeliveryStateEnum
     {
         return match ($code) {
-            1       => ParcelDeliveryStateEnum::RECEIVED_DATA,
-            2, 3, 4 => ParcelDeliveryStateEnum::IN_TRANSIT,
-            5       => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
-            7       => ParcelDeliveryStateEnum::DELIVERED,
-            8       => ParcelDeliveryStateEnum::NOT_PICKED_UP,
-            default => ParcelDeliveryStateEnum::CANCELLED,
+            1              => ParcelDeliveryStateEnum::RECEIVED_DATA,
+            2, 3, 4, 6, 25 => ParcelDeliveryStateEnum::IN_TRANSIT,
+            5              => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
+            7, 12          => ParcelDeliveryStateEnum::DELIVERED,
+            8              => ParcelDeliveryStateEnum::NOT_PICKED_UP,
+            default        => $this->unmappedPacketeryState($code),
         };
+    }
+
+    private function unmappedPacketeryState(int $code): ParcelDeliveryStateEnum
+    {
+        $this->logger->warning('Unmapped Packeta parcel status code', ['statusCode' => $code]);
+        return ParcelDeliveryStateEnum::UNKNOWN;
     }
 
     private function resolvePriceAndCod(Purchase $purchase, string $currency): array

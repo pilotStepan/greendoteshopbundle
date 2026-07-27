@@ -364,7 +364,46 @@ class PacketeryParcelTest extends TestCase
         $this->assertTrue($result->state->isFinal());
     }
 
-    public function testGetParcelStatus_unknownCode_returnsCancelled(): void
+    public function testGetParcelStatus_statusCode6_returnsInTransit(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-08T10:00:00</dateTime><statusCode>6</statusCode><codeText>handed to carrier</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_statusCode12_returnsDelivered(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-10T16:00:00</dateTime><statusCode>12</statusCode><codeText>collected</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::DELIVERED, $result->state);
+        $this->assertTrue($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_statusCode25_returnsInTransit(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-09T09:30:00</dateTime><statusCode>25</statusCode><codeText>carrier first delivery attempt</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_unknownCode_returnsUnknown(): void
     {
         $xml = '<response><status>ok</status><result><dateTime>2024-01-20T00:00:00</dateTime><statusCode>99</statusCode><codeText>unknown</codeText></result></response>';
         $httpClient = new MockHttpClient(new MockResponse($xml));
@@ -373,8 +412,8 @@ class PacketeryParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
-        $this->assertSame(ParcelDeliveryStateEnum::CANCELLED, $result->state);
-        $this->assertTrue($result->state->isFinal());
+        $this->assertSame(ParcelDeliveryStateEnum::UNKNOWN, $result->state);
+        $this->assertFalse($result->state->isFinal());
     }
 
     public function testSupports_whenEnabled_returnsTrueForPacketa(): void

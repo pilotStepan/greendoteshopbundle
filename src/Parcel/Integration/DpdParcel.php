@@ -295,7 +295,13 @@ class DpdParcel implements ParcelServiceInterface
             -1      => ParcelDeliveryStateEnum::CANCELLED,
             0, 1    => ParcelDeliveryStateEnum::RECEIVED_DATA,
             2       => ParcelDeliveryStateEnum::IN_TRANSIT,
-            default => ParcelDeliveryStateEnum::RECEIVED_DATA,
+            default => $this->unmappedDpdState($code),
         };
+    }
+
+    private function unmappedDpdState(int $code): ParcelDeliveryStateEnum
+    {
+        $this->logger->warning('Unmapped DPD shipment status code', ['status' => $code]);
+        return ParcelDeliveryStateEnum::UNKNOWN;
     }
 }

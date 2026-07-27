@@ -17,7 +17,6 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
-use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
@@ -31,6 +30,7 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 class CzechPostParcel implements ParcelServiceInterface
 {
     use CzechPostHmacAuthTrait;
+    use CzechPostStatusTrait;
 
     private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
     private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
@@ -268,25 +268,5 @@ class CzechPostParcel implements ParcelServiceInterface
     {
         $normalized = $country !== null ? strtoupper(trim($country)) : '';
         return $normalized !== '' ? $normalized : 'CZ';
-    }
-
-    private function mapStatusCode(string $statusId, string $reasonId): ParcelDeliveryStateEnum
-    {
-        $state = match ($statusId) {
-            '1'     => ParcelDeliveryStateEnum::RECEIVED_DATA,
-            '2'     => ParcelDeliveryStateEnum::IN_TRANSIT,
-            '3'     => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
-            '4'     => ParcelDeliveryStateEnum::DELIVERED,
-            '5'     => ParcelDeliveryStateEnum::NOT_PICKED_UP,
-            '6'     => ParcelDeliveryStateEnum::CANCELLED,
-            default => null,
-        };
-
-        if ($state === null) {
-            $this->logger->warning('Unmapped Czech Post parcel status code', ['statusID' => $statusId, 'reasonID' => $reasonId]);
-            return ParcelDeliveryStateEnum::RECEIVED_DATA;
-        }
-
-        return $state;
     }
 }

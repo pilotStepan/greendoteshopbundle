@@ -302,7 +302,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $httpClient = new MockHttpClient(function (string $method, string $url) use (&$capturedMethod, &$capturedUrl) {
             $capturedMethod = $method;
             $capturedUrl = $url;
-            return new MockResponse(self::statusResponse('2'));
+            return new MockResponse(self::statusResponse('11', '00'));
         });
 
         $this->makeService($httpClient, environment: 'prod')->getParcelStatus(
@@ -316,9 +316,9 @@ class CzechPostBalikovnaParcelTest extends TestCase
         );
     }
 
-    public function testGetParcelStatus_statusId3_returnsReadyForPickup(): void
+    public function testGetParcelStatus_statusIdP2_returnsReadyForPickup(): void
     {
-        $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('3')));
+        $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('P2', '01')));
 
         $result = $this->makeService($httpClient)->getParcelStatus(
             $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
@@ -328,7 +328,31 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $this->assertFalse($result->state->isFinal());
     }
 
-    public function testGetParcelStatus_unmappedCode_fallsBackToReceivedData(): void
+    public function testGetParcelStatus_statusId51ReasonId20_returnsReadyForPickup(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('51', '20')));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::READY_FOR_PICKUP, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_statusId91_returnsDelivered(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('91', '50')));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::DELIVERED, $result->state);
+        $this->assertTrue($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_unmappedCode_fallsBackToUnknown(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::statusResponse('999')));
 
@@ -336,7 +360,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
         );
 
-        $this->assertSame(ParcelDeliveryStateEnum::RECEIVED_DATA, $result->state);
+        $this->assertSame(ParcelDeliveryStateEnum::UNKNOWN, $result->state);
         $this->assertFalse($result->state->isFinal());
     }
 
