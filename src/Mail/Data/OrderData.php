@@ -21,6 +21,7 @@ class OrderData
         /** @var 'czk'|'eur' */
         public string                  $primaryCurrency,
         public bool                    $orderPaid,
+        public bool                    $alreadyShipped,
         public string                  $totalPriceCzk,
         public string                  $totalPriceEur,
         public string                  $clientSectionUrl,
