@@ -82,6 +82,7 @@ class PacketeryParcelTest extends TestCase
         bool             $isCod = false,
         string           $country = 'cz',
         ?PurchaseAddress $address = null,
+        ?string          $transportNumber = 'Z4154090000',
     ): Purchase
     {
         $client = $this->createMock(Client::class);
@@ -97,7 +98,7 @@ class PacketeryParcelTest extends TestCase
         $purchase->method('getClient')->willReturn($client);
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
-        $purchase->method('getTransportNumber')->willReturn('Z4154090000');
+        $purchase->method('getTransportNumber')->willReturn($transportNumber);
         $purchase->method('isVatExempted')->willReturn(false);
         return $purchase;
     }
@@ -435,5 +436,54 @@ class PacketeryParcelTest extends TestCase
         $service = $this->makeService(new MockHttpClient(), enabled: true);
 
         $this->assertFalse($service->supports(TransportationAPI::DPD));
+    }
+
+    public function testGetParcelStatus_blankPacketId_throwsPermanentExceptionWithoutHttpCall(): void
+    {
+        $called = false;
+        $httpClient = new MockHttpClient(function () use (&$called) {
+            $called = true;
+            return new MockResponse('<response><status>ok</status></response>');
+        });
+
+        $this->expectException(PermanentParcelException::class);
+
+        try {
+            $this->makeService($httpClient)->getParcelStatus(
+                $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: ''),
+            );
+        } finally {
+            $this->assertFalse($called, 'must not call Packeta API without a packetId');
+        }
+    }
+
+    public function testGetParcelStatus_packetIdFault_throwsPermanentException(): void
+    {
+        $xml = '<response><status>fault</status><fault>PacketIdFault</fault><string>Incorrect packet ID \'\'.</string></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+    }
+
+    public function testSupportsStatusPolling_withTransportNumber_returnsTrue(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertTrue($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        ));
+    }
+
+    public function testSupportsStatusPolling_withoutTransportNumber_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertFalse($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: ''),
+        ));
     }
 }

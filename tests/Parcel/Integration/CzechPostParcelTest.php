@@ -8,6 +8,7 @@ use Psr\Log\NullLogger;
 use RuntimeException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Integration\CzechPostParcel;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
@@ -586,5 +587,45 @@ class CzechPostParcelTest extends TestCase
 
         $this->assertFalse($service->supports(TransportationAPI::DPD));
         $this->assertFalse($service->supports(TransportationAPI::PACKETA));
+    }
+
+    // A 4xx (other than 408/429) means the request itself is rejected - retrying it
+    // unchanged cannot succeed, so it must be classified as permanent, not transient.
+    public function testGetParcelStatus_httpStatus400_throwsPermanentException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(json_encode(['error' => 'bad request']), ['http_code' => 400]));
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
+        );
+    }
+
+    public function testGetParcelStatus_noTransportNumber_throwsPermanentException(): void
+    {
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService(new MockHttpClient())->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), transportNumber: '')
+        );
+    }
+
+    public function testSupportsStatusPolling_withTransportNumber_returnsTrue(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertTrue($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
+        ));
+    }
+
+    public function testSupportsStatusPolling_withoutTransportNumber_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertFalse($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), transportNumber: '')
+        ));
     }
 }

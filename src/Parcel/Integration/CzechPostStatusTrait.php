@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Parcel\Integration;
 
+use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 
 /**
@@ -16,6 +17,17 @@ use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
  */
 trait CzechPostStatusTrait
 {
+    public function supportsStatusPolling(Purchase $purchase): bool
+    {
+        return (bool)$purchase->getTransportNumber();
+    }
+
+    private function isPermanentHttpFailure(?int $statusCode): bool
+    {
+        return $statusCode !== null && $statusCode >= 400 && $statusCode < 500
+            && !in_array($statusCode, [408, 429], true);
+    }
+
     private function mapStatusCode(string $statusId, string $reasonId): ParcelDeliveryStateEnum
     {
         $state = match ($statusId) {

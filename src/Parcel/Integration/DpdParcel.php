@@ -106,7 +106,12 @@ class DpdParcel implements ParcelServiceInterface
     {
         $transportation = $purchase->getTransportation();
         $jwt = $transportation?->getSecretKey() ?? '';
-        $shipmentId = (int)$purchase->getShipmentId();
+        $shipmentId = $purchase->getShipmentId();
+
+        if ($shipmentId === null || $shipmentId === '' || !ctype_digit($shipmentId)) {
+            $this->logger->error('No DPD shipmentId on purchase; cannot query status', ['purchaseId' => $purchase->getId()]);
+            throw new PermanentParcelException('No DPD shipmentId on purchase');
+        }
 
         try {
             $response = $this->httpClient->request('GET', $this->baseUrl . 'shipments/' . $shipmentId, [
@@ -119,11 +124,15 @@ class DpdParcel implements ParcelServiceInterface
             $data = $this->decodeResponse($response, 'getParcelStatus', $purchase->getId());
             $shipment = $data['shipment'] ?? null;
             if ($shipment === null) {
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('DPD API error on getParcelStatus: shipment not found in response', [
                     'purchaseId' => $purchase->getId(),
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $response->getContent(false),
                 ]);
+                if ($statusCode === 404) {
+                    throw new PermanentParcelException('DPD getParcelStatus failed: shipmentId does not exist');
+                }
                 throw new TransientParcelException('DPD getParcelStatus failed: shipment not found in response');
             }
 
@@ -201,6 +210,12 @@ class DpdParcel implements ParcelServiceInterface
     public function supports(TransportationAPI $transportationAPI): bool
     {
         return $this->enabled && $transportationAPI === TransportationAPI::DPD;
+    }
+
+    public function supportsStatusPolling(Purchase $purchase): bool
+    {
+        $shipmentId = $purchase->getShipmentId();
+        return $shipmentId !== null && $shipmentId !== '' && ctype_digit($shipmentId);
     }
 
     private function prepareShipmentData(Purchase $purchase): array

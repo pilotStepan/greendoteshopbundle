@@ -80,11 +80,15 @@ class CzechPostParcel implements ParcelServiceInterface
             $parcelCode = $data['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;
             if ($parcelCode === null) {
                 $rawResponse = $response->getContent(false);
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('Failed to create parcel', [
                     'purchaseId' => $purchase->getId(),
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $rawResponse,
                 ]);
+                if ($this->isPermanentHttpFailure($statusCode)) {
+                    throw new PermanentParcelException("Failed to create parcel: $rawResponse");
+                }
                 throw new TransientParcelException("Failed to create parcel: $rawResponse");
             }
 
@@ -128,12 +132,16 @@ class CzechPostParcel implements ParcelServiceInterface
             $status = $data['parcelStatus'] ?? null;
             if ($status === null) {
                 $rawResponse = $response->getContent(false);
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('Failed to get parcel status', [
                     'purchaseId' => $purchase->getId(),
                     'transportNumber' => $transportNumber,
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $rawResponse,
                 ]);
+                if ($this->isPermanentHttpFailure($statusCode)) {
+                    throw new PermanentParcelException("Czech Post getParcelStatus failed: $rawResponse");
+                }
                 throw new TransientParcelException("Czech Post getParcelStatus failed: $rawResponse");
             }
 

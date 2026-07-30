@@ -87,11 +87,15 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             $parcelCode = $data['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;
             if (!$parcelCode) {
                 $rawResponse = $response->getContent(false);
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('Failed to create Balikovna parcel', [
                     'purchaseId' => $purchase->getId(),
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $rawResponse,
                 ]);
+                if ($this->isPermanentHttpFailure($statusCode)) {
+                    throw new PermanentParcelException("Failed to create Balikovna parcel: $rawResponse");
+                }
                 throw new TransientParcelException("Failed to create Balikovna parcel: $rawResponse");
             }
 
@@ -135,12 +139,16 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             $status = $data['parcelStatus'] ?? null;
             if ($status === null) {
                 $rawResponse = $response->getContent(false);
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('Failed to get parcel status', [
                     'purchaseId' => $purchase->getId(),
                     'transportNumber' => $transportNumber,
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $rawResponse,
                 ]);
+                if ($this->isPermanentHttpFailure($statusCode)) {
+                    throw new PermanentParcelException("Czech Post getParcelStatus failed: $rawResponse");
+                }
                 throw new TransientParcelException("Czech Post getParcelStatus failed: $rawResponse");
             }
 

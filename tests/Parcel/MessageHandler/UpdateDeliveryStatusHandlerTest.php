@@ -22,10 +22,10 @@ use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Greendot\EshopBundle\Parcel\MessageHandler\UpdateDeliveryStatusHandler;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
-use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 class UpdateDeliveryStatusHandlerTest extends TestCase
@@ -164,7 +164,9 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
 
     // --- Guard: transient provider error ---
 
-    public function testProviderThrows_throwsRecoverable(): void
+    // Transient errors are rethrown as-is (not wrapped) so Symfony's max_retries on the
+    // `parcel` transport actually applies instead of retrying forever.
+    public function testProviderThrows_rethrowsOriginalException(): void
     {
         $purchase = $this->makePurchase();
         $this->purchaseRepo->method('find')->willReturn($purchase);
@@ -173,7 +175,24 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         $service->method('getParcelStatus')->willThrowException(new \RuntimeException('timeout'));
         $this->provider->method('getByPurchase')->willReturn($service);
 
-        $this->expectException(RecoverableMessageHandlingException::class);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('timeout');
+        ($this->handler)($this->makeMsg());
+    }
+
+    // --- Guard: permanent provider error ---
+
+    public function testProviderThrowsPermanent_throwsUnrecoverable(): void
+    {
+        $purchase = $this->makePurchase();
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $this->eventRepo->method('findLatestByPurchase')->willReturn(null);
+        $service = $this->createMock(ParcelServiceInterface::class);
+        $service->method('getParcelStatus')->willThrowException(new PermanentParcelException('No DPD shipmentId on purchase'));
+        $this->provider->method('getByPurchase')->willReturn($service);
+
+        $this->bus->expects($this->never())->method('dispatch');
+        $this->expectException(UnrecoverableMessageHandlingException::class);
         ($this->handler)($this->makeMsg());
     }
 

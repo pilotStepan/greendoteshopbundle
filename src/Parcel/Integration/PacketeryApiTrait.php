@@ -27,6 +27,11 @@ trait PacketeryApiTrait
         $apiPassword = $transportation?->getSecretKey() ?? '';
         $packetId = $purchase->getTransportNumber();
 
+        if (!$packetId) {
+            $this->logger->error('No Packeta packetId on purchase; cannot query status', ['purchaseId' => $purchase->getId()]);
+            throw new PermanentParcelException('No Packeta packetId on purchase');
+        }
+
         $xml = $this->callPacketeryApi('packetStatus', [
             'apiPassword' => $apiPassword,
             'packetId' => $packetId,
@@ -43,6 +48,11 @@ trait PacketeryApiTrait
             details: ['statusCode' => $statusCode, 'codeText' => $codeText],
             occurredAt: $dateTime,
         );
+    }
+
+    public function supportsStatusPolling(Purchase $purchase): bool
+    {
+        return (bool)$purchase->getTransportNumber();
     }
 
     private function callPacketeryApi(string $rootElement, array $data, string $logContext, Purchase $purchase): SimpleXMLElement
@@ -64,7 +74,7 @@ trait PacketeryApiTrait
                     'purchaseId' => $purchase->getId(),
                     'response' => $rawResponse,
                 ]);
-                if (in_array($fault, ['PacketAttributesFault', 'InvalidCourierNumber', 'InvalidApiPassword', 'SenderNotExists'], true)) {
+                if (in_array($fault, ['PacketAttributesFault', 'InvalidCourierNumber', 'InvalidApiPassword', 'SenderNotExists', 'PacketIdFault'], true)) {
                     throw new PermanentParcelException("Packeta $logContext failed (permanent/$fault): $rawResponse");
                 }
                 throw new TransientParcelException("Packeta $logContext failed: $rawResponse");

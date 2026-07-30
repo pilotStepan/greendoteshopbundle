@@ -386,4 +386,33 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $this->assertFalse($service->supports(TransportationAPI::DPD));
         $this->assertFalse($service->supports(TransportationAPI::PACKETA));
     }
+
+    public function testCreateParcel_httpStatus400_throwsPermanentException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(json_encode(['error' => 'bad request']), ['http_code' => 400]));
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
+        );
+    }
+
+    public function testSupportsStatusPolling_withTransportNumber_returnsTrue(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertTrue($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch())
+        ));
+    }
+
+    public function testSupportsStatusPolling_withoutTransportNumber_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertFalse($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch(), transportNumber: '')
+        ));
+    }
 }
