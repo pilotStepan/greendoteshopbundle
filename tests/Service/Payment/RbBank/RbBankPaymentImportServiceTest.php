@@ -147,6 +147,24 @@ class RbBankPaymentImportServiceTest extends TestCase
         ;
     }
 
+    public function testCeskaPostaRemittanceIsSkippedWithoutSettlingOrPersisting(): void
+    {
+        $purchase = new Purchase();
+        $this->purchaseRepository->expects($this->once())->method('find')->with('11048')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->never())->method('apply');
+
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+
+        // Real row from Raiffeisenbank's payments-list report: Česká pošta COD remittance (160987123/0300).
+        $line = '29.07.2026;29.07.2026;4103.00;CZK;4103.00;29.07.2026 01:33:17;160987123;0300;2583899001;5500;11048;;pošta 204717 27.07.2026 – 0DR0639136062M;2;CESKA POSTA, S.P.;6280672241';
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
+    }
+
     public function testMalformedRowIsSkipped(): void
     {
         $this->purchaseRepository->expects($this->never())->method('find');
@@ -180,7 +198,7 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->entityManager->expects($this->once())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
-        $line = '26.06.2026;26.06.2026;707.00;CZK;707.00;26.06.2026 01:39:09;160987123;0300;2583899001;5500;93033;;poznamka;2;6182739200';
+        $line = '26.06.2026;26.06.2026;707.00;CZK;707.00;26.06.2026 01:39:09;111111;0100;2583899001;5500;93033;;poznamka;2;6182739200';
         $this->createService(new MockHttpClient(new MockResponse($line)))
             ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
         ;
