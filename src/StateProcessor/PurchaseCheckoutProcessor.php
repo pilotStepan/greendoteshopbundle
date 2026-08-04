@@ -118,6 +118,8 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 $address = $this->createPurchaseAddress($data->address);
                 $purchase->setPurchaseAddress($address);
 
+                $purchase->setInternalNumber($data->internalNumber ?? null);
+
                 $this->logger->debug('Checkout purchase address persisted', [
                     'purchaseId' => $purchase->getId(),
                     'purchaseAddressId' => $address->getId(),

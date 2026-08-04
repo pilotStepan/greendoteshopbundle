@@ -104,6 +104,10 @@ readonly class RbBankPaymentImportService
             return;
         }
 
+        if ($record->debitAccountNumber === '160987123' && $record->debitBankCode === '0300') {
+            return; // CESKA POSTA COD remittance, not a customer transfer
+        }
+
         try {
             $this->managePurchase->applyBankTransferPayment($purchase, $paymentType, [
                 'performed_by' => 'system',

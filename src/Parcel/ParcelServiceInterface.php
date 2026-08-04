@@ -34,4 +34,13 @@ interface ParcelServiceInterface
      * Used in ParcelServiceProvider.
      */
     public function supports(TransportationAPI $transportationAPI): bool;
+
+    /**
+     * Whether getParcelStatus() has a chance of succeeding for this purchase, i.e. whether
+     * the carrier-specific status identifier is present. A parcel filled in manually via CMS
+     * may have a transport/tracking number an admin typed in, but still lack the identifier
+     * a given carrier's status API actually requires (e.g. DPD needs a numeric shipmentId
+     * returned by createParcel(), not just a human-readable tracking number).
+     */
+    public function supportsStatusPolling(Purchase $purchase): bool;
 }

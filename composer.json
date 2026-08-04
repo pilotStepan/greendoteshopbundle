@@ -21,6 +21,7 @@
   },
   "require": {
     "php": ">=8.2",
+    "algolia/algoliasearch-client-php": "^4.0",
     "symfony/dependency-injection": "^7.0",
     "doctrine/doctrine-bundle": "^2.12",
     "doctrine/orm": "^3.1",

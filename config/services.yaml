@@ -16,3 +16,12 @@ services:
     arguments:
       $decorated: '@Greendot\EshopBundle\OpenApi\ShortCodeOpenApiFactory.inner'
     autoconfigure: false
+
+  Algolia\AlgoliaSearch\Api\SearchClient:
+    factory: [ 'Algolia\AlgoliaSearch\Api\SearchClient', 'create' ]
+    arguments:
+      - '%env(ALGOLIA_APP_ID)%'
+      - '%env(ALGOLIA_API_KEY)%'
+
+  Greendot\EshopBundle\Algolia\ProductIndexerInterface:
+    alias: 'Greendot\EshopBundle\Algolia\ProductIndexer'

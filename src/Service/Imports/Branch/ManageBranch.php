@@ -13,11 +13,15 @@ use Greendot\EshopBundle\Entity\Project\BranchType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
 use Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware;
+use Symfony\Bridge\Doctrine\Middleware\Debug\Middleware as SymfonyDebugMiddleware;
 
 #[WithMonologChannel('branch_import')]
 final class ManageBranch
 {
     private const BATCH_SIZE = 500;
+
+    /** @var array<string,int> transportation name => id */
+    private array $transportationIdCache = [];
 
     public function __construct(
         private EntityManagerInterface  $em,
@@ -55,44 +59,17 @@ final class ManageBranch
                     'updated' => 0,
                 ];
 
-                /** @var ProviderBranchData $row */
+                $batch = [];
                 foreach ($importer->fetch() as $row) {
-                    ++$stats['processed'];
-
-                    if (!isset($typeIdCache[$row->branchTypeName])) {
-                        $type = $this->getOrCreateBranchType($row->branchTypeName);
-                        if ($type->getId() === null) {
-                            $this->em->persist($type);
-                            $this->em->flush();
-                        }
-                        $typeIdCache[$row->branchTypeName] = (int)$type->getId();
-                    }
-
-                    $typeId = $typeIdCache[$row->branchTypeName];
-                    $typeRef = $this->em->getReference(BranchType::class, $typeId);
-
-                    $seenByType[$row->branchTypeName][] = $row->providerId;
-
-                    $branch = $this->branchRepository->findOneByProviderId($row->providerId);
-
-                    if ($branch) {
-                        $this->updateBranch($branch, $row);
-                        ++$stats['updated']; // count as updated even if unchanged
-                    } else {
-                        $branch = $this->createBranch($row, $typeRef);
-                        $this->em->persist($branch);
-                        ++$stats['created'];
-                    }
-
-                    if (($stats['processed'] % self::BATCH_SIZE) === 0) {
-                        $this->em->flush();
-                        $this->em->clear();
-                        $this->logger->debug('Batch flushed', $stats);
+                    $batch[] = $row;
+                    if (count($batch) >= self::BATCH_SIZE) {
+                        $this->processBatch($batch, $typeIdCache, $seenByType, $stats);
+                        $batch = [];
                     }
                 }
-
-                $this->em->flush();
-                $this->em->clear();
+                if ($batch) {
+                    $this->processBatch($batch, $typeIdCache, $seenByType, $stats);
+                }
 
                 foreach ($seenByType as $typeName => $ids) {
                     $typeId = $typeIdCache[$typeName];
@@ -126,6 +103,52 @@ final class ManageBranch
         }
     }
 
+    /**
+     * @param ProviderBranchData[] $rows
+     * @param array<string,int> $typeIdCache
+     * @param array<string,string[]> $seenByType
+     * @param array{provider: string, processed: int, created: int, updated: int} $stats
+     */
+    private function processBatch(array $rows, array &$typeIdCache, array &$seenByType, array &$stats): void
+    {
+        $existing = $this->branchRepository->findIndexedByProviderIds(
+            array_map(static fn(ProviderBranchData $r) => $r->providerId, $rows),
+        );
+
+        foreach ($rows as $row) {
+            ++$stats['processed'];
+
+            if (!isset($typeIdCache[$row->branchTypeName])) {
+                $type = $this->getOrCreateBranchType($row->branchTypeName);
+                if ($type->getId() === null) {
+                    $this->em->persist($type);
+                    $this->em->flush();
+                }
+                $typeIdCache[$row->branchTypeName] = (int)$type->getId();
+            }
+
+            $typeId = $typeIdCache[$row->branchTypeName];
+            $typeRef = $this->em->getReference(BranchType::class, $typeId);
+
+            $seenByType[$row->branchTypeName][] = $row->providerId;
+
+            $branch = $existing[$row->providerId] ?? null;
+
+            if ($branch) {
+                $this->updateBranch($branch, $row);
+                ++$stats['updated']; // count as updated even if unchanged
+            } else {
+                $branch = $this->createBranch($row, $typeRef);
+                $this->em->persist($branch);
+                ++$stats['created'];
+            }
+        }
+
+        $this->em->flush();
+        $this->em->clear();
+        $this->logger->debug('Batch flushed', $stats);
+    }
+
     private function disableDbalDebugMiddleware(): ?array
     {
         $config = $this->em->getConnection()->getConfiguration();
@@ -134,7 +157,9 @@ final class ManageBranch
             return !(
                 (is_object($mw) && is_a($mw, Middleware::class, true)) ||
                 (is_object($mw) && class_exists(DebugMiddleware::class)
-                    && is_a($mw, DebugMiddleware::class, true))
+                    && is_a($mw, DebugMiddleware::class, true)) ||
+                (is_object($mw) && class_exists(SymfonyDebugMiddleware::class)
+                    && is_a($mw, SymfonyDebugMiddleware::class, true))
             );
         });
         $config->setMiddlewares($filtered);

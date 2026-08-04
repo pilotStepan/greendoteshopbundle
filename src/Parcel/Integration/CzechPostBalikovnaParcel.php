@@ -18,7 +18,6 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
-use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
@@ -32,6 +31,7 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 class CzechPostBalikovnaParcel implements ParcelServiceInterface
 {
     use CzechPostHmacAuthTrait;
+    use CzechPostStatusTrait;
 
     private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
     private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
@@ -87,11 +87,15 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             $parcelCode = $data['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;
             if (!$parcelCode) {
                 $rawResponse = $response->getContent(false);
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('Failed to create Balikovna parcel', [
                     'purchaseId' => $purchase->getId(),
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $rawResponse,
                 ]);
+                if ($this->isPermanentHttpFailure($statusCode)) {
+                    throw new PermanentParcelException("Failed to create Balikovna parcel: $rawResponse");
+                }
                 throw new TransientParcelException("Failed to create Balikovna parcel: $rawResponse");
             }
 
@@ -135,12 +139,16 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             $status = $data['parcelStatus'] ?? null;
             if ($status === null) {
                 $rawResponse = $response->getContent(false);
+                $statusCode = $response->getStatusCode();
                 $this->logger->error('Failed to get parcel status', [
                     'purchaseId' => $purchase->getId(),
                     'transportNumber' => $transportNumber,
-                    'httpStatusCode' => $response->getStatusCode(),
+                    'httpStatusCode' => $statusCode,
                     'response' => $rawResponse,
                 ]);
+                if ($this->isPermanentHttpFailure($statusCode)) {
+                    throw new PermanentParcelException("Czech Post getParcelStatus failed: $rawResponse");
+                }
                 throw new TransientParcelException("Czech Post getParcelStatus failed: $rawResponse");
             }
 
@@ -263,29 +271,5 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             'phoneNumber' => '',
             'emailAddress' => $client->getMail(),
         ];
-    }
-
-    /**
-     * Czech Post's spec doesn't publish an exhaustive statusID/reasonID code table, so unmapped codes are logged
-     * and treated as RECEIVED_DATA rather than crashing, matching DpdParcel/PacketeryParcel's defensive fallback.
-     */
-    private function mapStatusCode(string $statusId, string $reasonId): ParcelDeliveryStateEnum
-    {
-        $state = match ($statusId) {
-            '1'     => ParcelDeliveryStateEnum::RECEIVED_DATA,
-            '2'     => ParcelDeliveryStateEnum::IN_TRANSIT,
-            '3'     => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
-            '4'     => ParcelDeliveryStateEnum::DELIVERED,
-            '5'     => ParcelDeliveryStateEnum::NOT_PICKED_UP,
-            '6'     => ParcelDeliveryStateEnum::CANCELLED,
-            default => null,
-        };
-
-        if ($state === null) {
-            $this->logger->warning('Unmapped Czech Post parcel status code', ['statusID' => $statusId, 'reasonID' => $reasonId]);
-            return ParcelDeliveryStateEnum::RECEIVED_DATA;
-        }
-
-        return $state;
     }
 }

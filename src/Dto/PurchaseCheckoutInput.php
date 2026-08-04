@@ -61,6 +61,11 @@ class PurchaseCheckoutInput
     ])]
     public array $notes = [];
 
+    #[Groups(['purchase:checkout'])]
+    #[Assert\Type('string')]
+    #[Assert\Length(max: 255)]
+    public ?string $internalNumber = null;
+
 
     public static function validateAddress(array $address, ExecutionContextInterface $context): void
     {

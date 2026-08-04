@@ -87,13 +87,15 @@ final class PacketaBranchImporter implements ProviderImporterInterface
         return $openingHours;
     }
 
+    private const DESCRIPTION_MAX_LENGTH = 512;
+
     private function buildDescription(SimpleXMLElement $b): string
     {
         $description = (string)$b->directions;
         if (!empty($b->special)) {
             $description .= ($description !== '' ? ' ' : '') . $b->special;
         }
-        return $description;
+        return mb_substr($description, 0, self::DESCRIPTION_MAX_LENGTH);
     }
 
     /**

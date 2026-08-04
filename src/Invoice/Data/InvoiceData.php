@@ -5,7 +5,6 @@ namespace Greendot\EshopBundle\Invoice\Data;
 use DateTime;
 use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Currency;
-use Greendot\EshopBundle\Tests\Service\Price\PurchasePriceDataProvider;
 
 class InvoiceData
 {
@@ -15,6 +14,7 @@ class InvoiceData
         public bool                         $isInvoice,
         public bool                         $isVatExempted,
         public ?string                      $invoiceNumber,
+        public ?string                      $internalNumber,
         public ?DateTime                    $dateInvoiced,
         public ?DateTime                    $dateDue,
         // public InvoicePersonData            $contractor,

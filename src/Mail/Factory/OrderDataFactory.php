@@ -77,6 +77,7 @@ class OrderDataFactory
             items: $items,
             primaryCurrency: 'czk', // FIXME
             orderPaid: $purchase->isPaid(),
+            alreadyShipped: $purchase->hasAnyPlace('log_shipped', 'log_picked_up', 'log_delivered'),
             totalPriceCzk: $totalPriceCzk,
             totalPriceEur: $totalPriceEur,
             clientSectionUrl: $clientSectionUrl,

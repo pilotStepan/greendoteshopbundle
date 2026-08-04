@@ -7,6 +7,7 @@ use Psr\Log\NullLogger;
 use RuntimeException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Integration\DpdParcel;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
@@ -80,7 +81,7 @@ class DpdParcelTest extends TestCase
         bool $isCod = false,
         string $country = 'cz',
         string $transportNumber = '13955081839853',
-        string $shipmentId = '52172',
+        ?string $shipmentId = '52172',
         ?PurchaseAddress $address = null,
     ): Purchase {
         $client = $this->createMock(Client::class);
@@ -422,7 +423,7 @@ class DpdParcelTest extends TestCase
         $this->assertFalse($result->state->isFinal());
     }
 
-    public function testGetParcelStatus_unmappedCode_fallsBackToReceivedData(): void
+    public function testGetParcelStatus_unmappedCode_fallsBackToUnknown(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::statusResponse(52172, 99)));
 
@@ -430,7 +431,7 @@ class DpdParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('jwt123'))
         );
 
-        $this->assertSame(ParcelDeliveryStateEnum::RECEIVED_DATA, $result->state);
+        $this->assertSame(ParcelDeliveryStateEnum::UNKNOWN, $result->state);
         $this->assertFalse($result->state->isFinal());
     }
 
@@ -439,6 +440,51 @@ class DpdParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse(json_encode(['transactionId' => 1])));
 
         $this->expectException(RuntimeException::class);
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    // A purchase whose parcel was filled in manually via CMS may carry a human-readable
+    // transport number but no numeric shipmentId - DPD's status API can't work with that,
+    // so it must fail fast (permanently) instead of calling GET /shipments/0.
+    public function testGetParcelStatus_noShipmentId_throwsPermanentExceptionWithoutHttpCall(): void
+    {
+        $called = false;
+        $httpClient = new MockHttpClient(function () use (&$called) {
+            $called = true;
+            return new MockResponse(self::statusResponse());
+        });
+
+        $this->expectException(PermanentParcelException::class);
+
+        try {
+            $this->makeService($httpClient)->getParcelStatus(
+                $this->makePurchase($this->makeTransportation('jwt123'), shipmentId: null)
+            );
+        } finally {
+            $this->assertFalse($called, 'must not call DPD API without a shipmentId');
+        }
+    }
+
+    public function testGetParcelStatus_blankShipmentId_throwsPermanentException(): void
+    {
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService(new MockHttpClient())->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('jwt123'), shipmentId: '')
+        );
+    }
+
+    public function testGetParcelStatus_httpStatus404_throwsPermanentException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(
+            json_encode(['messages' => [['code' => 'MSG527', 'content' => 'shipmentId does not exist.']]]),
+            ['http_code' => 404],
+        ));
+
+        $this->expectException(PermanentParcelException::class);
 
         $this->makeService($httpClient)->getParcelStatus(
             $this->makePurchase($this->makeTransportation('jwt123'))
@@ -508,5 +554,23 @@ class DpdParcelTest extends TestCase
         $service = $this->makeService(new MockHttpClient(), enabled: true);
 
         $this->assertFalse($service->supports(TransportationAPI::PACKETA));
+    }
+
+    public function testSupportsStatusPolling_withNumericShipmentId_returnsTrue(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertTrue($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('jwt123'), shipmentId: '52172')
+        ));
+    }
+
+    public function testSupportsStatusPolling_withoutShipmentId_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertFalse($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('jwt123'), shipmentId: null)
+        ));
     }
 }

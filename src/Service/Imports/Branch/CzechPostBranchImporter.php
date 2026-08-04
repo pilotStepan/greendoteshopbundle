@@ -108,7 +108,7 @@ final class CzechPostBranchImporter implements ProviderImporterInterface
         if ((string)$row->TYP === 'pošta') {
             return 'Balík na poštu';
         } else {
-            return 'Balíkovna';
+            return 'Balíkovna - výdejní místo';
         }
     }
 }

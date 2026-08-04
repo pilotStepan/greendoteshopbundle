@@ -47,4 +47,27 @@ class BranchRepository extends ServiceEntityRepository
             ->getOneOrNullResult()
         ;
     }
+
+    /**
+     * @param string[] $providerIds
+     * @return array<string, Branch> indexed by provider_id
+     */
+    public function findIndexedByProviderIds(array $providerIds): array
+    {
+        if (empty($providerIds)) return [];
+
+        $branches = $this->createQueryBuilder('b')
+            ->where('b.provider_id IN (:pids)')
+            ->setParameter('pids', array_values(array_unique($providerIds)))
+            ->getQuery()
+            ->getResult()
+        ;
+
+        $indexed = [];
+        foreach ($branches as $branch) {
+            $indexed[$branch->getProviderId()] = $branch;
+        }
+
+        return $indexed;
+    }
 }

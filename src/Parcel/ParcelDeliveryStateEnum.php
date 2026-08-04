@@ -10,6 +10,7 @@ enum ParcelDeliveryStateEnum: string
     case DELIVERED = 'delivered';
     case NOT_PICKED_UP = 'not_picked_up';
     case CANCELLED = 'cancelled';
+    case UNKNOWN = 'unknown';
 
     public function isFinal(): bool
     {
