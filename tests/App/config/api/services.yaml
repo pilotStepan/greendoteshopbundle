@@ -17,6 +17,15 @@ services:
     Greendot\EshopBundle\Affiliate\:
         resource: '../../../../src/Affiliate/*'
 
+    Greendot\EshopBundle\Algolia\:
+        resource: '../../../../src/Algolia/*'
+
+    Algolia\AlgoliaSearch\Api\SearchClient:
+        factory: [ 'Algolia\AlgoliaSearch\Api\SearchClient', 'create' ]
+        arguments:
+            - 'test-app-id'
+            - 'test-api-key'
+
     Greendot\EshopBundle\ApiResource\:
         resource: '../../../../src/ApiResource/*'
 
