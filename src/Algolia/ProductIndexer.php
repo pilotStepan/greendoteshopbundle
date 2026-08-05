@@ -73,6 +73,34 @@ class ProductIndexer implements ProductIndexerInterface
         );
     }
 
+    public function indexProducts(array $ids, ?string $indexName = null): int
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (!$ids) {
+            return 0;
+        }
+
+        $indexName = $indexName ?? $this->getDefaultIndexName();
+
+        $found = [];
+        $batch = [];
+        foreach ($this->productGenerator($ids) as $row) {
+            $found[] = (int)$row['id'];
+            $batch[] = $this->hydrateRecord($row);
+        }
+
+        if ($batch) {
+            $this->algolia->saveObjects($indexName, $batch);
+        }
+
+        $missing = array_diff($ids, $found);
+        if ($missing) {
+            $this->algolia->deleteObjects($indexName, array_map('strval', array_values($missing)));
+        }
+
+        return \count($batch);
+    }
+
     /**
      * Algolia index to write to when no explicit index name is given.
      */
@@ -100,12 +128,21 @@ class ProductIndexer implements ProductIndexerInterface
     }
 
     /**
+     * @param int[]|null $ids When given, restricts the result to these product ids.
      * @return \Generator<array<string, mixed>>
      */
-    protected function productGenerator(): \Generator
+    protected function productGenerator(?array $ids = null): \Generator
     {
         $conn = $this->connection();
         [$where, $params] = $this->getProductFilters();
+        $types = [];
+
+        if ($ids !== null) {
+            $where = "({$where}) AND p.id IN (:__ids)";
+            $params['__ids'] = $ids;
+            $types['__ids'] = Connection::PARAM_INT_ARRAY;
+        }
+
         $offset = 0;
         $pageSize = 500;
 
@@ -129,7 +166,7 @@ class ProductIndexer implements ProductIndexerInterface
             $rows = $conn->executeQuery(
                 $sql,
                 $params + ['limit' => $pageSize, 'offset' => $offset],
-                ['limit' => ParameterType::INTEGER, 'offset' => ParameterType::INTEGER],
+                $types + ['limit' => ParameterType::INTEGER, 'offset' => ParameterType::INTEGER],
             )->fetchAllAssociative();
 
             if (!$rows) {
@@ -144,6 +181,10 @@ class ProductIndexer implements ProductIndexerInterface
             }
 
             $offset += $pageSize;
+
+            if ($ids !== null && \count($rows) < $pageSize) {
+                break;
+            }
         } while (true);
     }
 

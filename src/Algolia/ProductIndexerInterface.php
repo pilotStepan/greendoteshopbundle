@@ -19,6 +19,6 @@ interface ProductIndexerInterface
      * @param string|null $indexName Overrides the configured default index name for this run.
      */
     public function reindex(?string $indexName = null): ReindexResult;
-
     public function countProducts(): int;
+    public function indexProducts(array $ids, ?string $indexName = null): int;
 }
