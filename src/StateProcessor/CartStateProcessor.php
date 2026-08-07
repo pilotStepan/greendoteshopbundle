@@ -35,6 +35,11 @@ class CartStateProcessor implements ProcessorInterface
             $data->setBranch(null);
         }
 
+        $branch = $data->getBranch();
+        if ($transportation && $branch && !$transportation->getBranches()->contains($branch)) {
+            $data->setBranch(null);
+        }
+
         return $this->inner->process($data, $operation, $uriVariables, $context);
     }
 }

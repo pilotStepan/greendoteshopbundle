@@ -39,11 +39,15 @@ class CzechPostBalikovnaParcelTest extends TestCase
         string $city = 'Brno',
         string $zip = '60200',
     ): Branch {
+        $branchTransportation = $this->createMock(Transportation::class);
+        $branchTransportation->method('getTransportationAPI')->willReturn(TransportationAPI::CP_BALIKOVNA);
+
         $b = $this->createMock(Branch::class);
         $b->method('getProviderId')->willReturn('czechpost_10000');
         $b->method('getStreet')->willReturn($street);
         $b->method('getCity')->willReturn($city);
         $b->method('getZip')->willReturn($zip);
+        $b->method('getTransportation')->willReturn($branchTransportation);
         return $b;
     }
 

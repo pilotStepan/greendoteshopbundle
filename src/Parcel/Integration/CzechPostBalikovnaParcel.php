@@ -72,6 +72,15 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             throw new PermanentParcelException('No branch set for purchase');
         }
 
+        if ($branch->getTransportation()?->getTransportationAPI() !== TransportationAPI::CP_BALIKOVNA) {
+            $this->logger->error('Branch on purchase does not belong to Czech Post Balíkovna', [
+                'purchaseId' => $purchase->getId(),
+                'branchId' => $branch->getId(),
+                'branchTransportationApi' => $branch->getTransportation()?->getTransportationAPI()?->value,
+            ]);
+            throw new PermanentParcelException('Branch on purchase does not belong to Czech Post Balíkovna');
+        }
+
         $body = $this->prepareParcelData($purchase, $branch);
         $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
 

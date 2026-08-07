@@ -56,7 +56,10 @@ class PacketeryAddressParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
-        $country = $address->getShipCountry() ?? $address->getCountry();
+
+        $country = $this->normalizeCountry($transportation->getCountry())
+            ?? $this->normalizeCountry($address->getShipCountry())
+            ?? $this->normalizeCountry($address->getCountry());
 
         $currency = match ($country) {
             'sk'    => 'EUR',
@@ -125,5 +128,11 @@ class PacketeryAddressParcel implements ParcelServiceInterface
     public function supports(TransportationAPI $transportationAPI): bool
     {
         return $this->enabled && $transportationAPI === TransportationAPI::PACKETA_ADDRESS;
+    }
+
+    private function normalizeCountry(?string $country): ?string
+    {
+        $country = strtolower(trim((string)$country));
+        return $country === '' ? null : $country;
     }
 }

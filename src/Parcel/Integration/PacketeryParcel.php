@@ -48,13 +48,27 @@ class PacketeryParcel implements ParcelServiceInterface
         $transportation = $purchase->getTransportation();
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
-        $country = $address->getShipCountry() ?? $address->getCountry();
 
         $branch = $purchase->getBranch();
         if ($branch === null) {
             $this->logger->error('No pickup branch set for Packeta pickup-point purchase', ['purchaseId' => $purchase->getId()]);
             throw new PermanentParcelException('No pickup branch set for purchase');
         }
+
+        $branchApi = $branch->getTransportation()?->getTransportationAPI();
+        if ($branchApi === null || !$this->supports($branchApi)) {
+            $this->logger->error('Branch on purchase does not belong to Packeta', [
+                'purchaseId' => $purchase->getId(),
+                'branchId' => $branch->getId(),
+                'branchTransportationApi' => $branchApi?->value,
+            ]);
+            throw new PermanentParcelException('Branch on purchase does not belong to Packeta');
+        }
+
+        $country = $this->normalizeCountry($branch->getCountry())
+            ?? $this->normalizeCountry($transportation->getCountry())
+            ?? $this->normalizeCountry($address->getShipCountry())
+            ?? $this->normalizeCountry($address->getCountry());
 
         $currency = match ($country) {
             'sk'    => 'EUR',
@@ -89,5 +103,11 @@ class PacketeryParcel implements ParcelServiceInterface
     public function supports(TransportationAPI $transportationAPI): bool
     {
         return $this->enabled && $transportationAPI === TransportationAPI::PACKETA;
+    }
+
+    private function normalizeCountry(?string $country): ?string
+    {
+        $country = strtolower(trim((string)$country));
+        return $country === '' ? null : $country;
     }
 }

@@ -28,8 +28,7 @@ class PacketeryParcelTest extends TestCase
     public function testCreateParcel_pickupPoint_returnsBarcode(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $result = $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('secret123'), $branch),
@@ -130,6 +129,17 @@ class PacketeryParcelTest extends TestCase
         return $t;
     }
 
+    private function makeBranch(string $providerId, TransportationAPI $api = TransportationAPI::PACKETA): Branch
+    {
+        $branchTransportation = $this->createMock(Transportation::class);
+        $branchTransportation->method('getTransportationAPI')->willReturn($api);
+
+        $branch = $this->createMock(Branch::class);
+        $branch->method('getProviderId')->willReturn($providerId);
+        $branch->method('getTransportation')->willReturn($branchTransportation);
+        return $branch;
+    }
+
     public function testCreateParcel_pickupPoint_usesStrippedAddressId(): void
     {
         $capturedBody = null;
@@ -138,8 +148,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_99');
+        $branch = $this->makeBranch('packeta_99');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch),
@@ -167,8 +176,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true),
@@ -185,8 +193,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeServiceWithCodAwarePricing($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true),
@@ -232,8 +239,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: false),
@@ -250,8 +256,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch),
@@ -264,8 +269,7 @@ class PacketeryParcelTest extends TestCase
     {
         $xml = '<response><status>error</status><fault><code>1</code><message>Invalid API password</message></fault></response>';
         $httpClient = new MockHttpClient(new MockResponse($xml));
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->expectException(RuntimeException::class);
 
