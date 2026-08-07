@@ -90,6 +90,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             $this->em->wrapInTransaction(function () use ($data, $purchase) {
                 // 2. Apply client, address, consents, notes from input
                 $this->purchaseUpdate->applyFromInput($data, $purchase);
+                $purchase->setInternalNumber($data->internalNumber ?? null);
 
                 // 7. Workflow transition
                 $this->logger->info('Checkout applying workflow transition', [

@@ -3,9 +3,12 @@
 namespace Greendot\EshopBundle\Tests\Schema\Provider;
 
 use PHPUnit\Framework\TestCase;
+use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Greendot\EshopBundle\Schema\Provider\WebPageSchemaProvider;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Greendot\EshopBundle\Entity\Project\CategoryType;
+use Greendot\EshopBundle\Entity\Project\Category as CategoryEntity;
 
 class WebPageSchemaProviderTest extends TestCase
 {
@@ -53,6 +56,75 @@ class WebPageSchemaProviderTest extends TestCase
         $this->assertSame($expectedUrl, $array['url']);
         $this->assertSame('Electronics', $array['name']);
         $this->assertSame('All electronics', $array['description']);
+    }
+
+    public function testProvideUsesWebHomepageRouteForHomepageCategory(): void
+    {
+        $category = $this->createMock(CategoryEntity::class);
+        $category->method('getId')->willReturn(1);
+        $category->method('getName')->willReturn('Lepíky');
+        $category->method('getDescription')->willReturn(null);
+
+        $expectedUrl = 'https://example.com/';
+        $this->urlGenerator
+            ->expects($this->once())
+            ->method('generate')
+            ->with('web_homepage', [], UrlGeneratorInterface::ABSOLUTE_URL)
+            ->willReturn($expectedUrl);
+
+        $array = $this->provider->provide($category)->toArray();
+
+        $this->assertSame($expectedUrl, $array['url']);
+        $this->assertSame($expectedUrl . '#webpage', $array['@id']);
+    }
+
+    public function testProvideUsesWebBlogDetailRouteForBlogCategory(): void
+    {
+        $categoryType = $this->createMock(CategoryType::class);
+        $categoryType->method('getId')->willReturn(CategoryTypeEnum::BLOG->value);
+
+        $category = $this->createMock(CategoryEntity::class);
+        $category->method('getId')->willReturn(42);
+        $category->method('getCategoryType')->willReturn($categoryType);
+        $category->method('getSlug')->willReturn('jak-lepit-kov');
+        $category->method('getName')->willReturn('Jak lepit kov');
+        $category->method('getDescription')->willReturn(null);
+
+        $expectedUrl = 'https://example.com/blog/jak-lepit-kov';
+        $this->urlGenerator
+            ->expects($this->once())
+            ->method('generate')
+            ->with('web_blog_detail', ['slug' => 'jak-lepit-kov'], UrlGeneratorInterface::ABSOLUTE_URL)
+            ->willReturn($expectedUrl);
+
+        $array = $this->provider->provide($category)->toArray();
+
+        $this->assertSame($expectedUrl, $array['url']);
+    }
+
+    public function testProvideFallsBackToControllerNameForNonBlogCategory(): void
+    {
+        $categoryType = $this->createMock(CategoryType::class);
+        $categoryType->method('getId')->willReturn(CategoryTypeEnum::CATEGORY->value);
+
+        $category = $this->createMock(CategoryEntity::class);
+        $category->method('getId')->willReturn(42);
+        $category->method('getCategoryType')->willReturn($categoryType);
+        $category->method('getControllerName')->willReturn('app_master');
+        $category->method('getSlug')->willReturn('electronics');
+        $category->method('getName')->willReturn('Electronics');
+        $category->method('getDescription')->willReturn(null);
+
+        $expectedUrl = 'https://example.com/electronics';
+        $this->urlGenerator
+            ->expects($this->once())
+            ->method('generate')
+            ->with('app_master', ['slug' => 'electronics'], UrlGeneratorInterface::ABSOLUTE_URL)
+            ->willReturn($expectedUrl);
+
+        $array = $this->provider->provide($category)->toArray();
+
+        $this->assertSame($expectedUrl, $array['url']);
     }
 
     private function createPageableStub(

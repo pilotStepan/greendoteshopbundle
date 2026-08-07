@@ -2,23 +2,26 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\LockFactory;
 use Doctrine\ORM\EntityManagerInterface;
-use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
+use Greendot\EshopBundle\Algolia\ProductIndexerInterface;
 use Greendot\EshopBundle\Service\Imports\Branch\ManageBranch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 
 class ScheduledTasksController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface     $entityManager,
-        private readonly ProductRepository           $productRepository,
-        private readonly RbBankPaymentImportService  $rbBankPaymentImportService,
-        private readonly ManageBranch                $manageBranch,
+        private readonly ProductRepository          $productRepository,
+        private readonly RbBankPaymentImportService $rbBankPaymentImportService,
+        private readonly ManageBranch               $manageBranch,
     ) {}
 
     #[CustomApiEndpoint]
@@ -74,5 +77,33 @@ class ScheduledTasksController extends AbstractController
     {
         $this->manageBranch->importPacketa();
         return $this->json(['message' => 'Pobočky Zásilkovny byly úspěšně importovány']);
+    }
+
+    #[Route('/scheduled/algolia-reindex-products', name: 'scheduled_algolia_reindex_products', methods: ['GET'])]
+    public function algoliaReindexProducts(
+        Request                 $request,
+        ProductIndexerInterface $indexer,
+        LockFactory             $lockFactory,
+        LoggerInterface         $logger,
+    ): JsonResponse
+    {
+        set_time_limit(0);
+
+        $lock = $lockFactory->createLock('algolia_reindex_products', 3600);
+        if (!$lock->acquire()) {
+            return new JsonResponse(['status' => 'already_running'], 409);
+        }
+
+        try {
+            $result = $indexer->reindex($request->query->get('index'));
+
+            return new JsonResponse(['status' => 'ok'] + $result->toArray());
+        } catch (\Throwable $e) {
+            $logger->error('Algolia reindex failed: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
+
+            return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 500);
+        } finally {
+            $lock->release();
+        }
     }
 }

@@ -39,6 +39,11 @@ class CartStateProcessor implements ProcessorInterface
             $data->setBranch(null);
         }
 
+        $branch = $data->getBranch();
+        if ($transportation && $branch && !$transportation->getBranches()->contains($branch)) {
+            $data->setBranch(null);
+        }
+
         $purchase = $this->inner->process($data, $operation, $uriVariables, $context);
 
         // Recalculate prices after persisting so the response reflects the updated Transportation/PaymentType.

@@ -234,7 +234,9 @@ class ParameterRepository extends ServiceEntityRepository
             ->andWhere('ca.id IN (:categoryIds)')
             ->andWhere('pg.isFilter=1')
             ->setParameter('categoryIds', $allCategoryIds)
-            ->groupBy($alias . '.data');
+            ->groupBy($alias . '.data')
+            ->addOrderBy($alias . '.sequence', "ASC");
+
     }
 
     public function getProductParametersByProducer(QueryBuilder $queryBuilder, int $producerId) : QueryBuilder

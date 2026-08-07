@@ -88,6 +88,7 @@ final class InvoiceDataFactory
             isInvoice:                              $isInvoice,
             isVatExempted:                          $purchase->isVatExempted(),
             invoiceNumber:                          $invoiceNumber,
+            internalNumber:                         $purchase->getInternalNumber(),
             dateInvoiced:                           $dateInvoiced,
             dateDue:                                $dateDue,
             // contractor:                 $contractor,

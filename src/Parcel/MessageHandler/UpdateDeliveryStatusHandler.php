@@ -21,8 +21,8 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
-use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 #[AsMessageHandler]
@@ -85,12 +85,18 @@ readonly class UpdateDeliveryStatusHandler
 
         try {
             $statusInfo = $parcelService->getParcelStatus($purchase);
+        } catch (PermanentParcelException $e) {
+            $this->logger->error('Parcel status permanently unavailable; stopping polling', [
+                'purchaseId' => $purchaseId,
+                'error' => $e->getMessage(),
+            ]);
+            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
         } catch (Throwable $e) {
             $this->logger->error('Parcel provider failed; will retry', [
                 'purchaseId' => $purchaseId,
                 'error' => $e::class . ': ' . $e->getMessage(),
             ]);
-            throw new RecoverableMessageHandlingException('Transient parcel provider error', 0, $e);
+            throw $e;
         }
 
         // Skip writing if nothing changed (use == for value equality on DateTimeInterface)

@@ -28,8 +28,7 @@ class PacketeryParcelTest extends TestCase
     public function testCreateParcel_pickupPoint_returnsBarcode(): void
     {
         $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $result = $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('secret123'), $branch),
@@ -82,6 +81,7 @@ class PacketeryParcelTest extends TestCase
         bool             $isCod = false,
         string           $country = 'cz',
         ?PurchaseAddress $address = null,
+        ?string          $transportNumber = 'Z4154090000',
     ): Purchase
     {
         $client = $this->createMock(Client::class);
@@ -97,7 +97,7 @@ class PacketeryParcelTest extends TestCase
         $purchase->method('getClient')->willReturn($client);
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
-        $purchase->method('getTransportNumber')->willReturn('Z4154090000');
+        $purchase->method('getTransportNumber')->willReturn($transportNumber);
         $purchase->method('isVatExempted')->willReturn(false);
         return $purchase;
     }
@@ -129,6 +129,17 @@ class PacketeryParcelTest extends TestCase
         return $t;
     }
 
+    private function makeBranch(string $providerId, TransportationAPI $api = TransportationAPI::PACKETA): Branch
+    {
+        $branchTransportation = $this->createMock(Transportation::class);
+        $branchTransportation->method('getTransportationAPI')->willReturn($api);
+
+        $branch = $this->createMock(Branch::class);
+        $branch->method('getProviderId')->willReturn($providerId);
+        $branch->method('getTransportation')->willReturn($branchTransportation);
+        return $branch;
+    }
+
     public function testCreateParcel_pickupPoint_usesStrippedAddressId(): void
     {
         $capturedBody = null;
@@ -137,8 +148,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_99');
+        $branch = $this->makeBranch('packeta_99');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch),
@@ -166,8 +176,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true),
@@ -184,8 +193,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeServiceWithCodAwarePricing($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: true),
@@ -231,8 +239,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch, isCod: false),
@@ -249,8 +256,7 @@ class PacketeryParcelTest extends TestCase
             return new MockResponse(self::successXml());
         });
 
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw'), $branch),
@@ -263,8 +269,7 @@ class PacketeryParcelTest extends TestCase
     {
         $xml = '<response><status>error</status><fault><code>1</code><message>Invalid API password</message></fault></response>';
         $httpClient = new MockHttpClient(new MockResponse($xml));
-        $branch = $this->createMock(Branch::class);
-        $branch->method('getProviderId')->willReturn('packeta_52');
+        $branch = $this->makeBranch('packeta_52');
 
         $this->expectException(RuntimeException::class);
 
@@ -364,7 +369,46 @@ class PacketeryParcelTest extends TestCase
         $this->assertTrue($result->state->isFinal());
     }
 
-    public function testGetParcelStatus_unknownCode_returnsCancelled(): void
+    public function testGetParcelStatus_statusCode6_returnsInTransit(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-08T10:00:00</dateTime><statusCode>6</statusCode><codeText>handed to carrier</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_statusCode12_returnsDelivered(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-10T16:00:00</dateTime><statusCode>12</statusCode><codeText>collected</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::DELIVERED, $result->state);
+        $this->assertTrue($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_statusCode25_returnsInTransit(): void
+    {
+        $xml = '<response><status>ok</status><result><dateTime>2024-01-09T09:30:00</dateTime><statusCode>25</statusCode><codeText>carrier first delivery attempt</codeText></result></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $result = $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+
+        $this->assertSame(ParcelDeliveryStateEnum::IN_TRANSIT, $result->state);
+        $this->assertFalse($result->state->isFinal());
+    }
+
+    public function testGetParcelStatus_unknownCode_returnsUnknown(): void
     {
         $xml = '<response><status>ok</status><result><dateTime>2024-01-20T00:00:00</dateTime><statusCode>99</statusCode><codeText>unknown</codeText></result></response>';
         $httpClient = new MockHttpClient(new MockResponse($xml));
@@ -373,8 +417,8 @@ class PacketeryParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('pw'), null),
         );
 
-        $this->assertSame(ParcelDeliveryStateEnum::CANCELLED, $result->state);
-        $this->assertTrue($result->state->isFinal());
+        $this->assertSame(ParcelDeliveryStateEnum::UNKNOWN, $result->state);
+        $this->assertFalse($result->state->isFinal());
     }
 
     public function testSupports_whenEnabled_returnsTrueForPacketa(): void
@@ -396,5 +440,54 @@ class PacketeryParcelTest extends TestCase
         $service = $this->makeService(new MockHttpClient(), enabled: true);
 
         $this->assertFalse($service->supports(TransportationAPI::DPD));
+    }
+
+    public function testGetParcelStatus_blankPacketId_throwsPermanentExceptionWithoutHttpCall(): void
+    {
+        $called = false;
+        $httpClient = new MockHttpClient(function () use (&$called) {
+            $called = true;
+            return new MockResponse('<response><status>ok</status></response>');
+        });
+
+        $this->expectException(PermanentParcelException::class);
+
+        try {
+            $this->makeService($httpClient)->getParcelStatus(
+                $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: ''),
+            );
+        } finally {
+            $this->assertFalse($called, 'must not call Packeta API without a packetId');
+        }
+    }
+
+    public function testGetParcelStatus_packetIdFault_throwsPermanentException(): void
+    {
+        $xml = '<response><status>fault</status><fault>PacketIdFault</fault><string>Incorrect packet ID \'\'.</string></response>';
+        $httpClient = new MockHttpClient(new MockResponse($xml));
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        );
+    }
+
+    public function testSupportsStatusPolling_withTransportNumber_returnsTrue(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertTrue($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('pw'), null),
+        ));
+    }
+
+    public function testSupportsStatusPolling_withoutTransportNumber_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertFalse($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: ''),
+        ));
     }
 }

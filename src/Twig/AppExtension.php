@@ -569,9 +569,9 @@ class AppExtension extends AbstractExtension
         return $this->producerRepository->getProducersForCategory($category, $onlyActive);
     }
 
-    public function getProductsForEntity($entity, $onlyActive = true, $deep = true): array
+    public function getProductsForEntity($entity, bool $onlyActive = true, bool $onlyVisible = true): array
     {
-        return $this->productRepository->getProductsForEntity($entity, $onlyActive, $deep);
+        return $this->productRepository->getProductsForEntity($entity, $onlyActive, $onlyVisible);
     }
 
         public function getParametersByCategoryAndGroupType(Category|int $category, ParameterGroupType|int $parameterGroupType): array

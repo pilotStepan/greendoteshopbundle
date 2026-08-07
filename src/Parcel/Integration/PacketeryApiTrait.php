@@ -27,6 +27,11 @@ trait PacketeryApiTrait
         $apiPassword = $transportation?->getSecretKey() ?? '';
         $packetId = $purchase->getTransportNumber();
 
+        if (!$packetId) {
+            $this->logger->error('No Packeta packetId on purchase; cannot query status', ['purchaseId' => $purchase->getId()]);
+            throw new PermanentParcelException('No Packeta packetId on purchase');
+        }
+
         $xml = $this->callPacketeryApi('packetStatus', [
             'apiPassword' => $apiPassword,
             'packetId' => $packetId,
@@ -43,6 +48,11 @@ trait PacketeryApiTrait
             details: ['statusCode' => $statusCode, 'codeText' => $codeText],
             occurredAt: $dateTime,
         );
+    }
+
+    public function supportsStatusPolling(Purchase $purchase): bool
+    {
+        return (bool)$purchase->getTransportNumber();
     }
 
     private function callPacketeryApi(string $rootElement, array $data, string $logContext, Purchase $purchase): SimpleXMLElement
@@ -64,7 +74,7 @@ trait PacketeryApiTrait
                     'purchaseId' => $purchase->getId(),
                     'response' => $rawResponse,
                 ]);
-                if (in_array($fault, ['PacketAttributesFault', 'InvalidCourierNumber', 'InvalidApiPassword', 'SenderNotExists'], true)) {
+                if (in_array($fault, ['PacketAttributesFault', 'InvalidCourierNumber', 'InvalidApiPassword', 'SenderNotExists', 'PacketIdFault'], true)) {
                     throw new PermanentParcelException("Packeta $logContext failed (permanent/$fault): $rawResponse");
                 }
                 throw new TransientParcelException("Packeta $logContext failed: $rawResponse");
@@ -106,13 +116,19 @@ trait PacketeryApiTrait
     private function mapStatusCode(int $code): ParcelDeliveryStateEnum
     {
         return match ($code) {
-            1       => ParcelDeliveryStateEnum::RECEIVED_DATA,
-            2, 3, 4 => ParcelDeliveryStateEnum::IN_TRANSIT,
-            5       => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
-            7       => ParcelDeliveryStateEnum::DELIVERED,
-            8       => ParcelDeliveryStateEnum::NOT_PICKED_UP,
-            default => ParcelDeliveryStateEnum::CANCELLED,
+            1              => ParcelDeliveryStateEnum::RECEIVED_DATA,
+            2, 3, 4, 6, 25 => ParcelDeliveryStateEnum::IN_TRANSIT,
+            5              => ParcelDeliveryStateEnum::READY_FOR_PICKUP,
+            7, 12          => ParcelDeliveryStateEnum::DELIVERED,
+            8              => ParcelDeliveryStateEnum::NOT_PICKED_UP,
+            default        => $this->unmappedPacketeryState($code),
         };
+    }
+
+    private function unmappedPacketeryState(int $code): ParcelDeliveryStateEnum
+    {
+        $this->logger->warning('Unmapped Packeta parcel status code', ['statusCode' => $code]);
+        return ParcelDeliveryStateEnum::UNKNOWN;
     }
 
     private function resolvePriceAndCod(Purchase $purchase, string $currency): array

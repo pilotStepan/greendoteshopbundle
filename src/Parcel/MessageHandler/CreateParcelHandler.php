@@ -22,7 +22,6 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
-use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 #[AsMessageHandler]
@@ -58,21 +57,27 @@ readonly class CreateParcelHandler
             return;
         }
 
-        // If a parcel already exists, skip creation but schedule status tracking
-        if ($purchase->getTransportNumber()) {
-            $this->logger->info('Parcel already exists; skipping create', [
-                'purchaseId' => $purchaseId,
-                'transportNumber' => $purchase->getTransportNumber(),
-            ]);
-            $this->scheduleFirstStatusCheck($purchaseId);
-            return;
-        }
-
         try {
             $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
         } catch (ParcelServiceNotFoundException $e) {
             $this->logger->error('No parcel service available', ['purchaseId' => $purchaseId]);
             throw new UnrecoverableMessageHandlingException("No parcel service available (Purchase ID: $purchaseId)", 0, $e);
+        }
+
+        if ($purchase->getTransportNumber()) {
+            if ($parcelService->supportsStatusPolling($purchase)) {
+                $this->logger->info('Parcel already exists; skipping create', [
+                    'purchaseId' => $purchaseId,
+                    'transportNumber' => $purchase->getTransportNumber(),
+                ]);
+                $this->scheduleFirstStatusCheck($purchaseId);
+            } else {
+                $this->logger->info('Parcel data filled manually; no carrier status id, polling skipped', [
+                    'purchaseId' => $purchaseId,
+                    'transportNumber' => $purchase->getTransportNumber(),
+                ]);
+            }
+            return;
         }
 
         try {
@@ -91,7 +96,7 @@ readonly class CreateParcelHandler
                 'purchaseId' => $purchaseId,
                 'error' => $e::class . ': ' . $e->getMessage(),
             ]);
-            throw new RecoverableMessageHandlingException('Transient error while creating parcel', 0, $e);
+            throw $e;
         }
 
         $this->logger->info('Parcel created', [

@@ -19,7 +19,6 @@ use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Greendot\EshopBundle\Parcel\MessageHandler\CreateParcelHandler;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
-use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 class CreateParcelHandlerTest extends TestCase
@@ -85,7 +84,9 @@ class CreateParcelHandlerTest extends TestCase
         $purchase = $this->makePurchase('Z12345');
         $this->purchaseRepo->method('find')->willReturn($purchase);
 
-        $this->provider->expects($this->never())->method('getByPurchase');
+        $service = $this->createMock(ParcelServiceInterface::class);
+        $service->method('supportsStatusPolling')->willReturn(true);
+        $this->provider->expects($this->once())->method('getByPurchase')->willReturn($service);
         $this->em->expects($this->never())->method('flush');
 
         $this->bus->expects($this->once())->method('dispatch')
@@ -94,6 +95,24 @@ class CreateParcelHandlerTest extends TestCase
                 $this->assertInstanceOf(DelayStamp::class, $stamps[0]);
                 return new Envelope($msg);
             });
+
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
+    // A carrier ID entered manually via CMS (e.g. DPD's transport_number) does not necessarily
+    // give the carrier's status API what it needs (e.g. DPD's numeric shipmentId) - polling
+    // must not be scheduled in that case, and should say so once instead of retrying forever.
+    public function testAlreadyHasTransportNumberButNoStatusId_skipsCreateAndDoesNotSchedule(): void
+    {
+        $purchase = $this->makePurchase('DR0639136093M');
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $service = $this->createMock(ParcelServiceInterface::class);
+        $service->method('supportsStatusPolling')->willReturn(false);
+        $this->provider->method('getByPurchase')->willReturn($service);
+
+        $this->bus->expects($this->never())->method('dispatch');
+        $this->em->expects($this->never())->method('flush');
 
         ($this->handler)(new CreateParcelMessage(42));
     }
@@ -108,7 +127,9 @@ class CreateParcelHandlerTest extends TestCase
         ($this->handler)(new CreateParcelMessage(42));
     }
 
-    public function testApiFailure_throwsRecoverable(): void
+    // Transient errors are rethrown as-is (not wrapped) so Symfony's max_retries on the
+    // `parcel` transport actually applies instead of retrying forever.
+    public function testApiFailure_rethrowsOriginalException(): void
     {
         $purchase = $this->makePurchase();
         $this->purchaseRepo->method('find')->willReturn($purchase);
@@ -116,7 +137,8 @@ class CreateParcelHandlerTest extends TestCase
         $service->method('createParcel')->willThrowException(new \RuntimeException('connection refused'));
         $this->provider->method('getByPurchase')->willReturn($service);
 
-        $this->expectException(RecoverableMessageHandlingException::class);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('connection refused');
         ($this->handler)(new CreateParcelMessage(42));
     }
 
