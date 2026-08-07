@@ -38,4 +38,25 @@ class CommentRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    /**
+     * Top-level comments with an active admin reply, newest first.
+     *
+     * @return Comment[]
+     */
+    public function findAnsweredQuestions(int $limit = 20): array
+    {
+        return $this->createQueryBuilder('c')
+            ->join('c.underComment', 'uc')
+            ->where('c.comment IS NULL')
+            ->andWhere('c.isActive = true')
+            ->andWhere('uc.isAdmin = true')
+            ->andWhere('uc.isActive = true')
+            ->distinct()
+            ->orderBy('c.submitted', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }

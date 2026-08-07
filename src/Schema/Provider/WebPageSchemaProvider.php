@@ -4,13 +4,17 @@ namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\WebPage;
+use Greendot\EshopBundle\Enum\CategoryTypeEnum;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Greendot\EshopBundle\Entity\Project\Category as CategoryEntity;
 use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 class WebPageSchemaProvider implements SchemaProviderInterface
 {
+    private const HOMEPAGE_CATEGORY_ID = 1;
+
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
     ) {}
@@ -27,11 +31,7 @@ class WebPageSchemaProvider implements SchemaProviderInterface
         }
 
         /** @var PageableInterface $object */
-        $url = $this->urlGenerator->generate(
-            $object->getControllerName(),
-            ['slug' => $object->getSlug()],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
+        $url = $this->resolveUrl($object);
 
         return Schema::webPage()
             ->identifier(sprintf('%s#webpage', $url))
@@ -44,5 +44,28 @@ class WebPageSchemaProvider implements SchemaProviderInterface
     public function getPriority(): int
     {
         return 0;
+    }
+
+    private function resolveUrl(PageableInterface $object): string
+    {
+        if ($object instanceof CategoryEntity) {
+            if ($object->getId() === self::HOMEPAGE_CATEGORY_ID) {
+                return $this->urlGenerator->generate('web_homepage', [], UrlGeneratorInterface::ABSOLUTE_URL);
+            }
+
+            if ($object->getCategoryType()?->getId() === CategoryTypeEnum::BLOG->value) {
+                return $this->urlGenerator->generate(
+                    'web_blog_detail',
+                    ['slug' => $object->getSlug()],
+                    UrlGeneratorInterface::ABSOLUTE_URL,
+                );
+            }
+        }
+
+        return $this->urlGenerator->generate(
+            $object->getControllerName(),
+            ['slug' => $object->getSlug()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
     }
 }
