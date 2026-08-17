@@ -123,7 +123,10 @@ readonly class UpdateDeliveryStatusHandler
         } else if (in_array($statusInfo->state, [
             ParcelDeliveryStateEnum::DELIVERED,
             ParcelDeliveryStateEnum::READY_FOR_PICKUP,
-        ])) {
+        ], true)) {
+            if ($this->purchaseFlow->can($purchase, PWC::T_LOG_SEND->value)) {
+                $this->purchaseFlow->apply($purchase, PWC::T_LOG_SEND->value);
+            }
             $this->applyTransitionIfPossible($purchase, PWC::T_LOG_DELIVER->value);
         }
 
