@@ -15,6 +15,7 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\Entity\Interface\SoftDeletedInterface;
 use Greendot\EshopBundle\Entity\Trait\SoftDeletedTrait;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CurrencyRepository::class)]
 #[ApiResource(
@@ -40,6 +41,7 @@ class Currency implements SoftDeletedInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    // #[Assert\Currency]
     private ?string $name = null;
 
     #[ORM\Column(length: 15)]
@@ -55,6 +57,7 @@ class Currency implements SoftDeletedInterface
     private ?bool $isDefault = null;
 
     #[ORM\Column]
+    #[Assert\Locale]
     private ?string $defaultLocale = null;
     
     #[ORM\Column(options: ["default" => false])]
@@ -140,6 +143,18 @@ class Currency implements SoftDeletedInterface
     public function setIsDefault(bool $isDefault): self
     {
         $this->isDefault = $isDefault;
+
+        return $this;
+    }
+
+    public function getDefaultLocale(): ?string
+    {
+        return $this->defaultLocale;
+    }
+
+    public function setDefaultLocale(string $defaultLocale): self
+    {
+        $this->defaultLocale = $defaultLocale;
 
         return $this;
     }

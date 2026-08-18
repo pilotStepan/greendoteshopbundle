@@ -33,6 +33,8 @@ readonly class LoginSubscriber implements EventSubscriberInterface
 
         if (!$user instanceof Client) return;
 
+        $this->updateLocale($user);
+
         $sessionCart = $this->purchaseRepository->findOneBySession('purchase');
         $clientCart = $this->purchaseRepository->findCartForClient($user);
 
@@ -50,6 +52,16 @@ readonly class LoginSubscriber implements EventSubscriberInterface
         // Case 2: Only client cart exists - update session reference
         if ($clientCart) {
             $session->set('purchase', $clientCart->getId());
+        }
+    }
+
+    private function updateLocale(Client $user): void
+    {
+        $locale = $this->requestStack->getCurrentRequest()?->getLocale();
+
+        if ($locale && $locale !== $user->getLocale()) {
+            $user->setLocale($locale);
+            $this->entityManager->flush();
         }
     }
 }

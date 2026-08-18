@@ -1,0 +1,17 @@
+# Registers LocaleMiddleware on the default Messenger bus so purchase
+# notifications (and any other message carrying a LocaleStamp) are handled
+# under the locale they were dispatched with.
+#
+# 'messenger.bus.default' is the bus id Symfony's messenger-bundle recipe
+# generates by default (framework.messenger.default_bus). If the consuming
+# app renamed its bus, this prepend is a no-op for that bus and the
+# middleware must be added manually - see
+# src/Messenger/Middleware/LocaleMiddleware.php for the exact snippet.
+#
+# @see \Greendot\EshopBundle\Messenger\Middleware\LocaleMiddleware
+framework:
+  messenger:
+    buses:
+      messenger.bus.default:
+        middleware:
+          - Greendot\EshopBundle\Messenger\Middleware\LocaleMiddleware

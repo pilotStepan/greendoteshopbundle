@@ -161,7 +161,7 @@ readonly class ManagePurchase
     // sets required price data for pased Purchase entity
     public function preparePrices(Purchase $purchase): Purchase
     {
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
 
         $purchasePriceCalc = $this->purchasePriceFactory->create(
             $purchase,

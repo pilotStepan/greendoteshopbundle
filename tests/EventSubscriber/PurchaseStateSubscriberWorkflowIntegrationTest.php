@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Workflow\MarkingStore\MethodMarkingStore;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
@@ -58,6 +59,7 @@ class PurchaseStateSubscriberWorkflowIntegrationTest extends TestCase
             $this->createMock(WorkflowInterface::class),
             new RecordingPaymentActionLogger(),
             $this->createMock(PaymentRepository::class),
+            $this->createMock(CurrencyManager::class),
         );
         $dispatcher->addSubscriber($subscriber);
 

@@ -76,7 +76,7 @@ readonly class WishlistService
             'total_no_vat_secondary' => $totalNoVatSecondary,
         ]);
 
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($wishlist);
         foreach ($wishlist->getProductVariants() as $productVariant) {
             $productVariantPriceCalc = $this->productVariantPriceFactory->create(
                 $productVariant,

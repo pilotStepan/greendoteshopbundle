@@ -23,7 +23,7 @@ class CheckoutFunnelFactory
 
     public function createViewCart(Purchase $purchase): ViewCart
     {
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
         return new ViewCart(
             currency: $currency->getName() ?? 'CZK',
             value: $this->getValue($purchase, $currency),
@@ -32,7 +32,7 @@ class CheckoutFunnelFactory
     }
     public function createBeginCheckout(Purchase $purchase): BeginCheckout
     {
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
         return new BeginCheckout(
             currency: $currency->getName() ?? 'CZK',
             value: $this->getValue($purchase, $currency),
@@ -42,7 +42,7 @@ class CheckoutFunnelFactory
 
     public function createAddPaymentInfo(Purchase $purchase): AddPaymentInfo
     {
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
         return new AddPaymentInfo(
             currency: $currency->getName() ?? 'CZK',
             value: $this->getValue($purchase, $currency),
@@ -52,7 +52,7 @@ class CheckoutFunnelFactory
 
     public function createAddShippingInfo(Purchase $purchase): AddShippingInfo
     {
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
         return new AddShippingInfo(
             currency: $currency->getName() ?? 'CZK',
             value: $this->getValue($purchase, $currency),

@@ -120,7 +120,7 @@ class CalculatedPricesService
         }
 
         // Make calculated prices for purchase
-        $purchasePrice = $this->purchasePriceFactory->create($purchase, $this->currencyManager->get());
+        $purchasePrice = $this->purchasePriceFactory->create($purchase, $this->currencyManager->getForPurchase($purchase));
 
         $calculatedPricesMatrix = $this->createPurchaseCalculatedPricesMatrix($purchasePrice);
       

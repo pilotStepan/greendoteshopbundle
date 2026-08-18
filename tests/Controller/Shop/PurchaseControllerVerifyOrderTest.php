@@ -269,6 +269,7 @@ class PurchaseControllerVerifyOrderTest extends TestCase
             $this->createMock(WorkflowInterface::class),
             $this->paymentActionLogger,
             $this->paymentRepository,
+            $this->createMock(CurrencyManager::class),
         );
     }
 

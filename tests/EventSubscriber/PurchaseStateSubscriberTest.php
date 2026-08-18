@@ -84,6 +84,7 @@ class PurchaseStateSubscriberTest extends TestCase
             $this->purchaseWorkflow,
             $this->paymentActionLogger,
             $this->paymentRepository,
+            $this->createMock(CurrencyManager::class),
         );
     }
 

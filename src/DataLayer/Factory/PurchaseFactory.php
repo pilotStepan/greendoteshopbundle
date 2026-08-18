@@ -22,7 +22,7 @@ class PurchaseFactory
 
     public function create(\Greendot\EshopBundle\Entity\Project\Purchase $purchase): Purchase
     {
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
 
         $items = [];
         foreach ($purchase->getProductVariants() as $purchaseProductVariant){

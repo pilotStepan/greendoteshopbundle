@@ -71,6 +71,7 @@ class GPWebpayTest extends TestCase
         $currencyManager = $this->createMock(CurrencyManager::class);
         $currency = (new Currency())->setName('CZK');
         $currencyManager->method('get')->willReturn($currency);
+        $currencyManager->method('getForPurchase')->willReturn($currency);
 
         return $currencyManager;
     }

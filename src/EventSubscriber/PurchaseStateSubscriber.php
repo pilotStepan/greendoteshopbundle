@@ -17,6 +17,7 @@ use Symfony\Component\Workflow\Event\CompletedEvent;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Component\Workflow\Event\TransitionEvent;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Greendot\EshopBundle\DataLayer\Event\PurchaseEvent;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
@@ -40,6 +41,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private WorkflowInterface        $purchaseWorkflow,
         private PaymentActionLogger      $paymentActionLogger,
         private PaymentRepository        $paymentRepository,
+        private CurrencyManager          $currencyManager,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -177,8 +179,15 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $paymentTechnicalActionValue = $event->getContext()['payment_technical_action'] ?? null;
         $paymentTechnicalAction = is_string($paymentTechnicalActionValue) ? PaymentTechnicalAction::tryFrom($paymentTechnicalActionValue) : null;
         if ($paymentTechnicalAction) {
-            $paymentType = $this->entityManager->getRepository(PaymentType::class)->findOneBy(['paymentTechnicalAction' => $paymentTechnicalAction]);
-            $purchase->setPaymentType($paymentType);
+            $currency = $this->currencyManager->getForPurchase($purchase);
+            $criteria = [
+                'paymentTechnicalAction' => $paymentTechnicalAction,
+                'currency' => $currency,
+            ];
+            $paymentType = $this->entityManager->getRepository(PaymentType::class)->findOneBy($criteria);
+            if ($paymentType !== null) {
+                $purchase->setPaymentType($paymentType);
+            }
         }
 
         $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_PAID);

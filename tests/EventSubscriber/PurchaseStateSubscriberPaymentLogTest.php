@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Service\CurrencyManager;
@@ -36,6 +37,8 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
     private MockObject $entityManager;
     private RecordingPaymentActionLogger $paymentActionLogger;
     private MockObject $paymentRepository;
+    private MockObject $currencyManager;
+    private Currency $defaultCurrency;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void
@@ -43,6 +46,15 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->paymentActionLogger = new RecordingPaymentActionLogger();
         $this->paymentRepository = $this->createMock(PaymentRepository::class);
+
+        // Mirrors CurrencyManager::getForPurchase()'s real fallback chain, without
+        // needing a session/repository: purchase's own payment-type currency, or
+        // this test's shared "default currency" instance.
+        $this->defaultCurrency = new Currency();
+        $this->currencyManager = $this->createMock(CurrencyManager::class);
+        $this->currencyManager->method('getForPurchase')->willReturnCallback(
+            fn (Purchase $purchase) => $purchase->getPaymentType()?->getCurrency() ?? $this->defaultCurrency
+        );
 
         $this->subscriber = new PurchaseStateSubscriber(
             $this->entityManager,
@@ -54,6 +66,7 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
             $this->createMock(WorkflowInterface::class),
             $this->paymentActionLogger,
             $this->paymentRepository,
+            $this->currencyManager,
         );
     }
 
@@ -179,7 +192,10 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
         $paymentTypeRepository->expects($this->once())
             ->method('findOneBy')
-            ->with(['paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS])
+            ->with([
+                'paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS,
+                'currency' => $this->defaultCurrency,
+            ])
             ->willReturn($matchingPaymentType);
         $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
 
@@ -192,6 +208,115 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $this->subscriber->onPayment($event);
 
         $this->assertTrue($purchase->isPaid());
+        $this->assertSame($matchingPaymentType, $purchase->getPaymentType());
+    }
+
+    /**
+     * Regression test: PaymentType rows come in same-technical-action pairs
+     * (e.g. a CZK "(CZ)" row and a EUR "(SK)" row for the same gateway). A
+     * currency-blind findOneBy() would silently flip a EUR purchase's payment
+     * type — and therefore its currency, IBAN and locale — to the CZK sibling
+     * on gateway return. The lookup must be constrained to the purchase's own
+     * currency whenever a payment type is already attached.
+     */
+    public function testOnPaymentKeepsPurchaseCurrencyWhenResolvingTechnicalAction(): void
+    {
+        $eur = new Currency();
+        $existingEurPaymentType = new PaymentType();
+        $existingEurPaymentType->setCurrency($eur);
+
+        $purchase = new Purchase();
+        $purchase->setPaymentType($existingEurPaymentType);
+
+        $matchingEurPaymentType = new PaymentType();
+        $matchingEurPaymentType->setCurrency($eur);
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->expects($this->once())
+            ->method('findOneBy')
+            ->with([
+                'paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS,
+                'currency' => $eur,
+            ])
+            ->willReturn($matchingEurPaymentType);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertSame($matchingEurPaymentType, $purchase->getPaymentType());
+        $this->assertSame($eur, $purchase->getPaymentType()->getCurrency());
+    }
+
+    /**
+     * If no payment type exists for the purchase's own currency (e.g. data gap),
+     * the customer's already-attached payment type must be left untouched rather
+     * than overwritten with null or with a wrong-currency sibling.
+     */
+    public function testOnPaymentLeavesPaymentTypeUntouchedWhenNoMatchInPurchaseCurrency(): void
+    {
+        $eur = new Currency();
+        $existingEurPaymentType = new PaymentType();
+        $existingEurPaymentType->setCurrency($eur);
+
+        $purchase = new Purchase();
+        $purchase->setPaymentType($existingEurPaymentType);
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->expects($this->once())
+            ->method('findOneBy')
+            ->with([
+                'paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS,
+                'currency' => $eur,
+            ])
+            ->willReturn(null);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertSame($existingEurPaymentType, $purchase->getPaymentType(), 'Payment type must be left untouched when nothing matches the purchase currency');
+    }
+
+    /**
+     * Regression test: legacy PaymentType rows predate the currency column and
+     * have currency = null. The currency constraint must never be dropped from
+     * the lookup criteria in that case (that would resurrect the currency-blind
+     * bug above) - it must fall back to the purchase's resolved default currency.
+     */
+    public function testOnPaymentConstrainsByDefaultCurrencyWhenPaymentTypeCurrencyIsMissing(): void
+    {
+        $existingPaymentTypeWithoutCurrency = new PaymentType();
+        // currency intentionally left unset (legacy row)
+
+        $purchase = new Purchase();
+        $purchase->setPaymentType($existingPaymentTypeWithoutCurrency);
+
+        $matchingPaymentType = new PaymentType();
+        $matchingPaymentType->setCurrency($this->defaultCurrency);
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->expects($this->once())
+            ->method('findOneBy')
+            ->with([
+                'paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS,
+                'currency' => $this->defaultCurrency,
+            ])
+            ->willReturn($matchingPaymentType);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+        ]);
+
+        $this->subscriber->onPayment($event);
+
         $this->assertSame($matchingPaymentType, $purchase->getPaymentType());
     }
 

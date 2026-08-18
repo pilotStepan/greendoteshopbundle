@@ -37,7 +37,7 @@ class QRcodeGenerator
         $this->managePurchase->preparePrices($purchase);
 
         $now = new \DateTimeImmutable('now');
-        $currency = $this->currencyManager->get();
+        $currency = $this->currencyManager->getForPurchase($purchase);
 
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($purchase->getTotalPrice(), 2, '.', '') .

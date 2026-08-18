@@ -128,6 +128,11 @@ class PaymentType implements Translatable
     #[ORM\Column(nullable: true)]
     private ?array $exportNames = null;
 
+    #[ORM\ManyToOne(targetEntity: Currency::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['payment:read', 'payment:write'])]
+    private ?Currency $currency = null;
+
     public function __construct()
     {
         $this->purchases = new ArrayCollection();
@@ -456,6 +461,18 @@ class PaymentType implements Translatable
     public function setExportNames(?array $exportNames): static
     {
         $this->exportNames = $exportNames;
+
+        return $this;
+    }
+
+    public function getCurrency(): ?Currency
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?Currency $currency): static
+    {
+        $this->currency = $currency;
 
         return $this;
     }

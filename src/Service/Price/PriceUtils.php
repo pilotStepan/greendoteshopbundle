@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
+use Greendot\EshopBundle\Service\Price\Exception\MissingConversionRateException;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 class PriceUtils
@@ -60,8 +61,11 @@ class PriceUtils
 
         $conversionRate = $this->conversionRateRepository->getByDate($currency, $date);
 
-        //TODO: Is there a better way to do this? So its fail-safe
-        if (!$conversionRate){
+        if (!$conversionRate) {
+            if (!$currency->isIsDefault()) {
+                throw new MissingConversionRateException($currency, $date);
+            }
+
             $conversionRate = new ConversionRate();
             $conversionRate->setCurrency($currency);
             $conversionRate->setRate(1);
