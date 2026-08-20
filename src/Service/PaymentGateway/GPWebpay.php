@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Service\PaymentGateway;
 
+use DateTime;
 use Throwable;
 use Alcohol\ISO4217;
 use Psr\Log\LoggerInterface;
@@ -9,6 +10,8 @@ use Granam\GpWebPay\Settings;
 use Granam\GpWebPay\DigestSigner;
 use Granam\GpWebPay\CardPayRequest;
 use Granam\GpWebPay\CardPayResponse;
+use Granam\GpWebPay\Exceptions\GpWebPayErrorResponse;
+use Granam\GpWebPay\Exceptions\GpWebPayErrorByCustomerResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use Granam\GpWebPay\Codes\CurrencyCodes;
 use Granam\GpWebPay\CardPayRequestValues;
@@ -68,7 +71,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
         ]);
 
         $payment = new Payment();
-        $payment->setDate(new \DateTime());
+        $payment->setDate(new DateTime());
         $payment->setPurchase($purchase);
         $payment->setExternalId(1);
 
@@ -138,11 +141,25 @@ readonly class GPWebpay implements PaymentGatewayInterface
     {
         try {
             $settings = $this->createSettings();
-
-            $currencyCodes = new CurrencyCodes(new ISO4217());
             $digestSigner = new DigestSigner($settings);
 
             return CardPayResponse::createFromArray($_GET, $settings, $digestSigner);
+        } catch (GpWebPayErrorByCustomerResponse $e) {
+            $this->logger->info('GPW reported a customer-caused payment outcome', [
+                'error' => $e->getMessage(),
+                'prCode' => $e->getPrCode(),
+                'srCode' => $e->getSrCode(),
+                'request' => $_GET,
+            ]);
+            throw $e;
+        } catch (GpWebPayErrorResponse $e) {
+            $this->logger->error('GPW rejected the request due to a merchant/integration error', [
+                'error' => $e->getMessage(),
+                'prCode' => $e->getPrCode(),
+                'srCode' => $e->getSrCode(),
+                'request' => $_GET,
+            ]);
+            throw $e;
         } catch (Throwable $e) {
             $this->logger->error('GPW failed to verify payment link', [
                 'error' => $e->getMessage(),
