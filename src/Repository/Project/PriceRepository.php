@@ -12,6 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\ORM\QueryBuilder;
 use Greendot\EshopBundle\Entity\Project\Category;
+use Greendot\EshopBundle\Entity\Project\Event;
 use Greendot\EshopBundle\Enum\DiscountAmountType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
@@ -201,6 +202,41 @@ public function findCheapestPricesForProducts(array $productIds): array
                 }
             }
 
+        }
+
+        return $result;
+    }
+
+    public function findPriceByDateAndEvent(Event $event, \DateTime $date): array
+    {
+        $qb = $this->createQueryBuilder('p');
+        $qb
+            ->andWhere('p.event = :event')
+            ->setParameter('event', $event)
+            ->andWhere('p.validFrom <= :date')
+            ->setParameter('date', $date)
+            ->andWhere(
+                $qb->expr()->orX(
+                    'p.validUntil >= :date',
+                    'p.validUntil IS NULL'
+                )
+            )
+            ->addOrderBy('p.price', 'ASC')
+            ->addOrderBy('p.discount', 'DESC');
+
+        $prices = $qb->getQuery()->getResult();
+        $result = [];
+
+        foreach ($prices as $price) {
+            assert($price instanceof Price);
+            $isDiscounted = $price->getDiscount() > 0;
+
+            if ($isDiscounted and !isset($result['discounted'])) {
+                $result['discounted'] = $price;
+            }
+            if (!$isDiscounted and !isset($result['price'])) {
+                $result['price'] = $price;
+            }
         }
 
         return $result;

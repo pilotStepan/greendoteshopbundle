@@ -62,6 +62,9 @@ class Parameter implements Translatable
     #[ORM\ManyToOne(inversedBy: 'parameters')]
     private ?Person $person = null;
 
+    #[ORM\ManyToOne(inversedBy: 'parameters')]
+    private ?Event $event = null;
+
     #[Groups(['product_item:read'])]
     #[ORM\Column(nullable: true)]
     private ?int $sequence = null;
@@ -144,6 +147,18 @@ class Parameter implements Translatable
     public function setPerson(?Person $person): self
     {
         $this->person = $person;
+
+        return $this;
+    }
+
+    public function getEvent(): ?Event
+    {
+        return $this->event;
+    }
+
+    public function setEvent(?Event $event): self
+    {
+        $this->event = $event;
 
         return $this;
     }
