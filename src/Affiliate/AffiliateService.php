@@ -39,7 +39,7 @@ readonly class AffiliateService
         $request = $this->requestStack->getCurrentRequest();
         if ($request) {
             $affiliateId = $request->cookies->get('affiliate_id');
-            $adId = $request->cookies->get('ad_id');
+            $adId = $request->cookies->has('ad_id') ? (int)$request->cookies->get('ad_id') : null;
             $this->logger->info('Affiliate: assigning cookies to purchase.', [
                 'purchaseId' => $purchase->getId(),
                 'affiliateIdCookie' => $affiliateId,
@@ -62,9 +62,9 @@ readonly class AffiliateService
         $request = $event->getRequest();
         $response = $event->getResponse();
 
-        if ($request->query->has('aff') && $request->query->has('rek')) {
+        if ($request->query->has('aff')) {
             $affiliateId = $request->query->get('aff');
-            $adId = (int)$request->query->get('rek');
+            $adId = (int)$request->query->get('rek', 0);
             $cookieLifetime = 2592000; // 30 days in seconds
 
             $this->logger->info('Affiliate: aff/rek params seen, setting cookies.', [
@@ -103,7 +103,7 @@ readonly class AffiliateService
             'datum' => $now->getTimestamp(),
             'FK_idklient' => $purchase->getAffiliateId(),
             'FK_idvybery' => null,
-            'FK_idreklama' => $purchase->getAdId(),
+            'FK_idreklama' => $purchase->getAdId() ?? 0,
             'referer' => null,
             'datetime' => $now->format('Y-m-d H:i:s'),
         ];
@@ -182,6 +182,6 @@ readonly class AffiliateService
 
     private function purchaseIsAffiliate(Purchase $purchase): bool
     {
-        return $purchase->getAffiliateId() and $purchase->getAdId();
+        return (bool)$purchase->getAffiliateId();
     }
 }
