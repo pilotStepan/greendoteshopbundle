@@ -170,6 +170,42 @@ class UploadRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @param int[] $productIds
+     * @return array<int, list<array{id: int, path: string}>> keyed by product id, sequence-ordered
+     */
+    public function findListingImagePathsForProducts(array $productIds): array
+    {
+        if ($productIds === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('u')
+            ->select('COALESCE(p.id, pvp.id) AS productId', 'u.id AS uploadId', 'u.path AS path')
+            ->innerJoin('u.uploadGroup', 'ug')
+            ->leftJoin('ug.productUploadGroups', 'pug')
+            ->leftJoin('pug.Product', 'p')
+            ->leftJoin('ug.productVariantUploadGroups', 'pvug')
+            ->leftJoin('pvug.ProductVariant', 'pv')
+            ->leftJoin('pv.product', 'pvp')
+            ->andWhere('(p.id IN (:ids) OR pvp.id IN (:ids))')
+            ->andWhere('ug.type = :type')
+            ->setParameter('ids', $productIds)
+            ->setParameter('type', UploadGroupTypeEnum::IMAGE)
+            ->orderBy('u.sequence', 'ASC')
+            ->addOrderBy('u.id', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $productId = (int)$row['productId'];
+            $result[$productId][] = ['id' => (int)$row['uploadId'], 'path' => $row['path']];
+        }
+
+        return $result;
+    }
+
     public function findFirstImageUploadForProduct(Product $product, UploadGroupTypeEnum $type): ?Upload
     {
         return $this->createQueryBuilder('u')

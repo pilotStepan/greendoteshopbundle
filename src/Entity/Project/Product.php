@@ -210,6 +210,9 @@ class Product implements Translatable, PageableInterface
     #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'search_result', 'comment:read'])]
     private ?string $imagePath = null;
 
+    #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'search_result', 'comment:read'])]
+    private array $imagePaths = [];
+
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductParameterGroup::class)]
     #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'purchase:read'])]
     private Collection $productParameterGroups;
@@ -686,6 +689,17 @@ class Product implements Translatable, PageableInterface
     public function setImagePath(?string $imagePath): self
     {
         $this->imagePath = $imagePath;
+        return $this;
+    }
+
+    public function getImagePaths(): array
+    {
+        return $this->imagePaths;
+    }
+
+    public function setImagePaths(array $imagePaths): self
+    {
+        $this->imagePaths = $imagePaths;
         return $this;
     }
 
