@@ -49,7 +49,7 @@ class Price
     #[ORM\JoinColumn(nullable: true)]
     private ?ProductVariant $productVariant = null;
 
-    #[ORM\ManyToOne(inversedBy: 'price')]
+    #[ORM\ManyToOne(inversedBy: 'prices')]
     private ?Event $event = null;
 
 
