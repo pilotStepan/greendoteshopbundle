@@ -12,19 +12,20 @@ use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ListenerManager;
+use Greendot\EshopBundle\Service\SizeParameterValueSequencer;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class FilteredParametersStateProvider implements ProviderInterface
 {
     public function __construct(
-        private ParameterRepository     $parameterRepository,
-        private PriceRepository         $priceRepository,
-        private EntityManagerInterface  $em,
-        private ListenerManager         $listenerManager,
-        private ParameterBagInterface   $parameterBag,
-        private CurrencyManager         $currencyManager,
-    ) {
-    }
+        private ParameterRepository         $parameterRepository,
+        private PriceRepository             $priceRepository,
+        private EntityManagerInterface      $em,
+        private ListenerManager             $listenerManager,
+        private ParameterBagInterface       $parameterBag,
+        private CurrencyManager             $currencyManager,
+        private SizeParameterValueSequencer $parameterValueSequencer,
+    ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
@@ -89,7 +90,8 @@ class FilteredParametersStateProvider implements ProviderInterface
                 ['data' => $priceMinMax['priceMax'], 'parameterGroup' => $priceVirtualParamGroup]
             ];
         }
-        $parameters = array_merge($parameters, array_map(fn($row) => $row[0], $results));
+        $parameterEntities = $this->parameterValueSequencer->sort(array_map(static fn($row) => $row[0], $results));
+        $parameters = array_merge($parameters, $parameterEntities);
 
        
         return $parameters;
