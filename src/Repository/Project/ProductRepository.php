@@ -22,7 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Availability;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Translation\LocaleSwitcher;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -43,10 +43,10 @@ class ProductRepository extends HintedRepositoryBase
         private readonly CategoryInfoGetter     $categoryInfoGetter,
         private readonly PriceRepository        $priceRepository,
         private readonly ParameterBagInterface  $parameterBag,
-        RequestStack $requestStack
+        LocaleSwitcher $localeSwitcher
     )
     {
-        parent::__construct($registry, Product::class, $requestStack);
+        parent::__construct($registry, Product::class, $localeSwitcher);
     }
 
     public function findProductUploadSubstitute(Product $product): ?Upload

@@ -8,16 +8,16 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Translation\LocaleSwitcher;
 
 abstract class HintedRepositoryBase extends ServiceEntityRepository
 {
-    private RequestStack $requestStack;
+    private LocaleSwitcher $localeSwitcher;
 
-    public function __construct(ManagerRegistry $registry, $entityClass, RequestStack $requestStack)
+    public function __construct(ManagerRegistry $registry, $entityClass, LocaleSwitcher $localeSwitcher)
     {
         parent::__construct($registry, $entityClass);
-        $this->requestStack = $requestStack;
+        $this->localeSwitcher = $localeSwitcher;
     }
 
     final public function findHinted(int $id): ?object
@@ -35,7 +35,7 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         $stringCriteria = array_filter($criteria, static fn($v) => is_string($v) && $v !== '');
 
         if (count($stringCriteria) === 1) {
-            $locale = $this->requestStack->getCurrentRequest()?->getLocale();
+            $locale = $this->localeSwitcher->getLocale();
 
             if ($locale) {
                 $field = array_key_first($stringCriteria);
@@ -149,16 +149,11 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
 
     final public function hintQuery(Query $query): Query
     {
-        $locale = $this->requestStack->getCurrentRequest()->getLocale();
-
         $query->setHint(
             Query::HINT_CUSTOM_OUTPUT_WALKER,
             'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker'
         );
-
-        if ($locale){
-            $query->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $locale);
-        }
+        $query->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, $this->localeSwitcher->getLocale());
 
         return $query;
     }

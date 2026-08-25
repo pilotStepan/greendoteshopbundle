@@ -5,7 +5,7 @@ namespace Greendot\EshopBundle\Repository\Project;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Label;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Translation\LocaleSwitcher;
 
 /**
  * @method Label|null find($id, $lockMode = null, $lockVersion = null)
@@ -15,8 +15,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class LabelRepository extends HintedRepositoryBase
 {
-    public function __construct(ManagerRegistry $registry, RequestStack $requestStack)
+    public function __construct(ManagerRegistry $registry, LocaleSwitcher $localeSwitcher)
     {
-        parent::__construct($registry, Label::class, $requestStack);
+        parent::__construct($registry, Label::class, $localeSwitcher);
     }
 }
