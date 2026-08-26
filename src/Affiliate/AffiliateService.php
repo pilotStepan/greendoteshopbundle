@@ -32,13 +32,23 @@ readonly class AffiliateService
     public function setAffiliateToPurchase(Purchase $purchase): void
     {
         if (!$this->isAffiliate()) {
+            $this->logger->info('Affiliate: setAffiliateToPurchase skipped, no affiliate connection.', ['purchaseId' => $purchase->getId()]);
             return;
         }
 
         $request = $this->requestStack->getCurrentRequest();
         if ($request) {
-            $purchase->setAffiliateId($request->cookies->get('affiliate_id'));
-            $purchase->setAdId($request->cookies->get('ad_id'));
+            $affiliateId = $request->cookies->get('affiliate_id');
+            $adId = $request->cookies->has('ad_id') ? (int)$request->cookies->get('ad_id') : null;
+            $this->logger->info('Affiliate: assigning cookies to purchase.', [
+                'purchaseId' => $purchase->getId(),
+                'affiliateIdCookie' => $affiliateId,
+                'adIdCookie' => $adId,
+            ]);
+            $purchase->setAffiliateId($affiliateId);
+            $purchase->setAdId($adId);
+        } else {
+            $this->logger->info('Affiliate: no current request, cannot read cookies.', ['purchaseId' => $purchase->getId()]);
         }
     }
 
@@ -52,10 +62,16 @@ readonly class AffiliateService
         $request = $event->getRequest();
         $response = $event->getResponse();
 
-        if ($request->query->has('aff') && $request->query->has('rek')) {
+        if ($request->query->has('aff')) {
             $affiliateId = $request->query->get('aff');
-            $adId = (int)$request->query->get('rek');
+            $adId = (int)$request->query->get('rek', 0);
             $cookieLifetime = 2592000; // 30 days in seconds
+
+            $this->logger->info('Affiliate: aff/rek params seen, setting cookies.', [
+                'path' => $request->getPathInfo(),
+                'aff' => $affiliateId,
+                'rek' => $adId,
+            ]);
 
             $response->headers->setCookie(
                 new Cookie('affiliate_id', $affiliateId, time() + $cookieLifetime, '/', null, false, true),
@@ -87,7 +103,7 @@ readonly class AffiliateService
             'datum' => $now->getTimestamp(),
             'FK_idklient' => $purchase->getAffiliateId(),
             'FK_idvybery' => null,
-            'FK_idreklama' => $purchase->getAdId(),
+            'FK_idreklama' => $purchase->getAdId() ?? 0,
             'referer' => null,
             'datetime' => $now->format('Y-m-d H:i:s'),
         ];
@@ -111,9 +127,23 @@ readonly class AffiliateService
 
     public function dispatchCreateAffiliateEntryMessage(Purchase $purchase): void
     {
-        if (!$this->isAffiliate() || !$this->purchaseIsAffiliate($purchase) || $this->affiliateEntryExists($purchase)) {
+        $hasConnection = $this->isAffiliate();
+        $hasAffiliateData = $hasConnection && $this->purchaseIsAffiliate($purchase);
+        $entryExists = $hasAffiliateData && $this->affiliateEntryExists($purchase);
+
+        if (!$hasConnection || !$hasAffiliateData || $entryExists) {
+            $this->logger->info('Affiliate: dispatchCreateAffiliateEntryMessage skipped.', [
+                'purchaseId' => $purchase->getId(),
+                'hasConnection' => $hasConnection,
+                'affiliateId' => $purchase->getAffiliateId(),
+                'adId' => $purchase->getAdId(),
+                'hasAffiliateData' => $hasAffiliateData,
+                'entryExists' => $entryExists,
+            ]);
             return;
         }
+
+        $this->logger->info('Affiliate: dispatching CreateAffiliateEntry message.', ['purchaseId' => $purchase->getId()]);
 
         $this->messageBus->dispatch(
             new CreateAffiliateEntry(
@@ -152,6 +182,6 @@ readonly class AffiliateService
 
     private function purchaseIsAffiliate(Purchase $purchase): bool
     {
-        return $purchase->getAffiliateId() and $purchase->getAdId();
+        return (bool)$purchase->getAffiliateId();
     }
 }

@@ -4,11 +4,10 @@ namespace Greendot\EshopBundle\Repository\Project;
 
 use Greendot\EshopBundle\Entity\Project\Category;
 use Greendot\EshopBundle\Entity\Project\Producer;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Translation\LocaleSwitcher;
 
 /**
  * @method Producer|null find($id, $lockMode = null, $lockVersion = null)
@@ -18,9 +17,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class ProducerRepository extends HintedRepositoryBase
 {
-    public function __construct(ManagerRegistry $registry, RequestStack $requestStack)
+    public function __construct(ManagerRegistry $registry, LocaleSwitcher $localeSwitcher)
     {
-        parent::__construct($registry, Producer::class, $requestStack);
+        parent::__construct($registry, Producer::class, $localeSwitcher);
     }
 
     public function findByCategory(QueryBuilder $queryBuilder, int|array $categories): QueryBuilder

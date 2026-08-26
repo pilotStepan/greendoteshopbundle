@@ -19,6 +19,8 @@ use Greendot\EshopBundle\EventSubscriber\ProductVariantEventListener;
 use Greendot\EshopBundle\Repository\Project\AvailabilityRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Repository\Project\UploadRepository;
+use Greendot\EshopBundle\Entity\Project\Product;
 use Symfony\Component\HttpFoundation\Response;
 
 readonly class ProductStateProvider implements ProviderInterface
@@ -32,6 +34,7 @@ readonly class ProductStateProvider implements ProviderInterface
         private AvailabilityRepository  $availabilityRepository,
         private ParameterRepository     $parameterRepository,
         private PriceRepository         $priceRepository,
+        private UploadRepository        $uploadRepository,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
@@ -93,14 +96,16 @@ readonly class ProductStateProvider implements ProviderInterface
         $cheapestPriceMap = $this->priceRepository->findCheapestPricesForProducts($productIds);
         $availabilityMap = $this->availabilityRepository->getAvailabilityForProductIds($productIds);
         $parametersMap = $this->parameterRepository->calculateParametersForProductIds($productIds);
+        $imagePathsMap = $this->uploadRepository->findListingImagePathsForProducts($productIds);
 
 
         foreach ($products as $product) {
             $productId = $product->getId();
             if (array_key_exists($productId,$cheapestPriceMap)) $this->calculatedPricesService->makeCalculatedPricesForProduct(product: $product, context: $context, cheapestPrice: $cheapestPriceMap[$productId]);
             if (array_key_exists($productId, $availabilityMap)) $product->setAvailability($availabilityMap[$productId]);
-            if (array_key_exists($productId, $parametersMap))   $product->setParameters($parametersMap[$productId]);  
+            if (array_key_exists($productId, $parametersMap))   $product->setParameters($parametersMap[$productId]);
             $product->setCurrencySymbol($currency->getSymbol());
+            $product->setImagePaths($this->pickListingImagePaths($imagePathsMap[$productId] ?? [], $product));
         }
 
         $products = new \ArrayIterator($products);
@@ -110,6 +115,27 @@ readonly class ProductStateProvider implements ProviderInterface
             currentPage: $offset,
             itemsPerPage: $limit,
             totalItems: $totalItems
+        );
+    }
+
+    /**
+     * @param list<array{id: int, path: string}> $imageRows sequence-ordered rows for this product
+     */
+    private function pickListingImagePaths(array $imageRows, Product $product): array
+    {
+        if ($imageRows === []) {
+            return [];
+        }
+
+        $mainUploadId = $product->getUpload()?->getId();
+
+        usort($imageRows, static function (array $a, array $b) use ($mainUploadId): int {
+            return ($b['id'] === $mainUploadId ? 1 : 0) <=> ($a['id'] === $mainUploadId ? 1 : 0);
+        });
+
+        return array_map(
+            static fn(array $row) => $row['path'],
+            array_slice($imageRows, 0, 2)
         );
     }
 }

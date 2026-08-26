@@ -21,6 +21,8 @@ class ParameterType
     #[ORM\ManyToMany(targetEntity: Parameter::class, inversedBy: 'parameterTypes')]
     private Collection $parameters;
 
+    #[ORM\Column]
+    private ?int $sequence = null;
     public function __construct()
     {
         $this->parameters = new ArrayCollection();
@@ -63,6 +65,18 @@ class ParameterType
     public function removeParameter(Parameter $parameter): static
     {
         $this->parameters->removeElement($parameter);
+
+        return $this;
+    }
+
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(int $sequence): static
+    {
+        $this->sequence = $sequence;
 
         return $this;
     }

@@ -108,6 +108,9 @@ class Person implements Translatable
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: ProductPerson::class)]
     private Collection $productPeople;
 
+    #[ORM\OneToMany(mappedBy: 'person', targetEntity: EventPerson::class)]
+    private Collection $events;
+
     #[ORM\ManyToOne(inversedBy: 'people')]
     #[Groups(['person:read'])]
     private ?Upload $upload = null;
@@ -126,6 +129,7 @@ class Person implements Translatable
         $this->category = new ArrayCollection();
         $this->personUploadGroups = new ArrayCollection();
         $this->productPeople = new ArrayCollection();
+        $this->events = new ArrayCollection();
 
         $this->setFullName();
     }
@@ -404,6 +408,35 @@ class Person implements Translatable
             // set the owning side to null (unless already changed)
             if ($productPerson->getPerson() === $this) {
                 $productPerson->setPerson(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, EventPerson>
+     */
+    public function getEvents(): Collection
+    {
+        return $this->events;
+    }
+
+    public function addEvent(EventPerson $event): static
+    {
+        if (!$this->events->contains($event)) {
+            $this->events->add($event);
+            $event->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEvent(EventPerson $event): static
+    {
+        if ($this->events->removeElement($event)) {
+            if ($event->getPerson() === $this) {
+                $event->setPerson(null);
             }
         }
 

@@ -72,7 +72,7 @@ class Event implements Translatable
 
     #[ORM\OneToMany(mappedBy: "event", targetEntity: Price::class)]
     #[Groups(['event:read', 'event:write'])]
-    private ?Price $price = null;
+    private Collection $prices;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $state = null;
@@ -99,6 +99,15 @@ class Event implements Translatable
     #[ORM\OneToMany(mappedBy: "Event", targetEntity: EventUploadGroup::class)]
     private Collection $eventUploadGroups;
 
+    #[ORM\ManyToOne(inversedBy: 'events')]
+    private ?Upload $upload = null;
+
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: EventPerson::class)]
+    private Collection $people;
+
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Parameter::class)]
+    private Collection $parameters;
+
     #[Gedmo\Locale]
     private $locale;
 
@@ -107,6 +116,9 @@ class Event implements Translatable
         $this->categories = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
         $this->eventUploadGroups = new ArrayCollection();
+        $this->prices = new ArrayCollection();
+        $this->people = new ArrayCollection();
+        $this->parameters = new ArrayCollection();
     }
 
     public function setTranslatableLocale($locale): void
@@ -191,14 +203,31 @@ class Event implements Translatable
         return $this;
     }
 
-    public function getPrice(): ?Price
+    /**
+     * @return Collection<int, Price>
+     */
+    public function getPrices(): Collection
     {
-        return $this->price;
+        return $this->prices;
     }
 
-    public function setPrice(?Price $price): self
+    public function addPrice(Price $price): self
     {
-        $this->price = $price;
+        if (!$this->prices->contains($price)) {
+            $this->prices->add($price);
+            $price->setEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removePrice(Price $price): self
+    {
+        if ($this->prices->removeElement($price)) {
+            if ($price->getEvent() === $this) {
+                $price->setEvent(null);
+            }
+        }
 
         return $this;
     }
@@ -337,6 +366,75 @@ class Event implements Translatable
         if (!$this->eventUploadGroups->contains($eventUploadGroup)) {
             $this->eventUploadGroups->add($eventUploadGroup);
             $eventUploadGroup->setEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function getUpload(): ?Upload
+    {
+        return $this->upload;
+    }
+
+    public function setUpload(?Upload $upload): self
+    {
+        $this->upload = $upload;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, EventPerson>
+     */
+    public function getPeople(): Collection
+    {
+        return $this->people;
+    }
+
+    public function addPerson(EventPerson $person): self
+    {
+        if (!$this->people->contains($person)) {
+            $this->people->add($person);
+            $person->setEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removePerson(EventPerson $person): self
+    {
+        if ($this->people->removeElement($person)) {
+            if ($person->getEvent() === $this) {
+                $person->setEvent(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Parameter>
+     */
+    public function getParameters(): Collection
+    {
+        return $this->parameters;
+    }
+
+    public function addParameter(Parameter $parameter): self
+    {
+        if (!$this->parameters->contains($parameter)) {
+            $this->parameters->add($parameter);
+            $parameter->setEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParameter(Parameter $parameter): self
+    {
+        if ($this->parameters->removeElement($parameter)) {
+            if ($parameter->getEvent() === $this) {
+                $parameter->setEvent(null);
+            }
         }
 
         return $this;

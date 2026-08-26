@@ -118,6 +118,9 @@ class Upload implements Translatable
     #[ORM\OneToMany(mappedBy: 'upload', targetEntity: Category::class)]
     private Collection $categories;
 
+    #[ORM\OneToMany(mappedBy: 'upload', targetEntity: Event::class)]
+    private Collection $events;
+
     /**
      * @var Collection<int, Person>
      */
@@ -149,6 +152,7 @@ class Upload implements Translatable
         $this->categories = new ArrayCollection();
         $this->people = new ArrayCollection();
         $this->informationBlocks = new ArrayCollection();
+        $this->events = new ArrayCollection();
     }
 
     public function setTranslatableLocale($locale): void
@@ -540,6 +544,30 @@ class Upload implements Translatable
             }
         }
 
+        return $this;
+    }
+
+    public function getEvents(): Collection
+    {
+        return $this->events;
+    }
+
+    public function addEvent(Event $event): self
+    {
+        if (!$this->events->contains($event)){
+            $this->events->add($event);
+            $event->setUpload($this);
+        }
+        return $this;
+    }
+
+    public function removeEvent(Event $event): self
+    {
+        if ($this->events->removeElement($event)){
+           if ($event->getUpload() === $this){
+               $event->setUpload(null);
+           }
+        }
         return $this;
     }
 }

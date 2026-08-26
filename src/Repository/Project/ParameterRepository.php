@@ -12,21 +12,20 @@ use Greendot\EshopBundle\Entity\Project\ParameterGroupType;
 use Greendot\EshopBundle\Entity\Project\Person;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Greendot\EshopBundle\Repository\Utils\SafeJoin;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Translation\LocaleSwitcher;
 
 /**
- * @extends ServiceEntityRepository<Parameter>
- *
  * @method Parameter|null find($id, $lockMode = null, $lockVersion = null)
  * @method Parameter|null findOneBy(array $criteria, array $orderBy = null)
  * @method Parameter[]    findAll()
  * @method Parameter[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ParameterRepository extends ServiceEntityRepository
+class ParameterRepository extends HintedRepositoryBase
 {
     use SafeJoin;
 
@@ -34,10 +33,11 @@ class ParameterRepository extends ServiceEntityRepository
         ManagerRegistry                  $registry,
         private CategoryInfoGetter       $categoryInfoGetter,
         private CategoryRepository       $categoryRepository,
-        private ParameterGroupRepository $parameterGroupRepository
+        private ParameterGroupRepository $parameterGroupRepository,
+        LocaleSwitcher                   $localeSwitcher
     )
     {
-        parent::__construct($registry, Parameter::class);
+        parent::__construct($registry, Parameter::class, $localeSwitcher);
     }
 
     public function findAvailableParametersByColorOrSize($productId, $color = null, $size = null)
@@ -480,7 +480,7 @@ class ParameterRepository extends ServiceEntityRepository
             }
         }
 
-        $data = $qb->getQuery()->getResult();
+        $data = $this->hintQuery($qb->getQuery())->getResult();
 
         $result = [];
         foreach ($data as $item){

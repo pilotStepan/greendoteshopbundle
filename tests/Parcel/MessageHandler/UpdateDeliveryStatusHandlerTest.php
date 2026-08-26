@@ -282,11 +282,36 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
 
         $dto = new ParcelStatusInfoDto(ParcelDeliveryStateEnum::DELIVERED);
         $this->provider->method('getByPurchase')->willReturn($this->makeService($dto));
-        $this->workflow->method('can')->willReturn(true);
+        $this->workflow->method('can')->willReturnCallback(
+            static fn($p, string $transition) => $transition === PWC::T_LOG_DELIVER->value
+        );
 
         $this->workflow->expects($this->once())->method('apply')
             ->with($purchase, PWC::T_LOG_DELIVER->value);
         ($this->handler)($this->makeMsg());
+    }
+
+    public function testDelivered_catchesUpLogSendWhenInTransitWasSkipped(): void
+    {
+        $purchase = $this->makePurchase();
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $this->eventRepo->method('findLatestByPurchase')->willReturn(null);
+
+        $dto = new ParcelStatusInfoDto(ParcelDeliveryStateEnum::DELIVERED);
+        $this->provider->method('getByPurchase')->willReturn($this->makeService($dto));
+        $this->workflow->method('can')->willReturn(true);
+
+        $applied = [];
+        $marking = $this->createMock(\Symfony\Component\Workflow\Marking::class);
+        $this->workflow->expects($this->exactly(2))->method('apply')
+            ->willReturnCallback(function ($p, $transition) use (&$applied, $purchase, $marking) {
+                $this->assertSame($purchase, $p);
+                $applied[] = $transition;
+                return $marking;
+            });
+        ($this->handler)($this->makeMsg());
+
+        $this->assertSame([PWC::T_LOG_SEND->value, PWC::T_LOG_DELIVER->value], $applied);
     }
 
     // --- Rescheduling ---
