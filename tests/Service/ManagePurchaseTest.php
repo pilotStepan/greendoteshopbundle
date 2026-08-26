@@ -30,6 +30,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -259,6 +260,7 @@ class ManagePurchaseTest extends TestCase
             $priceUtils,
             $serviceCalculationUtils,
             $settingsRepository,
+            $this->createMock(AdditionalPurchaseCostProvider::class),
         );
         $currencyManager = new CurrencyManager($requestStack, $currencyRepository);
         $manageVies = new ManageVies($logger);

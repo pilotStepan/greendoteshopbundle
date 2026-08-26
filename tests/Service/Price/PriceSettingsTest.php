@@ -14,6 +14,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
 use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
 use Greendot\EshopBundle\Enum\VoucherCalculationType as VouchCalc;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -104,6 +105,8 @@ class PriceSettingsTest extends PriceCalculationTestCase
     ): PurchasePrice
     {
         $conversionRate = $currency->getConversionRates()->first();
+        $additionalPurchaseCostProvider = $this->createMock(AdditionalPurchaseCostProvider::class);
+        $additionalPurchaseCostProvider->method('get')->willReturn([]);
 
         return new PurchasePrice(
             $purchase,
@@ -115,6 +118,7 @@ class PriceSettingsTest extends PriceCalculationTestCase
             $factory ?? $this->productVariantPriceFactory,
             $this->priceUtils,
             $this->serviceCalculationUtils,
+            $additionalPurchaseCostProvider,
             $settingsRepository,
         );
     }

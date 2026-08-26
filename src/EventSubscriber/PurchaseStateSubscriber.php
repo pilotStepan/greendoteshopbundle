@@ -25,6 +25,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
@@ -40,6 +41,7 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private WorkflowInterface        $purchaseWorkflow,
         private PaymentActionLogger      $paymentActionLogger,
         private PaymentRepository        $paymentRepository,
+        private AdditionalPurchaseCostProvider $additionalPurchaseCostProvider,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -159,6 +161,10 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         // transport data is generated on `log_prepare_to_ship` event instead
         // $this->managePurchase->generateTransportData($purchase);
         $this->dateService->calculatePurchaseDeliveryDate($purchase);
+
+        foreach ($this->additionalPurchaseCostProvider->getEntities($purchase) as $additionalPurchaseCost) {
+            $purchase->addAdditionalPurchaseCost($additionalPurchaseCost);
+        }
     }
 
     public function onPayment(TransitionEvent $event): void

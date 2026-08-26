@@ -17,6 +17,7 @@ use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostInterface;
 use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 class PurchasePrice
 {
@@ -61,7 +62,8 @@ class PurchasePrice
         private readonly PriceUtils                 $priceUtils,
         private readonly ServiceCalculationUtils    $serviceCalculationUtils,
         private readonly AdditionalPurchaseCostProvider $additionalPurchaseCostProvider,
-        SettingsRepository         $settingsRepository
+        SettingsRepository         $settingsRepository,
+        private readonly array $editablePurchasePlaces = [PWC::S_DRAFT->value, PWC::S_WISHLIST->value, PWC::S_CART->value],
     )
     {
         foreach ($this->purchase->getVouchersUsed() as $voucher) {
@@ -281,11 +283,14 @@ class PurchasePrice
         }
 
         /**
-         * On checkout - relationship between purchase & additionalPurchaseCosts is created
-         * While state of purchase is not readonly it is calculated dynamically
+         * On checkout - relationship between purchase & additionalPurchaseCosts is created.
+         * Checkout doesn't land the purchase on a single terminal place (it fans out into
+         * logistics/payment tracking places long before reaching "completed"), so instead of
+         * listing every post-checkout place, we treat anything other than the still-editable
+         * pre-checkout places as frozen. Mirrors PriceUtils::getConversionRate().
          */
 
-        if (false){ // TODO: add if readonly
+        if (!$this->purchase->hasAnyPlace(...$this->editablePurchasePlaces)){
             $this->additionalPurchaseCosts = $this->purchase->getAdditionalPurchaseCosts()->toArray();
         }else{
             $this->additionalPurchaseCosts = iterator_to_array($this->additionalPurchaseCostProvider->get($this->purchase));

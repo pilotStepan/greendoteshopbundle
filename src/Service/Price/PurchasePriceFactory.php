@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Enum\VoucherCalculationType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
+use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 class PurchasePriceFactory
 {
@@ -17,7 +18,8 @@ class PurchasePriceFactory
         private PriceUtils                 $priceUtils,
         private ServiceCalculationUtils    $serviceCalculationUtils,
         private SettingsRepository         $settingsRepository,
-        private AdditionalPurchaseCostProvider $additionalPurchaseCostProvider
+        private AdditionalPurchaseCostProvider $additionalPurchaseCostProvider,
+        private array $editablePurchasePlaces = [PWC::S_DRAFT->value, PWC::S_WISHLIST->value, PWC::S_CART->value],
     ) {}
 
     public function create(
@@ -48,6 +50,7 @@ class PurchasePriceFactory
             $this->serviceCalculationUtils,
             $this->additionalPurchaseCostProvider,
             $this->settingsRepository,
+            $this->editablePurchasePlaces,
         );
     }
 }

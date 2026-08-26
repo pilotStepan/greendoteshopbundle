@@ -32,6 +32,7 @@ use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDisc
 use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\SumDiscountStrategy;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -158,6 +159,8 @@ abstract class PriceCalculationTestCase extends TestCase
     ): PurchasePrice
     {
         $conversionRate = $currency->getConversionRates()->first();
+        $additionalPurchaseCostProvider = $this->createMock(AdditionalPurchaseCostProvider::class);
+        $additionalPurchaseCostProvider->method('get')->willReturn([]);
         return new PurchasePrice(
             $purchase,
             $vatCalc,
@@ -168,6 +171,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $this->productVariantPriceFactory,
             $this->priceUtils,
             $this->serviceCalculationUtils,
+            $additionalPurchaseCostProvider,
             $this->settingsRepository
         );
     }
@@ -218,6 +222,9 @@ abstract class PriceCalculationTestCase extends TestCase
 
         $purchase->method('getDateIssue')->willReturn(new \DateTime('now'));
         $purchase->method('getVouchersUsed')->willReturn(new ArrayCollection($vouchers ?? []));
+        // These test purchases represent an in-progress (cart) purchase, so
+        // PurchasePrice must take the dynamic-calculation branch, not the frozen one.
+        $purchase->method('hasAnyPlace')->willReturn(true);
 
         return $purchase;
     }

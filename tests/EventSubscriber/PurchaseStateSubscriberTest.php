@@ -42,6 +42,7 @@ use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
@@ -61,6 +62,7 @@ class PurchaseStateSubscriberTest extends TestCase
     private MockObject $purchaseWorkflow;
     private RecordingPaymentActionLogger $paymentActionLogger;
     private MockObject $paymentRepository;
+    private MockObject $additionalPurchaseCostProvider;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void
@@ -73,6 +75,8 @@ class PurchaseStateSubscriberTest extends TestCase
         $this->purchaseWorkflow = $this->createMock(WorkflowInterface::class);
         $this->paymentActionLogger = new RecordingPaymentActionLogger();
         $this->paymentRepository = $this->createMock(PaymentRepository::class);
+        $this->additionalPurchaseCostProvider = $this->createMock(AdditionalPurchaseCostProvider::class);
+        $this->additionalPurchaseCostProvider->method('getEntities')->willReturn([]);
 
         $this->subscriber = new PurchaseStateSubscriber(
             $this->entityManager,
@@ -84,6 +88,7 @@ class PurchaseStateSubscriberTest extends TestCase
             $this->purchaseWorkflow,
             $this->paymentActionLogger,
             $this->paymentRepository,
+            $this->additionalPurchaseCostProvider,
         );
     }
 
@@ -257,6 +262,7 @@ class PurchaseStateSubscriberTest extends TestCase
             $priceUtils,
             $serviceCalculationUtils,
             $settingsRepository,
+            $this->createMock(AdditionalPurchaseCostProvider::class),
         );
 
         return new ManagePurchase(

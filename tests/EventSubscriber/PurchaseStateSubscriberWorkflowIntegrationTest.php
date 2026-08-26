@@ -20,6 +20,7 @@ use Greendot\EshopBundle\Service\ManageClientDiscount;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
@@ -58,6 +59,7 @@ class PurchaseStateSubscriberWorkflowIntegrationTest extends TestCase
             $this->createMock(WorkflowInterface::class),
             new RecordingPaymentActionLogger(),
             $this->createMock(PaymentRepository::class),
+            $this->createMock(AdditionalPurchaseCostProvider::class),
         );
         $dispatcher->addSubscriber($subscriber);
 

@@ -41,6 +41,7 @@ use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Tests\Stub\FakeGpWebpayGateway;
@@ -269,6 +270,7 @@ class PurchaseControllerVerifyOrderTest extends TestCase
             $this->createMock(WorkflowInterface::class),
             $this->paymentActionLogger,
             $this->paymentRepository,
+            $this->createMock(AdditionalPurchaseCostProvider::class),
         );
     }
 

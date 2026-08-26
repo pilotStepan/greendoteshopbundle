@@ -28,6 +28,7 @@ use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
+use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
@@ -54,6 +55,7 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
             $this->createMock(WorkflowInterface::class),
             $this->paymentActionLogger,
             $this->paymentRepository,
+            $this->createMock(AdditionalPurchaseCostProvider::class),
         );
     }
 
