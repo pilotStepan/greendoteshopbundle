@@ -4,6 +4,9 @@ namespace Greendot\EshopBundle\Controller\Simple;
 
 use JsonException;
 use LogicException;
+use Throwable;
+use ZipArchive;
+use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames;
 use Symfony\Component\Workflow\Registry;
@@ -22,6 +25,7 @@ use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Greendot\EshopBundle\Dto\ApplyVoucherOrDiscountRequest;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
+use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -30,6 +34,8 @@ use Greendot\EshopBundle\Message\Notification\PurchaseDiscussionEmail;
 #[Route('/simple/api/purchases', name: 'simple_api_purchases_')]
 class SimplePurchaseController extends AbstractController
 {
+    private const MAX_BATCH_SIZE = 500;
+
     public function __construct(
         private readonly MessageBusInterface    $messageBus,
         private readonly EntityManagerInterface $em,
@@ -173,6 +179,122 @@ class SimplePurchaseController extends AbstractController
         $response->headers->set('Content-Type', 'application/pdf');
 
         return $response;
+    }
+
+    #[Route('/invoices/pdf-batch', name: 'invoices_pdf_batch', methods: ['POST'])]
+    public function downloadInvoicesPdfBatch(
+        Request            $request,
+        PurchaseRepository $purchaseRepository,
+        InvoiceMaker       $invoiceMaker,
+        LoggerInterface    $logger,
+    ): Response
+    {
+        set_time_limit(300);
+
+        try {
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new BadRequestHttpException('Invalid JSON format');
+        }
+
+        $from = $this->parseDate($data['from'] ?? null);
+        $until = $this->parseDate($data['until'] ?? null, true);
+        if (!$from || !$until) {
+            throw new BadRequestHttpException('Missing or invalid "from"/"until"');
+        }
+        if ($from > $until) {
+            throw new BadRequestHttpException('"from" must precede "until"');
+        }
+
+        $purchases = $purchaseRepository->invoicedBetween($from, $until);
+        if (empty($purchases)) {
+            return new JsonResponse(['message' => 'No invoices in range'], Response::HTTP_NOT_FOUND);
+        }
+        if (count($purchases) > self::MAX_BATCH_SIZE) {
+            throw new BadRequestHttpException(sprintf(
+                'Maximum %d invoices per batch, %d found in range.',
+                self::MAX_BATCH_SIZE,
+                count($purchases),
+            ));
+        }
+
+        $this->em->getFilters()->disable(DoctrineFiltersConfigNames::ProductActiveFilter->value);
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'invbatch');
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath, ZipArchive::OVERWRITE) !== true) {
+            @unlink($zipPath);
+            throw new \RuntimeException('Could not create zip archive');
+        }
+
+        $usedNames = [];
+        $skippedCount = 0;
+        foreach ($purchases as $purchase) {
+            try {
+                $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
+            } catch (Throwable $exception) {
+                $logger->warning('Invoice PDF batch: failed to generate invoice for purchase {id}', [
+                    'id' => $purchase->getId(),
+                    'exception' => $exception,
+                ]);
+                $skippedCount++;
+                continue;
+            }
+
+            if ($pdfFilePath === null || !is_readable($pdfFilePath)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $zip->addFile($pdfFilePath, $this->buildZipEntryName($purchase, $usedNames));
+        }
+
+        $addedCount = count($purchases) - $skippedCount;
+        $zip->close();
+
+        if ($addedCount === 0) {
+            @unlink($zipPath);
+            return new JsonResponse(['message' => 'No invoices could be generated'], Response::HTTP_NOT_FOUND);
+        }
+
+        $response = $this->file($zipPath);
+        $response->deleteFileAfterSend();
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'invoices.zip');
+        $response->headers->set('Content-Type', 'application/zip');
+        $response->headers->set('X-Skipped-Count', (string) $skippedCount);
+
+        return $response;
+    }
+
+    private function parseDate(mixed $value, bool $endOfDay = false): ?\DateTimeInterface
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+        try {
+            $date = new \DateTime($value);
+        } catch (\Exception) {
+            return null;
+        }
+        if ($endOfDay && strlen($value) <= 10) {
+            $date->setTime(23, 59, 59);
+        }
+        return $date;
+    }
+
+    private function buildZipEntryName(Purchase $purchase, array &$usedNames): string
+    {
+        $label = $purchase->getInvoiceNumber() ?? (string) $purchase->getId();
+        $safe = preg_replace('/[^A-Za-z0-9._-]/', '_', $label);
+        $name = sprintf('invoice_%s.pdf', $safe);
+
+        $suffix = 2;
+        while (isset($usedNames[$name])) {
+            $name = sprintf('invoice_%s-%d.pdf', $safe, $suffix++);
+        }
+        $usedNames[$name] = true;
+
+        return $name;
     }
 
     #[Route('/{purchase}/invoice/xls', name: 'invoice_download_xls', methods: ['GET'])]

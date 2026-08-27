@@ -173,6 +173,22 @@ class PurchaseRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return Purchase[]
+     */
+    public function invoicedBetween(\DateTimeInterface $from, \DateTimeInterface $until): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.invoice_number IS NOT NULL')
+            ->andWhere('p.date_invoiced BETWEEN :from AND :until')
+            ->setParameter('from', $from)
+            ->setParameter('until', $until)
+            ->orderBy('p.date_invoiced', 'ASC')
+        ;
+
+        return $this->excludePlaces($qb, 'p', PWC::S_CANCELLED)->getQuery()->getResult();
+    }
+
+    /**
      * @throws NonUniqueResultException|NoResultException
      */
     public function findByPaymentId(string $paymentId): Purchase
