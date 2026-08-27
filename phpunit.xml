@@ -5,13 +5,13 @@
          colors="true">
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/Service</directory>
+            <directory>tests/Controller</directory>
+            <directory>tests/Entity</directory>
             <directory>tests/EventSubscriber</directory>
             <directory>tests/MessageHandler</directory>
-            <directory>tests/Entity</directory>
-            <directory>tests/Schema</directory>
             <directory>tests/Parcel</directory>
-            <directory>tests/Controller</directory>
+            <directory>tests/Schema</directory>
+            <directory>tests/Service</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>
