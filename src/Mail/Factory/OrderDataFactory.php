@@ -122,7 +122,7 @@ class OrderDataFactory
     }
 
     /** @return OrderItemData[] */
-    private function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
+    protected function buildItems(Purchase $purchase, Currency $currency, VatCalculationType $vatCalculation): array
     {
         $items = [];
 
