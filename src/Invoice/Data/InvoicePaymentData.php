@@ -15,6 +15,7 @@ class InvoicePaymentData
         public float                    $priceNoVatSecondary,
         public ?string                  $bankAccount,
         public ?string                  $bankNumber,
+        public ?string                  $bankName,
         public ?string                  $iban,
         public ?PaymentTypeActionGroup  $actionGroup,
 

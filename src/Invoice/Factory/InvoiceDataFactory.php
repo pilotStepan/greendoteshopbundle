@@ -379,6 +379,7 @@ final class InvoiceDataFactory
             priceNoVatSecondary:    $priceNoVatSecondary,
             bankAccount:            $paymentType->getAccount(),
             bankNumber:             $paymentType->getBankNumber(),
+            bankName:               $paymentType->getBankName(),
             iban:                   $paymentType->getIban(),
             actionGroup:            $paymentType->getActionGroup(),
             priceMoney:             $priceMoney,
