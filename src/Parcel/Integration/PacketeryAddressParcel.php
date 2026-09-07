@@ -12,7 +12,6 @@ use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 /**
  * Packeta home/address delivery via an external carrier (addressId = carrier ID, not a branch ID).
@@ -25,10 +24,9 @@ class PacketeryAddressParcel implements ParcelServiceInterface
     use PacketeryApiTrait;
 
     public function __construct(
-        private readonly HttpClientInterface  $httpClient,
-        private readonly LoggerInterface      $logger,
-        private readonly PurchasePriceFactory $purchasePriceFactory,
-        private readonly CurrencyRepository   $currencyRepository,
+        private readonly HttpClientInterface    $httpClient,
+        private readonly LoggerInterface        $logger,
+        private readonly PurchasePriceFactory   $purchasePriceFactory,
         #[Autowire(param: 'greendot_eshop.parcel.packeta.eshop_name')]
         private readonly string               $eshopName,
         #[Autowire(param: 'greendot_eshop.parcel.packeta.enabled')]
@@ -57,15 +55,8 @@ class PacketeryAddressParcel implements ParcelServiceInterface
         $client = $purchase->getClient();
         $address = $purchase->getPurchaseAddress();
 
-        $country = $this->normalizeCountry($transportation->getCountry())
-            ?? $this->normalizeCountry($address->getShipCountry())
-            ?? $this->normalizeCountry($address->getCountry());
-
-        $currency = match ($country) {
-            'sk'    => 'EUR',
-            default => 'CZK',
-        };
-
+        $currency = $purchase->getCurrency()
+            ?? throw new PermanentParcelException('Purchase has no currency snapshot for purchase ' . $purchase->getId());
         ['value' => $value, 'cod' => $cod] = $this->resolvePriceAndCod($purchase, $currency);
 
         $packetAttributes = [
@@ -78,14 +69,14 @@ class PacketeryAddressParcel implements ParcelServiceInterface
             'street' => $address->getShipStreet() ?? $address->getStreet(),
             'city' => $address->getShipCity() ?? $address->getCity(),
             'zip' => $address->getShipZip() ?? $address->getZip(),
-            'value' => $value,
-            'currency' => $currency,
+            'value' => $value->value,
+            'currency' => $value->iso,
             'weight' => 1,
             'eshop_id' => $this->eshopName,
         ];
 
         if ($cod !== null) {
-            $packetAttributes['cod'] = $cod;
+            $packetAttributes['cod'] = $cod->value;
         }
 
         return [
@@ -128,11 +119,5 @@ class PacketeryAddressParcel implements ParcelServiceInterface
     public function supports(TransportationAPI $transportationAPI): bool
     {
         return $this->enabled && $transportationAPI === TransportationAPI::PACKETA_ADDRESS;
-    }
-
-    private function normalizeCountry(?string $country): ?string
-    {
-        $country = strtolower(trim((string)$country));
-        return $country === '' ? null : $country;
     }
 }

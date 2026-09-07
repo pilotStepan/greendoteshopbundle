@@ -19,6 +19,7 @@ enum PurchaseWorkflowContract: string
     case T_INIT_WISHLIST = 'init_wishlist';
     case T_INIT_CART = 'init_cart';
     case T_CHECKOUT = 'checkout';
+    case T_INIT_ORDER = 'init_order'; // used by CMS to initiate from "drafts"
     case T_PAY_PAY = 'pay_pay';
     case T_PAY_FAIL = 'pay_fail';
     case T_LOG_SEND = 'log_send';

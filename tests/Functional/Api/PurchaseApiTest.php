@@ -4,7 +4,9 @@ namespace Greendot\EshopBundle\Tests\Functional\Api;
 
 use Greendot\EshopBundle\Tests\App\ApiTestCase;
 use Greendot\EshopBundle\Tests\App\Factory\ClientFactory;
+use Greendot\EshopBundle\Tests\App\Factory\PaymentTypeFactory;
 use Greendot\EshopBundle\Tests\App\Factory\PurchaseFactory;
+use Greendot\EshopBundle\Tests\App\Factory\TransportationFactory;
 use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -58,6 +60,46 @@ class PurchaseApiTest extends ApiTestCase
         ], json_encode(['clientDiscount' => '/client_discounts/does-not-exist']));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function testPatchSessionPurchaseWithPaymentTypeNotOfferedByTransportationReturnsUnprocessableEntity(): void
+    {
+        $transportation = TransportationFactory::createOne();
+        $paymentType = PaymentTypeFactory::createOne(); // not linked to $transportation
+        $purchase = PurchaseFactory::createOne();
+        $this->putPurchaseInSession($purchase->getId());
+
+        $this->client->request('PATCH', '/purchases/session', [], [], [
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], json_encode([
+            'Transportation' => '/transportations/' . $transportation->getId(),
+            'PaymentType' => '/payment_types/' . $paymentType->getId(),
+        ]));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertStringContainsString('transportation and payment', $data['detail'] ?? $data['hydra:description'] ?? '');
+    }
+
+    public function testPatchSessionPurchaseWithPaymentTypeOfferedByTransportationSucceeds(): void
+    {
+        $transportation = TransportationFactory::createOne();
+        $paymentType = PaymentTypeFactory::createOne();
+        $transportation->addPaymentType($paymentType->object());
+        $this->getEntityManager()->flush();
+        $purchase = PurchaseFactory::createOne();
+        $this->putPurchaseInSession($purchase->getId());
+
+        $this->client->request('PATCH', '/purchases/session', [], [], [
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], json_encode([
+            'Transportation' => '/transportations/' . $transportation->getId(),
+            'PaymentType' => '/payment_types/' . $paymentType->getId(),
+        ]));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
     }
 
     private function putPurchaseInSession(int $purchaseId): void

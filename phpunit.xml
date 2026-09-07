@@ -8,7 +8,12 @@
             <directory>tests/Controller</directory>
             <directory>tests/Entity</directory>
             <directory>tests/EventSubscriber</directory>
+            <directory>tests/Invoice</directory>
+            <directory>tests/Mail</directory>
             <directory>tests/MessageHandler</directory>
+            <directory>tests/Messenger</directory>
+            <directory>tests/Money</directory>
+            <directory>tests/Notification</directory>
             <directory>tests/Parcel</directory>
             <directory>tests/Schema</directory>
             <directory>tests/Service</directory>

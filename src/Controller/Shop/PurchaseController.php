@@ -73,6 +73,9 @@ class PurchaseController extends AbstractController
             $payment = $entityManager->getRepository(Payment::class)->find($paymentId);
             $purchase = $payment->getPurchase();
 
+            $context['amount'] = $payment->getAmount();
+            $context['currency'] = $payment->getCurrency()?->getIso();
+
             if ($purchase->isPaid()) {
                 $logger->info('Ignoring order verification for an already-paid purchase', [
                     'purchaseId' => $purchase->getId(),

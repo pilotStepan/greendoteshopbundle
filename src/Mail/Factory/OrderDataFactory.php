@@ -22,6 +22,8 @@ use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Mail\Data\OrderTransportationData;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
+use Greendot\EshopBundle\Money\Money;
+use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
@@ -40,6 +42,7 @@ class OrderDataFactory
         private PurchasePriceFactory       $purchasePriceFactory,
         private ProductVariantPriceFactory $productVariantPriceFactory,
         private CurrencyRepository         $currencyRepository,
+        private CurrencyManager            $currencyManager,
         private QRcodeGenerator            $qrGenerator,
         private PurchaseUrlGenerator       $purchaseUrlGenerator,
         private readonly LoggerInterface   $logger,
@@ -53,15 +56,20 @@ class OrderDataFactory
         $vatCalculation = $purchase->isVatExempted() ? VatCalculationType::WithoutVAT : VatCalculationType::WithVAT;
         $this->purchasePrice = $this->purchasePriceFactory->create($purchase, $czk, $vatCalculation);
 
+        $moneyPrimary = $this->currencyManager->getForPurchase($purchase);
+        $moneySecondary = $this->currencyManager->getSecondaryFor($moneyPrimary);
+
         $qr = $this->buildQrCode($purchase);
         $payLink = $this->buildPayLink($purchase);
         $items = $this->buildItems($purchase, $czk, $vatCalculation);
-        $transportation = $this->buildTransportation($purchase, $czk, $eur);
-        $payment = $this->buildPayment($purchase, $czk, $eur);
+        $transportation = $this->buildTransportation($purchase, $czk, $eur, $moneyPrimary, $moneySecondary);
+        $payment = $this->buildPayment($purchase, $czk, $eur, $moneyPrimary, $moneySecondary);
         $addresses = $this->buildAddresses($purchase);
         $purchaseNote = $this->extractNote($purchase);
         [$totalPriceCzk, $totalPriceEur] = array_values($this->buildTotalPrices($czk, $eur));
         $clientSectionUrl = $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase);
+        [$totalMoney, $totalPriceMoney, $totalMoneySecondary, $totalPriceMoneySecondary] =
+            $this->buildTotalMoney($purchase, $vatCalculation, $moneySecondary);
 
         return new OrderData(
             purchaseId: $purchase->getId(),
@@ -75,12 +83,16 @@ class OrderDataFactory
             payment: $payment,
             addresses: $addresses,
             items: $items,
-            primaryCurrency: 'czk', // FIXME
+            primaryCurrency: strtolower($czk->getIso()),
             orderPaid: $purchase->isPaid(),
             alreadyShipped: $purchase->hasAnyPlace('log_shipped', 'log_picked_up', 'log_delivered'),
             totalPriceCzk: $totalPriceCzk,
             totalPriceEur: $totalPriceEur,
             clientSectionUrl: $clientSectionUrl,
+            totalMoney: $totalMoney,
+            totalPriceMoney: $totalPriceMoney,
+            totalMoneySecondary: $totalMoneySecondary,
+            totalPriceMoneySecondary: $totalPriceMoneySecondary,
         );
     }
 
@@ -95,6 +107,21 @@ class OrderDataFactory
         }
 
         return [$czk, $eur];
+    }
+
+    private function buildTotalMoney(Purchase $purchase, VatCalculationType $vatCalculation, Currency $moneySecondary): array
+    {
+        $currency = $this->currencyManager->getForPurchase($purchase);
+        $calc = $this->purchasePriceFactory->create($purchase, $currency, $vatCalculation);
+
+        $totalMoney = $calc->getMoney(true);
+        $totalPriceMoney = PriceHelper::formatPrice($totalMoney->value, $currency);
+
+        $calcSecondary = $this->purchasePriceFactory->create($purchase, $moneySecondary, $vatCalculation);
+        $totalMoneySecondary = $calcSecondary->getMoney(true);
+        $totalPriceMoneySecondary = PriceHelper::formatPrice($totalMoneySecondary->value, $moneySecondary);
+
+        return [$totalMoney, $totalPriceMoney, $totalMoneySecondary, $totalPriceMoneySecondary];
     }
 
     private function buildQrCode(Purchase $purchase): ?string
@@ -146,12 +173,15 @@ class OrderDataFactory
         return $items;
     }
 
-    private function buildTransportation(Purchase $purchase, Currency $czk, Currency $eur): OrderTransportationData
+    private function buildTransportation(Purchase $purchase, Currency $czk, Currency $eur, Currency $moneyPrimary, Currency $moneySecondary): OrderTransportationData
     {
         $transportation = $purchase->getTransportation();
 
         $priceCzk = $this->purchasePrice->setCurrency($czk)->getTransportationPrice() ?? 0.0;
         $priceEur = $this->purchasePrice->setCurrency($eur)->getTransportationPrice() ?? 0.0;
+
+        $pricePrimaryValue = $this->purchasePrice->setCurrency($moneyPrimary)->getTransportationPrice() ?? 0.0;
+        $priceSecondaryValue = $this->purchasePrice->setCurrency($moneySecondary)->getTransportationPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderTransportationData(
@@ -163,15 +193,22 @@ class OrderDataFactory
             priceEur: PriceHelper::formatPrice($priceEur, $eur, freeLabel: 'Bez poplatku'),
             branchName: $purchase->getBranch()?->getName(),
             mailDescription: $transportation->getDescriptionMail(),
+            priceMoneyPrimary: Money::fromCurrency($pricePrimaryValue, $moneyPrimary),
+            pricePrimaryFormatted: PriceHelper::formatPrice($pricePrimaryValue, $moneyPrimary, freeLabel: 'Bez poplatku'),
+            priceMoneySecondary: Money::fromCurrency($priceSecondaryValue, $moneySecondary),
+            priceSecondaryFormatted: PriceHelper::formatPrice($priceSecondaryValue, $moneySecondary, freeLabel: 'Bez poplatku'),
         );
     }
 
-    private function buildPayment(Purchase $purchase, Currency $czk, Currency $eur): OrderPaymentData
+    private function buildPayment(Purchase $purchase, Currency $czk, Currency $eur, Currency $moneyPrimary, Currency $moneySecondary): OrderPaymentData
     {
         $paymentType = $purchase->getPaymentType();
 
         $priceCzk = $this->purchasePrice->setCurrency($czk)->getPaymentPrice() ?? 0.0;
         $priceEur = $this->purchasePrice->setCurrency($eur)->getPaymentPrice() ?? 0.0;
+
+        $pricePrimaryValue = $this->purchasePrice->setCurrency($moneyPrimary)->getPaymentPrice() ?? 0.0;
+        $priceSecondaryValue = $this->purchasePrice->setCurrency($moneySecondary)->getPaymentPrice() ?? 0.0;
         $this->purchasePrice->setCurrency($czk);
 
         return new OrderPaymentData(
@@ -186,6 +223,10 @@ class OrderDataFactory
             bankAccount: $paymentType->getAccount(),
             bankName: $paymentType->getBankName(),
             bankIban: $paymentType->getIban(),
+            priceMoneyPrimary: Money::fromCurrency($pricePrimaryValue, $moneyPrimary),
+            pricePrimaryFormatted: PriceHelper::formatPrice($pricePrimaryValue, $moneyPrimary, freeLabel: 'Bez poplatku'),
+            priceMoneySecondary: Money::fromCurrency($priceSecondaryValue, $moneySecondary),
+            priceSecondaryFormatted: PriceHelper::formatPrice($priceSecondaryValue, $moneySecondary, freeLabel: 'Bez poplatku'),
         );
     }
 

@@ -31,4 +31,9 @@ class CurrencyRepository extends ServiceEntityRepository
             ->getOneOrNullResult()
         ;
     }
+
+    public function findOneByIso(string $iso): ?Currency
+    {
+        return $this->findOneBy(['name' => $iso]);
+    }
 }

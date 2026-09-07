@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
@@ -19,7 +20,6 @@ use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 /**
  * Integrates Czech Post's B2B-ZSKService REST API (https://www.postaonline.cz/dokumentaceapi/b2b/api/B2B3-ZSKService/B2B-ZSKService-1.5.0.yaml).
@@ -31,16 +31,16 @@ class CzechPostParcel implements ParcelServiceInterface
 {
     use CzechPostHmacAuthTrait;
     use CzechPostStatusTrait;
+    use CzechPostCurrencyGuardTrait;
 
     private const PROD_URL = 'https://b2b.postaonline.cz:444/restservices/ZSKService/v1';
     private const SANDBOX_URL = 'https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1';
     private readonly string $baseUrl;
 
     public function __construct(
-        private readonly HttpClientInterface  $httpClient,
-        private readonly LoggerInterface      $logger,
-        private readonly PurchasePriceFactory $purchasePriceFactory,
-        private readonly CurrencyRepository   $currencyRepository,
+        private readonly HttpClientInterface    $httpClient,
+        private readonly LoggerInterface        $logger,
+        private readonly PurchasePriceFactory   $purchasePriceFactory,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.customer_id')]
         private readonly string               $customerId,
         #[Autowire(param: 'greendot_eshop.parcel.czech_post.post_code')]
@@ -177,23 +177,27 @@ class CzechPostParcel implements ParcelServiceInterface
 
     private function prepareParcelData(Purchase $purchase): array
     {
-        $priceCalculator = $this->purchasePriceFactory->create($purchase, $this->currencyRepository->findOneBy(['isDefault' => true]));
+        $currency = $purchase->getCurrency()
+            ?? throw new PermanentParcelException('Purchase has no currency snapshot for purchase ' . $purchase->getId());
+        $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency);
 
-        $insuredValue = (clone $priceCalculator)
+        $insuredMoney = (clone $priceCalculator)
             ->setVatCalculationType(VatCalculationType::WithVAT)
             ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
             ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
-            ->getPrice()
+            ->getMoney()
         ;
 
+        $this->assertCzkCurrency($insuredMoney, $purchase);
+
         $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
-        $codAmount = $isCod
+        $codMoney = $isCod
             ? (clone $priceCalculator)
                 ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice(true)
-            : 0;
+                ->getMoney(true)
+            : Money::zero($currency);
 
         $weight = 1;
 
@@ -201,9 +205,9 @@ class CzechPostParcel implements ParcelServiceInterface
             'recordID' => (string)$purchase->getId(),
             'prefixParcelCode' => 'DR',
             'weight' => number_format($weight, 2),
-            'insuredValue' => $insuredValue,
-            'amount' => $codAmount,
-            'currency' => 'CZK',
+            'insuredValue' => $insuredMoney->value,
+            'amount' => $codMoney->value,
+            'currency' => $insuredMoney->iso,
             'vsParcel' => (string)$purchase->getId(),
             'note' => 'VS ' . $purchase->getId(),
             'notePrint' => 'VS ' . $purchase->getId(),

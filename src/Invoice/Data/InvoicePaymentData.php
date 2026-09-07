@@ -3,18 +3,24 @@
 namespace Greendot\EshopBundle\Invoice\Data;
 
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
+use Greendot\EshopBundle\Money\Money;
 
 class InvoicePaymentData
 {
     public function __construct(
-        public string                   $name,        
+        public string                   $name,
         public float                    $price,
-        public float                    $priceSecondary,  
+        public float                    $priceSecondary,
         public float                    $priceNoVat,
-        public float                    $priceNoVatSecondary,     
+        public float                    $priceNoVatSecondary,
         public ?string                  $bankAccount,
         public ?string                  $bankNumber,
         public ?string                  $iban,
         public ?PaymentTypeActionGroup  $actionGroup,
-    ) { }
+
+        public ?Money                   $priceMoney = null,
+        public ?Money                   $priceMoneySecondary = null,
+        public ?Money                   $priceNoVatMoney = null,
+        public ?Money                   $priceNoVatMoneySecondary = null,
+    ) {}
 }

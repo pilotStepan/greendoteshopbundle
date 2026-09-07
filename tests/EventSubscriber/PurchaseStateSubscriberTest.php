@@ -13,6 +13,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use PHPUnit\Framework\MockObject\MockObject;
 use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Entity\Project\Client;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Doctrine\Common\Collections\ArrayCollection;
 use Greendot\EshopBundle\Entity\Project\Consent;
@@ -222,6 +223,75 @@ class PurchaseStateSubscriberTest extends TestCase
         $this->assertFalse($event->isBlocked(), 'Transition should not be blocked');
     }
 
+    public function testGuardReceiveBlocksWhenCurrencyMismatched(): void
+    {
+        $czk = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0);
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2);
+
+        $paymentType = $this->createMock(PaymentType::class);
+        $paymentType->method('getCurrency')->willReturn($eur);
+        $transportation = $this->createMock(Transportation::class);
+
+        $purchase = $this->createPurchaseMock(
+            client: new Client(),
+            paymentType: $paymentType,
+            transportation: $transportation,
+            currency: $czk,
+        );
+
+        $event = $this->createGuardEvent($purchase);
+        $this->subscriber->onGuardReceive($event);
+
+        $this->assertBlockedWithMessage($event, 'Objednávka je vedena v měně');
+    }
+
+    /**
+     * onGuardCurrencyConsistency() guards `init_order` (the CMS's "Inicializovat objednávku"
+     * transition) - the choke point for orders the CMS created or duplicated, since its own
+     * Purchase entity doesn't map `currency` at all.
+     */
+    public function testOnGuardCurrencyConsistencyBlocksWhenMismatched(): void
+    {
+        $czk = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0);
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2);
+
+        $purchase = new Purchase();
+        $purchase->setPaymentType((new PaymentType())->setCurrency($eur));
+        $purchase->setCurrency($czk); // simulates a drifted/legacy currency snapshot
+
+        $event = $this->createGuardEvent($purchase);
+        $this->subscriber->onGuardCurrencyConsistency($event);
+
+        $this->assertBlockedWithMessage($event, 'Objednávka je vedena v měně');
+    }
+
+    public function testOnGuardCurrencyConsistencyAllowsWhenCurrencyNotYetDecided(): void
+    {
+        $purchase = new Purchase();
+        $purchase->setPaymentType(new PaymentType()); // no currency configured; purchase.currency stays null
+
+        $event = $this->createGuardEvent($purchase);
+        $this->subscriber->onGuardCurrencyConsistency($event);
+
+        $this->assertFalse($event->isBlocked());
+    }
+
+    /**
+     * onInitOrder() is what finally stamps a currency for orders the CMS created or duplicated -
+     * neither path ever touches the bundle's Purchase entity/listeners, so nothing else does it.
+     */
+    public function testOnInitOrderStampsCurrencyFromPaymentType(): void
+    {
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2);
+        $purchase = new Purchase();
+        $purchase->setPaymentType((new PaymentType())->setCurrency($eur));
+        $purchase->setCurrency(null); // simulates a CMS-created purchase, never stamped
+
+        $this->subscriber->onInitOrder(new \Symfony\Component\Workflow\Event\Event($purchase, $this->createMock(Marking::class)));
+
+        $this->assertSame($eur, $purchase->getCurrency());
+    }
+
     private function buildManagePurchase(): ManagePurchase
     {
         $conversionRateRepo = $this->createMock(ConversionRateRepository::class);
@@ -288,7 +358,8 @@ class PurchaseStateSubscriberTest extends TestCase
         ?MockObject     $paymentType = null,
         ?MockObject     $transportation = null,
         array           $consents = [new Consent()],
-        ?ClientDiscount $clientDiscount = null
+        ?ClientDiscount $clientDiscount = null,
+        ?Currency       $currency = null,
     ): MockObject
     {
         if ($productVariants === null) {
@@ -311,6 +382,7 @@ class PurchaseStateSubscriberTest extends TestCase
         $purchase->method('getClientDiscount')->willReturn($clientDiscount);
         $purchase->method('getVouchersUsed')->willReturn(new ArrayCollection());
         $purchase->method('getPurchaseAddress')->willReturn($purchaseAddress);
+        $purchase->method('getCurrency')->willReturn($currency);
         return $purchase;
     }
 

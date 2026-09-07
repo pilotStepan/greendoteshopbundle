@@ -2,13 +2,16 @@
 
 namespace Greendot\EshopBundle\Service;
 
+use DateTimeImmutable;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use Greendot\EshopBundle\Entity\Project\Purchase;
-use Exception;
+use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
+use Greendot\EshopBundle\Money\Money;
+use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -20,28 +23,41 @@ class QRcodeGenerator
         private Filesystem              $filesystem,
         private RequestStack            $requestStack,
         private UrlGeneratorInterface   $router,
-        private CurrencyManager         $currencyManager, 
+        private CurrencyManager         $currencyManager,
         private ManagePurchase          $managePurchase,
         #[Autowire('%kernel.project_dir%')]
         private string                  $projectDir,
         #[Autowire('%env(APP_URL)%')]
         private string                  $appUrl = '',
-    )
-    { }
+    ) {}
 
     public function getUri(Purchase $purchase): string
     {
-        $iban = $purchase->getPaymentType()->getIban();
-        if (!$iban) throw new Exception('Missing IBAN in paymentType id'.$purchase->getPaymentType()->getId());
+        $paymentType = $purchase->getPaymentType();
+        if (!$paymentType) {
+            throw new RuntimeException('Missing PaymentType on purchase ' . $purchase->getId());
+        }
+
+        $iban = $paymentType->getIban();
+        if (!$iban) {
+            throw new \RuntimeException('Missing IBAN in paymentType id' . $paymentType->getId());
+        }
+
+        if ($paymentType->getCurrency() !== null && $purchase->getCurrency() !== null
+            && $paymentType->getCurrency() !== $purchase->getCurrency()
+        ) {
+            throw PurchaseCurrencyMismatchException::forPurchase($purchase);
+        }
 
         $this->managePurchase->preparePrices($purchase);
 
-        $now = new \DateTimeImmutable('now');
-        $currency = $this->currencyManager->get();
+        $now = new DateTimeImmutable('now');
+        $currency = $this->currencyManager->getForPurchase($purchase);
+        $money = $purchase->getTotalMoney() ?? Money::fromCurrency($purchase->getTotalPrice(), $currency);
 
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
-            number_format($purchase->getTotalPrice(), 2, '.', '') .
-            '*CC:' . $currency->getName() . '*DT:' . $now->format("Ymd") .
+            number_format($money->value, 2, '.', '') .
+            '*CC:' . $money->iso . '*DT:' . $now->format("Ymd") .
             '*X-VS:' . $purchase->getId().
             '*X-KS:308';
 

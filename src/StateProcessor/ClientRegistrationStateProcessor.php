@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -19,11 +20,16 @@ final readonly class ClientRegistrationStateProcessor implements ProcessorInterf
         private ProcessorInterface          $processor,
         private UserPasswordHasherInterface $passwordHasher,
         private TokenStorageInterface       $tokenStorage,
+        private RequestStack                $requestStack,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Client
     {
         /* @var Client $data */
+        if (!$data->getLocale()) {
+            $data->setLocale($this->requestStack->getCurrentRequest()?->getLocale());
+        }
+
         if (!$data->getPlainPassword()) {
             return $this->processor->process($data, $operation, $uriVariables, $context);
         }

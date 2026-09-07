@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Entity\Project;
 
 use Doctrine\DBAL\Types\Types;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -14,6 +15,7 @@ use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PurchaseSession;
 use Greendot\EshopBundle\Dto\PurchaseCheckoutInput;
 use Greendot\EshopBundle\Entity\PurchaseTracking;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\StateProcessor\CartStateProcessor;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -173,6 +175,12 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write'])]
     private $PaymentType;
 
+    #[ORM\ManyToOne(targetEntity: Currency::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[ApiProperty(fetchEager: false)]
+    #[Groups(['purchase:read'])]
+    private ?Currency $currency = null;
+
     #[ORM\ManyToOne(targetEntity: Transportation::class, cascade: ['persist'], inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -224,10 +232,25 @@ class Purchase
     private array $calculatedPrices = [];
 
     #[Groups(['purchase:read', 'purchase:write'])]
+    private array $calculatedMoney = [];
+
+    #[Groups(['purchase:read', 'purchase:write'])]
     private $transportation_price;
 
     #[Groups(['purchase:read', 'purchase:write'])]
     private $payment_price;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?Money $totalMoney = null;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?Money $totalMoneyNoServices = null;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?Money $transportationMoney = null;
+
+    #[Groups(['purchase:read', 'purchase:write'])]
+    private ?Money $paymentMoney = null;
 
     #[ORM\OneToMany(targetEntity: PurchaseProductVariant::class, mappedBy: 'purchase', cascade: ['persist', 'remove'])]
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
@@ -527,6 +550,24 @@ class Purchase
     {
         $this->PaymentType = $PaymentType;
 
+        $isPreCheckout = $this->hasAnyPlace(PWC::S_DRAFT->value, PWC::S_CART->value, PWC::S_WISHLIST->value);
+
+        if ($isPreCheckout && $PaymentType?->getCurrency()) {
+            $this->currency = $PaymentType->getCurrency();
+        }
+
+        return $this;
+    }
+
+    public function getCurrency(): ?Currency
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?Currency $currency): self
+    {
+        $this->currency = $currency;
+
         return $this;
     }
 
@@ -793,6 +834,54 @@ class Purchase
     public function setPaymentPrice($payment_price): void
     {
         $this->payment_price = $payment_price;
+    }
+
+    public function getTotalMoney(): ?Money
+    {
+        return $this->totalMoney;
+    }
+
+    public function setTotalMoney(?Money $totalMoney): static
+    {
+        $this->totalMoney = $totalMoney;
+
+        return $this;
+    }
+
+    public function getTotalMoneyNoServices(): ?Money
+    {
+        return $this->totalMoneyNoServices;
+    }
+
+    public function setTotalMoneyNoServices(?Money $totalMoneyNoServices): static
+    {
+        $this->totalMoneyNoServices = $totalMoneyNoServices;
+
+        return $this;
+    }
+
+    public function getTransportationMoney(): ?Money
+    {
+        return $this->transportationMoney;
+    }
+
+    public function setTransportationMoney(?Money $transportationMoney): static
+    {
+        $this->transportationMoney = $transportationMoney;
+
+        return $this;
+    }
+
+    public function getPaymentMoney(): ?Money
+    {
+        return $this->paymentMoney;
+    }
+
+    public function setPaymentMoney(?Money $paymentMoney): static
+    {
+        $this->paymentMoney = $paymentMoney;
+
+        return $this;
     }
 
     public function getPurchaseAddress(): ?PurchaseAddress
@@ -1064,6 +1153,17 @@ class Purchase
     public function setCalculatedPrices(array $calculatedPrices): Purchase
     {
         $this->calculatedPrices = $calculatedPrices;
+        return $this;
+    }
+
+    public function getCalculatedMoney(): array
+    {
+        return $this->calculatedMoney;
+    }
+
+    public function setCalculatedMoney(array $calculatedMoney): Purchase
+    {
+        $this->calculatedMoney = $calculatedMoney;
         return $this;
     }
 

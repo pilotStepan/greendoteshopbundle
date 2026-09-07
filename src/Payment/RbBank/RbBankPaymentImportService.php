@@ -2,6 +2,10 @@
 
 namespace Greendot\EshopBundle\Payment\RbBank;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use Greendot\EshopBundle\Money\Money;
+use SensitiveParameter;
 use Throwable;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
@@ -42,11 +46,11 @@ readonly class RbBankPaymentImportService
         #[Autowire(param: 'greendot_eshop.payment.rb_bank.bank_code')]
         private string                 $bankCode,
         #[Autowire(param: 'greendot_eshop.payment.rb_bank.password')]
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         private string                 $password,
     ) {}
 
-    public function downloadAndProcessPayments(\DateTimeInterface $startDate): void
+    public function downloadAndProcessPayments(DateTimeInterface $startDate): void
     {
         if (!$this->enabled) {
             $this->logger->info('RB bank payment integration is disabled, skipping import.');
@@ -55,7 +59,7 @@ readonly class RbBankPaymentImportService
 
         try {
             $rawList = $this->fetchPaymentsList($startDate);
-            $paymentType = $this->resolveBankTransferPaymentType();
+            $paymentType = $this->findBankTransferPaymentType();
 
             foreach ($this->parsePaymentsList($rawList) as $record) {
                 if ($record->status !== RbPaymentStatus::Completed) {
@@ -78,23 +82,17 @@ readonly class RbBankPaymentImportService
         }
     }
 
-    private function resolveBankTransferPaymentType(): PaymentType
+    private function findBankTransferPaymentType(): ?PaymentType
     {
-        $paymentType = $this->paymentTypeRepository->findOneBy([
+        return $this->paymentTypeRepository->findOneBy([
             'action_group' => PaymentTypeActionGroup::BANK_TRANSFER,
             'account' => $this->account,
             'bank_number' => $this->bankCode,
-        ]);
-
-        if (!$paymentType) {
-            throw new RuntimeException(sprintf(
-                'No bank-transfer PaymentType configured for RB account %s/%s.',
-                $this->account,
-                $this->bankCode,
-            ));
-        }
-
-        return $paymentType;
+        ]) ?? throw new RuntimeException(sprintf(
+            'No bank-transfer PaymentType configured for RB account %s/%s.',
+            $this->account,
+            $this->bankCode,
+        ));
     }
 
     private function processRecord(RbBankPaymentRecord $record, PaymentType $paymentType): void
@@ -108,24 +106,65 @@ readonly class RbBankPaymentImportService
             return; // CESKA POSTA COD remittance, not a customer transfer
         }
 
+        $this->managePurchase->preparePrices($purchase);
+        $expectedMoney = $purchase->getTotalMoney();
+        $transferredMoney = $record->transferredMoney;
+
+        if (!$expectedMoney->isSameCurrency($transferredMoney)) {
+            $this->paymentActionLogger->log($purchase, PaymentActionType::FAILURE->value, 'system',
+                sprintf('Platba pro objednávku #%d (VS %s) přišla v jiné měně (%s) než objednávka (%s); platba nebyla potvrzena.',
+                    $purchase->getId(),
+                    $record->variableSymbol,
+                    $transferredMoney->iso,
+                    $expectedMoney->iso,
+                ),
+                [
+                    'source' => 'rb_bank',
+                    'variableSymbol' => $record->variableSymbol,
+                    'transactionId' => $record->transactionId,
+                    'transferredMoney' => $transferredMoney,
+                    'expectedMoney' => $expectedMoney,
+                ],
+            );
+            return;
+        }
+
+        if ($transferredMoney->lessThan($expectedMoney)) {
+            $this->paymentActionLogger->log($purchase, PaymentActionType::FAILURE->value, 'system',
+                sprintf(
+                    'Přijatá částka %s je nižší než cena objednávky #%d (%s); platba nebyla potvrzena.',
+                    $transferredMoney,
+                    $purchase->getId(),
+                    $expectedMoney,
+                ),
+                [
+                    'source' => 'rb_bank',
+                    'variableSymbol' => $record->variableSymbol,
+                    'transactionId' => $record->transactionId,
+                    'transferredMoney' => $transferredMoney,
+                    'expectedMoney' => $expectedMoney,
+                ],
+            );
+            return;
+        }
+
         try {
             $this->managePurchase->applyBankTransferPayment($purchase, $paymentType, [
                 'performed_by' => 'system',
                 'source' => 'rb_bank',
                 'variableSymbol' => $record->variableSymbol,
                 'transactionId' => $record->transactionId,
-                'amount' => $record->transferredAmount,
-                'currency' => $record->currencyCode,
+                'transferredMoney' => $transferredMoney,
+                'expectedMoney' => $expectedMoney,
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->paymentActionLogger->log($purchase, PaymentActionType::FAILURE->value, 'system',
                 sprintf('Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit. Error: %s', $purchase->getId(), $record->variableSymbol, $e->getMessage()),
                 [
                     'source' => 'rb_bank',
                     'variableSymbol' => $record->variableSymbol,
                     'transactionId' => $record->transactionId,
-                    'amount' => $record->transferredAmount,
-                    'currency' => $record->currencyCode,
+                    'transferredMoney' => $transferredMoney,
                 ],
             );
             return;
@@ -134,7 +173,7 @@ readonly class RbBankPaymentImportService
         $this->entityManager->persist($purchase);
     }
 
-    private function fetchPaymentsList(\DateTimeInterface $startDate): string
+    private function fetchPaymentsList(DateTimeInterface $startDate): string
     {
         $response = $this->httpClient->request('GET', self::URL, [
             'query' => [
@@ -173,11 +212,11 @@ readonly class RbBankPaymentImportService
         return $records;
     }
 
-    private function parseDate(string $value): ?\DateTimeImmutable
+    private function parseDate(string $value): ?DateTimeImmutable
     {
         $value = ltrim(trim($value), "\u{FEFF}");
         foreach (['d.m.Y H:i:s', 'd.m.Y'] as $format) {
-            $date = \DateTimeImmutable::createFromFormat($format, $value);
+            $date = DateTimeImmutable::createFromFormat($format, $value);
             if ($date !== false) {
                 return $date;
             }
@@ -211,8 +250,7 @@ readonly class RbBankPaymentImportService
             validFrom: $validFrom,
             validTo: $validTo,
             prescribedAmount: (float)$columns[2],
-            currencyCode: trim($columns[3]),
-            transferredAmount: (float)$columns[4],
+            transferredMoney: new Money((float)$columns[4], strtoupper(trim($columns[3]))),
             transferDate: $transferDate,
             debitAccountNumber: trim($columns[6]),
             debitBankCode: trim($columns[7]),

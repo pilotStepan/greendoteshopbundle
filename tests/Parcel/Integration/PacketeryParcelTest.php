@@ -19,9 +19,9 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Parcel\Integration\PacketeryParcel;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 class PacketeryParcelTest extends TestCase
 {
@@ -48,7 +48,6 @@ class PacketeryParcelTest extends TestCase
             $httpClient,
             new NullLogger(),
             $this->makePriceFactory($price),
-            $this->makeCurrencyRepo(),
             'TestEshop',
             $enabled,
         );
@@ -60,19 +59,18 @@ class PacketeryParcelTest extends TestCase
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturn($price);
+        $calculator->method('getMoney')->willReturn(new Money($price, 'CZK'));
 
         $factory = $this->createMock(PurchasePriceFactory::class);
         $factory->method('create')->willReturn($calculator);
         return $factory;
     }
 
-    private function makeCurrencyRepo(): CurrencyRepository
+    private function makeCurrency(string $iso = 'CZK'): Currency
     {
         $currency = $this->createMock(Currency::class);
-        $repo = $this->createMock(CurrencyRepository::class);
-        $repo->method('findOneBy')->willReturn($currency);
-        return $repo;
+        $currency->method('getIso')->willReturn($iso);
+        return $currency;
     }
 
     private function makePurchase(
@@ -82,6 +80,7 @@ class PacketeryParcelTest extends TestCase
         string           $country = 'cz',
         ?PurchaseAddress $address = null,
         ?string          $transportNumber = 'Z4154090000',
+        ?string          $currencyIso = 'CZK',
     ): Purchase
     {
         $client = $this->createMock(Client::class);
@@ -99,6 +98,7 @@ class PacketeryParcelTest extends TestCase
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
         $purchase->method('isVatExempted')->willReturn(false);
+        $purchase->method('getCurrency')->willReturn($currencyIso !== null ? $this->makeCurrency($currencyIso) : null);
         return $purchase;
     }
 
@@ -168,6 +168,18 @@ class PacketeryParcelTest extends TestCase
         );
     }
 
+    public function testCreateParcel_noCurrencySnapshot_throwsPermanentParcelException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(self::successXml()));
+        $branch = $this->makeBranch('packeta_52');
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('pw'), $branch, currencyIso: null),
+        );
+    }
+
     public function testCreateParcel_codOrder_includesCod(): void
     {
         $capturedBody = null;
@@ -210,7 +222,6 @@ class PacketeryParcelTest extends TestCase
             $httpClient,
             new NullLogger(),
             $this->makeCodAwarePriceFactory(),
-            $this->makeCurrencyRepo(),
             'TestEshop',
             $enabled,
         );
@@ -222,8 +233,8 @@ class PacketeryParcelTest extends TestCase
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturnCallback(
-            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0,
+        $calculator->method('getMoney')->willReturnCallback(
+            static fn(bool $includeServices = false): Money => new Money($includeServices ? 353.94 : 214.0, 'CZK'),
         );
 
         $factory = $this->createMock(PurchasePriceFactory::class);

@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\PaymentGateway;
 
 use DateTime;
+use RuntimeException;
 use Throwable;
 use Alcohol\ISO4217;
 use Psr\Log\LoggerInterface;
@@ -17,6 +18,7 @@ use Granam\GpWebPay\Codes\CurrencyCodes;
 use Granam\GpWebPay\CardPayRequestValues;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Payment;
+use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
@@ -59,21 +61,42 @@ readonly class GPWebpay implements PaymentGatewayInterface
      */
     public function getPayLink(Purchase $purchase): string
     {
+        $paymentType = $purchase->getPaymentType();
+        if ($paymentType?->getCurrency() !== null && $purchase->getCurrency() !== null
+            && $paymentType->getCurrency() !== $purchase->getCurrency()
+        ) {
+            throw PurchaseCurrencyMismatchException::forPurchase($purchase);
+        }
+
         $this->managePurchase->preparePrices($purchase);
 
-        $currency = $this->currencyManager->get();
-        $currencyNumeric = (new ISO4217())->getByCode($currency->getName())['numeric'];
+        $currency = $this->currencyManager->getForPurchase($purchase);
+        $money = $purchase->getTotalMoney();
+
+        if ($money?->iso !== $currency->getIso()) {
+            throw new RuntimeException(sprintf(
+                'Purchase #%d total (%s) does not match its currency (%s); refusing to build a payment link.',
+                $purchase->getId(),
+                $money->iso,
+                $currency->getIso(),
+            ));
+        }
+
+        $currencyNumeric = (new ISO4217())->getByCode($currency->getIso())['numeric'];
 
         $this->logger->info('GPW getPayLink initiated', [
             'purchaseId' => $purchase->getId(),
-            'totalPrice' => $purchase->getTotalPrice(),
+            'totalPrice' => $money->value,
             'currency' => $currencyNumeric,
+            'currencyIso' => $money->iso,
         ]);
 
         $payment = new Payment();
         $payment->setDate(new DateTime());
         $payment->setPurchase($purchase);
         $payment->setExternalId(1);
+        $payment->setAmount($money->value);
+        $payment->setCurrency($currency);
 
         try {
             $this->entityManager->persist($payment);
@@ -99,7 +122,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
 
             $requestValues = CardPayRequestValues::createFromArray([
                 'ORDERNUMBER' => $payment->getId(),
-                'AMOUNT' => $purchase->getTotalPrice(),
+                'AMOUNT' => $money->value,
                 'CURRENCY' => $currencyNumeric,
                 'DEPOSITFLAG' => true,
                 'MERORDERNUM' => $purchase->getId(),
@@ -116,8 +139,9 @@ readonly class GPWebpay implements PaymentGatewayInterface
                 [
                     'url' => $redirectUrl,
                     'ORDERNUMBER' => $payment->getId(),
-                    'AMOUNT' => $purchase->getTotalPrice(),
+                    'AMOUNT' => $money->value,
                     'CURRENCY' => $currencyNumeric,
+                    'CURRENCY_ISO' => $money->iso,
                     'DEPOSITFLAG' => true,
                     'MERORDERNUM' => $purchase->getId(),
                 ],

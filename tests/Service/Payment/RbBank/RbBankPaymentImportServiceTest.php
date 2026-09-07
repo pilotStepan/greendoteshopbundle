@@ -10,6 +10,7 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -17,6 +18,7 @@ use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -36,6 +38,9 @@ class RbBankPaymentImportServiceTest extends TestCase
     private LoggerInterface&MockObject $logger;
     private WorkflowInterface&MockObject $purchaseFlow;
     private PaymentType $bankTransferPaymentType;
+
+    /** @var array<int, Money> spl_object_id(Purchase) => expected total, defaults to "always sufficient, CZK" */
+    private array $expectedTotalByPurchase = [];
 
     protected function setUp(): void
     {
@@ -77,6 +82,73 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->entityManager->expects($this->once())->method('flush');
 
         $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertSame($this->bankTransferPaymentType, $purchase->getPaymentType());
+    }
+
+    public function testCurrencyMismatchIsRejectedAsFailureWithoutConfirmingPayment(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('find')->with('42')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->never())->method('apply');
+
+        $this->entityManager->expects($this->once())->method('persist'); // failure PaymentAction only
+        $this->entityManager->expects($this->once())->method('flush');
+
+        // Record arrives in EUR, but the order's own total is CZK.
+        $line = '01.06.2026;30.06.2026;100.00;EUR;100.00;15.06.2026;111111;0100;222222;5500;42;0;poznamka;2;tx-1';
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    public function testUnderpaymentIsRejectedAsFailureWithoutConfirmingPayment(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('find')->with('42')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->never())->method('apply');
+
+        $this->entityManager->expects($this->once())->method('persist'); // failure PaymentAction only
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line = sprintf(self::ROW, '50.00', '15.06.2026', '42', 2, 'tx-1'); // order total is 100.0
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    public function testExactPaymentIsConfirmed(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('find')->with('42')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->once())->method('apply');
+
+        $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertSame($this->bankTransferPaymentType, $purchase->getPaymentType());
+    }
+
+    public function testOverpaymentIsConfirmed(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('find')->with('42')->willReturn($purchase);
+        $this->purchaseFlow->expects($this->once())->method('apply');
+
+        $line = sprintf(self::ROW, '150.00', '15.06.2026', '42', 2, 'tx-1');
         $this->createService(new MockHttpClient(new MockResponse($line)))
             ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
         ;
@@ -309,8 +381,22 @@ class RbBankPaymentImportServiceTest extends TestCase
         ;
     }
 
+    private function setExpectedTotal(Purchase $purchase, float $value, string $iso = 'CZK'): void
+    {
+        $this->expectedTotalByPurchase[spl_object_id($purchase)] = new Money($value, $iso);
+    }
+
     private function createService(MockHttpClient $httpClient, bool $enabled = true): RbBankPaymentImportService
     {
+        $purchasePriceFactory = $this->createMock(PurchasePriceFactory::class);
+        $purchasePriceFactory->method('create')->willReturnCallback(function (Purchase $purchase) {
+            $money = $this->expectedTotalByPurchase[spl_object_id($purchase)] ?? new Money(0.0, 'CZK');
+            $calculator = $this->createMock(PurchasePrice::class);
+            $calculator->method('getMoney')->willReturn($money);
+            $calculator->method('getPrice')->willReturn($money->value);
+            return $calculator;
+        });
+
         return new RbBankPaymentImportService(
             $httpClient,
             $this->entityManager,
@@ -318,7 +404,7 @@ class RbBankPaymentImportServiceTest extends TestCase
             $this->paymentTypeRepository,
             new ManagePurchase(
                 $this->createMock(CurrencyManager::class),
-                $this->createMock(PurchasePriceFactory::class),
+                $purchasePriceFactory,
                 $this->createMock(ProductVariantPriceFactory::class),
                 $this->purchaseRepository,
                 new ManageVies($this->createMock(LoggerInterface::class)),

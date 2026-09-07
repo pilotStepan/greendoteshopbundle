@@ -6,8 +6,10 @@ use Throwable;
 use RuntimeException;
 use SimpleXMLElement;
 use DateTimeImmutable;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Parcel\ParcelStatusInfoDto;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
@@ -131,19 +133,18 @@ trait PacketeryApiTrait
         return ParcelDeliveryStateEnum::UNKNOWN;
     }
 
-    private function resolvePriceAndCod(Purchase $purchase, string $currency): array
+    /**
+     * @return array{value: Money, cod: ?Money}
+     */
+    private function resolvePriceAndCod(Purchase $purchase, Currency $currency): array
     {
-        $currencyEntity = $currency === 'EUR'
-            ? $this->currencyRepository->findOneBy(['isDefault' => false])
-            : $this->currencyRepository->findOneBy(['isDefault' => true]);
-
-        $priceCalculator = $this->purchasePriceFactory->create($purchase, $currencyEntity);
+        $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency);
 
         $value = (clone $priceCalculator)
             ->setVatCalculationType(VatCalculationType::WithVAT)
             ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
             ->setVoucherCalculationType(VoucherCalculationType::WithoutVoucher)
-            ->getPrice()
+            ->getMoney()
         ;
 
         $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
@@ -152,7 +153,7 @@ trait PacketeryApiTrait
                 ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice(true)
+                ->getMoney(true)
             : null;
 
         return ['value' => $value, 'cod' => $cod];

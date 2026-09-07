@@ -5,6 +5,8 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Exception;
 use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Workflow\Event\Event;
 use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageVoucher;
@@ -29,6 +31,8 @@ use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
+    private LoggerInterface $logger;
+
     public function __construct(
         private EntityManagerInterface   $entityManager,
         private ManageVoucher            $manageVoucher,
@@ -40,14 +44,19 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private WorkflowInterface        $purchaseWorkflow,
         private PaymentActionLogger      $paymentActionLogger,
         private PaymentRepository        $paymentRepository,
-    ) {}
+        ?LoggerInterface                 $logger = null,
+    ) {
+        $this->logger = $logger ?? new NullLogger();
+    }
 
     public static function getSubscribedEvents(): array
     {
         return [
             PWC::eventName('guard', PWC::T_CHECKOUT) => 'onGuardReceive',
+            PWC::eventName('guard', PWC::T_INIT_ORDER) => 'onGuardCurrencyConsistency',
 
             PWC::eventName('transition', PWC::T_CHECKOUT) => 'onReceive',
+            PWC::eventName('transition', PWC::T_INIT_ORDER) => 'onInitOrder',
             PWC::eventName('transition', PWC::T_PAY_PAY) => 'onPayment',
             PWC::eventName('transition', PWC::T_PAY_FAIL) => 'onPaymentIssue',
             PWC::eventName('transition', PWC::T_CANCEL) => 'onCancellation',
@@ -104,6 +113,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             return;
         }
 
+        if (!$this->isCurrencyConsistent($purchase)) {
+            $event->setBlocked(true, $this->currencyMismatchMessage($purchase));
+            return;
+        }
+
         $missingConsent = $this->entityManager->getRepository(Consent::class)->findMissingRequiredConsent($purchase->getConsents());
 
         if ($missingConsent) {
@@ -133,6 +147,49 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $event->setBlocked(true, "Chyba při ověřování DIČ: " . $e->getMessage());
             return;
         }
+    }
+
+    public function onGuardCurrencyConsistency(GuardEvent $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+        if (!$purchase instanceof Purchase) {
+            return;
+        }
+
+        if (!$this->isCurrencyConsistent($purchase)) {
+            $event->setBlocked(true, $this->currencyMismatchMessage($purchase));
+        }
+    }
+
+    private function isCurrencyConsistent(Purchase $purchase): bool
+    {
+        $purchaseCurrency = $purchase->getCurrency();
+        $paymentTypeCurrency = $purchase->getPaymentType()?->getCurrency();
+
+        return $purchaseCurrency === null
+            || $paymentTypeCurrency === null
+            || $purchaseCurrency === $paymentTypeCurrency;
+    }
+
+    private function currencyMismatchMessage(Purchase $purchase): string
+    {
+        return sprintf(
+            'Objednávka je vedena v měně %s, ale zvolený způsob platby účtuje v %s.',
+            $purchase->getCurrency()?->getIso() ?? '?',
+            $purchase->getPaymentType()?->getCurrency()?->getIso() ?? '?',
+        );
+    }
+
+    public function onInitOrder(Event $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+        if (!$purchase instanceof Purchase) {
+            return;
+        }
+
+        $this->managePurchase->ensureCurrency($purchase);
     }
 
     public function onReceive(Event $event): void
@@ -177,8 +234,31 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $paymentTechnicalActionValue = $event->getContext()['payment_technical_action'] ?? null;
         $paymentTechnicalAction = is_string($paymentTechnicalActionValue) ? PaymentTechnicalAction::tryFrom($paymentTechnicalActionValue) : null;
         if ($paymentTechnicalAction) {
-            $paymentType = $this->entityManager->getRepository(PaymentType::class)->findOneBy(['paymentTechnicalAction' => $paymentTechnicalAction]);
-            $purchase->setPaymentType($paymentType);
+            $paymentTypeRepository = $this->entityManager->getRepository(PaymentType::class);
+
+            $paymentType = $purchase->getCurrency()
+                ? $paymentTypeRepository->findOneBy([
+                    'paymentTechnicalAction' => $paymentTechnicalAction,
+                    'currency' => $purchase->getCurrency(),
+                    'isEnabled' => true,
+                ])
+                : null;
+
+            $paymentType ??= $paymentTypeRepository->findOneBy([
+                'paymentTechnicalAction' => $paymentTechnicalAction,
+                'currency' => null,
+                'isEnabled' => true,
+            ]);
+
+            if ($paymentType !== null) {
+                $purchase->setPaymentType($paymentType);
+            } else {
+                $this->logger->warning('No matching enabled PaymentType found for successful payment; leaving existing PaymentType untouched', [
+                    'purchaseId' => $purchase->getId(),
+                    'paymentTechnicalAction' => $paymentTechnicalAction->value,
+                    'purchaseCurrency' => $purchase->getCurrency()?->getIso(),
+                ]);
+            }
         }
 
         $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_PAID);

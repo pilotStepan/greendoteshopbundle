@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Mail\Data;
 
+use Greendot\EshopBundle\Money\Money;
+
 class OrderPaymentData
 {
     public function __construct(
@@ -16,5 +18,10 @@ class OrderPaymentData
         public ?string $bankAccount,
         public ?string $bankName,
         public ?string $bankIban,
+
+        public ?Money   $priceMoneyPrimary = null,
+        public ?string  $pricePrimaryFormatted = null,
+        public ?Money   $priceMoneySecondary = null,
+        public ?string  $priceSecondaryFormatted = null,
     ) {}
 }

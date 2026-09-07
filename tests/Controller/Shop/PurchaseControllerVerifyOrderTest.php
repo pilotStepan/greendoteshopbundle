@@ -23,6 +23,7 @@ use Granam\GpWebPay\DigestSignerInterface;
 use Granam\GpWebPay\Codes\PrCodes;
 use Granam\GpWebPay\Exceptions\GpWebPayErrorResponse;
 use Greendot\EshopBundle\Controller\Shop\PurchaseController;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Client;
@@ -137,6 +138,39 @@ class PurchaseControllerVerifyOrderTest extends TestCase
         $this->assertFalse($purchase->getWorkflowFlag(PWC::F_PAYMENT_ERROR->value));
         $this->assertSame(302, $response->getStatusCode());
         $this->assertSame('https://test.example.com/zakaznik/objednavka/999?created=1', $response->getTargetUrl());
+    }
+
+    public function testSuccessfulPaymentLogsTheAmountAndCurrencyThePaymentWasRedirectedWith(): void
+    {
+        $purchase = $this->createCompletedPurchase();
+        $czk = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0);
+        $payment = (new Payment())->setPurchase($purchase)->setAmount(1234.0)->setCurrency($czk);
+
+        $this->paymentRepository->method('find')->with('42')->willReturn($payment);
+
+        $gateway = new FakeGpWebpayGateway(verifyResult: $this->buildCardPayResponse(orderNumber: 42, prCode: PrCodes::OK_CODE, srCode: 0));
+
+        $this->controller->verifyOrder(
+            $this->buildRequest(['ORDERNUMBER' => '42']),
+            $gateway,
+            $this->entityManager,
+            $this->workflow,
+            $this->urlGenerator,
+            $this->createMock(LoggerInterface::class),
+            $this->paymentActionLogger,
+        );
+
+        $statePaidCall = null;
+        foreach ($this->paymentActionLogger->calls as $call) {
+            if ($call[1] === 'state_paid') {
+                $statePaidCall = $call;
+            }
+        }
+        $this->assertNotNull($statePaidCall, 'Expected a state_paid PaymentAction to be logged');
+
+        [, , , , $data] = $statePaidCall;
+        $this->assertSame(1234.0, $data['amount']);
+        $this->assertSame('CZK', $data['currency']);
     }
 
     public function testDeclinedPaymentMarksPurchaseFailedAndRedirectsToEndscreen(): void

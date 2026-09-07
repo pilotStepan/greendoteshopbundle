@@ -15,6 +15,7 @@ use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Greendot\EshopBundle\Entity\Interface\SoftDeletedInterface;
 use Greendot\EshopBundle\Entity\Trait\SoftDeletedTrait;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CurrencyRepository::class)]
 #[ApiResource(
@@ -73,6 +74,15 @@ class Currency implements SoftDeletedInterface
     public function getName(): ?string
     {
         return $this->name;
+    }
+
+    /**
+     * ISO 4217 currency code (e.g. "CZK", "EUR"). The `name` column doubles as the ISO code
+     * in this schema - this accessor exists so callers that need the code can say so explicitly.
+     */
+    public function getIso(): string
+    {
+        return $this->name ?? '';
     }
 
     public function setName(string $name): self
@@ -140,6 +150,18 @@ class Currency implements SoftDeletedInterface
     public function setIsDefault(bool $isDefault): self
     {
         $this->isDefault = $isDefault;
+
+        return $this;
+    }
+
+    public function getDefaultLocale(): ?string
+    {
+        return $this->defaultLocale;
+    }
+
+    public function setDefaultLocale(string $defaultLocale): self
+    {
+        $this->defaultLocale = $defaultLocale;
 
         return $this;
     }

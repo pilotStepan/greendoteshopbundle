@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Payment\RbBank;
 
 // one row of Raiffeisenbank's PLAIN payments-list report, see RbBankPaymentImportService for the column layout
 use DateTimeImmutable;
+use Greendot\EshopBundle\Money\Money;
 
 readonly class RbBankPaymentRecord
 {
@@ -11,8 +12,7 @@ readonly class RbBankPaymentRecord
         public DateTimeImmutable $validFrom,
         public DateTimeImmutable $validTo,
         public float             $prescribedAmount,
-        public string            $currencyCode,
-        public float             $transferredAmount,
+        public Money             $transferredMoney,
         public DateTimeImmutable $transferDate,
         public string            $debitAccountNumber,
         public string            $debitBankCode,

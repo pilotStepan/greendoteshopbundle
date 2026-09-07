@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 
 class PurchasePrice
@@ -75,6 +76,7 @@ class PurchasePrice
         $this->calculateVouchersValue();
     }
 
+    /* @deprecated use getMoney() instead */
     public function getPrice(bool $includeServices = false, ?float $vat = null): ?float
     {
         $price = $this->purchasePrice;
@@ -95,6 +97,36 @@ class PurchasePrice
         return $this->priceUtils->convertCurrency($price, $this->conversionRate);
     }
 
+    public function getCurrency(): Currency
+    {
+        return $this->currency;
+    }
+
+    public function getMoney(bool $includeServices = false, ?float $vat = null): Money
+    {
+        return Money::fromCurrency($this->getPrice($includeServices, $vat), $this->currency);
+    }
+
+    public function getTransportationMoney(): Money
+    {
+        return Money::fromCurrency($this->getTransportationPrice(), $this->currency);
+    }
+
+    public function getPaymentMoney(): Money
+    {
+        return Money::fromCurrency($this->getPaymentPrice(), $this->currency);
+    }
+
+    public function getVouchersUsedMoney(): Money
+    {
+        return Money::fromCurrency($this->getVouchersUsedValue(), $this->currency);
+    }
+
+    public function getDiscountMoney(): Money
+    {
+        return Money::fromCurrency($this->discountValue, $this->currency);
+    }
+
     /**
      * @return float|null
      */
@@ -103,6 +135,7 @@ class PurchasePrice
         return $this->priceUtils->convertCurrency($this->minPrice, $this->conversionRate);
     }
 
+    /* @deprecated use getTransportationMoney() instead */
     public function getTransportationPrice(): ?float
     {
         if (!$this->transportationPrice) {
@@ -111,6 +144,7 @@ class PurchasePrice
         return $this->priceUtils->convertCurrency($this->transportationPrice, $this->conversionRate);
     }
 
+    /* @deprecated use getPaymentMoney() instead */
     public function getPaymentPrice(): ?float
     {
         if (!$this->paymentPrice) {
@@ -127,6 +161,7 @@ class PurchasePrice
         return $this->vouchersUsed;
     }
 
+    /* @deprecated use getVouchersUsedMoney() instead */
     public function getVouchersUsedValue(): float
     {
         if ($this->vouchersValue > 0) {

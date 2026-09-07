@@ -3,17 +3,19 @@
 namespace Greendot\EshopBundle\Service;
 
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Entity\Project\Purchase;
+use RuntimeException;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 
 /**
  * Source of truth for currently selected currency.
  * Keeps selection in session and allows resetting it based on locale changes.
- * Sets currency automatically on each request via LocaleListener, unless manually overridden.
+ * Sets currency automatically on each request via CurrencyLocaleListener, unless manually overridden.
  */
-class CurrencyManager implements LocaleAwareInterface
+class CurrencyManager
 {
     private const SESSION_KEY_CURRENCY_ID = 'selectedCurrencyId';
     private const SESSION_KEY_LOCALE = 'selectedCurrencyLocale';
@@ -21,6 +23,8 @@ class CurrencyManager implements LocaleAwareInterface
     public function __construct(
         private RequestStack       $requestStack,
         private CurrencyRepository $currencyRepository,
+        #[Autowire(param: 'greendot_eshop.shop.secondary_currency_name')]
+        private string             $secondaryCurrencyName = 'EUR',
     ) {}
 
     /**
@@ -45,6 +49,40 @@ class CurrencyManager implements LocaleAwareInterface
         }
 
         return $this->currencyRepository->findOneBy(['isDefault' => true]);
+    }
+
+    /**
+     * Currency a given purchase should be priced/displayed in: its own snapshot when set
+     * (set at cart creation and kept in sync with its PaymentType's currency), falling back
+     * to the current session/default currency for purchases that predate this column.
+     *
+     * IMPORTANT: only use this to build a Money value. Every plain float/string price must keep
+     * using get() (the ambient session/global currency) - never this method - so a bare number
+     * that a template or API consumer formats with the ambient currency symbol can never hold a
+     * value silently computed in a different currency. See git history around the "Money object
+     * pro ceny objednávek" commits for the incident this split fixes.
+     */
+    public function getForPurchase(Purchase $purchase): Currency
+    {
+        return $purchase->getCurrency() ?? $this->get();
+    }
+
+    /**
+     * The currency a document/email should show alongside a given primary currency:
+     * the shop's secondary currency (e.g. EUR) when the primary is the default currency,
+     * otherwise the default currency itself - so a document never shows the same currency twice.
+     */
+    public function getSecondaryFor(Currency $primary): Currency
+    {
+        $secondary = $primary->isIsDefault()
+            ? $this->currencyRepository->findOneByIso($this->secondaryCurrencyName)
+            : $this->currencyRepository->findOneBy(['isDefault' => true]);
+
+        if (!$secondary) {
+            throw new RuntimeException(sprintf('Could not resolve a secondary currency for "%s".', $primary->getIso()));
+        }
+
+        return $secondary;
     }
 
     /**
@@ -91,14 +129,15 @@ class CurrencyManager implements LocaleAwareInterface
         $this->storeInSession($currency, $currentLocale);
     }
 
-    public function setLocale(string $locale): void
-    {
-        $this->setByLocale($locale);
-    }
-
     public function getLocale(): string
     {
-        return $this->requestStack->getSession()->get(self::SESSION_KEY_LOCALE) ?? '';
+        try {
+            $session = $this->requestStack->getSession();
+        } catch (SessionNotFoundException $e) {
+            return '';
+        }
+
+        return $session->get(self::SESSION_KEY_LOCALE) ?? '';
     }
 
     private function storeInSession(Currency $currency, ?string $locale): void

@@ -5,6 +5,8 @@ namespace Greendot\EshopBundle\StateProcessor;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -15,7 +17,9 @@ class CartStateProcessor implements ProcessorInterface
 {
     public function __construct(
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
-        private ProcessorInterface $inner,
+        private ProcessorInterface      $inner,
+        private ManagePurchase          $managePurchase,
+        private CalculatedPricesService $calculatedPricesService,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Purchase
@@ -40,6 +44,19 @@ class CartStateProcessor implements ProcessorInterface
             $data->setBranch(null);
         }
 
-        return $this->inner->process($data, $operation, $uriVariables, $context);
+        $persisted = $this->inner->process($data, $operation, $uriVariables, $context);
+        assert($persisted instanceof Purchase);
+
+        $persisted->setCalculatedPrices([]);
+        $persisted->setCalculatedMoney([]);
+        foreach ($persisted->getProductVariants() as $purchaseProductVariant) {
+            $purchaseProductVariant->setCalculatedPrices([]);
+            $purchaseProductVariant->setCalculatedMoney([]);
+        }
+
+        $this->managePurchase->preparePrices($persisted);
+        $this->calculatedPricesService->makeCalculatedPricesForPurchaseWithVariants($persisted);
+
+        return $persisted;
     }
 }

@@ -101,10 +101,15 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     public function index(
         ClientRepository   $clientRepository,
         PurchaseRepository $purchaseRepository,
+        ManagePurchase     $managePurchase,
     ): Response
     {
         $client = $clientRepository->find($this->getUser());
         $lastOrder = $purchaseRepository->lastPurchaseOfUser($client);
+
+        if ($lastOrder) {
+            $managePurchase->preparePrices($lastOrder);
+        }
 
         return $this->render('client-section/index.html.twig', [
             'client' => $client,
@@ -117,12 +122,13 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
     ])]
     #[Route('/zakaznik/platba/{purchaseID}', name: 'client_section_payment')]
     public function payment(
-        int                $purchaseID,
-        PurchaseRepository $purchaseRepository,
-        QRcodeGenerator    $qrCodeGenerator,
-        PriceCalculator    $priceCalculator,
-        ClientRepository   $clientRepository,
-        CurrencyManager    $currencyManager,
+        int                  $purchaseID,
+        PurchaseRepository   $purchaseRepository,
+        QRcodeGenerator      $qrCodeGenerator,
+        PriceCalculator      $priceCalculator,
+        PurchasePriceFactory $purchasePriceFactory,
+        ClientRepository     $clientRepository,
+        CurrencyManager      $currencyManager,
     ): Response
     {
         $client = $clientRepository->find($this->getUser());
@@ -144,6 +150,11 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             true,
         );
 
+        $purchaseCurrency = $currencyManager->getForPurchase($purchase);
+        $totalMoney = $purchasePriceFactory
+            ->create($purchase, $purchaseCurrency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount, VoucherCalculationType::WithoutVoucher)
+            ->getMoney(true);
+
         $qrCodePath = $qrCodeGenerator->getUri($purchase);
 
         return $this->render('client-section/payment.html.twig', [
@@ -151,6 +162,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             'purchase' => $purchase,
             'QRcode' => $qrCodePath,
             'totalPrice' => $totalPrice,
+            'totalMoney' => $totalMoney,
             'currencySymbol' => $currency->getSymbol(),
         ]);
     }
@@ -171,6 +183,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
 
+        foreach ($pagination as $purchase) {
+            $managePurchase->preparePrices($purchase);
+        }
         foreach ($carts as $cart) {
             $managePurchase->preparePrices($cart);
         }
@@ -207,6 +222,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         $created = $request->query->get('created');
 
         $priceCalculator = $purchasePriceFactory->create($purchase, $currency);
+
+        $purchaseCurrency = $currencyManager->getForPurchase($purchase);
+        $purchaseMoneyCalculator = $purchasePriceFactory->create($purchase, $purchaseCurrency);
+
         $managePurchase->preparePrices($purchase);
 
         $qrCodePath = $qrCodeGenerator->getUri($purchase);
@@ -221,8 +240,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             'purchase' => $purchase,
             'QRcode' => $qrCodePath,
             'priceCalculator' => $priceCalculator,
+            'purchaseMoneyCalculator' => $purchaseMoneyCalculator,
             'productPriceCalculator' => $productVariantPriceFactory,
             'currency' => $currency,
+            'purchaseCurrency' => $purchaseCurrency,
             'created' => $created,
             'payLink' => $paylink,
             'trackingUrl' => $trackingUrl,
@@ -236,7 +257,9 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         ClientRepository   $clientRepository,
         PurchaseRepository $orderRepository,
         PaginatorInterface $paginator,
-        Request            $request): Response
+        Request            $request,
+        ManagePurchase     $managePurchase,
+    ): Response
     {
         if (!$user = $this->getUser()) return $this->redirectToRoute('web_homepage');
         if (!$client = $clientRepository->find($user)) return $this->redirectToRoute('web_homepage');
@@ -245,6 +268,10 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
 
         $pagination = $paginator->paginate($orders, $request->query->getInt('page', 1), 5);
         $pagination->setTemplate('pagination/pagination.html.twig');
+
+        foreach ($pagination as $purchase) {
+            $managePurchase->preparePrices($purchase);
+        }
 
         return $this->render('client-section/draft-orders.html.twig', [
             'client' => $client,

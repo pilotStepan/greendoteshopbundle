@@ -69,7 +69,7 @@ abstract class ApiTestCase extends WebTestCase
         $this->client = static::createClient();
         $this->getEntityManager()->beginTransaction();
 
-        // Every request runs LocaleAwareListenerDecorator -> CurrencyManager, which requires
+        // Every request runs CurrencyLocaleListener -> CurrencyManager, which requires
         // a default Currency row to exist; without one, even unrelated endpoints 500.
         CurrencyFactory::createOne();
     }

@@ -18,8 +18,8 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Parcel\Integration\PacketeryAddressParcel;
 
 class PacketeryAddressParcelTest extends TestCase
@@ -92,7 +92,6 @@ class PacketeryAddressParcelTest extends TestCase
             $httpClient,
             new NullLogger(),
             $this->makePriceFactory($price),
-            $this->makeCurrencyRepo(),
             'TestEshop',
             $enabled,
         );
@@ -104,19 +103,20 @@ class PacketeryAddressParcelTest extends TestCase
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturn($price);
+        $calculator->method('getMoney')->willReturn(new Money($price, 'EUR'));
 
         $factory = $this->createMock(PurchasePriceFactory::class);
         $factory->method('create')->willReturn($calculator);
         return $factory;
     }
 
-    private function makeCurrencyRepo(): CurrencyRepository
+    // Purchases in this test file default to an 'sk' address, so the currency snapshot
+    // defaults to EUR, matching that address's expected currency.
+    private function makeCurrency(string $iso = 'EUR'): Currency
     {
         $currency = $this->createMock(Currency::class);
-        $repo = $this->createMock(CurrencyRepository::class);
-        $repo->method('findOneBy')->willReturn($currency);
-        return $repo;
+        $currency->method('getIso')->willReturn($iso);
+        return $currency;
     }
 
     private function makePurchase(
@@ -124,6 +124,7 @@ class PacketeryAddressParcelTest extends TestCase
         bool             $isCod = false,
         string           $country = 'sk',
         ?PurchaseAddress $address = null,
+        ?string          $currencyIso = 'EUR',
     ): Purchase
     {
         $client = $this->createMock(Client::class);
@@ -140,6 +141,7 @@ class PacketeryAddressParcelTest extends TestCase
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn('Z4154090000');
         $purchase->method('isVatExempted')->willReturn(false);
+        $purchase->method('getCurrency')->willReturn($currencyIso !== null ? $this->makeCurrency($currencyIso) : null);
         return $purchase;
     }
 
@@ -236,6 +238,17 @@ class PacketeryAddressParcelTest extends TestCase
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('pw', '131')),
+        );
+    }
+
+    public function testCreateParcel_noCurrencySnapshot_throwsPermanentParcelException(): void
+    {
+        $httpClient = $this->makeFullFlowHttpClient();
+
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('apiPw', '131'), currencyIso: null),
         );
     }
 

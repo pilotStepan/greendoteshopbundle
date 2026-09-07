@@ -9,10 +9,13 @@ use Symfony\Bundle\SecurityBundle\Security;
 use PHPUnit\Framework\MockObject\MockObject;
 use Doctrine\Common\Collections\ArrayCollection;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Service\Price\PriceUtils;
@@ -25,6 +28,7 @@ use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
+use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -218,6 +222,180 @@ class ManagePurchaseTest extends TestCase
 
         $result = $this->managePurchase->findPurchaseByInquiryNumber($inquiryNumber);
         $this->assertSame($dummyPurchase, $result);
+    }
+
+    /**
+     * Regression coverage for the plain/Money currency split: preparePrices() must price the
+     * plain (float) fields in the ambient session/global currency exactly as before the Money
+     * feature, and only the *Money fields in the purchase's own currency snapshot - never the
+     * other way around, and never mixing the two on a single field.
+     */
+    public function testPreparePricesUsesAmbientCurrencyForPlainFieldsAndPurchaseCurrencyForMoney(): void
+    {
+        $displayCurrency = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0)->setIsDefault(true);
+        $purchaseCurrency = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2)->setIsDefault(false);
+
+        $purchase = new Purchase();
+        $purchase->setCurrency($purchaseCurrency);
+
+        $currencyRepository = $this->createMock(CurrencyRepository::class);
+        $currencyRepository->method('findOneBy')->with(['isDefault' => true])->willReturn($displayCurrency);
+
+        $session = $this->createMock(\Symfony\Component\HttpFoundation\Session\SessionInterface::class);
+        $session->method('get')->willReturn(null);
+        $requestStack = $this->createMock(RequestStack::class);
+        $requestStack->method('getSession')->willReturn($session);
+
+        $currencyManager = new CurrencyManager($requestStack, $currencyRepository);
+
+        $seenCurrencies = [];
+        $purchasePriceCalc = $this->createMock(PurchasePrice::class);
+        $purchasePriceCalc->method('getPrice')->willReturn(100.0);
+        $purchasePriceCalc->method('getTransportationPrice')->willReturn(null);
+        $purchasePriceCalc->method('getPaymentPrice')->willReturn(null);
+        $purchasePriceCalc->method('setCurrency')->willReturnCallback(
+            function (Currency $c) use (&$seenCurrencies, $purchasePriceCalc) {
+                $seenCurrencies[] = $c;
+                return $purchasePriceCalc;
+            }
+        );
+        $purchasePriceCalc->method('getMoney')->willReturn(new Money(100.0, 'EUR'));
+
+        $purchasePriceFactory = $this->createMock(PurchasePriceFactory::class);
+        $purchasePriceFactory->expects($this->once())
+            ->method('create')
+            ->with($purchase, $displayCurrency, VatCalculationType::WithVAT)
+            ->willReturn($purchasePriceCalc);
+
+        $productVariantPriceFactory = $this->createMock(ProductVariantPriceFactory::class);
+
+        $managePurchase = new ManagePurchase(
+            $currencyManager,
+            $purchasePriceFactory,
+            $productVariantPriceFactory,
+            $this->purchaseRepository,
+            new ManageVies($this->createMock(LoggerInterface::class)),
+            $this->bus,
+            new ParcelServiceProvider([]),
+            $this->createMock(WorkflowInterface::class),
+        );
+
+        $managePurchase->preparePrices($purchase);
+
+        // The calculator is built once, in the ambient currency (asserted via the `with()`
+        // matcher on create() above); its currency is switched to the purchase's own snapshot
+        // exactly once, right before the Money fields are read.
+        $this->assertSame([$purchaseCurrency], $seenCurrencies);
+        $this->assertSame(100.0, $purchase->getTotalPrice());
+        $this->assertSame('EUR', $purchase->getTotalMoney()?->getIso());
+    }
+
+    /**
+     * ensureCurrency() is checkout's last synchronous guard against a purchase whose currency
+     * snapshot has drifted from its PaymentType's own currency (e.g. a client PATCHing `currency`
+     * directly after PaymentType was set, bypassing Purchase::setPaymentType()'s sync) - it must
+     * reject checkout rather than silently proceeding with mismatched data.
+     */
+    public function testEnsureCurrencyThrowsWhenCurrencyDoesNotMatchPaymentTypeCurrency(): void
+    {
+        $czk = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0)->setIsDefault(true);
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2)->setIsDefault(false);
+
+        $paymentType = (new PaymentType())->setCurrency($eur);
+        $purchase = new Purchase();
+        $purchase->setCurrency($czk); // bare assignment, bypassing setPaymentType()'s sync
+        $this->setPaymentTypeWithoutSync($purchase, $paymentType);
+
+        $managePurchase = $this->createManagePurchase(
+            $this->purchaseRepository,
+            $this->bus,
+            new ParcelServiceProvider([]),
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/currency/i');
+
+        $managePurchase->ensureCurrency($purchase);
+    }
+
+    public function testEnsureCurrencyDoesNothingWhenCurrencyAlreadyMatchesPaymentTypeCurrency(): void
+    {
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2)->setIsDefault(false);
+        $paymentType = (new PaymentType())->setCurrency($eur);
+        $purchase = new Purchase();
+        $purchase->setPaymentType($paymentType); // real sync: currency becomes $eur
+
+        $managePurchase = $this->createManagePurchase(
+            $this->purchaseRepository,
+            $this->bus,
+            new ParcelServiceProvider([]),
+        );
+
+        $managePurchase->ensureCurrency($purchase);
+
+        $this->assertSame($eur, $purchase->getCurrency());
+    }
+
+    public function testEnsureCurrencyFillsNullCurrencyFromPaymentTypeCurrency(): void
+    {
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2)->setIsDefault(false);
+        $paymentType = (new PaymentType())->setCurrency($eur);
+        $purchase = new Purchase();
+        $this->setPaymentTypeWithoutSync($purchase, $paymentType);
+        // Purchase starts with no currency snapshot at all.
+
+        $managePurchase = $this->createManagePurchase(
+            $this->purchaseRepository,
+            $this->bus,
+            new ParcelServiceProvider([]),
+        );
+
+        $managePurchase->ensureCurrency($purchase);
+
+        $this->assertSame($eur, $purchase->getCurrency());
+    }
+
+    public function testEnsureCurrencyFillsNullCurrencyFromShopDefaultWhenPaymentTypeHasNone(): void
+    {
+        $default = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0)->setIsDefault(true);
+        $paymentType = new PaymentType(); // no currency of its own
+        $purchase = new Purchase();
+        $this->setPaymentTypeWithoutSync($purchase, $paymentType);
+
+        $currencyRepository = $this->createMock(CurrencyRepository::class);
+        $currencyRepository->method('findOneBy')->with(['isDefault' => true])->willReturn($default);
+        $requestStack = $this->createMock(RequestStack::class);
+        $requestStack->method('getSession')->willThrowException(
+            new \Symfony\Component\HttpFoundation\Exception\SessionNotFoundException(),
+        );
+        $currencyManager = new CurrencyManager($requestStack, $currencyRepository);
+
+        $managePurchase = new ManagePurchase(
+            $currencyManager,
+            $this->createMock(PurchasePriceFactory::class),
+            $this->createMock(ProductVariantPriceFactory::class),
+            $this->purchaseRepository,
+            new ManageVies($this->createMock(LoggerInterface::class)),
+            $this->bus,
+            new ParcelServiceProvider([]),
+            $this->createMock(WorkflowInterface::class),
+        );
+
+        $managePurchase->ensureCurrency($purchase);
+
+        $this->assertSame($default, $purchase->getCurrency());
+    }
+
+    /**
+     * Sets PaymentType on a Purchase without going through Purchase::setPaymentType()'s
+     * pre-checkout currency sync, so tests can construct a purchase/paymentType pairing with
+     * an independently-controlled currency snapshot.
+     */
+    private function setPaymentTypeWithoutSync(Purchase $purchase, PaymentType $paymentType): void
+    {
+        $property = new \ReflectionProperty(Purchase::class, 'PaymentType');
+        $property->setAccessible(true);
+        $property->setValue($purchase, $paymentType);
     }
 
     private function createManagePurchase(

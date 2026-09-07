@@ -169,6 +169,13 @@ class PurchasePriceTest extends PriceCalculationTestCase
             "Total price with services mismatch"
         );
 
+        $this->assertEqualsWithDelta(
+            $expectedTotalWithServices,
+            $pp->getMoney(true)->getValue(),
+            0.001,
+            "getMoney() value should match getPrice() value"
+        );
+        $this->assertSame('CZK', $pp->getMoney(true)->getIso(), "getMoney() should carry the current currency's ISO code");
 
         $pp->setCurrency(FactoryUtil::eur());
         $this->assertEqualsWithDelta(
@@ -177,6 +184,14 @@ class PurchasePriceTest extends PriceCalculationTestCase
             0.001,
             "Total price with services mismatch after currency change"
         );
+
+        $this->assertEqualsWithDelta(
+            $expectedTotalWithServicesEUR,
+            $pp->getMoney(true)->getValue(),
+            0.001,
+            "getMoney() value should match getPrice() value after currency change"
+        );
+        $this->assertSame('EUR', $pp->getMoney(true)->getIso(), "getMoney() should follow setCurrency()");
 
         $pp->setCurrency(FactoryUtil::czk());
         $pp->setDiscountCalculationType(DiscCalc::WithDiscount);
@@ -240,6 +255,39 @@ class PurchasePriceTest extends PriceCalculationTestCase
             0.001,
             "Purchase price with PPV custom price mismatch"
         );
+    }
+
+    /**
+     * Regression test: getDiscountMoney() must carry the exact same numeric value as
+     * getDiscountValue() (just tagged with the currency), never a second conversion of it.
+     * discountValue is already converted (summed from ProductVariantPrice::getDiscountValue(),
+     * which converts using the same conversion rate) - converting it again in getDiscountMoney()
+     * silently shrank the reported discount by another factor of the conversion rate.
+     */
+    public function testDiscountMoneyMatchesDiscountValueRegardlessOfCurrency(): void
+    {
+        $ppv = [
+            [
+                'amount' => 11,
+                'prices' => [
+                    1 => [
+                        'price' => FactoryUtil::makePrice(100, 21, 1, discount: 0),
+                        'discounted' => FactoryUtil::makePrice(100, 21, 1, discount: 10),
+                    ],
+                ],
+            ],
+        ];
+        $purchase = $this->createPurchase($ppv, clientDiscount: null, vouchers: null);
+
+        $pp = $this->createPurchasePrice($purchase, VatCalc::WithVAT, DiscCalc::WithDiscount, FactoryUtil::czk());
+
+        $this->assertGreaterThan(0.0, $pp->getDiscountValue(), 'Sanity check: discount should be non-zero');
+        $this->assertEqualsWithDelta($pp->getDiscountValue(), $pp->getDiscountMoney()->getValue(), 0.001);
+        $this->assertSame('CZK', $pp->getDiscountMoney()->getIso());
+
+        $pp->setCurrency(FactoryUtil::eur());
+        $this->assertEqualsWithDelta($pp->getDiscountValue(), $pp->getDiscountMoney()->getValue(), 0.001);
+        $this->assertSame('EUR', $pp->getDiscountMoney()->getIso());
     }
 
     public function testEmptyPurchase(): void

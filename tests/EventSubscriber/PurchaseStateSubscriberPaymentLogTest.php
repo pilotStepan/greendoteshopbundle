@@ -11,6 +11,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -179,7 +180,7 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
         $paymentTypeRepository->expects($this->once())
             ->method('findOneBy')
-            ->with(['paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS])
+            ->with(['paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS, 'currency' => null, 'isEnabled' => true])
             ->willReturn($matchingPaymentType);
         $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
 
@@ -193,6 +194,78 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
 
         $this->assertTrue($purchase->isPaid());
         $this->assertSame($matchingPaymentType, $purchase->getPaymentType());
+    }
+
+    public function testOnPaymentPrefersPaymentTypeMatchingPurchaseCurrency(): void
+    {
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2);
+        $purchase = (new Purchase())->setCurrency($eur);
+        $eurPaymentType = new PaymentType();
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->expects($this->once())
+            ->method('findOneBy')
+            ->with(['paymentTechnicalAction' => PaymentTechnicalAction::GLOBAL_PAYMENTS, 'currency' => $eur, 'isEnabled' => true])
+            ->willReturn($eurPaymentType);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+            'performed_by' => 'client',
+            'source' => 'gpw',
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertSame($eurPaymentType, $purchase->getPaymentType());
+        // The currency-matched lookup already found a result, so the currency-less
+        // fallback lookup must never run.
+        $this->assertSame($eur, $purchase->getCurrency(), 'Must stay EUR, not be overwritten by a currency-less fallback');
+    }
+
+    /**
+     * Regression test: previously, when a valid technical action matched no enabled PaymentType
+     * at all (e.g. a gateway with no rows configured), the bare `setPaymentType($paymentType)`
+     * call still ran with $paymentType === null, wiping out whatever PaymentType the purchase
+     * already had on a *successful* payment - breaking COD detection, QR/invoice bank details,
+     * and PurchaseCheckoutProcessor's post-checkout redirect.
+     */
+    public function testOnPaymentLeavesPaymentTypeUntouchedAndWarnsWhenNoMatchFound(): void
+    {
+        $purchase = new Purchase();
+        $originalPaymentType = new PaymentType();
+        $purchase->setPaymentType($originalPaymentType);
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->method('findOneBy')->willReturn(null);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning')->with(
+            $this->stringContains('No matching enabled PaymentType'),
+        );
+
+        $subscriber = new PurchaseStateSubscriber(
+            $this->entityManager,
+            $this->createMock(ManageVoucher::class),
+            $this->buildManagePurchase(),
+            new ManageClientDiscount($this->createMock(EntityManagerInterface::class)),
+            $this->createMock(DateService::class),
+            $this->createMock(EventDispatcherInterface::class),
+            $this->createMock(WorkflowInterface::class),
+            $this->paymentActionLogger,
+            $this->paymentRepository,
+            $logger,
+        );
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+        ]);
+
+        $subscriber->onPayment($event);
+
+        $this->assertTrue($purchase->isPaid());
+        $this->assertSame($originalPaymentType, $purchase->getPaymentType(), 'Payment type must be left untouched when no match is found');
     }
 
     public function testOnPaymentIssueLogsStateFailed(): void

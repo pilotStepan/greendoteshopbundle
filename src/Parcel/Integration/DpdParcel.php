@@ -22,7 +22,6 @@ use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 
 /**
  * Integrates DPD Group's "NST Shipping API" (https://nst-preprod.dpsin.dpdgroup.com / https://shipping.dpdgroup.com).
@@ -37,10 +36,9 @@ class DpdParcel implements ParcelServiceInterface
     private readonly string $baseUrl;
 
     public function __construct(
-        private readonly HttpClientInterface  $httpClient,
-        private readonly LoggerInterface      $logger,
-        private readonly PurchasePriceFactory $purchasePriceFactory,
-        private readonly CurrencyRepository   $currencyRepository,
+        private readonly HttpClientInterface    $httpClient,
+        private readonly LoggerInterface        $logger,
+        private readonly PurchasePriceFactory   $purchasePriceFactory,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.customer_id')]
         private readonly string               $customerId,
         #[Autowire(param: 'greendot_eshop.parcel.dpd.sender_address_id')]
@@ -224,24 +222,17 @@ class DpdParcel implements ParcelServiceInterface
         $address = $purchase->getPurchaseAddress();
         $country = $address->getShipCountry() ?? $address->getCountry();
 
-        $currency = match (strtolower((string)$country)) {
-            'sk'    => 'EUR',
-            default => 'CZK',
-        };
-
-        $currencyEntity = $currency === 'EUR'
-            ? $this->currencyRepository->findOneBy(['isDefault' => false])
-            : $this->currencyRepository->findOneBy(['isDefault' => true]);
-
-        $priceCalculator = $this->purchasePriceFactory->create($purchase, $currencyEntity);
+        $currency = $purchase->getCurrency()
+            ?? throw new PermanentParcelException('Purchase has no currency snapshot for purchase ' . $purchase->getId());
+        $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency);
 
         $isCod = $purchase->getPaymentType()->getActionGroup() === PaymentTypeActionGroup::ON_DELIVERY;
-        $codAmount = $isCod
+        $codMoney = $isCod
             ? (clone $priceCalculator)
                 ->setVatCalculationType(VatCalculationType::WithVAT)
                 ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
                 ->setVoucherCalculationType(VoucherCalculationType::WithVoucher)
-                ->getPrice(true)
+                ->getMoney(true)
             : null;
 
         $receiver = [
@@ -278,11 +269,11 @@ class DpdParcel implements ParcelServiceInterface
             'mainServiceCode' => self::MAIN_SERVICE_CODE,
         ];
 
-        if ($codAmount !== null) {
+        if ($codMoney !== null) {
             $shipment['service']['additionalService'] = [
                 'cod' => [
-                    'amount' => (string)$codAmount,
-                    'currency' => $currency,
+                    'amount' => (string)$codMoney->value,
+                    'currency' => $codMoney->iso,
                     'paymentType' => 'Cash',
                     'reference' => (string)$purchase->getId(),
                     'split' => 'Even',

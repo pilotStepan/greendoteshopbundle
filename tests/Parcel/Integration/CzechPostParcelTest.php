@@ -19,7 +19,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 
@@ -80,6 +80,7 @@ class CzechPostParcelTest extends TestCase
         bool $isCod = false,
         string $transportNumber = 'DR0639135725M',
         ?PurchaseAddress $address = null,
+        ?string $currencyIso = 'CZK',
     ): Purchase {
         $client = $this->createMock(Client::class);
         $client->method('getId')->willReturn(42);
@@ -96,37 +97,36 @@ class CzechPostParcelTest extends TestCase
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress());
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
+        $purchase->method('getCurrency')->willReturn($currencyIso !== null ? $this->makeCurrency($currencyIso) : null);
         return $purchase;
     }
 
-    private function makePriceFactory(float $price = 500.0): PurchasePriceFactory
+    private function makePriceFactory(float $price = 500.0, string $iso = 'CZK'): PurchasePriceFactory
     {
         $calculator = $this->createMock(PurchasePrice::class);
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturn($price);
+        $calculator->method('getMoney')->willReturn(new Money($price, $iso));
 
         $factory = $this->createMock(PurchasePriceFactory::class);
         $factory->method('create')->willReturn($calculator);
         return $factory;
     }
 
-    private function makeCurrencyRepo(): CurrencyRepository
+    private function makeCurrency(string $iso = 'CZK'): Currency
     {
         $currency = $this->createMock(Currency::class);
-        $repo = $this->createMock(CurrencyRepository::class);
-        $repo->method('findOneBy')->willReturn($currency);
-        return $repo;
+        $currency->method('getIso')->willReturn($iso);
+        return $currency;
     }
 
-    private function makeService(MockHttpClient $httpClient, bool $enabled = true, string $environment = 'test'): CzechPostParcel
+    private function makeService(MockHttpClient $httpClient, bool $enabled = true, string $environment = 'test', string $iso = 'CZK'): CzechPostParcel
     {
         return new CzechPostParcel(
             $httpClient,
             new NullLogger(),
-            $this->makePriceFactory(),
-            $this->makeCurrencyRepo(),
+            $this->makePriceFactory(iso: $iso),
             'M06391',
             '18000',
             $environment,
@@ -139,14 +139,14 @@ class CzechPostParcelTest extends TestCase
      * shipping-exclusive price) and 353.94 when called with services included (the
      * correct, VAT-inclusive price + shipping the courier should actually collect).
      */
-    private function makeCodAwarePriceFactory(): PurchasePriceFactory
+    private function makeCodAwarePriceFactory(string $iso = 'CZK'): PurchasePriceFactory
     {
         $calculator = $this->createMock(PurchasePrice::class);
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturnCallback(
-            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0
+        $calculator->method('getMoney')->willReturnCallback(
+            static fn(bool $includeServices = false): Money => new Money($includeServices ? 353.94 : 214.0, $iso)
         );
 
         $factory = $this->createMock(PurchasePriceFactory::class);
@@ -154,13 +154,12 @@ class CzechPostParcelTest extends TestCase
         return $factory;
     }
 
-    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, bool $enabled = true, string $environment = 'test'): CzechPostParcel
+    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, bool $enabled = true, string $environment = 'test', string $iso = 'CZK'): CzechPostParcel
     {
         return new CzechPostParcel(
             $httpClient,
             new NullLogger(),
-            $this->makeCodAwarePriceFactory(),
-            $this->makeCurrencyRepo(),
+            $this->makeCodAwarePriceFactory($iso),
             'M06391',
             '18000',
             $environment,
@@ -335,6 +334,51 @@ class CzechPostParcelTest extends TestCase
         $this->assertEquals(500.0, $parcelParams['amount']);
         $this->assertSame('123', $parcelParams['vsVoucher']);
         $this->assertContains('41', $decoded['parcelServiceData']['parcelServices']);
+    }
+
+    public function testCreateParcel_defaultCzkPurchase_sendsCzkCurrency(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'))
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $this->assertSame('CZK', $decoded['parcelServiceData']['parcelParams']['currency']);
+    }
+
+    public function testCreateParcel_nonCzkPurchase_throwsPermanentParcelExceptionWithoutCallingApi(): void
+    {
+        $called = false;
+        $httpClient = new MockHttpClient(function () use (&$called) {
+            $called = true;
+            return new MockResponse(self::successResponse());
+        });
+
+        $service = $this->makeService($httpClient, iso: 'EUR');
+
+        try {
+            $service->createParcel($this->makePurchase($this->makeTransportation('c2VjcmV0'), currencyIso: 'EUR'));
+            $this->fail('Expected PermanentParcelException for a non-CZK purchase currency');
+        } catch (PermanentParcelException $e) {
+            $this->assertStringContainsString('CZK', $e->getMessage());
+        }
+
+        $this->assertFalse($called, 'Czech Post must not be called for a non-CZK purchase');
+    }
+
+    public function testCreateParcel_noCurrencySnapshot_throwsPermanentParcelException(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->expectException(PermanentParcelException::class);
+
+        $service->createParcel($this->makePurchase($this->makeTransportation('c2VjcmV0'), currencyIso: null));
     }
 
     public function testCreateParcel_codOrder_sendsCodAmountIncludingVatAndShipping(): void
