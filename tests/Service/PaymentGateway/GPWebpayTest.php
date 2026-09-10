@@ -26,6 +26,11 @@ class GPWebpayTest extends TestCase
 
     public function testGetPayLinkLogsRedirectUrlAndSentParams(): void
     {
+        $probeKey = openssl_pkey_get_private((string) file_get_contents(self::$privateKeyFile));
+        if ($probeKey === false || !@openssl_sign('probe', $probeSignature, $probeKey, OPENSSL_ALGO_SHA1)) {
+            self::markTestSkipped('This OpenSSL build cannot produce RSA-SHA1 signatures required by GP Webpay.');
+        }
+
         $purchase = new Purchase();
         $purchase->setTotalPrice(150.0);
 
