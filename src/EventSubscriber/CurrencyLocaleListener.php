@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\EventSubscriber;
 
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Utils\StatelessRequestMatcher;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -16,6 +17,10 @@ class CurrencyLocaleListener
     public function onKernelRequest(RequestEvent $event): void
     {
         if (!$event->isMainRequest()) {
+            return;
+        }
+
+        if (StatelessRequestMatcher::isStateless($event->getRequest())) {
             return;
         }
 

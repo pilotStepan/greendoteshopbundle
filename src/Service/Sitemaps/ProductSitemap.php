@@ -34,7 +34,7 @@ class ProductSitemap implements SitemapProviderInterface
 
     public function generateSiteMap(array $options = []): Response
     {
-        [ 'page' => $page ] = $options;
+        $page = (int) ($options['page'] ?? 0);
 
         $xml = $this->blankUrlSet();
         $productQb = $this->sitemapProductQB();
