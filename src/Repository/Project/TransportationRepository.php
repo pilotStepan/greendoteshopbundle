@@ -37,6 +37,7 @@ class TransportationRepository extends ServiceEntityRepository
             )
             ->setParameter('now', $now)
             ->orderBy('h.free_from_price', 'ASC')
+            ->addOrderBy('h.price', 'ASC')
             ->setMaxResults(1)
         ;
 
