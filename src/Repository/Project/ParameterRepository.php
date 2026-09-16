@@ -126,6 +126,48 @@ class ParameterRepository extends HintedRepositoryBase
         return implode($separator, array_column($results, 'data'));
     }
 
+    /**
+     * Variant parameters as "Group: value unit" pairs, e.g. "Barva: Hnědá, Šířka: 24 mm".
+     */
+    public function getVariantParametersDetailedLabel(ProductVariant $productVariant, string $separator = ', '): string
+    {
+        $queryBuilder = $this->createQueryBuilder('parameter')
+            ->select(
+                "CASE WHEN format.name = 'color' THEN COALESCE(color.name, parameter.data) ELSE parameter.data END AS parameterValue",
+                'parameterGroup.name AS groupName',
+                'parameterGroup.unit AS unit',
+            );
+
+        $results = $this->findProductParameterGroupsParametersQB($productVariant, $queryBuilder)
+            ->addOrderBy('parameter.sequence', 'ASC')
+            ->addOrderBy('parameterGroup.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $groups = [];
+        foreach ($results as $result) {
+            $value = trim((string)$result['parameterValue']);
+            if ($value === '') {
+                continue;
+            }
+            if (!empty($result['unit'])) {
+                $value .= "\u{00A0}" . $result['unit'];
+            }
+
+            $groupName = (string)$result['groupName'];
+            $groups[$groupName][$value] = $value;
+        }
+
+        $parts = [];
+        foreach ($groups as $groupName => $values) {
+            $parts[] = $groupName !== ''
+                ? sprintf('%s: %s', $groupName, implode(', ', $values))
+                : implode(', ', $values);
+        }
+
+        return implode($separator, $parts);
+    }
+
     public function add(Parameter $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);

@@ -234,34 +234,57 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $paymentTechnicalActionValue = $event->getContext()['payment_technical_action'] ?? null;
         $paymentTechnicalAction = is_string($paymentTechnicalActionValue) ? PaymentTechnicalAction::tryFrom($paymentTechnicalActionValue) : null;
         if ($paymentTechnicalAction) {
-            $paymentTypeRepository = $this->entityManager->getRepository(PaymentType::class);
-
-            $paymentType = $purchase->getCurrency()
-                ? $paymentTypeRepository->findOneBy([
-                    'paymentTechnicalAction' => $paymentTechnicalAction,
-                    'currency' => $purchase->getCurrency(),
-                    'isEnabled' => true,
-                ])
-                : null;
-
-            $paymentType ??= $paymentTypeRepository->findOneBy([
-                'paymentTechnicalAction' => $paymentTechnicalAction,
-                'currency' => null,
-                'isEnabled' => true,
-            ]);
-
+            $paymentType = $this->resolvePaymentTypeForTechnicalAction($purchase, $paymentTechnicalAction);
             if ($paymentType !== null) {
                 $purchase->setPaymentType($paymentType);
-            } else {
-                $this->logger->warning('No matching enabled PaymentType found for successful payment; leaving existing PaymentType untouched', [
-                    'purchaseId' => $purchase->getId(),
-                    'paymentTechnicalAction' => $paymentTechnicalAction->value,
-                    'purchaseCurrency' => $purchase->getCurrency()?->getIso(),
-                ]);
             }
         }
 
         $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_PAID);
+    }
+
+    private function resolvePaymentTypeForTechnicalAction(Purchase $purchase, PaymentTechnicalAction $paymentTechnicalAction): ?PaymentType
+    {
+        $currentPaymentType = $purchase->getPaymentType();
+        if ($currentPaymentType?->getPaymentTechnicalAction() === $paymentTechnicalAction) {
+            return null;
+        }
+
+        $candidates = $this->entityManager->getRepository(PaymentType::class)->findBy([
+            'paymentTechnicalAction' => $paymentTechnicalAction,
+        ]);
+        if (!$candidates) {
+            $this->logger->warning('No PaymentType configured for this payment_technical_action; leaving existing PaymentType untouched', [
+                'purchaseId' => $purchase->getId(),
+                'paymentTechnicalAction' => $paymentTechnicalAction->value,
+            ]);
+            return null;
+        }
+
+        $transportation = $purchase->getTransportation();
+        $compatible = $transportation
+            ? array_values(array_filter($candidates, static fn (PaymentType $c) => $transportation->getPaymentTypes()->contains($c)))
+            : $candidates;
+
+        if (!$compatible) {
+            $this->logger->warning('No PaymentType for this payment_technical_action is compatible with the purchase\'s Transportation; leaving existing PaymentType untouched', [
+                'purchaseId' => $purchase->getId(),
+                'paymentTechnicalAction' => $paymentTechnicalAction->value,
+                'transportationId' => $transportation?->getId(),
+                'currentPaymentTypeId' => $currentPaymentType?->getId(),
+            ]);
+            return null;
+        }
+
+        $currency = $purchase->getCurrency();
+        $byCurrency = $currency
+            ? array_values(array_filter($compatible, static fn (PaymentType $c) => $c->getCurrency() === null || $c->getCurrency() === $currency))
+            : $compatible;
+        $pool = $byCurrency ?: $compatible;
+
+        $enabled = array_values(array_filter($pool, static fn (PaymentType $c) => $c->isIsEnabled()));
+
+        return $enabled[0] ?? $pool[0];
     }
 
     public function onPaymentIssue(TransitionEvent $event): void

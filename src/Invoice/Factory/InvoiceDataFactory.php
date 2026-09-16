@@ -294,7 +294,7 @@ final class InvoiceDataFactory
                 priceNoVatNoDiscountSecondary:  $priceNoVatNoDiscountSecondary,
                 priceVatNoDiscount:             $priceVatNoDiscount,
                 priceVatNoDiscountSecondary:    $priceVatNoDiscountSecondary,
-                parametersLabel:                $this->parameterRepository->getVariantParametersLabel($variant),
+                parametersLabel:                $this->parameterRepository->getVariantParametersDetailedLabel($variant),
                 priceNoVatMoney:                          $priceNoVatMoney,
                 priceNoVatMoneySecondary:                 $priceNoVatMoneySecondary,
                 priceVatMoney:                            $priceVatMoney,
