@@ -38,8 +38,8 @@ class BlogController extends AbstractController
         if ($page == null) {
             $page = 1;
         }
-
-        $pagination = $paginator->paginate($blogArticles, $page, 10);
+        $itemsPerPage = $parameterBag?->get('greendot_eshop.blog.items_per_page') ?? 10;
+        $pagination = $paginator->paginate($blogArticles, $page, $itemsPerPage);
         $pagination->setTemplate('pagination/pagination_blog.html.twig');
 
         return $this->render('web/blog/landing.html.twig', [
