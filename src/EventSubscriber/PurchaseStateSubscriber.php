@@ -5,6 +5,8 @@ namespace Greendot\EshopBundle\EventSubscriber;
 use Exception;
 use LogicException;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Workflow\Event\Event;
 use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageVoucher;
@@ -29,6 +31,8 @@ use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 readonly class PurchaseStateSubscriber implements EventSubscriberInterface
 {
+    private LoggerInterface $logger;
+
     public function __construct(
         private EntityManagerInterface   $entityManager,
         private ManageVoucher            $manageVoucher,
@@ -40,7 +44,10 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         private WorkflowInterface        $purchaseWorkflow,
         private PaymentActionLogger      $paymentActionLogger,
         private PaymentRepository        $paymentRepository,
-    ) {}
+        ?LoggerInterface                 $logger = null,
+    ) {
+        $this->logger = $logger ?? new NullLogger();
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -177,11 +184,51 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         $paymentTechnicalActionValue = $event->getContext()['payment_technical_action'] ?? null;
         $paymentTechnicalAction = is_string($paymentTechnicalActionValue) ? PaymentTechnicalAction::tryFrom($paymentTechnicalActionValue) : null;
         if ($paymentTechnicalAction) {
-            $paymentType = $this->entityManager->getRepository(PaymentType::class)->findOneBy(['paymentTechnicalAction' => $paymentTechnicalAction]);
-            $purchase->setPaymentType($paymentType);
+            $paymentType = $this->resolvePaymentTypeForTechnicalAction($purchase, $paymentTechnicalAction);
+            if ($paymentType !== null) {
+                $purchase->setPaymentType($paymentType);
+            }
         }
 
         $this->logPaymentAction($purchase, $event, PaymentActionType::STATE_PAID);
+    }
+
+    private function resolvePaymentTypeForTechnicalAction(Purchase $purchase, PaymentTechnicalAction $paymentTechnicalAction): ?PaymentType
+    {
+        $currentPaymentType = $purchase->getPaymentType();
+        if ($currentPaymentType?->getPaymentTechnicalAction() === $paymentTechnicalAction) {
+            return null;
+        }
+
+        $candidates = $this->entityManager->getRepository(PaymentType::class)->findBy([
+            'paymentTechnicalAction' => $paymentTechnicalAction,
+        ]);
+        if (!$candidates) {
+            $this->logger->warning('No PaymentType configured for this payment_technical_action; leaving existing PaymentType untouched', [
+                'purchaseId' => $purchase->getId(),
+                'paymentTechnicalAction' => $paymentTechnicalAction->value,
+            ]);
+            return null;
+        }
+
+        $transportation = $purchase->getTransportation();
+        $compatible = $transportation
+            ? array_values(array_filter($candidates, static fn (PaymentType $c) => $transportation->getPaymentTypes()->contains($c)))
+            : $candidates;
+
+        if (!$compatible) {
+            $this->logger->warning('No PaymentType for this payment_technical_action is compatible with the purchase\'s Transportation; leaving existing PaymentType untouched', [
+                'purchaseId' => $purchase->getId(),
+                'paymentTechnicalAction' => $paymentTechnicalAction->value,
+                'transportationId' => $transportation?->getId(),
+                'currentPaymentTypeId' => $currentPaymentType?->getId(),
+            ]);
+            return null;
+        }
+
+        $enabled = array_values(array_filter($compatible, static fn (PaymentType $c) => $c->isIsEnabled()));
+
+        return $enabled[0] ?? $compatible[0];
     }
 
     public function onPaymentIssue(TransitionEvent $event): void
