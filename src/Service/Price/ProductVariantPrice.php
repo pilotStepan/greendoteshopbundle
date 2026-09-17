@@ -68,7 +68,17 @@ class ProductVariantPrice
         private readonly PriceUtils           $priceUtils,
         private readonly ProductProductRepository      $productProductRepository,
         private readonly DiscountCombinationStrategyInterface $discountCombinationStrategy,
-        private readonly ?Price               $priceEntity = null
+        private readonly ?Price               $priceEntity = null,
+        /**
+         * The FULL, unceilinged result of PriceRepository::findPricesByDateAndProductVariantNew()
+         * for this variant (minimalAmount => ['price' => Price, 'discounted' => ?Price], DESC by
+         * minimalAmount) — not pre-scoped to any particular amount. When given, this class derives
+         * both minAmount (constructForProductVariant(), when $setAmount is null) and the
+         * ceiling-filtered price set (recalculatePrice()) from it instead of querying, for callers
+         * that already fetched all of a variant's prices once and want to build one or more
+         * ProductVariantPrice instances from that without a fresh query each time.
+         */
+        private readonly ?array               $prefetchedPrices = null,
     )
     {
         if ($productVariant instanceof PurchaseProductVariant and !is_null($setAmount)) {
@@ -328,10 +338,25 @@ class ProductVariantPrice
 
     private function constructForProductVariant(): void
     {
-        $this->minAmount = $this->priceRepository->getMinimalAmount($this->productVariant, new \DateTime("now"));
-        if (!$this->minAmount and !$this->amount){
-            $this->emptyPrice = true;
-            return;
+        if ($this->amount) {
+            // minAmount only matters as the fallback default for $this->amount below, which is
+            // already set here, so its query result would go unused — skip it.
+        } elseif ($this->prefetchedPrices !== null) {
+            // Same set findPricesByDateAndProductVariantNew()'s ceiling-less fetch and
+            // getMinimalAmount()'s query both draw from (identical validFrom/validUntil
+            // filtering, no minimalAmount ceiling in either) — the lowest key here is exactly
+            // what getMinimalAmount() would have returned.
+            $this->minAmount = $this->prefetchedPrices ? min(array_keys($this->prefetchedPrices)) : 0;
+            if (!$this->minAmount) {
+                $this->emptyPrice = true;
+                return;
+            }
+        } else {
+            $this->minAmount = $this->priceRepository->getMinimalAmount($this->productVariant, new \DateTime("now"));
+            if (!$this->minAmount) {
+                $this->emptyPrice = true;
+                return;
+            }
         }
         $this->setCurrentUserDiscount();
     }
@@ -385,6 +410,16 @@ class ProductVariantPrice
             }
             $prices = [$customPrice->getMinimalAmount() => $customPrices];
 
+        } elseif ($this->prefetchedPrices !== null) {
+            // Ceiling-filtered here (not by the caller): findPricesByDateAndProductVariantNew()
+            // would have applied `minimalAmount <= $this->amount` in SQL before grouping, but
+            // since the grouping below is a per-key partition with no cross-key interaction,
+            // filtering the already-grouped full map by key afterwards gives an identical result.
+            $prices = array_filter(
+                $this->prefetchedPrices,
+                static fn(int $tier) => $tier <= $this->amount,
+                ARRAY_FILTER_USE_KEY,
+            );
         } else {
             $prices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, $date, $this->amount);
         }

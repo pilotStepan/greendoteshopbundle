@@ -96,6 +96,55 @@ class ProductVariantPriceFactory
         return $productVariantPrice;
     }
 
+    /**
+     * Like create(), but for building one or more ProductVariantPrice instances for the same
+     * variant (e.g. the base price and a per-tier quantity-discount table) from a single prices
+     * fetch instead of a fresh query each time. $prefetchedPrices is the FULL, unceilinged result
+     * of PriceRepository::findPricesByDateAndProductVariantNew() for this variant — see
+     * ProductVariantPrice's $prefetchedPrices constructor param for why it isn't pre-scoped here.
+     * $amount behaves exactly like create()'s: pass null to resolve it from the variant's lowest
+     * available minimalAmount, or an explicit amount for a specific tier.
+     *
+     * Only for plain ProductVariant — PurchaseProductVariant pricing (order-specific, custom
+     * prices) isn't covered by this prefetch shape; use create() for that, same as before.
+     */
+    public function createFromPrefetchedPrices(
+        ProductVariant               $pv,
+        array                        $prefetchedPrices,
+        Currency|ConversionRate      $currencyOrConversionRate,
+        ?int                         $amount = null,
+        VatCalculationType           $vatCalculationType = VatCalculationType::WithoutVAT,
+        DiscountCalculationType      $discountCalculationType = DiscountCalculationType::WithDiscount,
+        Product|ProductProduct|null  $parentProduct = null,
+    ): ProductVariantPrice
+    {
+        $conversionRate = $currencyOrConversionRate;
+        if ($currencyOrConversionRate instanceof Currency){
+            $conversionRate = $this->priceUtils->getConversionRate($currencyOrConversionRate);
+        }
+
+        $productVariantPrice = new ProductVariantPrice(
+            $pv,
+            $amount,
+            $conversionRate,
+            $vatCalculationType,
+            $discountCalculationType,
+            $this->afterRegistrationBonus,
+            $this->security,
+            $this->priceRepository,
+            $this->discountService,
+            $this->priceUtils,
+            $this->productProductRepository,
+            $this->discountCombinationStrategy(),
+            priceEntity: null,
+            prefetchedPrices: $prefetchedPrices,
+        );
+        if ($parentProduct){
+            $productVariantPrice->setParentProduct($parentProduct);
+        }
+        return $productVariantPrice;
+    }
+
     public function entityLoad(
         Price                       $price,
         Currency|ConversionRate     $currencyOrConversionRate,

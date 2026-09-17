@@ -43,6 +43,22 @@ class PriceExtension
             $currency = $this->currencyManager->get();
         }
 
+        // PurchaseProductVariant pricing (order-specific, possibly custom prices) goes through
+        // create() unchanged — the prefetch shape below only covers plain ProductVariant pricing.
+        if ($productVariant instanceof ProductVariant) {
+            $allPrices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, new \DateTime(), null);
+
+            return $this->productVariantPriceFactory->createFromPrefetchedPrices(
+                pv: $productVariant,
+                prefetchedPrices: $allPrices,
+                currencyOrConversionRate: $currency,
+                amount: $amount,
+                vatCalculationType: $vatCalculationType,
+                discountCalculationType: $discountCalculationType,
+                parentProduct: $parentProduct,
+            );
+        }
+
         return $this->productVariantPriceFactory->create(
             pv: $productVariant,
             currencyOrConversionRate: $currency,
@@ -66,12 +82,19 @@ class PriceExtension
         DiscountCalculationType $discountCalculationType = DiscountCalculationType::WithDiscount
     ): array
     {
-        $minimalAmounts = $this->priceRepository->getUniqueMinimalAmounts($productVariant);
+        // One fetch of every valid price row for this variant (grouped by minimalAmount, DESC —
+        // same shape findPricesByDateAndProductVariantNew() always returns), reused for every
+        // tier below instead of each tier re-querying getMinimalAmount() +
+        // findPricesByDateAndProductVariantNew() from scratch.
+        $allPrices = $this->priceRepository->findPricesByDateAndProductVariantNew($productVariant, new \DateTime(), null);
 
         $array = [];
-        foreach ($minimalAmounts as $minimalAmount) {
-            $array[$minimalAmount] = $this->productVariantPriceFactory->create(
+        foreach (array_keys($allPrices) as $minimalAmount) {
+            // ProductVariantPrice does its own ceiling filtering against the full map — see its
+            // $prefetchedPrices constructor doc.
+            $array[$minimalAmount] = $this->productVariantPriceFactory->createFromPrefetchedPrices(
                 pv: $productVariant,
+                prefetchedPrices: $allPrices,
                 currencyOrConversionRate: $currency,
                 amount: $minimalAmount,
                 vatCalculationType: $vatCalculationType,
