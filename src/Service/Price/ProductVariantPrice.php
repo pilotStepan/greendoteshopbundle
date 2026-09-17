@@ -415,9 +415,10 @@ class ProductVariantPrice
             // would have applied `minimalAmount <= $this->amount` in SQL before grouping, but
             // since the grouping below is a per-key partition with no cross-key interaction,
             // filtering the already-grouped full map by key afterwards gives an identical result.
+            $ceiling = $this->amount;
             $prices = array_filter(
                 $this->prefetchedPrices,
-                static fn(int $tier) => $tier <= $this->amount,
+                static fn(int $tier) => $tier <= $ceiling,
                 ARRAY_FILTER_USE_KEY,
             );
         } else {

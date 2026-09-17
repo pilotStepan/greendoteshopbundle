@@ -181,6 +181,55 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         );
     }
 
+    /**
+     * createFromPrefetchedPrices() must produce the same prices create() would for the same
+     * underlying rows — both for an amount matching one tier exactly (uses only that tier, per
+     * the DESC-first-match cascading logic) and for amount=null (resolves the lowest tier without
+     * a getMinimalAmount() query). Regression test for a bug where the ceiling-filter closure
+     * referenced $this while declared `static`, which throws the instant it's actually invoked.
+     */
+    public function testCreateFromPrefetchedPricesMatchesCreate(): void
+    {
+        $this->security->method('getUser')->willReturn(null);
+
+        $priceTen = FactoryUtil::makePrice(90, 0, minimalAmount: 10, isPackage: true);
+        $priceOne = FactoryUtil::makePrice(100, 0, minimalAmount: 1);
+        $variant = $this->createMock(ProductVariant::class);
+
+        // DESC by minimalAmount, same shape/order findPricesByDateAndProductVariantNew() returns.
+        $prefetchedPrices = [
+            10 => ['price' => $priceTen],
+            1  => ['price' => $priceOne],
+        ];
+
+        // amount = 17 (cascades across both tiers): matches the existing 'tierPrice' scenario.
+        $this->priceRepository->method('findPricesByDateAndProductVariantNew')
+            ->with($variant, $this->anything(), 17)
+            ->willReturn($prefetchedPrices);
+        $viaCreate = $this->productVariantPriceFactory->create(
+            pv: $variant, currencyOrConversionRate: FactoryUtil::czk(), amount: 17,
+        );
+        $viaPrefetched = $this->productVariantPriceFactory->createFromPrefetchedPrices(
+            pv: $variant, prefetchedPrices: $prefetchedPrices, currencyOrConversionRate: FactoryUtil::czk(), amount: 17,
+        );
+        $this->assertEqualsWithDelta($viaCreate->getPrice(), $viaPrefetched->getPrice(), 0.01);
+        $this->assertEqualsWithDelta(1600.0, $viaPrefetched->getPrice(), 0.01);
+
+        // amount = 10 (exact tier match): must use only that tier's own row.
+        $viaPrefetchedTier = $this->productVariantPriceFactory->createFromPrefetchedPrices(
+            pv: $variant, prefetchedPrices: $prefetchedPrices, currencyOrConversionRate: FactoryUtil::czk(), amount: 10,
+        );
+        $this->assertEqualsWithDelta(900.0, $viaPrefetchedTier->getPrice(), 0.01);
+
+        // amount = null: must resolve minAmount from the map (lowest key = 1) without querying.
+        $this->priceRepository->expects($this->never())->method('getMinimalAmount');
+        $viaPrefetchedBase = $this->productVariantPriceFactory->createFromPrefetchedPrices(
+            pv: $variant, prefetchedPrices: $prefetchedPrices, currencyOrConversionRate: FactoryUtil::czk(),
+        );
+        $this->assertEqualsWithDelta(100.0, $viaPrefetchedBase->getPrice(), 0.01);
+        $this->assertSame(1, $viaPrefetchedBase->getMinimalAmount());
+    }
+
 // Commented out - missing provider
 //    #[DataProviderExternal(ProductVariantPriceDataProvider::class, 'mixedVatException')]
 //    public function testProductVariantPriceMixedVatException(
