@@ -20,14 +20,23 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         $this->localeSwitcher = $localeSwitcher;
     }
 
+    /**
+     * Deliberately not using hintQuery()/TranslationWalker here: it JOINs ext_translations with
+     * `t.foreign_key = e.id`, comparing a VARCHAR column against an INT one — MySQL casts that
+     * to a numeric comparison, which can't use ext_translations' lookup_unique_idx, forcing a
+     * full table scan per translated field. Gedmo's default postLoad translation loading (active
+     * globally — stof_doctrine_extensions' skip_translation_on_load defaults false and isn't
+     * overridden) binds the id as a string instead, so it hits the index. Its locale comes from
+     * TranslatableListener directly, kept in sync with the request by
+     * Stof\DoctrineExtensionsBundle\Tool\LocaleSynchronizer (tagged kernel.locale_aware) —
+     * independent of hintQuery(), so this needs no extra locale wiring of its own.
+     */
     final public function findHinted(int $id): ?object
     {
         $qb = $this->createQueryBuilder('e')
             ->andWhere('e.id = :id')
             ->setParameter('id', $id);
-        $qb = $this->hintQuery($qb->getQuery());
-        return $qb->getOneOrNullResult();
-
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     final public function findOneByHinted(array $criteria, array $orderBy = null): ?object
@@ -61,7 +70,7 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('e');
         $qb = $this->handleCriteria($qb, $criteria);
         $qb = $this->handleOrderBy($qb, $orderBy);
-        return $this->hintQuery($qb->getQuery())->getOneOrNullResult();
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     private function findIdInTranslations(string $locale, string $field, string $value): ?int
@@ -96,15 +105,12 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
 
         if ($offset) $qb->setFirstResult($offset);
 
-        $qb = $this->hintQuery($qb->getQuery());
-        return $qb->getResult();
+        return $qb->getQuery()->getResult();
     }
 
     final public function findAllHinted(): array
     {
-        $qb = $this->createQueryBuilder('e');
-        $qb = $this->hintQuery($qb->getQuery());
-        return $qb->getResult();
+        return $this->createQueryBuilder('e')->getQuery()->getResult();
     }
 
     public function findPropertyInLocale(object $entity,string $property, string $targetLocale): ?string
