@@ -26,9 +26,6 @@ class ViewItemListProductFactory
     {
         $items = [];
 
-        $valueVat = 0;
-        $valueNoVat = 0;
-
         foreach ($product->getProductVariants() as $variant) {
             $item = $this->dataLayerItemFactory->createFromVariant(
                 variant: $variant,
@@ -36,8 +33,6 @@ class ViewItemListProductFactory
                 item_variant: $this->getVariantNameSafe($variant),
                 parameters: $this->getFormatedParameters($variant),
             );
-            $valueNoVat += $item->priceNoVat;
-            $valueVat += $item->priceVat;
 
             $items[] = $item;
         }
@@ -63,8 +58,8 @@ class ViewItemListProductFactory
             currency: $this->currency->getName(),
             priceVat: $lowestPriceItem?->priceVat ?? 0.0,
             priceNoVat: $lowestPriceItem?->priceNoVat ?? 0.0,
-            valueVat: $valueVat,
-            valueNoVat: $valueNoVat,
+            valueVat: $lowestPriceItem?->priceVat ?? 0.0,
+            valueNoVat: $lowestPriceItem?->priceNoVat ?? 0.0,
             items: $items
         );
     }
