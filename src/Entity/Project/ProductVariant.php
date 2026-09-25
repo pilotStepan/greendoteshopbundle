@@ -61,6 +61,9 @@ class ProductVariant implements Translatable
     #[Groups(['product_variant:read', 'purchase:read', 'purchase:wishlist'])]
     private $product;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $sequence = null;
+
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: PurchaseProductVariant::class)]
     private $orderProductVariants;
 
@@ -196,6 +199,18 @@ class ProductVariant implements Translatable
     public function setProduct(?Product $product): self
     {
         $this->product = $product;
+
+        return $this;
+    }
+
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(?int $sequence): self
+    {
+        $this->sequence = $sequence;
 
         return $this;
     }

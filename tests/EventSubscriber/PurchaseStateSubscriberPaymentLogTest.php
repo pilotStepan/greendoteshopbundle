@@ -173,6 +173,13 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $this->assertNull($purchase->getPaymentType());
     }
 
+    /**
+     * Regression test for the SK/CZ card mix-up (e.g. purchases #12969, #12980): the customer
+     * chose "Kartou online (SK)", which already carries the 'gpw' technical action, so the gateway
+     * callback must not touch it at all - in particular it must not fall back to whichever
+     * PaymentType with that technical action happens to be found first (previously always the CZ
+     * one, since findOneBy() has no transportation/country discriminator).
+     */
     public function testOnPaymentKeepsCustomersExistingChoiceWhenItAlreadyMatchesTechnicalAction(): void
     {
         $skCard = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS);
@@ -193,11 +200,19 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $this->assertSame($skCard, $purchase->getPaymentType());
     }
 
+    /**
+     * Regression test for the same bug from the other side: when the swap does need to run (the
+     * purchase's current PaymentType has a different technical action - e.g. it was created as a
+     * bank transfer and later paid through the gateway link), the replacement must only be chosen
+     * from PaymentTypes the purchase's Transportation actually accepts, not just any row sharing
+     * the technical action.
+     */
     public function testOnPaymentOnlySwapsToATransportationCompatiblePaymentType(): void
     {
         $czCard = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setIsEnabled(true);
         $skCard = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setIsEnabled(true);
 
+        // "Packeta na výdejní místo - Slovensko" accepts the SK card, not the CZ one.
         $transportation = (new Transportation())->addPaymentType($skCard);
 
         $purchase = new Purchase();
@@ -275,11 +290,11 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
     }
 
     /**
-     * Regression test: previously, when a valid technical action matched no enabled PaymentType
-     * at all (e.g. a gateway with no rows configured), the bare `setPaymentType($paymentType)`
-     * call still ran with $paymentType === null, wiping out whatever PaymentType the purchase
-     * already had on a *successful* payment - breaking COD detection, QR/invoice bank details,
-     * and PurchaseCheckoutProcessor's post-checkout redirect.
+     * Regression test: previously, when a valid technical action matched no PaymentType at all
+     * (e.g. a gateway with no rows configured), the bare `setPaymentType($paymentType)` call still
+     * ran with $paymentType === null, wiping out whatever PaymentType the purchase already had on
+     * a *successful* payment - breaking COD detection, QR/invoice bank details, and
+     * PurchaseCheckoutProcessor's post-checkout redirect.
      */
     public function testOnPaymentLeavesPaymentTypeUntouchedAndWarnsWhenNoTechnicalActionMatchConfigured(): void
     {

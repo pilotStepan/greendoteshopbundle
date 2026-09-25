@@ -5,6 +5,7 @@
          colors="true">
     <testsuites>
         <testsuite name="Unit">
+            <directory>tests/Affiliate</directory>
             <directory>tests/Controller</directory>
             <directory>tests/Entity</directory>
             <directory>tests/EventSubscriber</directory>

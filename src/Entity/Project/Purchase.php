@@ -96,6 +96,7 @@ class Purchase
 {
     private const SHIPMENT_ID = 'shipment_id';
     private const COURIER_NUMBER = 'courier_number';
+    private const REFERER = 'referer';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -511,6 +512,21 @@ class Purchase
     {
         $this->additionalInfo = array_filter(
             [...($this->additionalInfo ?? []), self::COURIER_NUMBER => $courierNumber],
+            static fn($v) => $v !== null
+        );
+
+        return $this;
+    }
+
+    public function getReferer(): ?string
+    {
+        return $this->additionalInfo[self::REFERER] ?? null;
+    }
+
+    public function setReferer(?string $referer): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::REFERER => $referer],
             static fn($v) => $v !== null
         );
 

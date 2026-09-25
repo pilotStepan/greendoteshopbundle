@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Export\Data\Model\GoogleProductFeedModel;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
@@ -75,17 +76,11 @@ class GoogleProductFeedFactory
         $brand = $product?->getProducer()?->getName();
         $externalId = $productVariant?->getExternalId();
 
-        $variantPrice = $this->productVariantPriceFactory->create($productVariant, $currency);
-        $price = $variantPrice->getPrice();
-        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
+        $variantPrice = $this->productVariantPriceFactory->create($productVariant, $currency, vatCalculationType: VatCalculationType::WithVAT);
         $priceDiscount = $variantPrice->getPrice();
+        $variantPrice->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
+        $price = $variantPrice->getPrice();
 
-//        $calculatedPrices = $productVariant->getCalculatedPrices() ?? [];
-//        if (!empty($calculatedPrices)){
-//            $calculatedPrices = $calculatedPrices[array_key_first($calculatedPrices)];
-//        }
-//        $price = $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVatNoDiscount');
-//        $priceDiscount = $this->getFromCalculatedPricesSafe($calculatedPrices, 'priceVat');
         if ($price <= $priceDiscount){
             $priceDiscount = null;
         }
