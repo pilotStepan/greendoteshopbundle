@@ -56,7 +56,7 @@ class CategorySitemap implements SitemapProviderInterface
         return $this->generateXmlResponse($xml);
     }
 
-    private function resolveCategoryUrl(int $id, ?int $categoryType, string $slug): ?string
+    private function resolveCategoryUrl(int $id, ?int $categoryType, ?string $slug): ?string
     {
         $parameters = ['slug' => $slug];
         $controllerName = null;
@@ -73,6 +73,12 @@ class CategorySitemap implements SitemapProviderInterface
         }
 
         if (!$controllerName) {
+            // A non-reserved category with no slug cannot produce a valid URL - skip it
+            // rather than letting the router throw on an empty "slug" parameter.
+            if ($slug === null || $slug === '') {
+                return null;
+            }
+
             $controllerName = match ($categoryType) {
                 CategoryTypeEnum::BLOG->value => 'web_blog_detail',
                 default => 'app_master',

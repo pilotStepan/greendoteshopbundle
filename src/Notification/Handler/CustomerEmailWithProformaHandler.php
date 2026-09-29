@@ -26,7 +26,7 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
     {
         $orderData = $this->orderDataFactory->create($purchase);
 
-        $params = ['%id%' => $purchase->getId() ?? ''];
+        $params = ['%id%' => $purchase->getOrderNumber() ?? ''];
         $key = 'email.subject.order.' . $transition;
         $subject = $this->translator->trans($key, $params, 'emails');
         if ($subject === $key) {
@@ -44,7 +44,7 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
         if ($invoicePath) {
             $email->attachFromPath(
                 $invoicePath,
-                 $purchase->getId() . '.pdf',
+                 $purchase->getOrderNumber() . '.pdf',
                 'application/pdf',
             );
         }

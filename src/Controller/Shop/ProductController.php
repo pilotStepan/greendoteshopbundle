@@ -116,11 +116,11 @@ class ProductController extends AbstractController
     }
 
     #[CustomApiEndpoint]
-    #[Route('/shop/api/cart/add-{variant_id}/amount-{amount}', name: 'add_to_cart', requirements: ['slug' => '[A-Za-z0-9\-]+'], defaults: ['amount' => 1], priority: 2)]
+    #[Route('/shop/api/cart/add-{variant_id}/amount-{amount}', name: 'add_to_cart', requirements: ['variant_id' => '\d+', 'amount' => '\d+'], defaults: ['amount' => 1], priority: 2)]
     public function addToCart
     (
-        $variant_id,
-        $amount,
+        int $variant_id,
+        int $amount,
         RequestStack $requestStack,
         PurchaseProductVariantRepository $purchaseProductVariantRepository,
         ManagePurchase $manageOrder,

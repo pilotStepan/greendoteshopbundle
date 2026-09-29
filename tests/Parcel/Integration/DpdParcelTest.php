@@ -18,7 +18,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
-use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 
@@ -83,6 +83,7 @@ class DpdParcelTest extends TestCase
         string $transportNumber = '13955081839853',
         ?string $shipmentId = '52172',
         ?PurchaseAddress $address = null,
+        ?string $currencyIso = 'CZK',
     ): Purchase {
         $client = $this->createMock(Client::class);
         $client->method('getName')->willReturn('John');
@@ -92,43 +93,43 @@ class DpdParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getClient')->willReturn($client);
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
         $purchase->method('getPaymentType')->willReturn($this->makePaymentType($isCod));
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
         $purchase->method('getShipmentId')->willReturn($shipmentId);
+        $purchase->method('getCurrency')->willReturn($currencyIso !== null ? $this->makeCurrency($currencyIso) : null);
         return $purchase;
     }
 
-    private function makePriceFactory(float $price = 500.0): PurchasePriceFactory
+    private function makePriceFactory(float $price = 500.0, string $iso = 'CZK'): PurchasePriceFactory
     {
         $calculator = $this->createMock(PurchasePrice::class);
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturn($price);
+        $calculator->method('getMoney')->willReturn(new Money($price, $iso));
 
         $factory = $this->createMock(PurchasePriceFactory::class);
         $factory->method('create')->willReturn($calculator);
         return $factory;
     }
 
-    private function makeCurrencyRepo(): CurrencyRepository
+    private function makeCurrency(string $iso = 'CZK'): Currency
     {
         $currency = $this->createMock(Currency::class);
-        $repo = $this->createMock(CurrencyRepository::class);
-        $repo->method('findOneBy')->willReturn($currency);
-        return $repo;
+        $currency->method('getIso')->willReturn($iso);
+        return $currency;
     }
 
-    private function makeService(MockHttpClient $httpClient, string $environment = 'test', bool $enabled = true): DpdParcel
+    private function makeService(MockHttpClient $httpClient, string $environment = 'test', bool $enabled = true, string $iso = 'CZK'): DpdParcel
     {
         return new DpdParcel(
             $httpClient,
             new NullLogger(),
-            $this->makePriceFactory(),
-            $this->makeCurrencyRepo(),
+            $this->makePriceFactory(iso: $iso),
             'TestCustomer',
             '56',
             $environment,
@@ -141,14 +142,14 @@ class DpdParcelTest extends TestCase
      * shipping-exclusive price) and 353.94 when called with services included (the
      * correct, VAT-inclusive price + shipping the courier should actually collect).
      */
-    private function makeCodAwarePriceFactory(): PurchasePriceFactory
+    private function makeCodAwarePriceFactory(string $iso = 'CZK'): PurchasePriceFactory
     {
         $calculator = $this->createMock(PurchasePrice::class);
         $calculator->method('setVatCalculationType')->willReturnSelf();
         $calculator->method('setDiscountCalculationType')->willReturnSelf();
         $calculator->method('setVoucherCalculationType')->willReturnSelf();
-        $calculator->method('getPrice')->willReturnCallback(
-            static fn(bool $includeServices = false): float => $includeServices ? 353.94 : 214.0
+        $calculator->method('getMoney')->willReturnCallback(
+            static fn(bool $includeServices = false): Money => new Money($includeServices ? 353.94 : 214.0, $iso)
         );
 
         $factory = $this->createMock(PurchasePriceFactory::class);
@@ -156,13 +157,12 @@ class DpdParcelTest extends TestCase
         return $factory;
     }
 
-    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, string $environment = 'test', bool $enabled = true): DpdParcel
+    private function makeServiceWithCodAwarePricing(MockHttpClient $httpClient, string $environment = 'test', bool $enabled = true, string $iso = 'CZK'): DpdParcel
     {
         return new DpdParcel(
             $httpClient,
             new NullLogger(),
-            $this->makeCodAwarePriceFactory(),
-            $this->makeCurrencyRepo(),
+            $this->makeCodAwarePriceFactory($iso),
             'TestCustomer',
             '56',
             $environment,
@@ -288,7 +288,7 @@ class DpdParcelTest extends TestCase
         $this->assertArrayHasKey('service', $decoded['shipments'][0]);
         $this->assertSame('101', $decoded['shipments'][0]['service']['mainServiceCode']);
         $this->assertSame('CZK', $decoded['shipments'][0]['service']['additionalService']['cod']['currency']);
-        $this->assertSame('123', $decoded['shipments'][0]['service']['additionalService']['cod']['reference']);
+        $this->assertSame('5001', $decoded['shipments'][0]['service']['additionalService']['cod']['reference']);
         $this->assertSame('Even', $decoded['shipments'][0]['service']['additionalService']['cod']['split']);
     }
 
@@ -309,6 +309,24 @@ class DpdParcelTest extends TestCase
         $this->assertEquals('353.94', $decoded['shipments'][0]['service']['additionalService']['cod']['amount']);
     }
 
+    public function testCreateParcel_eurPurchase_sendsEurCod(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $this->makeServiceWithCodAwarePricing($httpClient, iso: 'EUR')->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'), isCod: true, country: 'sk')
+        );
+
+        $decoded = json_decode($capturedBody, true);
+
+        $this->assertEquals('353.94', $decoded['shipments'][0]['service']['additionalService']['cod']['amount']);
+        $this->assertSame('EUR', $decoded['shipments'][0]['service']['additionalService']['cod']['currency']);
+    }
+
     public function testCreateParcel_nonCodOrder_sendsMainServiceCodeWithoutAdditionalService(): void
     {
         $capturedBody = null;
@@ -324,6 +342,15 @@ class DpdParcelTest extends TestCase
         $decoded = json_decode($capturedBody, true);
         $this->assertSame('101', $decoded['shipments'][0]['service']['mainServiceCode']);
         $this->assertArrayNotHasKey('additionalService', $decoded['shipments'][0]['service']);
+    }
+
+    public function testCreateParcel_noCurrencySnapshot_throwsPermanentParcelException(): void
+    {
+        $this->expectException(PermanentParcelException::class);
+
+        $this->makeService(new MockHttpClient())->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'), currencyIso: null)
+        );
     }
 
     public function testCreateParcel_missingShipmentId_throwsRuntimeException(): void

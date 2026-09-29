@@ -53,8 +53,10 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
     {
         return [
             PWC::eventName('guard', PWC::T_CHECKOUT) => 'onGuardReceive',
+            PWC::eventName('guard', PWC::T_INIT_ORDER) => 'onGuardCurrencyConsistency',
 
             PWC::eventName('transition', PWC::T_CHECKOUT) => 'onReceive',
+            PWC::eventName('transition', PWC::T_INIT_ORDER) => 'onInitOrder',
             PWC::eventName('transition', PWC::T_PAY_PAY) => 'onPayment',
             PWC::eventName('transition', PWC::T_PAY_FAIL) => 'onPaymentIssue',
             PWC::eventName('transition', PWC::T_CANCEL) => 'onCancellation',
@@ -111,6 +113,11 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             return;
         }
 
+        if (!$this->isCurrencyConsistent($purchase)) {
+            $event->setBlocked(true, $this->currencyMismatchMessage($purchase));
+            return;
+        }
+
         $missingConsent = $this->entityManager->getRepository(Consent::class)->findMissingRequiredConsent($purchase->getConsents());
 
         if ($missingConsent) {
@@ -140,6 +147,49 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             $event->setBlocked(true, "Chyba při ověřování DIČ: " . $e->getMessage());
             return;
         }
+    }
+
+    public function onGuardCurrencyConsistency(GuardEvent $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+        if (!$purchase instanceof Purchase) {
+            return;
+        }
+
+        if (!$this->isCurrencyConsistent($purchase)) {
+            $event->setBlocked(true, $this->currencyMismatchMessage($purchase));
+        }
+    }
+
+    private function isCurrencyConsistent(Purchase $purchase): bool
+    {
+        $purchaseCurrency = $purchase->getCurrency();
+        $paymentTypeCurrency = $purchase->getPaymentType()?->getCurrency();
+
+        return $purchaseCurrency === null
+            || $paymentTypeCurrency === null
+            || $purchaseCurrency === $paymentTypeCurrency;
+    }
+
+    private function currencyMismatchMessage(Purchase $purchase): string
+    {
+        return sprintf(
+            'Objednávka je vedena v měně %s, ale zvolený způsob platby účtuje v %s.',
+            $purchase->getCurrency()?->getIso() ?? '?',
+            $purchase->getPaymentType()?->getCurrency()?->getIso() ?? '?',
+        );
+    }
+
+    public function onInitOrder(Event $event): void
+    {
+        /** @var Purchase $purchase */
+        $purchase = $event->getSubject();
+        if (!$purchase instanceof Purchase) {
+            return;
+        }
+
+        $this->managePurchase->ensureCurrency($purchase);
     }
 
     public function onReceive(Event $event): void
@@ -226,9 +276,15 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             return null;
         }
 
-        $enabled = array_values(array_filter($compatible, static fn (PaymentType $c) => $c->isIsEnabled()));
+        $currency = $purchase->getCurrency();
+        $byCurrency = $currency
+            ? array_values(array_filter($compatible, static fn (PaymentType $c) => $c->getCurrency() === null || $c->getCurrency() === $currency))
+            : $compatible;
+        $pool = $byCurrency ?: $compatible;
 
-        return $enabled[0] ?? $compatible[0];
+        $enabled = array_values(array_filter($pool, static fn (PaymentType $c) => $c->isIsEnabled()));
+
+        return $enabled[0] ?? $pool[0];
     }
 
     public function onPaymentIssue(TransitionEvent $event): void

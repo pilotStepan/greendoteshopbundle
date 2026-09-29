@@ -19,6 +19,7 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Enum\TransportationAction;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\TransportationRepository;
 use Greendot\EshopBundle\StateProvider\CheapTransportationStateProvider;
 
@@ -124,6 +125,12 @@ class Transportation implements Translatable
 
     #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
     private ?float $priceForCart = null;
+
+    #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
+    private ?Money $priceMoney = null;
+
+    #[Groups(['transportation:read', 'transportation_group:read', 'payment:read', 'branch:read'])]
+    private ?Money $priceForCartMoney = null;
 
     /**
      * @var Collection<int, HandlingPrice>
@@ -517,6 +524,30 @@ class Transportation implements Translatable
     public function setPriceForCart(?float $priceForCart): static
     {
         $this->priceForCart = $priceForCart;
+        return $this;
+    }
+
+    public function getPriceMoney(): ?Money
+    {
+        return $this->priceMoney;
+    }
+
+    public function setPriceMoney(?Money $priceMoney): static
+    {
+        $this->priceMoney = $priceMoney;
+
+        return $this;
+    }
+
+    public function getPriceForCartMoney(): ?Money
+    {
+        return $this->priceForCartMoney;
+    }
+
+    public function setPriceForCartMoney(?Money $priceForCartMoney): static
+    {
+        $this->priceForCartMoney = $priceForCartMoney;
+
         return $this;
     }
 

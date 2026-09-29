@@ -146,7 +146,10 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                     'notesCount' => count($notes),
                 ]);
 
-                // 7. Workflow transition
+                // 7. Ensure currency snapshot before checkout
+                $this->managePurchase->ensureCurrency($purchase);
+
+                // 8. Workflow transition
                 $this->logger->info('Checkout applying workflow transition', [
                     'purchaseId' => $purchase->getId(),
                     'transition' => PurchaseWorkflowContract::T_CHECKOUT->value,

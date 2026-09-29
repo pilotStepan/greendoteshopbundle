@@ -17,6 +17,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\DiscountCombinationStrategyInterface;
+use Greendot\EshopBundle\Money\Money;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -90,6 +91,34 @@ class ProductVariantPrice
             return $this->calculatedPrice;
         }
         return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->conversionRate);
+    }
+
+    public function getCurrency(): Currency
+    {
+        return $this->conversionRate->getCurrency();
+    }
+
+    /**
+     * Money-typed equivalent of getPrice() (always converted to this calculator's currency).
+     */
+    public function getMoney(): Money
+    {
+        return Money::fromCurrency($this->getPrice(), $this->getCurrency());
+    }
+
+    public function getPieceMoney(): Money
+    {
+        return Money::fromCurrency($this->getPiecePrice(), $this->getCurrency());
+    }
+
+    public function getMinMoney(): Money
+    {
+        return Money::fromCurrency($this->getMinPrice(), $this->getCurrency());
+    }
+
+    public function getDiscountMoney(): Money
+    {
+        return Money::fromCurrency($this->getDiscountValue(), $this->getCurrency());
     }
 
     public function getPiecePrice(): ?float

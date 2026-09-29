@@ -11,6 +11,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Greendot\EshopBundle\Service\DateService;
 use Greendot\EshopBundle\Service\ManageVoucher;
 use Greendot\EshopBundle\Service\ManagePurchase;
+use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -236,7 +237,36 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $this->assertSame($skCard, $purchase->getPaymentType());
     }
 
-    public function testOnPaymentPrefersEnabledOverDisabledAmongTransportationCompatibleCandidates(): void
+    public function testOnPaymentPrefersPaymentTypeMatchingPurchaseCurrencyAmongCompatibleOnes(): void
+    {
+        $eur = (new Currency())->setName('EUR')->setSymbol('€')->setRounding(2);
+        $czk = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0);
+
+        $czkPaymentType = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setCurrency($czk)->setIsEnabled(true);
+        $eurPaymentType = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setCurrency($eur)->setIsEnabled(true);
+
+        $transportation = (new Transportation())->addPaymentType($czkPaymentType)->addPaymentType($eurPaymentType);
+
+        $purchase = (new Purchase())->setCurrency($eur);
+        $purchase->setTransportation($transportation);
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->method('findBy')->willReturn([$czkPaymentType, $eurPaymentType]);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+            'performed_by' => 'client',
+            'source' => 'gpw',
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertSame($eurPaymentType, $purchase->getPaymentType());
+        $this->assertSame($eur, $purchase->getCurrency(), 'Must stay EUR, not be overwritten');
+    }
+
+    public function testOnPaymentPrefersEnabledOverDisabledWhenCurrencyDoesNotDiscriminate(): void
     {
         $disabled = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setIsEnabled(false);
         $enabled = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setIsEnabled(true);
