@@ -31,6 +31,7 @@ use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
+#[ORM\UniqueConstraint(name: 'UNIQ_purchase_order_number', columns: ['order_number'])]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
     operations: [
@@ -170,6 +171,14 @@ class Purchase
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
     private $internalNumber;
+
+    /**
+     * Customer-facing sequential order number, assigned once when a purchase becomes a real order.
+     * Carts, wishlists and drafts keep NULL. Use `id` for links/API, this for anything a human reads.
+     */
+    #[ORM\Column(type: 'integer', nullable: true, options: ['unsigned' => true])]
+    #[Groups(['purchase:read'])]
+    private ?int $orderNumber = null;
 
     #[ORM\ManyToOne(targetEntity: PaymentType::class, cascade: ['persist'], inversedBy: 'purchases')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
@@ -356,6 +365,11 @@ class Purchase
         return $products;
     }
 
+    /**
+     * Internal database id. It is shared by carts, wishlists and orders, so real orders have gaps.
+     * Use it only for machine purposes.
+     * Never show it to a customer or use it as a variable symbol. Use {@see getOrderNumber()} for that.
+     */
     public function getId(): ?int
     {
         return $this->id;
@@ -634,6 +648,24 @@ class Purchase
     public function setInternalNumber($internalNumber): static
     {
         $this->internalNumber = $internalNumber;
+        return $this;
+    }
+
+    /**
+     * Customer-facing order number; NULL for carts, wishlists and drafts.
+     */
+    public function getOrderNumber(): ?int
+    {
+        return $this->orderNumber;
+    }
+
+    public function assignOrderNumber(int $orderNumber): static
+    {
+        if ($this->orderNumber !== null) {
+            throw new \LogicException(sprintf('Purchase %d already has order number %d.', $this->id, $this->orderNumber));
+        }
+
+        $this->orderNumber = $orderNumber;
         return $this;
     }
 

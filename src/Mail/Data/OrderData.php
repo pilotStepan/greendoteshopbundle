@@ -8,6 +8,8 @@ class OrderData
 {
     public function __construct(
         public int                     $purchaseId,
+        public ?int                    $orderNumber,
+        public ?string                 $variableSymbol,
         public bool                    $vatExempted,
         public ?string                 $qrCodeUri,
         public ?string                 $payLink,

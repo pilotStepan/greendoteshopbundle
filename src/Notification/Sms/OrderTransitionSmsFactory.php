@@ -50,7 +50,7 @@ readonly class OrderTransitionSmsFactory implements OrderTransitionSmsFactoryInt
         $key = 'sms.order.' . $transition;
 
         $params = array_filter([
-            '%id%' => $purchase->getId() ?? '',
+            '%id%' => $purchase->getOrderNumber() ?? '',
             '%tracking%' => $tracking,
             '%amount%' => $amount,
         ], static fn($v) => $v !== null && $v !== '');

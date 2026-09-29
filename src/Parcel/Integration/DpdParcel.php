@@ -257,10 +257,10 @@ class DpdParcel implements ParcelServiceInterface
             'parcels' => [
                 [
                     'weight' => $weight,
-                    'reference1' => (string)$purchase->getId(),
+                    'reference1' => (string)$purchase->getOrderNumber(),
                 ],
             ],
-            'reference1' => (string)$purchase->getId(),
+            'reference1' => (string)$purchase->getOrderNumber(),
             'saveMode' => 'printed',
             'printFormat' => 'PDF',
         ];
@@ -275,7 +275,7 @@ class DpdParcel implements ParcelServiceInterface
                     'amount' => (string)$codMoney->value,
                     'currency' => $codMoney->iso,
                     'paymentType' => 'Cash',
-                    'reference' => (string)$purchase->getId(),
+                    'reference' => (string)$purchase->getOrderNumber(),
                     'split' => 'Even',
                 ],
             ];

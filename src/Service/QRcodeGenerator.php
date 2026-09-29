@@ -58,7 +58,7 @@ class QRcodeGenerator
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($money->value, 2, '.', '') .
             '*CC:' . $money->iso . '*DT:' . $now->format("Ymd") .
-            '*X-VS:' . $purchase->getId().
+            '*X-VS:' . $purchase->getOrderNumber().
             '*X-KS:308';
 
 

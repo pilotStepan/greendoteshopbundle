@@ -174,7 +174,7 @@ class SimplePurchaseController extends AbstractController
         $response = new BinaryFileResponse($pdfFilePath);
         $response->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-            'invoice_' . $purchase->getId() . '.pdf',
+            'invoice_' . $purchase->getOrderNumber() . '.pdf',
         );
         $response->headers->set('Content-Type', 'application/pdf');
 
@@ -284,7 +284,7 @@ class SimplePurchaseController extends AbstractController
 
     private function buildZipEntryName(Purchase $purchase, array &$usedNames): string
     {
-        $label = $purchase->getInvoiceNumber() ?? (string) $purchase->getId();
+        $label = $purchase->getInvoiceNumber() ?? (string) ($purchase->getOrderNumber() ?? $purchase->getId());
         $safe = preg_replace('/[^A-Za-z0-9._-]/', '_', $label);
         $name = sprintf('invoice_%s.pdf', $safe);
 

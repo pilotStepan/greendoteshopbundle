@@ -86,6 +86,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
         $purchase->method('getDateIssue')->willReturn(new DateTimeImmutable('2024-01-15'));
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getBranch')->willReturn($branch);
@@ -213,7 +214,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
 
         $this->assertSame('NB', $parcelParam['prefixParcelCode']);
         $this->assertSame('1.00', $parcelParam['weight']);
-        $this->assertSame('VS 123', $parcelParam['note']);
+        $this->assertSame('VS 5001', $parcelParam['note']);
         $this->assertSame(['street' => 'Balíkovna', 'zipCode' => '10000'], $address);
     }
 
@@ -252,7 +253,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $parcelParam = $decoded['parcelServiceData']['parcelParams'];
 
         $this->assertEquals(500.0, $parcelParam['amount']);
-        $this->assertSame('123', $parcelParam['vsVoucher']);
+        $this->assertSame('5001', $parcelParam['vsVoucher']);
         $this->assertContains('41', $decoded['parcelServiceData']['parcelServices']);
     }
 
@@ -335,6 +336,7 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $purchase->method('getTransportation')->willReturn($this->makeTransportation('c2VjcmV0'));
         $purchase->method('getBranch')->willReturn(null);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
 
         $this->expectException(PermanentParcelException::class);
 

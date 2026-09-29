@@ -78,7 +78,7 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
             $response = new BinaryFileResponse($pdfFilePath);
             $response->setContentDisposition(
                 ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                'faktura-' . $purchase->getId() . '.pdf',
+                'faktura-' . $purchase->getOrderNumber() . '.pdf',
             );
 
             return $response;

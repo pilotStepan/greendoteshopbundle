@@ -73,6 +73,8 @@ class OrderDataFactory
 
         return new OrderData(
             purchaseId: $purchase->getId(),
+            orderNumber: $purchase->getOrderNumber(),
+            variableSymbol: $purchase->getOrderNumber() !== null ? (string) $purchase->getOrderNumber() : null,
             vatExempted: $purchase->isVatExempted(),
             qrCodeUri: $qr,
             payLink: $payLink,

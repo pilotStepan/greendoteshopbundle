@@ -135,6 +135,7 @@ class PacketeryAddressParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getClient')->willReturn($client);
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));

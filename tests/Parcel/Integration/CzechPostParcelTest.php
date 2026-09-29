@@ -91,6 +91,7 @@ class CzechPostParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
         $purchase->method('getDateIssue')->willReturn(new DateTimeImmutable('2024-01-15'));
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getClient')->willReturn($client);
@@ -272,7 +273,7 @@ class CzechPostParcelTest extends TestCase
         $address = $decoded['parcelServiceData']['parcelAddress']['address'];
 
         $this->assertSame('DR', $parcelParams['prefixParcelCode']);
-        $this->assertSame('VS 123', $parcelParams['note']);
+        $this->assertSame('VS 5001', $parcelParams['note']);
         $this->assertSame('Testovací 123', $address['street']);
         $this->assertSame('Praha', $address['city']);
         $this->assertSame('10000', $address['zipCode']);
@@ -332,7 +333,7 @@ class CzechPostParcelTest extends TestCase
         $parcelParams = $decoded['parcelServiceData']['parcelParams'];
 
         $this->assertEquals(500.0, $parcelParams['amount']);
-        $this->assertSame('123', $parcelParams['vsVoucher']);
+        $this->assertSame('5001', $parcelParams['vsVoucher']);
         $this->assertContains('41', $decoded['parcelServiceData']['parcelServices']);
     }
 

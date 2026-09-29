@@ -202,15 +202,15 @@ class CzechPostParcel implements ParcelServiceInterface
         $weight = 1;
 
         $parcelParams = [
-            'recordID' => (string)$purchase->getId(),
+            'recordID' => (string)$purchase->getOrderNumber(),
             'prefixParcelCode' => 'DR',
             'weight' => number_format($weight, 2),
             'insuredValue' => $insuredMoney->value,
             'amount' => $codMoney->value,
             'currency' => $insuredMoney->iso,
-            'vsParcel' => (string)$purchase->getId(),
-            'note' => 'VS ' . $purchase->getId(),
-            'notePrint' => 'VS ' . $purchase->getId(),
+            'vsParcel' => (string)$purchase->getOrderNumber(),
+            'note' => 'VS ' . $purchase->getOrderNumber(),
+            'notePrint' => 'VS ' . $purchase->getOrderNumber(),
             'length' => 0,
             'width' => 0,
             'height' => 0,
@@ -218,7 +218,7 @@ class CzechPostParcel implements ParcelServiceInterface
         // vsVoucher must match ^\d{1,10}$ on Czech Post's side; omit it entirely for non-COD parcels
         // rather than sending an empty string, which the API rejects with a 400.
         if ($isCod) {
-            $parcelParams['vsVoucher'] = (string)$purchase->getId();
+            $parcelParams['vsVoucher'] = (string)$purchase->getOrderNumber();
         }
 
         return [

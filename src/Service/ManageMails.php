@@ -41,7 +41,7 @@ class ManageMails
     {
         $subject = sprintf('%s #%d',
             $this->translator->trans('Nová odpověď v konverzaci k objednávce'),
-            $purchase->getId())
+            $purchase->getOrderNumber())
         ;
 
         $email = (new TemplatedEmail())

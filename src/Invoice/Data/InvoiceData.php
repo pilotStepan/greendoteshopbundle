@@ -11,7 +11,8 @@ class InvoiceData
 {
     public function __construct(
         public ?string                      $invoiceId,
-        public int                          $purchaseId,
+        public ?int                         $orderNumber,
+        public ?string                      $variableSymbol,
         public bool                         $isInvoice,
         public bool                         $isVatExempted,
         public ?string                      $invoiceNumber,

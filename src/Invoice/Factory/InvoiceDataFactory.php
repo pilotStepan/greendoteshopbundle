@@ -98,7 +98,8 @@ final class InvoiceDataFactory
 
         return new InvoiceData(
             invoiceId:                              $purchase->getInvoiceNumber(),
-            purchaseId:                             $purchase->getId(),
+            orderNumber:                            $purchase->getOrderNumber(),
+            variableSymbol:                         $purchase->getOrderNumber() !== null ? (string) $purchase->getOrderNumber() : null,
             isInvoice:                              $isInvoice,
             isVatExempted:                          $purchase->isVatExempted(),
             invoiceNumber:                          $invoiceNumber,

@@ -97,7 +97,7 @@ readonly class RbBankPaymentImportService
 
     private function processRecord(RbBankPaymentRecord $record, PaymentType $paymentType): void
     {
-        $purchase = $this->purchaseRepository->find($record->variableSymbol);
+        $purchase = $this->purchaseRepository->findOneBy(['orderNumber' => (int) $record->variableSymbol]);
         if (!$purchase) {
             return;
         }
@@ -113,7 +113,7 @@ readonly class RbBankPaymentImportService
         if (!$expectedMoney->isSameCurrency($transferredMoney)) {
             $this->paymentActionLogger->log($purchase, PaymentActionType::FAILURE->value, 'system',
                 sprintf('Platba pro objednávku #%d (VS %s) přišla v jiné měně (%s) než objednávka (%s); platba nebyla potvrzena.',
-                    $purchase->getId(),
+                    $purchase->getOrderNumber(),
                     $record->variableSymbol,
                     $transferredMoney->iso,
                     $expectedMoney->iso,
@@ -134,7 +134,7 @@ readonly class RbBankPaymentImportService
                 sprintf(
                     'Přijatá částka %s je nižší než cena objednávky #%d (%s); platba nebyla potvrzena.',
                     $transferredMoney,
-                    $purchase->getId(),
+                    $purchase->getOrderNumber(),
                     $expectedMoney,
                 ),
                 [
@@ -159,7 +159,7 @@ readonly class RbBankPaymentImportService
             ]);
         } catch (Throwable $e) {
             $this->paymentActionLogger->log($purchase, PaymentActionType::FAILURE->value, 'system',
-                sprintf('Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit. Error: %s', $purchase->getId(), $record->variableSymbol, $e->getMessage()),
+                sprintf('Platbu pro objednávku #%d (VS %s) se nepodařilo potvrdit. Error: %s', $purchase->getOrderNumber(), $record->variableSymbol, $e->getMessage()),
                 [
                     'source' => 'rb_bank',
                     'variableSymbol' => $record->variableSymbol,

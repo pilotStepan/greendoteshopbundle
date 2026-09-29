@@ -91,6 +91,7 @@ class PacketeryParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getBranch')->willReturn($branch);
         $purchase->method('getClient')->willReturn($client);
@@ -274,6 +275,21 @@ class PacketeryParcelTest extends TestCase
         );
 
         $this->assertStringContainsString('<eshop_id>TestEshop</eshop_id>', $capturedBody);
+    }
+
+    public function testCreateParcel_usesOrderNumberNotId(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successXml());
+        });
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('pw'), $this->makeBranch('packeta_52')),
+        );
+
+        $this->assertStringContainsString('<number>5001</number>', $capturedBody);
     }
 
     public function testCreateParcel_apiError_throwsRuntimeException(): void

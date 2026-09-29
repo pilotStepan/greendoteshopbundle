@@ -93,6 +93,7 @@ class DpdParcelTest extends TestCase
 
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(123);
+        $purchase->method('getOrderNumber')->willReturn(5001);
         $purchase->method('getTransportation')->willReturn($transportation);
         $purchase->method('getClient')->willReturn($client);
         $purchase->method('getPurchaseAddress')->willReturn($address ?? $this->makeAddress($country));
@@ -287,7 +288,7 @@ class DpdParcelTest extends TestCase
         $this->assertArrayHasKey('service', $decoded['shipments'][0]);
         $this->assertSame('101', $decoded['shipments'][0]['service']['mainServiceCode']);
         $this->assertSame('CZK', $decoded['shipments'][0]['service']['additionalService']['cod']['currency']);
-        $this->assertSame('123', $decoded['shipments'][0]['service']['additionalService']['cod']['reference']);
+        $this->assertSame('5001', $decoded['shipments'][0]['service']['additionalService']['cod']['reference']);
         $this->assertSame('Even', $decoded['shipments'][0]['service']['additionalService']['cod']['split']);
     }
 

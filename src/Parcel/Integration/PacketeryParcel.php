@@ -68,7 +68,7 @@ class PacketeryParcel implements ParcelServiceInterface
         ['value' => $value, 'cod' => $cod] = $this->resolvePriceAndCod($purchase, $currency);
 
         $packetAttributes = [
-            'number' => (string)$purchase->getId(),
+            'number' => (string)$purchase->getOrderNumber(),
             'name' => $address->getShipName() ?? $client->getName(),
             'surname' => $address->getShipSurname() ?? $client->getSurname(),
             'email' => $client->getMail(),
