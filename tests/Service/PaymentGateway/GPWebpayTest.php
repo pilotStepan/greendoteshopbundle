@@ -73,7 +73,7 @@ class GPWebpayTest extends TestCase
         $this->assertSame('client', $performedBy);
         $this->assertSame($redirectUrl, $data['url']);
         $this->assertSame(150.0, $data['AMOUNT']);
-        $this->assertSame(203, $data['CURRENCY'], 'CZK ISO 4217 numeric code is 203');
+        $this->assertSame('203', $data['CURRENCY'], 'CZK ISO 4217 numeric code is 203');
         $this->assertSame('CZK', $data['CURRENCY_ISO']);
         $this->assertNotNull($payment);
 
@@ -122,7 +122,7 @@ class GPWebpayTest extends TestCase
 
         [, , , , $data, $payment] = $paymentActionLogger->calls[0];
 
-        $this->assertSame(978, $data['CURRENCY'], 'EUR ISO 4217 numeric code is 978');
+        $this->assertSame('978', $data['CURRENCY'], 'EUR ISO 4217 numeric code is 978');
         $this->assertSame('EUR', $data['CURRENCY_ISO']);
         assert($payment instanceof Payment);
         $this->assertSame('EUR', $payment->getCurrency()?->getIso());
