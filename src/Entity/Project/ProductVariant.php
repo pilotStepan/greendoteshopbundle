@@ -85,7 +85,7 @@ class ProductVariant implements Translatable
     private Collection $price;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    #[Groups(["SearchProductResultApiModel"])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel", 'purchase:wishlist'])]
     private ?int $AvgRestockDays = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
