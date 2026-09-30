@@ -44,11 +44,14 @@ final readonly class PurchaseNotificationSubscriber implements EventSubscriberIn
 
         $locale = $this->purchaseLocaleResolver->resolve($purchase);
 
+        $notificationKey = $event->getMetadata('notification_key', $event->getTransition())
+            ?? $event->getTransition()->getName();
+
         foreach ($aliases as $alias) {
             $this->bus->dispatch(
                 new PurchaseTransitionNotification(
                     purchaseId: $purchase->getId(),
-                    transition: $event->getTransition()->getName(),
+                    transition: $notificationKey,
                     alias: $alias,
                 ),
                 [new LocaleStamp($locale)],

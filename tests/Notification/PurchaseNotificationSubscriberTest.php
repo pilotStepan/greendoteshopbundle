@@ -114,14 +114,39 @@ class PurchaseNotificationSubscriberTest extends TestCase
         $this->assertSame('de', $seenLocale);
     }
 
-    private function buildCompletedEvent(Purchase $purchase, array $notificationAliases, array $context = []): CompletedEvent
+    public function testUsesNotificationKeyMetadataInsteadOfTransitionName(): void
+    {
+        $purchase = new Purchase();
+        $this->setPurchaseId($purchase, 7);
+
+        $event = $this->buildCompletedEvent($purchase, ['customer_email'], notificationKey: 'log_send');
+
+        $seenTransition = null;
+        $this->bus->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(function ($message, array $stamps) use (&$seenTransition) {
+                $seenTransition = $message->transition;
+
+                return new Envelope($message, $stamps);
+            });
+
+        $this->subscriber->dispatchNotifications($event);
+
+        $this->assertSame('log_send', $seenTransition);
+    }
+
+    private function buildCompletedEvent(Purchase $purchase, array $notificationAliases, array $context = [], ?string $notificationKey = null): CompletedEvent
     {
         $transition = new Transition('paid', 'received', 'completed');
 
         $metadataStore = $this->createMock(\Symfony\Component\Workflow\Metadata\MetadataStoreInterface::class);
         $metadataStore->method('getMetadata')
-            ->with('notifications', $transition)
-            ->willReturn($notificationAliases);
+            ->willReturnCallback(fn (string $key, $subject) => match (true) {
+                $subject !== $transition => null,
+                $key === 'notifications' => $notificationAliases,
+                $key === 'notification_key' => $notificationKey,
+                default => null,
+            });
 
         $workflow = $this->createMock(WorkflowInterface::class);
         $workflow->method('getMetadataStore')->willReturn($metadataStore);
