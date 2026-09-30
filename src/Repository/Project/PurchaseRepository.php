@@ -81,6 +81,22 @@ class PurchaseRepository extends ServiceEntityRepository
         return $maxInvoiceNumber ? (string)($maxInvoiceNumber + 1) : '1';
     }
 
+    /**
+     * Assigns the next sequential order number
+     */
+    public function assignNextOrderNumber(Purchase $purchase): void
+    {
+        if ($purchase->getOrderNumber() !== null) {
+            return;
+        }
+
+        $next = (int) $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT COALESCE(MAX(order_number), MAX(id), 0) + 1 FROM purchase FOR UPDATE'
+        );
+
+        $purchase->assignOrderNumber($next);
+    }
+
     public function findBySession(QueryBuilder $queryBuilder): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];

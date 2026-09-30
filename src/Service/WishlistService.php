@@ -77,6 +77,8 @@ readonly class WishlistService
         ]);
 
         $currency = $this->currencyManager->get();
+        $moneyCurrency = $this->currencyManager->getForPurchase($wishlist);
+
         foreach ($wishlist->getProductVariants() as $productVariant) {
             $productVariantPriceCalc = $this->productVariantPriceFactory->create(
                 $productVariant,
@@ -85,6 +87,13 @@ readonly class WishlistService
             );
             $productVariant->setTotalPrice(
                 $productVariantPriceCalc->getPrice(),
+            );
+
+            if ($moneyCurrency !== $currency) {
+                $productVariantPriceCalc->setCurrency($moneyCurrency);
+            }
+            $productVariant->setTotalMoney(
+                $productVariantPriceCalc->getMoney(),
             );
         }
 

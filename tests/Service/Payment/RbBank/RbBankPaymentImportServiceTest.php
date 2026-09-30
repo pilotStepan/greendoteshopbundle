@@ -10,6 +10,7 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -17,6 +18,7 @@ use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Parcel\ParcelServiceProvider;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -36,6 +38,9 @@ class RbBankPaymentImportServiceTest extends TestCase
     private LoggerInterface&MockObject $logger;
     private WorkflowInterface&MockObject $purchaseFlow;
     private PaymentType $bankTransferPaymentType;
+
+    /** @var array<int, Money> spl_object_id(Purchase) => expected total, defaults to "always sufficient, CZK" */
+    private array $expectedTotalByPurchase = [];
 
     protected function setUp(): void
     {
@@ -60,7 +65,7 @@ class RbBankPaymentImportServiceTest extends TestCase
     public function testCompletedPaymentIsMatchedAndConfirmed(): void
     {
         $purchase = new Purchase();
-        $this->purchaseRepository->expects($this->once())->method('find')->with('42')->willReturn($purchase);
+        $this->purchaseRepository->expects($this->once())->method('findOneBy')->with(['orderNumber' => 42])->willReturn($purchase);
 
         $this->purchaseFlow->expects($this->once())
             ->method('apply')
@@ -84,12 +89,79 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->assertSame($this->bankTransferPaymentType, $purchase->getPaymentType());
     }
 
+    public function testCurrencyMismatchIsRejectedAsFailureWithoutConfirmingPayment(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('findOneBy')->with(['orderNumber' => 42])->willReturn($purchase);
+        $this->purchaseFlow->expects($this->never())->method('apply');
+
+        $this->entityManager->expects($this->once())->method('persist'); // failure PaymentAction only
+        $this->entityManager->expects($this->once())->method('flush');
+
+        // Record arrives in EUR, but the order's own total is CZK.
+        $line = '01.06.2026;30.06.2026;100.00;EUR;100.00;15.06.2026;111111;0100;222222;5500;42;0;poznamka;2;tx-1';
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    public function testUnderpaymentIsRejectedAsFailureWithoutConfirmingPayment(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('findOneBy')->with(['orderNumber' => 42])->willReturn($purchase);
+        $this->purchaseFlow->expects($this->never())->method('apply');
+
+        $this->entityManager->expects($this->once())->method('persist'); // failure PaymentAction only
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $line = sprintf(self::ROW, '50.00', '15.06.2026', '42', 2, 'tx-1'); // order total is 100.0
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertNull($purchase->getPaymentType());
+    }
+
+    public function testExactPaymentIsConfirmed(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('findOneBy')->with(['orderNumber' => 42])->willReturn($purchase);
+        $this->purchaseFlow->expects($this->once())->method('apply');
+
+        $line = sprintf(self::ROW, '100.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertSame($this->bankTransferPaymentType, $purchase->getPaymentType());
+    }
+
+    public function testOverpaymentIsConfirmed(): void
+    {
+        $purchase = new Purchase();
+        $this->setExpectedTotal($purchase, 100.0, 'CZK');
+        $this->purchaseRepository->method('findOneBy')->with(['orderNumber' => 42])->willReturn($purchase);
+        $this->purchaseFlow->expects($this->once())->method('apply');
+
+        $line = sprintf(self::ROW, '150.00', '15.06.2026', '42', 2, 'tx-1');
+        $this->createService(new MockHttpClient(new MockResponse($line)))
+            ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
+        ;
+
+        $this->assertSame($this->bankTransferPaymentType, $purchase->getPaymentType());
+    }
+
     public function testAlreadyPaidPurchaseIsPersistedAsSuccessWithoutChangingPaymentType(): void
     {
         $purchase = new Purchase();
         $purchase->assignWorkflowFlag(PWC::F_PAYMENT_SUCCESS->value);
 
-        $this->purchaseRepository->method('find')->willReturn($purchase);
+        $this->purchaseRepository->method('findOneBy')->willReturn($purchase);
         $this->purchaseFlow->expects($this->never())->method('apply');
 
         // applyBankTransferPayment returns silently (already paid) → processRecord still persists the purchase
@@ -108,7 +180,7 @@ class RbBankPaymentImportServiceTest extends TestCase
     {
         $purchase = new Purchase();
         $this->purchaseFlow->method('apply')->willThrowException(new \RuntimeException('Transition blocked'));
-        $this->purchaseRepository->method('find')->willReturn($purchase);
+        $this->purchaseRepository->method('findOneBy')->willReturn($purchase);
 
         $this->entityManager->expects($this->exactly(1))->method('persist'); // failure PaymentAction only
         $this->entityManager->expects($this->once())->method('flush');
@@ -123,7 +195,7 @@ class RbBankPaymentImportServiceTest extends TestCase
 
     public function testPendingOrTerminatedPaymentsAreSkipped(): void
     {
-        $this->purchaseRepository->expects($this->never())->method('find');
+        $this->purchaseRepository->expects($this->never())->method('findOneBy');
         $this->entityManager->expects($this->never())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
@@ -137,7 +209,7 @@ class RbBankPaymentImportServiceTest extends TestCase
 
     public function testUnmatchedPurchaseIsSkippedWithoutPersisting(): void
     {
-        $this->purchaseRepository->expects($this->once())->method('find')->with('99')->willReturn(null);
+        $this->purchaseRepository->expects($this->once())->method('findOneBy')->with(['orderNumber' => 99])->willReturn(null);
         $this->entityManager->expects($this->never())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
@@ -150,7 +222,7 @@ class RbBankPaymentImportServiceTest extends TestCase
     public function testCeskaPostaRemittanceIsSkippedWithoutSettlingOrPersisting(): void
     {
         $purchase = new Purchase();
-        $this->purchaseRepository->expects($this->once())->method('find')->with('11048')->willReturn($purchase);
+        $this->purchaseRepository->expects($this->once())->method('findOneBy')->with(['orderNumber' => 11048])->willReturn($purchase);
         $this->purchaseFlow->expects($this->never())->method('apply');
 
         $this->entityManager->expects($this->never())->method('persist');
@@ -167,7 +239,7 @@ class RbBankPaymentImportServiceTest extends TestCase
 
     public function testMalformedRowIsSkipped(): void
     {
-        $this->purchaseRepository->expects($this->never())->method('find');
+        $this->purchaseRepository->expects($this->never())->method('findOneBy');
         $this->entityManager->expects($this->never())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
         $this->logger->expects($this->atLeastOnce())->method('warning');
@@ -179,7 +251,7 @@ class RbBankPaymentImportServiceTest extends TestCase
 
     public function testRowWithUnparsableDateIsSkipped(): void
     {
-        $this->purchaseRepository->expects($this->never())->method('find');
+        $this->purchaseRepository->expects($this->never())->method('findOneBy');
         $this->entityManager->expects($this->never())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
         $this->logger->expects($this->atLeastOnce())->method('warning');
@@ -193,7 +265,7 @@ class RbBankPaymentImportServiceTest extends TestCase
     public function testCompletedPaymentWithDatetimeInTransferColumnIsProcessed(): void
     {
         $purchase = new Purchase();
-        $this->purchaseRepository->expects($this->once())->method('find')->with('93033')->willReturn($purchase);
+        $this->purchaseRepository->expects($this->once())->method('findOneBy')->with(['orderNumber' => 93033])->willReturn($purchase);
         $this->purchaseFlow->expects($this->once())->method('apply');
         $this->entityManager->expects($this->once())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
@@ -209,7 +281,7 @@ class RbBankPaymentImportServiceTest extends TestCase
         $purchase1 = new Purchase();
         $purchase2 = new Purchase();
 
-        $this->purchaseRepository->method('find')
+        $this->purchaseRepository->method('findOneBy')
             ->willReturnOnConsecutiveCalls($purchase1, $purchase2)
         ;
 
@@ -309,8 +381,22 @@ class RbBankPaymentImportServiceTest extends TestCase
         ;
     }
 
+    private function setExpectedTotal(Purchase $purchase, float $value, string $iso = 'CZK'): void
+    {
+        $this->expectedTotalByPurchase[spl_object_id($purchase)] = new Money($value, $iso);
+    }
+
     private function createService(MockHttpClient $httpClient, bool $enabled = true): RbBankPaymentImportService
     {
+        $purchasePriceFactory = $this->createMock(PurchasePriceFactory::class);
+        $purchasePriceFactory->method('create')->willReturnCallback(function (Purchase $purchase) {
+            $money = $this->expectedTotalByPurchase[spl_object_id($purchase)] ?? new Money(0.0, 'CZK');
+            $calculator = $this->createMock(PurchasePrice::class);
+            $calculator->method('getMoney')->willReturn($money);
+            $calculator->method('getPrice')->willReturn($money->value);
+            return $calculator;
+        });
+
         return new RbBankPaymentImportService(
             $httpClient,
             $this->entityManager,
@@ -318,7 +404,7 @@ class RbBankPaymentImportServiceTest extends TestCase
             $this->paymentTypeRepository,
             new ManagePurchase(
                 $this->createMock(CurrencyManager::class),
-                $this->createMock(PurchasePriceFactory::class),
+                $purchasePriceFactory,
                 $this->createMock(ProductVariantPriceFactory::class),
                 $this->purchaseRepository,
                 new ManageVies($this->createMock(LoggerInterface::class)),

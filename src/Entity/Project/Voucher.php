@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\VoucherRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -44,6 +45,9 @@ class Voucher
     #[ORM\Column(nullable: true)]
     #[Groups(['purchase:read', 'voucher:read', 'voucher:write'])]
     private ?int $amount = null;
+
+    #[Groups(['purchase:read', 'voucher:read'])]
+    private ?Money $amountMoney = null;
 
     #[ORM\Column(length: 6, unique: true)]
     #[Groups(['purchase:read', 'voucher:read'])]
@@ -115,6 +119,18 @@ class Voucher
     public function setAmount(?int $amount): static
     {
         $this->amount = $amount;
+
+        return $this;
+    }
+
+    public function getAmountMoney(): ?Money
+    {
+        return $this->amountMoney;
+    }
+
+    public function setAmountMoney(?Money $amountMoney): static
+    {
+        $this->amountMoney = $amountMoney;
 
         return $this;
     }

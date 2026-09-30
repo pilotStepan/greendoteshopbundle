@@ -9,6 +9,7 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\HandlingPrice;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 
 readonly class ServiceCalculationUtils
@@ -63,6 +64,21 @@ readonly class ServiceCalculationUtils
             return $this->priceUtils->convertCurrency($price, $conversionRate);
         }
         return $price;
+    }
+
+    public function calculateServiceMoney(
+        Transportation|PaymentType|HandlingPrice $service,
+        Currency|ConversionRate    $currencyOrConversionRate,
+        VatCalculationType         $vatCalculationType = VatCalculationType::WithoutVAT,
+        float                      $theoreticalAmount = 0.0,
+    ): Money
+    {
+        $price = $this->calculateServicePrice($service, $currencyOrConversionRate, $vatCalculationType, $theoreticalAmount, false);
+        $currency = $currencyOrConversionRate instanceof ConversionRate
+            ? $currencyOrConversionRate->getCurrency()
+            : $currencyOrConversionRate;
+
+        return Money::fromCurrency($price, $currency);
     }
 
     /**

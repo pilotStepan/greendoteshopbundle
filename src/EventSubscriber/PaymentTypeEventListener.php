@@ -33,10 +33,18 @@ readonly class PaymentTypeEventListener
         $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession();
         $cart = $cartEntity ? clone $cartEntity : null;
 
+        $moneyCurrency = $paymentType->getCurrency()
+            ?? ($cart ? $this->currencyManager->getForPurchase($cart) : $currency);
+
         // Base price for the given service
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(
             $paymentType,
             $currency,
+            VatCalculationType::WithVAT,
+        );
+        $baseMoney = $this->serviceCalculationUtils->calculateServiceMoney(
+            $paymentType,
+            $moneyCurrency,
             VatCalculationType::WithVAT,
         );
 
@@ -48,13 +56,21 @@ readonly class PaymentTypeEventListener
                 VatCalculationType::WithVAT,
             );
             $cartPrice = $calc->getPaymentPrice() ?? 0.0;
+
+            if ($moneyCurrency !== $currency) {
+                $calc->setCurrency($moneyCurrency);
+            }
+            $cartMoney = $calc->getPaymentMoney();
         } else {
             $cartPrice = $basePrice;
+            $cartMoney = $baseMoney;
         }
 
         $paymentType
             ->setPrice($basePrice)
             ->setPriceForCart($cartPrice)
+            ->setPriceMoney($baseMoney)
+            ->setPriceForCartMoney($cartMoney)
         ;
     }
 }

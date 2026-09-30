@@ -7,7 +7,9 @@ namespace Greendot\EshopBundle\Notification;
 use Psr\Log\LoggerInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Translation\LocaleSwitcher;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Service\PurchaseLocaleResolver;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
@@ -15,10 +17,12 @@ use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 final readonly class PurchaseTransitionNotificationHandler
 {
     public function __construct(
-        private PurchaseRepository $purchaseRepository,
+        private PurchaseRepository     $purchaseRepository,
         #[AutowireLocator('greendot_eshop.purchase_notification')]
-        private ContainerInterface $locator,
-        private LoggerInterface    $logger,
+        private ContainerInterface     $locator,
+        private LoggerInterface        $logger,
+        private PurchaseLocaleResolver $purchaseLocaleResolver,
+        private LocaleSwitcher         $localeSwitcher,
     ) {}
 
     public function __invoke(PurchaseTransitionNotification $msg): void
@@ -47,6 +51,11 @@ final readonly class PurchaseTransitionNotificationHandler
             ));
         }
 
-        $purchaseNotificationHandler->handle($purchase, $msg->transition);
+        $locale = $this->purchaseLocaleResolver->resolve($purchase);
+
+        $this->localeSwitcher->runWithLocale(
+            $locale,
+            fn () => $purchaseNotificationHandler->handle($purchase, $msg->transition),
+        );
     }
 }

@@ -40,7 +40,7 @@ class PurchaseFactory
         $tax = $purchasePrice->getPrice();
 
         return new Purchase(
-            transaction_id: $purchase->getId(),
+            transaction_id: (string) $purchase->getId(),
             value: $value,
             tax: $tax,
             shipping: $shipping ?? 0,

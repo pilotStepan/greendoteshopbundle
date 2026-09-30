@@ -15,9 +15,7 @@ readonly class LoginSubscriber implements EventSubscriberInterface
         private PurchaseRepository $purchaseRepository,
         private RequestStack       $requestStack,
         private EntityManagerInterface $entityManager,
-    )
-    {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
@@ -31,13 +29,19 @@ readonly class LoginSubscriber implements EventSubscriberInterface
         $session = $this->requestStack->getSession();
         $user = $event->getAuthenticationToken()->getUser();
 
-        if (!$user instanceof Client) return;
+        if (!$user instanceof Client) {
+            return;
+        }
 
-        $sessionCart = $this->purchaseRepository->findOneBySession('purchase');
+        $this->updateLocale($user);
+
+        $sessionCart = $this->purchaseRepository->findOneBySession();
         $clientCart = $this->purchaseRepository->findCartForClient($user);
 
         // Skip if carts are identical
-        if ($sessionCart && $clientCart && $sessionCart->getId() === $clientCart->getId()) return;
+        if ($sessionCart && $clientCart && $sessionCart->getId() === $clientCart->getId()) {
+            return;
+        }
 
         // Case 1: Session cart has items - use it as active, existing client cart remains untouched
         if ($sessionCart && !$sessionCart->getProductVariants()->isEmpty()) {
@@ -50,6 +54,16 @@ readonly class LoginSubscriber implements EventSubscriberInterface
         // Case 2: Only client cart exists - update session reference
         if ($clientCart) {
             $session->set('purchase', $clientCart->getId());
+        }
+    }
+
+    private function updateLocale(Client $user): void
+    {
+        $locale = $this->requestStack->getCurrentRequest()?->getLocale();
+
+        if ($locale && $locale !== $user->getLocale()) {
+            $user->setLocale($locale);
+            $this->entityManager->flush();
         }
     }
 }

@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
 use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
@@ -76,6 +77,12 @@ class CalculatedPricesServiceTest extends TestCase
                 $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
                 return $priceMap[$key] ?? 0.0;
             });
+        $pvPrice->method('getPieceMoney')
+            ->willReturnCallback(function () use (&$vatType, &$discType, $priceMap) {
+                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
+                return new Money($priceMap[$key] ?? 0.0, 'CZK');
+            });
+        $pvPrice->method('getMoney')->willReturn(new Money(0.0, 'CZK'));
 
         return $pvPrice;
     }
@@ -107,6 +114,11 @@ class CalculatedPricesServiceTest extends TestCase
             ->willReturnCallback(function (bool $withServices = false) use (&$vatType, &$discType, $priceMap) {
                 $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
                 return $priceMap[$key][$withServices] ?? 0.0;
+            });
+        $ppPrice->method('getMoney')
+            ->willReturnCallback(function (bool $withServices = false) use (&$vatType, &$discType, $priceMap) {
+                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
+                return new Money($priceMap[$key][$withServices] ?? 0.0, 'CZK');
             });
 
         return $ppPrice;

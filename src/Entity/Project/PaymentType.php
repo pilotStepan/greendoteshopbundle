@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -13,6 +14,7 @@ use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PaymentTypeByTransportationFilter;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -109,6 +111,18 @@ class PaymentType implements Translatable
 
     #[Groups(['payment:read', 'purchase:read'])]
     private ?float $priceForCart = null;
+
+    #[Groups(['payment:read', 'purchase:read'])]
+    private ?Money $priceMoney = null;
+
+    #[Groups(['payment:read', 'purchase:read'])]
+    private ?Money $priceForCartMoney = null;
+
+    #[ORM\ManyToOne(targetEntity: Currency::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[ApiProperty(fetchEager: false)]
+    #[Groups(['payment:read', 'payment:write', 'purchase:read'])]
+    private ?Currency $currency = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $account = null;
@@ -385,6 +399,42 @@ class PaymentType implements Translatable
     public function setPriceForCart(?float $priceForCart): static
     {
         $this->priceForCart = $priceForCart;
+        return $this;
+    }
+
+    public function getPriceMoney(): ?Money
+    {
+        return $this->priceMoney;
+    }
+
+    public function setPriceMoney(?Money $priceMoney): static
+    {
+        $this->priceMoney = $priceMoney;
+
+        return $this;
+    }
+
+    public function getPriceForCartMoney(): ?Money
+    {
+        return $this->priceForCartMoney;
+    }
+
+    public function setPriceForCartMoney(?Money $priceForCartMoney): static
+    {
+        $this->priceForCartMoney = $priceForCartMoney;
+
+        return $this;
+    }
+
+    public function getCurrency(): ?Currency
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?Currency $currency): static
+    {
+        $this->currency = $currency;
+
         return $this;
     }
 

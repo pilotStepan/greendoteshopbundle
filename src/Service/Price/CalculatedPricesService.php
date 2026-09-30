@@ -3,7 +3,9 @@
 namespace Greendot\EshopBundle\Service\Price;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedMoneyMatrix;
 use Greendot\EshopBundle\Dto\calculatedPrices\PurchaseCalculatedPricesMatrix;
+use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedMoneyMatrix;
 use Greendot\EshopBundle\Dto\calculatedPrices\VariantCalculatedPricesMatrix;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
 use Greendot\EshopBundle\Entity\Project\Price;
@@ -24,7 +26,7 @@ class CalculatedPricesService
         private readonly PurchasePriceFactory        $purchasePriceFactory,
         private readonly CurrencyManager             $currencyManager,
         private readonly PriceRepository             $priceRepository,
-    ) {}    
+    ) {}
 
     /**
      * Sets the calculated prices collection for variant for all unique minimal amounts
@@ -119,12 +121,20 @@ class CalculatedPricesService
             return $purchase;
         }
 
-        // Make calculated prices for purchase
-        $purchasePrice = $this->purchasePriceFactory->create($purchase, $this->currencyManager->get());
+        $displayCurrency = $this->currencyManager->get();
+        $purchaseCurrency = $this->currencyManager->getForPurchase($purchase);
+
+        $purchasePrice = $this->purchasePriceFactory->create($purchase, $displayCurrency);
 
         $calculatedPricesMatrix = $this->createPurchaseCalculatedPricesMatrix($purchasePrice);
-      
+
+        if ($purchaseCurrency !== $displayCurrency) {
+            $purchasePrice->setCurrency($purchaseCurrency);
+        }
+        $calculatedMoneyMatrix = $this->createPurchaseCalculatedMoneyMatrix($purchasePrice);
+
         $purchase->setCalculatedPrices((array)$calculatedPricesMatrix);
+        $purchase->setCalculatedMoney((array)$calculatedMoneyMatrix);
 
         return $purchase;
     }
@@ -142,13 +152,23 @@ class CalculatedPricesService
 
         $variantPrice = $this->productVariantPriceFactory->createFromContext($purchaseProductVariant, $context);
         $calculatedPricesMatrix = $this->createVariantCalculatedPricesMatrix($variantPrice);
-        
+
+        $purchase = $purchaseProductVariant->getPurchase();
+        if ($purchase) {
+            $purchaseCurrency = $this->currencyManager->getForPurchase($purchase);
+            if ($purchaseCurrency !== $variantPrice->getCurrency()) {
+                $variantPrice->setCurrency($purchaseCurrency);
+            }
+        }
+        $calculatedMoneyMatrix = $this->createVariantCalculatedMoneyMatrix($variantPrice);
+
         $purchaseProductVariant->setCalculatedPrices((array)$calculatedPricesMatrix);
+        $purchaseProductVariant->setCalculatedMoney((array)$calculatedMoneyMatrix);
         return $purchaseProductVariant;
     }
 
     public function makeCalculatedPricesForPurchaseWithVariants(
-        Purchase                    $purchase, 
+        Purchase                    $purchase,
         ?ProductVariantPriceContext $context = null
     ) : Purchase
     {
@@ -226,6 +246,103 @@ class CalculatedPricesService
             totalPriceNoVatNoDiscount:  $totalPriceNoVatNoDiscount,
             discountPercentage:         $discountPercentage,
             productDiscountPercentage:  $productDiscountPercentage,
+        );
+    }
+
+    /**
+     * Money-typed twin of createVariantCalculatedPricesMatrix(), built from the same
+     * calculator by repeating its VAT/discount toggling (the calculator ends in the same
+     * final state either way, so calling both builders back-to-back is safe).
+     */
+    protected function createVariantCalculatedMoneyMatrix(ProductVariantPrice $productVariantPrice): VariantCalculatedMoneyMatrix
+    {
+        $priceVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getPieceMoney();
+
+        $priceNoVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getPieceMoney();
+
+        $priceVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getPieceMoney();
+
+        $priceNoVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getPieceMoney();
+
+        $totalPriceVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getMoney();
+
+        $totalPriceNoVat = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithDiscount)
+            ->getMoney();
+
+        $totalPriceVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getMoney();
+
+        $totalPriceNoVatNoDiscount = $productVariantPrice
+            ->setVatCalculationType(VatCalculationType::WithoutVAT)
+            ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount)
+            ->getMoney();
+
+        return new VariantCalculatedMoneyMatrix(
+            priceVat:                   $priceVat,
+            priceNoVat:                 $priceNoVat,
+            priceVatNoDiscount:         $priceVatNoDiscount,
+            priceNoVatNoDiscount:       $priceNoVatNoDiscount,
+            totalPriceVat:              $totalPriceVat,
+            totalPriceNoVat:            $totalPriceNoVat,
+            totalPriceVatNoDiscount:    $totalPriceVatNoDiscount,
+            totalPriceNoVatNoDiscount:  $totalPriceNoVatNoDiscount,
+        );
+    }
+
+    /**
+     * Money-typed twin of createPurchaseCalculatedPricesMatrix(), see note on
+     * createVariantCalculatedMoneyMatrix() above about repeating the toggle sequence.
+     */
+    protected function createPurchaseCalculatedMoneyMatrix(PurchasePrice $purchasePrice): PurchaseCalculatedMoneyMatrix
+    {
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $priceVat = $purchasePrice->getMoney(true);
+        $priceVatNoServices = $purchasePrice->getMoney(false);
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithDiscount);
+        $priceNoVat = $purchasePrice->getMoney(true);
+        $priceNoVatNoServices = $purchasePrice->getMoney(false);
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
+        $priceVatNoDiscount = $purchasePrice->getMoney(true);
+        $priceVatNoDiscountNoServices = $purchasePrice->getMoney(false);
+
+        $purchasePrice->setVatCalculationType(VatCalculationType::WithoutVAT)
+                      ->setDiscountCalculationType(DiscountCalculationType::WithoutDiscount);
+        $priceNoVatNoDiscount = $purchasePrice->getMoney(true);
+        $priceNoVatNoDiscountNoServices = $purchasePrice->getMoney(false);
+
+        return new PurchaseCalculatedMoneyMatrix(
+            priceVat:                       $priceVat,
+            priceNoVat:                     $priceNoVat,
+            priceVatNoDiscount:             $priceVatNoDiscount,
+            priceNoVatNoDiscount:           $priceNoVatNoDiscount,
+            priceVatNoServices:             $priceVatNoServices,
+            priceNoVatNoServices:           $priceNoVatNoServices,
+            priceVatNoDiscountNoServices:   $priceVatNoDiscountNoServices,
+            priceNoVatNoDiscountNoServices: $priceNoVatNoDiscountNoServices,
         );
     }
 
