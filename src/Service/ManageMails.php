@@ -51,6 +51,7 @@ class ManageMails
             ->htmlTemplate('email/purchase-discussion/new_discussion.html.twig')
             ->context([
                 'purchase_id' => $purchase->getId(),
+                'order_number' => $purchase->getOrderNumber(),
                 'client_section_link' => $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase),
                 'last_admin_message' => $purchase->getLastAdminMessage(),
             ])
