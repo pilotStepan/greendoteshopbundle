@@ -284,7 +284,7 @@ class SimplePurchaseController extends AbstractController
 
     private function buildZipEntryName(Purchase $purchase, array &$usedNames): string
     {
-        $label = $purchase->getInvoiceNumber() ?? (string) ($purchase->getOrderNumber() ?? $purchase->getId());
+        $label = $purchase->getInvoiceNumber() ?? (string) $purchase->getOrderNumber();
         $safe = preg_replace('/[^A-Za-z0-9._-]/', '_', $label);
         $name = sprintf('invoice_%s.pdf', $safe);
 
