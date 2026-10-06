@@ -234,6 +234,10 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 ->setPhone($clientData['phone'])
             ;
 
+            if (!$user->getLocale()) {
+                $user->setLocale($this->requestStack->getCurrentRequest()?->getLocale());
+            }
+
             $address = $user->getPrimaryAddress();
             if (!$address) {
                 $address = ClientAddress::fromArray($addressData);
@@ -268,6 +272,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
             ->setPhone($clientData['phone'])
             ->setMail($clientData['mail'])
             ->setIsAnonymous(true)
+            ->setLocale($this->requestStack->getCurrentRequest()?->getLocale())
         ;
 
         $this->em->persist($client);
