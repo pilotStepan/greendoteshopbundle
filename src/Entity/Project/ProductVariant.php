@@ -62,6 +62,7 @@ class ProductVariant implements Translatable
     private $product;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['product_variant:read','upload_product_with_variants:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
     private ?int $sequence = null;
 
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: PurchaseProductVariant::class)]
