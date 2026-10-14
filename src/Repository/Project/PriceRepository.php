@@ -55,7 +55,7 @@ class PriceRepository extends ServiceEntityRepository
     public function findCheapestPriceForProduct(Product $product): ?Price
     {
         return $this->createQueryBuilder('p')
-            ->select('p, (p.price * (1 - p.discount) * (1 + p.vat)) as HIDDEN calculatedPrice')
+            ->select('p, (p.price * (1 - COALESCE(p.discount, 0)) * (1 + COALESCE(p.vat, 0))) as HIDDEN calculatedPrice')
             ->join('p.productVariant', 'pv')
             ->where('pv.product = :product')
             ->andWhere('p.validFrom <= :now')
