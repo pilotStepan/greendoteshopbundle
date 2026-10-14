@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Branch;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
+use Greendot\EshopBundle\Service\BranchMapProvider;
 use Greendot\EshopBundle\Entity\Project\BranchType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Repository\Project\BranchRepository;
@@ -29,6 +30,7 @@ final class ManageBranch
         private CzechPostBranchImporter $czechPostBranchImporter,
         private PacketaBranchImporter   $packetaBranchImporter,
         private LoggerInterface         $logger,
+        private BranchMapProvider       $branchMapProvider,
     ) {}
 
     public function importCzechPost(): array { return $this->importFrom($this->czechPostBranchImporter); }
@@ -88,6 +90,7 @@ final class ManageBranch
                 return $stats;
             });
 
+            $this->branchMapProvider->invalidate();
             $this->logger->info('Branch import finished', $stats);
 
             return $stats;

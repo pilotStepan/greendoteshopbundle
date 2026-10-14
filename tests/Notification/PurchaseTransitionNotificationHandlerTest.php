@@ -7,10 +7,13 @@ namespace Greendot\EshopBundle\Tests\Notification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Psr\Container\ContainerInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query\FilterCollection;
 use Symfony\Component\Translation\LocaleSwitcher;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Service\PurchaseLocaleResolver;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
@@ -66,6 +69,55 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
         $this->assertSame('cs', $localeSwitcher->getLocale(), 'locale must be restored after the notification is handled');
     }
 
+    /**
+     * Regression coverage: a purchase containing a deactivated product failed with
+     * "Entity of type Product for IDs id(..) was not found", because the active filters
+     * hid the product when its lazy proxy was initialized while rendering the notification.
+     */
+    public function testActiveFiltersAreDisabledWhileHandlingAndRestoredAfter(): void
+    {
+        $enabledDuringHandling = null;
+        $notificationHandler = $this->buildNotificationHandler(function () use (&$enabledDuringHandling) {
+            $enabledDuringHandling = $this->enabledFilters;
+        });
+
+        $handler = $this->buildHandler($notificationHandler, new LocaleSwitcher('cs', []));
+        $this->setPurchaseId(new Purchase(), 1);
+
+        $handler(new PurchaseTransitionNotification(purchaseId: 1, transition: 'paid', alias: 'customer_email'));
+
+        $this->assertSame([], $enabledDuringHandling, 'active filters must be off while the notification is rendered');
+        $this->assertSame($this->activeFilters(), $this->enabledFilters, 'active filters must be restored afterwards');
+    }
+
+    public function testActiveFiltersAreRestoredWhenHandlingFails(): void
+    {
+        $notificationHandler = $this->buildNotificationHandler(fn () => throw new \RuntimeException('boom'));
+
+        $handler = $this->buildHandler($notificationHandler, new LocaleSwitcher('cs', []));
+        $this->setPurchaseId(new Purchase(), 1);
+
+        try {
+            $handler(new PurchaseTransitionNotification(purchaseId: 1, transition: 'paid', alias: 'customer_email'));
+            $this->fail('exception expected');
+        } catch (\RuntimeException) {
+        }
+
+        $this->assertSame($this->activeFilters(), $this->enabledFilters);
+    }
+
+    public function testFilterThatWasAlreadyDisabledStaysDisabled(): void
+    {
+        $this->enabledFilters = [DoctrineFiltersConfigNames::ProductVariantActiveFilter->value];
+
+        $handler = $this->buildHandler($this->buildNotificationHandler(fn () => null), new LocaleSwitcher('cs', []));
+        $this->setPurchaseId(new Purchase(), 1);
+
+        $handler(new PurchaseTransitionNotification(purchaseId: 1, transition: 'paid', alias: 'customer_email'));
+
+        $this->assertSame([DoctrineFiltersConfigNames::ProductVariantActiveFilter->value], $this->enabledFilters);
+    }
+
     private function buildNotificationHandler(callable $onHandle): PurchaseNotificationHandlerInterface
     {
         return new class($onHandle) implements PurchaseNotificationHandlerInterface {
@@ -97,8 +149,48 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
             new NullLogger(),
             new PurchaseLocaleResolver('cs'),
             $localeSwitcher,
+            $this->buildEntityManager(),
         );
     }
+
+    private function buildEntityManager(): EntityManagerInterface
+    {
+        $this->enabledFilters ??= $this->activeFilters();
+
+        $filters = $this->createMock(FilterCollection::class);
+        $filters->method('isEnabled')->willReturnCallback(
+            fn (string $name) => in_array($name, $this->enabledFilters, true),
+        );
+        $filters->method('disable')->willReturnCallback(function (string $name) {
+            $this->enabledFilters = array_values(array_diff($this->enabledFilters, [$name]));
+
+            return $this->createStub(\Doctrine\ORM\Query\Filter\SQLFilter::class);
+        });
+        $filters->method('enable')->willReturnCallback(function (string $name) {
+            $this->enabledFilters[] = $name;
+
+            return $this->createStub(\Doctrine\ORM\Query\Filter\SQLFilter::class);
+        });
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getFilters')->willReturn($filters);
+
+        return $entityManager;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function activeFilters(): array
+    {
+        return [
+            DoctrineFiltersConfigNames::ProductActiveFilter->value,
+            DoctrineFiltersConfigNames::ProductVariantActiveFilter->value,
+        ];
+    }
+
+    /** @var string[]|null */
+    private ?array $enabledFilters = null;
 
     private ?Purchase $currentPurchase = null;
 
