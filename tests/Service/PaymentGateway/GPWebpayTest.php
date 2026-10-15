@@ -36,6 +36,8 @@ class GPWebpayTest extends TestCase
         }
 
         $purchase = new Purchase();
+        (new \ReflectionProperty($purchase, 'id'))->setValue($purchase, 14284);
+        $purchase->assignOrderNumber(14048);
         $purchase->setTotalPrice(150.0);
         $purchase->setTotalMoney(new Money(150.0, 'CZK'));
 
@@ -75,6 +77,9 @@ class GPWebpayTest extends TestCase
         $this->assertSame(150.0, $data['AMOUNT']);
         $this->assertSame('203', $data['CURRENCY'], 'CZK ISO 4217 numeric code is 203');
         $this->assertSame('CZK', $data['CURRENCY_ISO']);
+        $this->assertSame(999, $data['ORDERNUMBER']);
+        $this->assertSame(14048, $data['MERORDERNUM'], 'MERORDERNUM is the VS in GP webpay statements - must be the order number, not the purchase id');
+        $this->assertStringContainsString('MERORDERNUM=14048', $redirectUrl);
         $this->assertNotNull($payment);
 
         // The gateway attempt itself must carry what it was actually asked to charge.
@@ -91,6 +96,7 @@ class GPWebpayTest extends TestCase
         }
 
         $purchase = new Purchase();
+        $purchase->assignOrderNumber(1);
         $purchase->setTotalPrice(99.5);
         $purchase->setTotalMoney(new Money(99.5, 'EUR'));
 
@@ -153,6 +159,34 @@ class GPWebpayTest extends TestCase
         );
 
         $this->expectException(PurchaseCurrencyMismatchException::class);
+
+        $gpWebpay->getPayLink($purchase);
+    }
+
+    public function testGetPayLinkThrowsWithoutOrderNumberAndPersistsNoPayment(): void
+    {
+        $purchase = new Purchase();
+        $purchase->setTotalMoney(new Money(150.0, 'CZK'));
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('persist');
+
+        $gpWebpay = new GPWebpay(
+            self::$privateKeyFile,
+            self::$publicKeyFile,
+            '',
+            '123456',
+            $this->createMock(UrlGeneratorInterface::class),
+            $entityManager,
+            $this->createMock(LoggerInterface::class),
+            new StubManagePurchase(),
+            $this->buildCurrencyManager('CZK'),
+            new RecordingPaymentActionLogger(),
+            'test',
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('no order number');
 
         $gpWebpay->getPayLink($purchase);
     }

@@ -68,6 +68,15 @@ readonly class GPWebpay implements PaymentGatewayInterface
             throw PurchaseCurrencyMismatchException::forPurchase($purchase);
         }
 
+        // MERORDERNUM is the variable symbol in GP webpay statements - it must be the order number, never the id.
+        $orderNumber = $purchase->getOrderNumber();
+        if ($orderNumber === null) {
+            throw new RuntimeException(sprintf(
+                'Purchase #%d has no order number; refusing to build a payment link.',
+                $purchase->getId(),
+            ));
+        }
+
         $this->managePurchase->preparePrices($purchase);
 
         $currency = $this->currencyManager->getForPurchase($purchase);
@@ -125,7 +134,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
                 'AMOUNT' => $money->value,
                 'CURRENCY' => $currencyNumeric,
                 'DEPOSITFLAG' => true,
-                'MERORDERNUM' => $purchase->getId(),
+                'MERORDERNUM' => $orderNumber,
             ], $currencyCodes);
 
             $cardPayRequest = new CardPayRequest($requestValues, $settings, $digestSigner);
@@ -143,7 +152,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
                     'CURRENCY' => $currencyNumeric,
                     'CURRENCY_ISO' => $money->iso,
                     'DEPOSITFLAG' => true,
-                    'MERORDERNUM' => $purchase->getId(),
+                    'MERORDERNUM' => $orderNumber,
                 ],
                 $payment,
             );
