@@ -32,6 +32,7 @@ class DpdParcel implements ParcelServiceInterface
     private const PROD_URL = 'https://shipping.dpdgroup.com/api/v1.1/';
     private const SANDBOX_URL = 'https://nst-preprod.dpsin.dpdgroup.com/api/v1.1/';
     private const MAIN_SERVICE_CODE = '101';
+    private const MAX_FIELD_LENGTH = 35;
 
     private readonly string $baseUrl;
 
@@ -236,14 +237,14 @@ class DpdParcel implements ParcelServiceInterface
             : null;
 
         $receiver = [
-            'name' => $address->getShipName() ?? $client->getName(),
-            'name2' => $address->getShipSurname() ?? $client->getSurname(),
-            'companyName' => $address->getShipCompany() ?? $address->getCompany(),
-            'street' => $address->getShipStreet() ?? $address->getStreet(),
-            'city' => $address->getShipCity() ?? $address->getCity(),
+            'name' => $this->truncate($address->getShipName() ?? $client->getName()),
+            'name2' => $this->truncate($address->getShipSurname() ?? $client->getSurname()),
+            'companyName' => $this->truncate($address->getShipCompany() ?? $address->getCompany()),
+            'street' => $this->truncate($address->getShipStreet() ?? $address->getStreet()),
+            'city' => $this->truncate($address->getShipCity() ?? $address->getCity()),
             'zipCode' => preg_replace('/\s+/', '', (string)($address->getShipZip() ?? $address->getZip())),
             'countryCode' => strtoupper((string)$country),
-            'contactName' => trim(($client->getName() ?? '') . ' ' . ($client->getSurname() ?? '')),
+            'contactName' => $this->truncate(trim(($client->getName() ?? '') . ' ' . ($client->getSurname() ?? ''))),
             'contactEmail' => $client->getMail(),
             'contactPhone' => $client->getPhone(),
         ];
@@ -285,6 +286,11 @@ class DpdParcel implements ParcelServiceInterface
             'customerId' => $this->customerId,
             'shipments' => [$shipment],
         ];
+    }
+
+    private function truncate(?string $value): ?string
+    {
+        return $value === null ? null : mb_substr(trim($value), 0, self::MAX_FIELD_LENGTH);
     }
 
     /**

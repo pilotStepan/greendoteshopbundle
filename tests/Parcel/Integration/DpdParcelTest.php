@@ -272,6 +272,29 @@ class DpdParcelTest extends TestCase
         $this->assertSame('Acme s.r.o.', $decoded['shipments'][0]['receiver']['companyName']);
     }
 
+    public function testCreateParcel_longCompanyName_isTruncatedTo35Chars(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $address = $this->createMock(PurchaseAddress::class);
+        $address->method('getCountry')->willReturn('cz');
+        $address->method('getShipCompany')->willReturn('Grand Hotel Marienbad Betriebs s.r.o.');
+        $address->method('getShipStreet')->willReturn('Testovací 123');
+        $address->method('getShipCity')->willReturn('Praha');
+        $address->method('getShipZip')->willReturn('100 00');
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'), address: $address)
+        );
+
+        $decoded = json_decode($capturedBody, true);
+        $this->assertSame('Grand Hotel Marienbad Betriebs s.r.', $decoded['shipments'][0]['receiver']['companyName']);
+    }
+
     public function testCreateParcel_codOrder_includesCod(): void
     {
         $capturedBody = null;
