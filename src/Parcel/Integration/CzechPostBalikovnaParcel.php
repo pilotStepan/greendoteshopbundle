@@ -271,7 +271,7 @@ class CzechPostBalikovnaParcel implements ParcelServiceInterface
             'recordID' => (string)$client->getId(),
             'firstName' => $purchaseAddress->getShipName() ?? $client->getName(),
             'surname' => $purchaseAddress->getShipSurname() ?? $client->getSurname(),
-            'company' => $purchaseAddress->getShipCompany() ?? $purchaseAddress->getCompany() ?? '',
+            'company' => $purchaseAddress->getDeliveryCompany() ?? '',
             'aditionAddress' => '',
             'subject' => 'F',
             // NB (pickup point) parcels carry only a fixed 'Balíkovna'

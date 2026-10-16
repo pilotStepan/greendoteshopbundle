@@ -246,6 +246,16 @@ abstract class Address
         return $this;
     }
 
+    /* company for the parcel recipient; the billing company only applies when the parcel goes to the billing address */
+    public function getDeliveryCompany(): ?string
+    {
+        if (!empty($this->ship_company)) {
+            return $this->ship_company;
+        }
+
+        return $this->getIsBillingSameAsShipping() ? $this->company : null;
+    }
+
     public function getShipStreet(): ?string
     {
         return $this->ship_street;

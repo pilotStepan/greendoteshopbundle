@@ -59,6 +59,7 @@ class CzechPostParcelTest extends TestCase
         $a->method('getShipName')->willReturn('Jane');
         $a->method('getShipSurname')->willReturn('Smith');
         $a->method('getShipCompany')->willReturn('Acme s.r.o.');
+        $a->method('getDeliveryCompany')->willReturn('Acme s.r.o.');
         $a->method('getShipStreet')->willReturn('Hlavní 1');
         $a->method('getShipCity')->willReturn('Brno');
         $a->method('getShipZip')->willReturn('60200');

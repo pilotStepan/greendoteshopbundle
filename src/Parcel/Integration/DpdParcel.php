@@ -239,7 +239,7 @@ class DpdParcel implements ParcelServiceInterface
         $receiver = [
             'name' => $this->truncate($address->getShipName() ?? $client->getName()),
             'name2' => $this->truncate($address->getShipSurname() ?? $client->getSurname()),
-            'companyName' => $this->truncate($address->getShipCompany() ?? $address->getCompany()),
+            'companyName' => $this->truncate($address->getDeliveryCompany()),
             'street' => $this->truncate($address->getShipStreet() ?? $address->getStreet()),
             'city' => $this->truncate($address->getShipCity() ?? $address->getCity()),
             'zipCode' => preg_replace('/\s+/', '', (string)($address->getShipZip() ?? $address->getZip())),

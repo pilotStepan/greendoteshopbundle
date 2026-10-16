@@ -61,6 +61,7 @@ class DpdParcelTest extends TestCase
         $a->method('getShipCity')->willReturn(null);
         $a->method('getShipZip')->willReturn(null);
         $a->method('getCompany')->willReturn('Acme s.r.o.');
+        $a->method('getDeliveryCompany')->willReturn('Acme s.r.o.');
         $a->method('getStreet')->willReturn('Hlavní 1');
         $a->method('getCity')->willReturn('Brno');
         $a->method('getZip')->willReturn('602 00');
@@ -282,7 +283,7 @@ class DpdParcelTest extends TestCase
 
         $address = $this->createMock(PurchaseAddress::class);
         $address->method('getCountry')->willReturn('cz');
-        $address->method('getShipCompany')->willReturn('Grand Hotel Marienbad Betriebs s.r.o.');
+        $address->method('getDeliveryCompany')->willReturn('Grand Hotel Marienbad Betriebs s.r.o.');
         $address->method('getShipStreet')->willReturn('Testovací 123');
         $address->method('getShipCity')->willReturn('Praha');
         $address->method('getShipZip')->willReturn('100 00');
@@ -293,6 +294,41 @@ class DpdParcelTest extends TestCase
 
         $decoded = json_decode($capturedBody, true);
         $this->assertSame('Grand Hotel Marienbad Betriebs s.r.', $decoded['shipments'][0]['receiver']['companyName']);
+    }
+
+    /**
+     * Order 14049: billing address is a company, the parcel goes to a private shipping address
+     * without a company. The billing company must not end up on the DPD label.
+     */
+    public function testCreateParcel_shippingAddressWithoutCompany_doesNotSendBillingCompany(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $address = (new PurchaseAddress())
+            ->setCompany('Grand Hotel Marienbad Betriebs s.r.o.')
+            ->setStreet('Opletalova 1402')
+            ->setCity('Praha')
+            ->setZip('11000')
+            ->setCountry('cz')
+            ->setShipName('Lucia')
+            ->setShipSurname('Skala')
+            ->setShipStreet('Ruská 123')
+            ->setShipCity('Mariánské Lázně')
+            ->setShipZip('35301')
+            ->setShipCountry('cz');
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'), address: $address)
+        );
+
+        $receiver = json_decode($capturedBody, true)['shipments'][0]['receiver'];
+        $this->assertNull($receiver['companyName']);
+        $this->assertSame('Ruská 123', $receiver['street']);
+        $this->assertSame('Mariánské Lázně', $receiver['city']);
     }
 
     public function testCreateParcel_codOrder_includesCod(): void
