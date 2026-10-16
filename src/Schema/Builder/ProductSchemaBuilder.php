@@ -93,6 +93,7 @@ class ProductSchemaBuilder
 
         $url = $this->urlGenerator->generate($variant->getProduct()->getControllerName(), [
             'slug' => $variant->getProduct()->getSlug(),
+            'variant' => $variant->getId(),
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $clone->schema
@@ -125,6 +126,7 @@ class ProductSchemaBuilder
         $product = $variant->getProduct();
         $url = $this->urlGenerator->generate($product->getControllerName(), [
             'slug' => $product->getSlug(),
+            'variant' => $variant->getId(),
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $schema = Schema::product()

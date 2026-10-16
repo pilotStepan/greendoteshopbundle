@@ -26,7 +26,7 @@ final readonly class CustomerEmailHandler implements PurchaseNotificationHandler
 
         $email = $this->manageMails->getBaseTemplate()
             ->to($purchase->getClient()->getMail())
-            ->subject($this->resolveSubject($transition, $purchase->getId()))
+            ->subject($this->resolveSubject($transition, $purchase->getOrderNumber()))
             ->htmlTemplate(sprintf('email/order/%s.html.twig', $transition))
             ->context(['data' => $orderData, 'transition' => $transition])
         ;
@@ -34,9 +34,9 @@ final readonly class CustomerEmailHandler implements PurchaseNotificationHandler
         $this->manageMails->sendTemplate($email);
     }
 
-    private function resolveSubject(string $transition, ?int $purchaseId): string
+    private function resolveSubject(string $transition, ?int $orderNumber): string
     {
-        $params = ['%id%' => $purchaseId ?? ''];
+        $params = ['%id%' => $orderNumber ?? ''];
         $key = 'email.subject.order.' . $transition;
         $translated = $this->translator->trans($key, $params, 'emails');
 

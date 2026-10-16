@@ -292,33 +292,14 @@ class ProductRepository extends HintedRepositoryBase
         $alias = $qb->getRootAliases()[0];
 
         $qb
+            ->andWhere("$alias.isActive = 1")
+            ->andWhere("$alias.isVisible = 1")
             ->innerJoin($alias . '.productVariants', 'pv')
             ->innerJoin('pv.availability', 'a')
-            ->andWhere($alias . '.state = :state')
-            ->andWhere('pv.isActive = :variantActive')
-            ->andWhere('a.id = :availabilityId')
-            ->setParameter('state', 'active')
-            ->setParameter('variantActive', true)
-            ->setParameter('availabilityId', 1);
+            ->andWhere('a.isPurchasable = 1')
+            ->andWhere('pv.isActive = 1')
+            ;
 
-        return $qb;
-    }
-
-    /*
-     * Add to statement with joined variants.
-     */
-    public function filterAvailableQB(QueryBuilder $qb): QueryBuilder
-    {
-        $alias = $qb->getRootAliases()[0];
-
-        $qb
-            ->innerJoin('pv.availability', 'a')
-            ->andWhere($alias . '.state = :state')
-            ->andWhere('pv.isActive = :variantActive')
-            ->andWhere('a.id = :availabilityId')
-            ->setParameter('state', 'active')
-            ->setParameter('variantActive', true)
-            ->setParameter('availabilityId', 1);
 
         return $qb;
     }

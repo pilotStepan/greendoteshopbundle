@@ -91,9 +91,20 @@ readonly class AffiliateService
 
         $this->logger->info('Creating affiliate entry.', ['purchaseId' => $purchase->getId()]);
 
+        $clientId = $this->resolveAffiliateClientId($purchase->getAffiliateId());
+
+        if ($clientId === null) {
+            $this->logger->warning('Affiliate: unknown client hash, skipping vydelky entry.', [
+                'purchaseId' => $purchase->getId(),
+                'affiliateId' => $purchase->getAffiliateId(),
+            ]);
+            return;
+        }
+
         $currency = $this->currencyRepository->findOneBy(['isDefault' => true]);
         $priceCalculator = $this->purchasePriceFactory->create($purchase, $currency, VatCalculationType::WithVAT, DiscountCalculationType::WithDiscount);
         $now = new DateTime();
+        $referer = $purchase->getReferer();
 
         $data = [
             'castka' => $priceCalculator->getPrice() * 0.1,
@@ -101,10 +112,10 @@ readonly class AffiliateService
             'FK_idobjednavky' => $purchase->getId(),
             'stav' => 1,
             'datum' => $now->getTimestamp(),
-            'FK_idklient' => $purchase->getAffiliateId(),
+            'FK_idklient' => $clientId,
             'FK_idvybery' => null,
             'FK_idreklama' => $purchase->getAdId() ?? 0,
-            'referer' => null,
+            'referer' => $referer !== null ? mb_substr($referer, 0, 250) : null,
             'datetime' => $now->format('Y-m-d H:i:s'),
         ];
 
@@ -112,7 +123,20 @@ readonly class AffiliateService
 
     }
 
-    // send request to affiliate db to cancel an entry for purchase
+    private function resolveAffiliateClientId(?string $hash): ?int
+    {
+        if (!$hash) {
+            return null;
+        }
+
+        $id = $this->affiliateDbConnection->fetchOne(
+            'SELECT idklient FROM klient WHERE klic = :hash LIMIT 1',
+            ['hash' => $hash],
+        );
+
+        return $id === false ? null : (int)$id;
+    }
+
     public function cancelAffiliateEntry(Purchase $purchase): void
     {
         if (!$this->isAffiliate()) {
@@ -121,7 +145,6 @@ readonly class AffiliateService
 
         $this->logger->info('Canceling affiliate entry.', ['purchaseId' => $purchase->getId()]);
 
-        // send request to db
         $this->affiliateDbConnection->update('vydelky', ['stav' => 4], ['FK_idobjednavky' => $purchase->getId()]);
     }
 

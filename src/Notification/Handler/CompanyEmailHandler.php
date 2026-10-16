@@ -28,7 +28,7 @@ final readonly class CompanyEmailHandler implements PurchaseNotificationHandlerI
         $orderData = $this->orderDataFactory->create($purchase);
 
         $key = 'email.subject.order.company.' . $transition;
-        $params = ['%id%' => $purchase->getId() ?? ''];
+        $params = ['%id%' => $purchase->getOrderNumber() ?? ''];
         $subject = $this->translator->trans($key, $params, 'emails');
         if ($subject === $key) {
             $subject = $this->translator->trans('email.subject.order.company.default', $params, 'emails');

@@ -61,6 +61,10 @@ class ProductVariant implements Translatable
     #[Groups(['product_variant:read', 'purchase:read', 'purchase:wishlist'])]
     private $product;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(['product_variant:read','upload_product_with_variants:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_info:write', 'searchable', "search_result", "SearchProductResultApiModel", 'purchase:read', 'purchase:wishlist'])]
+    private ?int $sequence = null;
+
     #[ORM\OneToMany(mappedBy: 'ProductVariant', targetEntity: PurchaseProductVariant::class)]
     private $orderProductVariants;
 
@@ -82,7 +86,7 @@ class ProductVariant implements Translatable
     private Collection $price;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    #[Groups(["SearchProductResultApiModel", "purchase:read"])]
+    #[Groups(['product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'product_variant:read', 'product_variant:write', 'purchase:read', 'purchase:write', "SearchProductResultApiModel", 'purchase:wishlist'])]
     private ?int $AvgRestockDays = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
@@ -196,6 +200,18 @@ class ProductVariant implements Translatable
     public function setProduct(?Product $product): self
     {
         $this->product = $product;
+
+        return $this;
+    }
+
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(?int $sequence): self
+    {
+        $this->sequence = $sequence;
 
         return $this;
     }

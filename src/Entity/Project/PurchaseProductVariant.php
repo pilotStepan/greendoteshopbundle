@@ -6,6 +6,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 
 #[ORM\Entity(repositoryClass: PurchaseProductVariantRepository::class)]
@@ -56,6 +57,12 @@ class PurchaseProductVariant
 
     #[Groups(['purchase:read', 'purchase:wishlist'])]
     private array $calculatedPrices = [];
+
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
+    private ?Money $totalMoney = null;
+
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
+    private array $calculatedMoney = [];
 
     public function __construct() {}
 
@@ -192,5 +199,29 @@ class PurchaseProductVariant
     public function getCalculatedPrices(): array
     {
         return $this->calculatedPrices;
+    }
+
+    public function getTotalMoney(): ?Money
+    {
+        return $this->totalMoney;
+    }
+
+    public function setTotalMoney(?Money $totalMoney): self
+    {
+        $this->totalMoney = $totalMoney;
+
+        return $this;
+    }
+
+    public function setCalculatedMoney(array $calculatedMoney): self
+    {
+        $this->calculatedMoney = $calculatedMoney;
+
+        return $this;
+    }
+
+    public function getCalculatedMoney(): array
+    {
+        return $this->calculatedMoney;
     }
 }

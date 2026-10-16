@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Tests\Service\Price;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
 use Greendot\EshopBundle\Entity\Project\Price;
 use Greendot\EshopBundle\Entity\Project\Product;
@@ -12,13 +13,17 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType as DiscCalc;
 use Greendot\EshopBundle\Enum\VatCalculationType as VatCalc;
+use Greendot\EshopBundle\Money\Money;
+use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\Price\PurchasePrice;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use Greendot\EshopBundle\Tests\Service\Price\PriceCalculationFactoryUtil as FactoryUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -45,6 +50,11 @@ class CalculatedPricesServiceTest extends TestCase
             $this->purchasePriceFactory,
             $this->currencyManager,
             $this->priceRepository,
+            new ServiceCalculationUtils(
+                $this->createMock(HandlingPriceRepository::class),
+                $this->createMock(PriceUtils::class),
+            ),
+            $this->createMock(EntityManagerInterface::class),
         );
     }
 
@@ -76,6 +86,12 @@ class CalculatedPricesServiceTest extends TestCase
                 $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
                 return $priceMap[$key] ?? 0.0;
             });
+        $pvPrice->method('getPieceMoney')
+            ->willReturnCallback(function () use (&$vatType, &$discType, $priceMap) {
+                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
+                return new Money($priceMap[$key] ?? 0.0, 'CZK');
+            });
+        $pvPrice->method('getMoney')->willReturn(new Money(0.0, 'CZK'));
 
         return $pvPrice;
     }
@@ -107,6 +123,11 @@ class CalculatedPricesServiceTest extends TestCase
             ->willReturnCallback(function (bool $withServices = false) use (&$vatType, &$discType, $priceMap) {
                 $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
                 return $priceMap[$key][$withServices] ?? 0.0;
+            });
+        $ppPrice->method('getMoney')
+            ->willReturnCallback(function (bool $withServices = false) use (&$vatType, &$discType, $priceMap) {
+                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
+                return new Money($priceMap[$key][$withServices] ?? 0.0, 'CZK');
             });
 
         return $ppPrice;

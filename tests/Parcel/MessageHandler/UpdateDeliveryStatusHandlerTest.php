@@ -85,10 +85,12 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
     private function makeEvent(
         ParcelDeliveryStateEnum $state,
         ?DateTimeImmutable $occurredAt = null,
+        ?TransportationAPI $transportationAPI = null,
     ): TransportationEvent {
         $event = $this->createMock(TransportationEvent::class);
         $event->method('getState')->willReturn($state);
         $event->method('getOccurredAt')->willReturn($occurredAt);
+        $event->method('getTransportationAPI')->willReturn($transportationAPI);
         return $event;
     }
 
@@ -130,6 +132,23 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         $finalEvent = $this->makeEvent(ParcelDeliveryStateEnum::DELIVERED);
         $this->eventRepo->method('findLatestByPurchase')->willReturn($finalEvent);
 
+        $this->bus->expects($this->never())->method('dispatch');
+        $this->em->expects($this->never())->method('persist');
+
+        ($this->handler)($this->makeMsg());
+    }
+
+    // --- Guard: parcel created by a different carrier than the current transportation ---
+
+    public function testCarrierChangedAfterParcelCreated_stopsPollingWithoutCallingProvider(): void
+    {
+        $purchase = $this->makePurchase();
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $this->eventRepo->method('findLatestByPurchase')->willReturn(
+            $this->makeEvent(ParcelDeliveryStateEnum::RECEIVED_DATA, transportationAPI: TransportationAPI::CP_BALIKOVNA)
+        );
+
+        $this->provider->expects($this->never())->method('getByPurchase');
         $this->bus->expects($this->never())->method('dispatch');
         $this->em->expects($this->never())->method('persist');
 

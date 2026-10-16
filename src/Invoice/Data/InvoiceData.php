@@ -5,12 +5,14 @@ namespace Greendot\EshopBundle\Invoice\Data;
 use DateTime;
 use Greendot\EshopBundle\Entity\Project\ClientDiscount;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Money\Money;
 
 class InvoiceData
 {
     public function __construct(
         public ?string                      $invoiceId,
-        public int                          $purchaseId,
+        public ?int                         $orderNumber,
+        public ?string                      $variableSymbol,
         public bool                         $isInvoice,
         public bool                         $isVatExempted,
         public ?string                      $invoiceNumber,
@@ -53,6 +55,35 @@ class InvoiceData
         public float                        $toPayVatCzk,
         public float                        $toPayVatEur,
         public float                        $toPayNoVatCzk,
-        public float                        $toPayNoVatEur
+        public float                        $toPayNoVatEur,
+
+        public ?Money                       $toPayVatMoney = null,
+        public ?Money                       $toPayNoVatMoney = null,
+
+        /**
+         * Secondary-currency counterpart of toPayVatMoney/toPayNoVatMoney: whichever of
+         * (shop default, configured secondary currency) the primary isn't. See
+         * CurrencyManager::getSecondaryFor().
+         */
+        public ?Money                       $toPayVatMoneySecondary = null,
+        public ?Money                       $toPayNoVatMoneySecondary = null,
+
+        /**
+         * Money-typed twins of the totalPrice / discountValue / voucherValue fields above, in
+         * the purchase's own currency paired with the correct secondary currency instead of
+         * always CZK/EUR.
+         */
+        public ?Money                       $totalPriceNoVatMoney = null,
+        public ?Money                       $totalPriceNoVatMoneySecondary = null,
+        public ?Money                       $totalPriceVatMoney = null,
+        public ?Money                       $totalPriceVatMoneySecondary = null,
+        public ?Money                       $totalPriceNoVatNoDiscountMoney = null,
+        public ?Money                       $totalPriceNoVatNoDiscountMoneySecondary = null,
+        public ?Money                       $totalPriceVatNoDiscountMoney = null,
+        public ?Money                       $totalPriceVatNoDiscountMoneySecondary = null,
+        public ?Money                       $discountValueMoney = null,
+        public ?Money                       $discountValueMoneySecondary = null,
+        public ?Money                       $voucherValueMoney = null,
+        public ?Money                       $voucherValueMoneySecondary = null,
     ) {}
 }

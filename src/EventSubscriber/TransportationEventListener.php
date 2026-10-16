@@ -11,6 +11,7 @@ use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 
 /**
@@ -34,9 +35,16 @@ readonly class TransportationEventListener
         $cartEntity = $this->entityManager->getRepository(Purchase::class)->findOneBySession();
         $cart = $cartEntity ? clone $cartEntity : null;
 
+        $moneyCurrency = $cart ? $this->currencyManager->getForPurchase($cart) : $currency;
+
         $basePrice = $this->serviceCalculationUtils->calculateServicePrice(
             $transportation,
             $currency,
+            VatCalculationType::WithVAT,
+        );
+        $baseMoney = $this->serviceCalculationUtils->calculateServiceMoney(
+            $transportation,
+            $moneyCurrency,
             VatCalculationType::WithVAT,
         );
         $freeFromPrice = $this->serviceCalculationUtils->getFreeFromPrice($transportation, $currency);
@@ -48,12 +56,15 @@ readonly class TransportationEventListener
             $basePrice,
             $freeFromPrice,
         );
+        $cartMoney = $this->resolveCartMoney($cart, $transportation, $moneyCurrency, $baseMoney);
 
         $transportation
             ->setPrice($basePrice)
             ->setPriceForCart($cartPrice)
             ->setFreeFromPrice($freeFromPrice)
             ->setAmountUntilFree($amountUntilFree)
+            ->setPriceMoney($baseMoney)
+            ->setPriceForCartMoney($cartMoney)
         ;
     }
 
@@ -88,6 +99,26 @@ readonly class TransportationEventListener
         $amountUntilFree = $this->calculateAmountUntilFree($freeFromPrice, $cartSubtotalExServices);
 
         return [$cartTransportationPrice, $amountUntilFree];
+    }
+
+    private function resolveCartMoney(
+        ?Purchase      $cart,
+        Transportation $transportation,
+        Currency       $moneyCurrency,
+        Money          $baseMoney,
+    ): Money
+    {
+        if ($cart === null) {
+            return $baseMoney;
+        }
+
+        $priceCalc = $this->purchasePriceFactory->create(
+            $cart->setTransportation($transportation),
+            $moneyCurrency,
+            VatCalculationType::WithVAT,
+        );
+
+        return $priceCalc->getTransportationMoney();
     }
 
     private function calculateAmountUntilFree(?float $freeFromPrice, float $cartSubtotalExSvcs): ?float

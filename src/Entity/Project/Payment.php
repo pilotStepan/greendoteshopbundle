@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use Doctrine\ORM\Mapping as ORM;
+use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 
 /**
@@ -27,12 +28,23 @@ class Payment
     #[ORM\JoinColumn(nullable: false)]
     private $purchase;
 
+    /**
+     * What the gateway was actually asked to charge, alongside the currency it was asked
+     * to charge in - set by the gateway integration right before redirecting the customer.
+     */
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $amount = null;
+
+    #[ORM\ManyToOne(targetEntity: Currency::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Currency $currency = null;
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getExternalId(): ?int
+    public function getExternalId(): ?string
     {
         return $this->externalId;
     }
@@ -66,5 +78,38 @@ class Payment
         $this->purchase = $purchase;
 
         return $this;
+    }
+
+    public function getAmount(): ?float
+    {
+        return $this->amount;
+    }
+
+    public function setAmount(?float $amount): self
+    {
+        $this->amount = $amount;
+
+        return $this;
+    }
+
+    public function getCurrency(): ?Currency
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?Currency $currency): self
+    {
+        $this->currency = $currency;
+
+        return $this;
+    }
+
+    public function getMoney(): ?Money
+    {
+        if ($this->amount === null || $this->currency === null) {
+            return null;
+        }
+
+        return Money::fromCurrency($this->amount, $this->currency);
     }
 }

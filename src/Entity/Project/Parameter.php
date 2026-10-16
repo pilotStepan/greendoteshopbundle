@@ -65,7 +65,7 @@ class Parameter implements Translatable
     #[ORM\ManyToOne(inversedBy: 'parameters')]
     private ?Event $event = null;
 
-    #[Groups(['product_item:read'])]
+    #[Groups(['parameter_filtered:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read','searchable', 'parameter:read', 'parameter:write', 'purchase:read', 'purchase:wishlist'])]
     #[ORM\Column(nullable: true)]
     private ?int $sequence = null;
 

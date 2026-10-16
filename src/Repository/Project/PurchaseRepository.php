@@ -70,6 +70,22 @@ class PurchaseRepository extends ServiceEntityRepository
         return $maxInvoiceNumber ? (string)($maxInvoiceNumber + 1) : '1';
     }
 
+    /**
+     * Assigns the next sequential order number
+     */
+    public function assignNextOrderNumber(Purchase $purchase): void
+    {
+        if ($purchase->getOrderNumber() !== null) {
+            return;
+        }
+
+        $next = (int) $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT COALESCE(MAX(order_number), MAX(id), 0) + 1 FROM purchase FOR UPDATE'
+        );
+
+        $purchase->assignOrderNumber($next);
+    }
+
     public function findBySession(QueryBuilder $queryBuilder): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];
@@ -159,6 +175,22 @@ class PurchaseRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult()
         ;
+    }
+
+    /**
+     * @return Purchase[]
+     */
+    public function invoicedBetween(\DateTimeInterface $from, \DateTimeInterface $until): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.invoice_number IS NOT NULL')
+            ->andWhere('p.date_invoiced BETWEEN :from AND :until')
+            ->setParameter('from', $from)
+            ->setParameter('until', $until)
+            ->orderBy('p.date_invoiced', 'ASC')
+        ;
+
+        return $this->excludePlaces($qb, 'p', PWC::S_CANCELLED)->getQuery()->getResult();
     }
 
     /**

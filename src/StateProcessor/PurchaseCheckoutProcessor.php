@@ -92,7 +92,10 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
                 $this->purchaseUpdate->applyFromInput($data, $purchase);
                 $purchase->setInternalNumber($data->internalNumber ?? null);
 
-                // 7. Workflow transition
+                // 3. Ensure currency snapshot before checkout
+                $this->managePurchase->ensureCurrency($purchase);
+
+                // 4. Workflow transition
                 $this->logger->info('Checkout applying workflow transition', [
                     'purchaseId' => $purchase->getId(),
                     'transition' => PurchaseWorkflowContract::T_CHECKOUT->value,

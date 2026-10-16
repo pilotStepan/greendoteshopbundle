@@ -2,10 +2,14 @@
 
 namespace Greendot\EshopBundle\Mail\Data;
 
+use Greendot\EshopBundle\Money\Money;
+
 class OrderData
 {
     public function __construct(
         public int                     $purchaseId,
+        public ?int                    $orderNumber,
+        public ?string                 $variableSymbol,
         public bool                    $vatExempted,
         public ?string                 $qrCodeUri,
         public ?string                 $payLink,
@@ -25,5 +29,11 @@ class OrderData
         public string                  $totalPriceCzk,
         public string                  $totalPriceEur,
         public string                  $clientSectionUrl,
+
+        public ?Money                  $totalMoney = null,
+        public ?string                 $totalPriceMoney = null,
+
+        public ?Money                  $totalMoneySecondary = null,
+        public ?string                 $totalPriceMoneySecondary = null,
     ) {}
 }

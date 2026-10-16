@@ -44,12 +44,20 @@ class CartStateProcessor implements ProcessorInterface
             $data->setBranch(null);
         }
 
-        $purchase = $this->inner->process($data, $operation, $uriVariables, $context);
+        $persisted = $this->inner->process($data, $operation, $uriVariables, $context);
+        assert($persisted instanceof Purchase);
+
+        $persisted->setCalculatedPrices([]);
+        $persisted->setCalculatedMoney([]);
+        foreach ($persisted->getProductVariants() as $purchaseProductVariant) {
+            $purchaseProductVariant->setCalculatedPrices([]);
+            $purchaseProductVariant->setCalculatedMoney([]);
+        }
 
         // Recalculate prices after persisting so the response reflects the updated Transportation/PaymentType.
-        $this->managePurchase->preparePrices($purchase);
-        $this->calculatedPricesService->makeCalculatedPricesForPurchaseWithVariants($purchase);
+        $this->managePurchase->preparePrices($persisted);
+        $this->calculatedPricesService->makeCalculatedPricesForPurchaseWithVariants($persisted);
 
-        return $purchase;
+        return $persisted;
     }
 }

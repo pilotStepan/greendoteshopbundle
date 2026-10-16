@@ -158,6 +158,7 @@ class UploadRepository extends ServiceEntityRepository
      public function getProductWithVariantsUploads(int $productId) : array
     {
         return $this->createQueryBuilder('u')
+            ->addSelect('ug', 'pvug', 'pv')
             ->innerJoin('u.uploadGroup', 'ug')
             ->leftJoin('ug.productUploadGroups', 'pug')
             ->leftJoin('pug.Product', 'p')

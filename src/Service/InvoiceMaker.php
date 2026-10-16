@@ -48,7 +48,7 @@ class InvoiceMaker
             throw new \RuntimeException('HTML rendering returned null');
         }
 
-        $pdfFilePath = $this->generatePdf($html, $invoiceData->purchaseId);
+        $pdfFilePath = $this->generatePdf($html, $purchase->getId());
         if ($pdfFilePath === null) {
             throw new \RuntimeException('PDF generation returned null');
         }
@@ -78,7 +78,7 @@ class InvoiceMaker
             'order'           => $purchase,
             'is_invoice'      => $isInvoice,
             'is_proforma'     => $isProforma,
-            'order_number'    => $purchase->getId(),
+            'order_number'    => $purchase->getOrderNumber(),
             'invoice_number'  => $isInvoice ? $purchase->getInvoiceNumber() : null,
             'created_at'      => $isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue(),
             'due_date'        => (clone($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue()))->modify('+14 days'),

@@ -9,6 +9,7 @@ use Exception;
 use RuntimeException;
 use InvalidArgumentException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
+use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -59,6 +60,20 @@ readonly class ManagePurchase
             $purchase->addProductVariant($purchaseProductVariant);
         }
         return $purchase;
+    }
+
+    public function ensureCurrency(Purchase $purchase): void
+    {
+        $paymentTypeCurrency = $purchase->getPaymentType()?->getCurrency();
+
+        if ($purchase->getCurrency() === null) {
+            $purchase->setCurrency($paymentTypeCurrency ?? $this->currencyManager->get());
+            return;
+        }
+
+        if ($paymentTypeCurrency !== null && $paymentTypeCurrency !== $purchase->getCurrency()) {
+            throw PurchaseCurrencyMismatchException::forPurchase($purchase);
+        }
     }
 
     public function generateInquiryNumber(Purchase $purchase): string
@@ -162,6 +177,7 @@ readonly class ManagePurchase
     public function preparePrices(Purchase $purchase): Purchase
     {
         $currency = $this->currencyManager->get();
+        $purchaseCurrency = $this->currencyManager->getForPurchase($purchase);
 
         $purchasePriceCalc = $this->purchasePriceFactory->create(
             $purchase,
@@ -187,6 +203,18 @@ readonly class ManagePurchase
             );
         }
 
+        if ($purchaseCurrency !== $currency) {
+            $purchasePriceCalc->setCurrency($purchaseCurrency);
+        }
+        $purchase->setTotalMoney($purchasePriceCalc->getMoney(true));
+        $purchase->setTotalMoneyNoServices($purchasePriceCalc->getMoney(false));
+        if ($purchase->getTransportation()) {
+            $purchase->setTransportationMoney($purchasePriceCalc->getTransportationMoney());
+        }
+        if ($purchase->getPaymentType()) {
+            $purchase->setPaymentMoney($purchasePriceCalc->getPaymentMoney());
+        }
+
         foreach ($purchase->getProductVariants() as $productVariant) {
             $productVariantPriceCalc = $this->productVariantPriceFactory->create(
                 $productVariant,
@@ -196,6 +224,10 @@ readonly class ManagePurchase
             $productVariant->setTotalPrice(
                 $productVariantPriceCalc->getPrice(),
             );
+            if ($purchaseCurrency !== $currency) {
+                $productVariantPriceCalc->setCurrency($purchaseCurrency);
+            }
+            $productVariant->setTotalMoney($productVariantPriceCalc->getMoney());
         }
 
         return $purchase;

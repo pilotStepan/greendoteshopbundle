@@ -67,6 +67,18 @@ readonly class UpdateDeliveryStatusHandler
             return;
         }
 
+        $currentApi = $purchase->getTransportation()?->getTransportationAPI();
+        $parcelApi = $lastEvent?->getTransportationAPI();
+        if ($parcelApi !== null && $currentApi !== null && $parcelApi !== $currentApi) {
+            $this->logger->warning('Parcel was created by a different carrier than the current transportation; stopping polling', [
+                'purchaseId' => $purchaseId,
+                'transportNumber' => $purchase->getTransportNumber(),
+                'parcelApi' => $parcelApi->value,
+                'currentApi' => $currentApi->value,
+            ]);
+            return;
+        }
+
         $ageDays = $purchase->getDateIssue()->diff(new DateTimeImmutable())->days;
         if ($ageDays >= self::MAX_POLL_DAYS) {
             $this->logger->warning('Polling window expired; giving up', [

@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class PurchaseUpdate
 {
@@ -20,6 +21,7 @@ class PurchaseUpdate
         private EntityManagerInterface $em,
         private Security               $security,
         private LoggerInterface        $logger,
+        private RequestStack           $requestStack,
     ) {}
 
     /**
@@ -55,6 +57,9 @@ class PurchaseUpdate
                 ->setSurname($clientData['surname'])
                 ->setPhone($clientData['phone'])
             ;
+            if (!$user->getLocale()) {
+                $user->setLocale($this->requestStack->getCurrentRequest()?->getLocale());
+            }
             $purchase->setClient($user);
             return;
         }
@@ -72,6 +77,9 @@ class PurchaseUpdate
             ->setPhone($clientData['phone'])
             ->setMail($clientData['mail'])
         ;
+        if (!$client->getLocale()) {
+            $client->setLocale($this->requestStack->getCurrentRequest()?->getLocale());
+        }
 
         if (!$client->getPrimaryAddress() and $purchase->getPurchaseAddress()){
             $address =$purchase->getPurchaseAddress();

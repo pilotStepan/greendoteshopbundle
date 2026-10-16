@@ -38,8 +38,6 @@ trait BranchImportTrait
                 if ($node instanceof SimpleXMLElement) {
                     yield $node;
                 }
-
-                $reader->next($elementName);
             }
         } finally {
             $reader->close();

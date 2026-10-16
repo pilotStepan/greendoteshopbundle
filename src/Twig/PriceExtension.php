@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Twig;
 
-use Greendot\EshopBundle\Entity\Project\ConversionRate;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductProduct;
@@ -10,23 +9,54 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Money\Money;
+use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
+use Greendot\EshopBundle\Utils\PriceHelper;
 use Twig\Attribute\AsTwigFunction;
 
 class PriceExtension
 {
     public function __construct(
         private readonly ProductVariantPriceFactory $productVariantPriceFactory,
-        private readonly PurchasePriceFactory       $purchasePriceFactory,
         private readonly CurrencyManager            $currencyManager,
-        private readonly PriceRepository            $priceRepository
+        private readonly PriceRepository            $priceRepository,
+        private readonly CurrencyRepository         $currencyRepository,
+    ) {}
 
-    )
+    #[AsTwigFunction('format_money')]
+    public function formatMoney(Money $money, bool $showFree = false): string
     {
+        $currency = $this->currencyRepository->findOneByIso($money->getIso());
+        if (!$currency) {
+            throw new \RuntimeException(sprintf('No Currency found for ISO code "%s".', $money->getIso()));
+        }
+
+        return PriceHelper::formatPrice($money->getValue(), $currency, $showFree);
+    }
+
+    #[AsTwigFunction('money_zero')]
+    public function moneyZero(Currency $currency): Money
+    {
+        return Money::zero($currency);
+    }
+
+    #[AsTwigFunction('money_currencies_json')]
+    public function currenciesJson(): string
+    {
+        $currencies = [];
+        foreach ($this->currencyRepository->findAll() as $currency) {
+            $currencies[$currency->getIso()] = [
+                'symbol' => $currency->getSymbol(),
+                'rounding' => $currency->getRounding() ?? 0,
+                'isSymbolLeft' => (bool) $currency->isSymbolLeft(),
+            ];
+        }
+
+        return json_encode($currencies, JSON_THROW_ON_ERROR);
     }
 
     #[AsTwigFunction('create_product_variant_price')]
