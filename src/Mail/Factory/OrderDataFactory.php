@@ -169,6 +169,7 @@ class OrderDataFactory
                 quantity: $ppv->getAmount(),
                 unitPrice: PriceHelper::formatPrice($unitPrice, $currency),
                 totalPrice: PriceHelper::formatPrice($totalPrice, $currency),
+                externalId: $product->getExternalId(),
             );
         }
 

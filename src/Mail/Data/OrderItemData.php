@@ -11,5 +11,6 @@ class OrderItemData
         public int    $quantity,
         public string $unitPrice,
         public string $totalPrice,
+        public ?string $externalId = null,
     ) {}
 }
