@@ -23,7 +23,7 @@ class AdviceController extends AbstractController
         ]);
     }
 
-    #[Route('poradna/{slug}', name: 'app_comment_detail')]
+    #[Route('poradna/{slug}', name: 'app_comment_detail', options: ['expose' => true])]
     public function commentDetail(
         #[MapEntity(mapping: ['slug' => 'slug'])]
         Comment $comment

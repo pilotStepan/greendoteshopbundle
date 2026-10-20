@@ -347,7 +347,7 @@ class PurchaseController extends AbstractController
     {
         // Check user login and ownership
         $user = $this->getUser();
-        $returnTo = $request->query->get('returnTo', '/');
+        $returnTo = $request->query->get('returnTo') ?? $this->generateUrl('web_homepage');
 
         if (!$user || $user !== $purchase->getClient()) {
             throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
@@ -368,7 +368,7 @@ class PurchaseController extends AbstractController
         $session->set('purchase', $purchase->getId());
 
         // Redirect to page
-        return $this->redirect('/objednavka/obsah');
+        return $this->redirectToRoute('shop_order_steps', ['path' => 'obsah']);
     }
 
     #[Route('/api/purchase/{id}/repeat', name: 'purchase_repeat')]
@@ -384,7 +384,7 @@ class PurchaseController extends AbstractController
     {
         // Check user login and ownership
         $user = $this->getUser();
-        $returnTo = $request->query->get('returnTo', '/');
+        $returnTo = $request->query->get('returnTo') ?? $this->generateUrl('web_homepage');
 
         if (!$user || $user !== $purchase->getClient()) {
             throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
@@ -417,13 +417,13 @@ class PurchaseController extends AbstractController
         $session->set('purchase', $cartPurchase->getId());
 
         // Redirect to page
-        return $this->redirect('/objednavka/obsah');
+        return $this->redirectToRoute('shop_order_steps', ['path' => 'obsah']);
     }
 
     #[Route('/seznam-prani', name: 'shop_wishlist', options: ['expose' => true], priority: 2)]
     public function wishlist(RequestStack $requestStack, WishlistService $wishlistService, PurchaseRepository $repo): Response
     {
-        if (!$this->getUser()) return $this->redirect('/');
+        if (!$this->getUser()) return $this->redirectToRoute('web_homepage');
 
         $wishlistId = $requestStack->getSession()->get('wishlist');
         $wishlist = $repo->find($wishlistId);

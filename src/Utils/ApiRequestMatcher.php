@@ -14,6 +14,7 @@ final class ApiRequestMatcher
         '/my-api',
         '/translate',
         '/_fragment',
+        '/gtm',
     ];
 
     public static function isApiRequest(Request $request): bool
