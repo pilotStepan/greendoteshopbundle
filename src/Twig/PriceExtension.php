@@ -28,14 +28,14 @@ class PriceExtension
     ) {}
 
     #[AsTwigFunction('format_money')]
-    public function formatMoney(Money $money, bool $showFree = false): string
+    public function formatMoney(Money $money, bool $showFree = false, bool $trimWholeDecimals = false): string
     {
         $currency = $this->currencyRepository->findOneByIso($money->getIso());
         if (!$currency) {
             throw new \RuntimeException(sprintf('No Currency found for ISO code "%s".', $money->getIso()));
         }
 
-        return PriceHelper::formatPrice($money->getValue(), $currency, $showFree);
+        return PriceHelper::formatPrice($money->getValue(), $currency, $showFree, trimWholeDecimals: $trimWholeDecimals);
     }
 
     #[AsTwigFunction('money_zero')]
