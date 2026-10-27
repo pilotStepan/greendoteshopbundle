@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Service\DataLayer;
 
 use Greendot\EshopBundle\DataLayer\Factory\PurchaseFactory;
+use Greendot\EshopBundle\DataLayer\Factory\UserDataFactory;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
@@ -25,6 +26,7 @@ class ConfirmationPurchaseTracker
     public function __construct(
         private readonly RequestStack    $requestStack,
         private readonly PurchaseFactory $purchaseFactory,
+        private readonly UserDataFactory $userDataFactory,
         #[Autowire(param: 'greendot_eshop.gtm.purchase_on_confirmation_page')]
         private readonly bool            $enabled = false,
     ) {}
@@ -70,7 +72,12 @@ class ConfirmationPurchaseTracker
         $session?->set(self::PENDING_KEY, array_values(array_diff($pending, [$transactionId])));
         $session?->set(self::SENT_KEY, [...$sent, $transactionId]);
 
-        return ['event' => 'purchase', 'ecommerce' => $this->purchaseFactory->create($purchase)];
+        $event = ['event' => 'purchase', 'ecommerce' => $this->purchaseFactory->create($purchase)];
+        if ($userData = $this->userDataFactory->create($purchase)) {
+            $event['user_data'] = $userData;
+        }
+
+        return $event;
     }
 
     private function getSession(): ?SessionInterface

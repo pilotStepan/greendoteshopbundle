@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Tests\DataLayer\Service;
 
 use Greendot\EshopBundle\DataLayer\Data\Purchase\Purchase as PurchaseData;
 use Greendot\EshopBundle\DataLayer\Factory\PurchaseFactory;
+use Greendot\EshopBundle\DataLayer\Factory\UserDataFactory;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\DataLayer\ConfirmationPurchaseTracker;
 use PHPUnit\Framework\TestCase;
@@ -80,7 +81,7 @@ class ConfirmationPurchaseTrackerTest extends TestCase
             static fn (Purchase $purchase) => new PurchaseData((string) $purchase->getId(), 1500, 260, 99, 'CZK', 'new', []),
         );
 
-        return new ConfirmationPurchaseTracker($this->requestStack, $purchaseFactory, $enabled);
+        return new ConfirmationPurchaseTracker($this->requestStack, $purchaseFactory, new UserDataFactory(), $enabled);
     }
 
     private function createPurchase(?int $orderNumber = 2026001, ?\DateTime $dateIssue = null): Purchase

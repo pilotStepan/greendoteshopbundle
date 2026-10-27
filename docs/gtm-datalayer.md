@@ -147,7 +147,8 @@ minimal amount (or 1).
 // with another non-draft order in the last 540 days
 ```
 
-Full dataLayer entry: `{ "event": "<name>", "ecommerce": { …payload… } }`.
+Full dataLayer entry: `{ "event": "<name>", "ecommerce": { …payload… } }`. With
+[Enhanced Conversions](#79-enhanced-conversions-google-ads) enabled, `purchase` also carries a top-level `user_data`.
 
 ---
 
@@ -454,6 +455,51 @@ In the GTM UI (per project):
    layer or the explicit variables above.
 5. `view_item_list_product` is custom — map it to GA4 `view_item` in the container if needed, or ignore it.
 
+### 7.9 Enhanced Conversions (Google Ads)
+
+Enhanced Conversions sends the buyer's hashed email, phone and name with the conversion, so Google Ads can attribute
+the purchase to an ad click even when the click cookie is missing (no consent, Safari, payment gateway round trip).
+Opt-in:
+
+```yaml
+greendot_eshop:
+    gtm:
+        enhanced_conversions: true
+```
+
+`UserDataFactory` then adds `user_data` to the `purchase` event (both delivery modes of §7.7):
+
+```jsonc
+{
+  "event": "purchase",
+  "ecommerce": { … },
+  "user_data": {
+    "sha256_email_address": "…",        // Client::getMail()
+    "sha256_phone_number": "…",         // Client::getPhone(), E.164
+    "address": {                        // only when all four are known
+      "sha256_first_name": "…",         // Client::getName()
+      "sha256_last_name": "…",          // Client::getSurname()
+      "postal_code": "11000",           // PurchaseAddress::getZip(), billing address
+      "country": "CZ"                   // PurchaseAddress::getCountry()
+    }
+  }
+}
+```
+
+- Values are normalized per Google's rules for pre-hashed data and hashed with SHA-256 **on the server**; plain
+  contact data never reaches the page, so other scripts on it cannot read it.
+  - email: trimmed, lowercased, dots removed from the local part of `gmail.com` / `googlemail.com`;
+  - phone: E.164 (`+420739834430`); a number without `+`/`00` gets the calling code of the billing country
+    (CZ, SK, PL, DE, AT, HU), otherwise it is left out;
+  - names: trimmed, lowercased, digits and punctuation removed (diacritics kept).
+- A field that is missing or cannot be normalized is left out; with no usable field, `user_data` is not sent.
+- GTM: in the Google Ads Conversion Tracking tag tick "Include user-provided data from your website" and point it
+  at a *User-Provided Data* variable of type *Code* returning the Data Layer Variable `user_data`. Enhanced
+  Conversions must also be accepted in the Google Ads account (Goals → Settings).
+- Google uses the data only when `ad_user_data` consent is granted (Consent Mode v2); the tags enforce that.
+- Legal: mention in the privacy policy that hashed contact data of buyers is passed to Google for conversion
+  measurement.
+
 ---
 
 ## 8. Extending and customizing
@@ -539,6 +585,8 @@ Implementing GTM on a project that uses `greendot/eshopbundle`:
 - [ ] JS: `dispatchGtmTrigger()` helper; call it after every add-to-cart, remove-from-cart, add-to-wishlist request.
 - [ ] JS: `begin_checkout` / `add_shipping_info` / `add_payment_info` via `/gtm/checkout-funnel/{type}` then
       `dispatchGtmTrigger()` at the matching checkout steps.
+- [ ] Optional, after a legal check: `greendot_eshop.gtm.enhanced_conversions: true` + GTM Ads tag reads `user_data`
+      (§7.9).
 - [ ] `greendot_eshop.gtm.purchase_on_confirmation_page: true` + thank-you page includes
       `@GreendotEshop/data_layer/purchase_push.html.twig` (no manual `gtm_purchase`).
 - [ ] Never call a `gtm_*` Twig function after `{{ parent() }}` inside `block gtm`.

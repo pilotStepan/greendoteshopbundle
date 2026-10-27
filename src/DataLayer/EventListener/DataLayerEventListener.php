@@ -12,6 +12,7 @@ use Greendot\EshopBundle\DataLayer\Event\ViewItemListProductEvent;
 use Greendot\EshopBundle\DataLayer\Factory\CartFactory;
 use Greendot\EshopBundle\DataLayer\Factory\CheckoutFunnelFactory;
 use Greendot\EshopBundle\DataLayer\Factory\PurchaseFactory;
+use Greendot\EshopBundle\DataLayer\Factory\UserDataFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemListFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemListProductFactory;
@@ -32,6 +33,7 @@ class DataLayerEventListener
         private readonly CheckoutFunnelFactory $checkoutFunnelFactory,
         private readonly WishlistFactory       $wishlistFactory,
         private readonly ConfirmationPurchaseTracker $confirmationPurchaseTracker,
+        private readonly UserDataFactory       $userDataFactory,
     ) {}
 
     #[AsEventListener(event: ViewItemListEvent::class)]
@@ -63,8 +65,12 @@ class DataLayerEventListener
             return;
         }
 
-        $eventData = $this->purchaseFactory->create($purchaseEvent->getPurchase());
-        $this->dataLayerManager->push(['event' => 'purchase', 'ecommerce' => $eventData], true);
+        $purchase = $purchaseEvent->getPurchase();
+        $event = ['event' => 'purchase', 'ecommerce' => $this->purchaseFactory->create($purchase)];
+        if ($userData = $this->userDataFactory->create($purchase)) {
+            $event['user_data'] = $userData;
+        }
+        $this->dataLayerManager->push($event, true);
     }
 
     #[AsEventListener(event: ModifyCart::class)]
