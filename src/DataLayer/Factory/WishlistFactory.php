@@ -28,7 +28,7 @@ class WishlistFactory
 
         return new AddToWishlist(
             currency: $this->currency->getName() ?? 'CZK',
-            value: $item->priceVat,
+            value: round($item->priceVat * $item->quantity, 2),
             items: [$item],
         );
     }

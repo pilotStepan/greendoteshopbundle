@@ -96,9 +96,9 @@ Before every e-commerce event the listener pushes `{"ecommerce": null}` (Google'
 
 ## 4. Payload shapes
 
-Not pure GA4: **prices are sent twice, `priceVat` and `priceNoVat`** (and `valueVat` / `valueNoVat` on list/item
-events), instead of GA4's `price`. The GTM container must map these to GA4 fields with Data Layer Variables (see
-[§7.8](#78-gtm-container-configuration)).
+Not pure GA4: besides GA4's `price` (unit price incl. VAT), **prices are also sent as `priceVat` and `priceNoVat`**
+(and `valueVat` / `valueNoVat` on list/item events). All item prices are **per piece**; multiply by `quantity` for the
+line total. See [§7.8](#78-gtm-container-configuration) for the container mapping.
 
 ### `items[]` entry (`DataLayerItem`)
 
@@ -107,6 +107,7 @@ events), instead of GA4's `price`. The GTM container must map these to GA4 field
   "item_id": "1234",            // ProductVariant id (createFromVariant) or Product id (createFromProduct, list events)
   "item_name": "Yoga mat Pro",  // Product name
   "item_brand": "Producer name",// Product::getProducer()->getName(), "Unknown" if none
+  "price": 1290.0,              // = priceVat, unit price
   "priceVat": 1290.0,
   "priceNoVat": 1066.12,
   "quantity": 1,
@@ -118,8 +119,9 @@ events), instead of GA4's `price`. The GTM container must map these to GA4 field
 }
 ```
 
-Prices come from `ProductVariantPriceFactory` in the session currency (`CurrencyManager::get()`); `quantity` defaults to
-the variant's minimal amount (or 1).
+Prices come from `ProductVariantPriceFactory` in the session currency (`CurrencyManager::get()`), priced for
+`quantity` pieces (quantity discounts apply) and divided back to a unit price; `quantity` defaults to the variant's
+minimal amount (or 1).
 
 ### Event-level shapes
 
@@ -134,7 +136,7 @@ the variant's minimal amount (or 1).
 
 // add_to_cart, remove_from_cart, add_to_wishlist, view_cart, begin_checkout, add_shipping_info, add_payment_info
 { "currency": "CZK", "value": 0, "items": [ … ] }
-// cart/wishlist: value = the changed item's price; funnel: value = whole purchase with VAT
+// cart/wishlist: value = unit price × changed quantity; funnel: value = whole purchase with VAT
 
 // purchase
 { "transaction_id": "5678", "value": 0, "tax": 0, "shipping": 0, "currency": "CZK",
@@ -416,10 +418,10 @@ In the GTM UI (per project):
 1. **Data Layer Variables** (Version 2) for fields that are not standard GA4: `ecommerce.value`, `ecommerce.valueVat`,
    `ecommerce.currency`, `ecommerce.transaction_id`, `ecommerce.tax`, `ecommerce.shipping`, `ecommerce.customer_type`,
    `ecommerce.items`, …
-2. **Items price mapping:** GA4 reads `items[].price`, which the bundle does not send. Either map
-   `priceVat`/`priceNoVat` → `price` with a Custom JavaScript variable that returns a transformed `ecommerce.items`, or
-   change the payload in the project (see §8.2). Decide whether the shop reports gross or net prices and stay
-   consistent with `value`.
+2. **Items price mapping:** `items[].price` is the unit price incl. VAT, consistent with `value`, so "Send Ecommerce
+   data" works as is. If the shop reports net prices, map `priceNoVat` → `price` with a Custom JavaScript variable
+   (or change the payload in the project, see §8.2) and do the same for `value`. Never multiply by `quantity` in the
+   container: GA4 does that itself.
 3. **Triggers:** Custom Event triggers named exactly as the `event` values in §3.
 4. **Tags:** GA4 Event tags (or Google Ads / Meta / Sklik …) per trigger, with "Send Ecommerce data" from the data
    layer or the explicit variables above.
