@@ -5,13 +5,14 @@ namespace Greendot\EshopBundle\Entity\Project;
 use ApiPlatform\Core\Annotation\ApiResource;
 use Gedmo\Translatable\Translatable;
 use Greendot\EshopBundle\Repository\Project\ColourRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: ColourRepository::class)]
+#[ORM\UniqueConstraint(name: 'UNIQ_colour_hex', columns: ['hex'])]
+#[UniqueEntity(fields: ['hex'], message: 'Barva s tímto hex kódem už existuje.')]
 class Colour implements Translatable
 {
     #[ORM\Id]
