@@ -27,7 +27,7 @@ class CartFactory
         );
         return new CartModified(
             currency: $this->currency->getName() ?? 'CZK',
-            value: $item->priceVat,
+            value: round($item->priceVat * $item->quantity, 2),
             items: [$item]
         );
     }

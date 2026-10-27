@@ -57,7 +57,7 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 
 | Layer | File | Role |
 |---|---|---|
-| Queue | `src/Service/DataLayer/DataLayerManager.php` | `push(array $data, bool $persist = false)`, `all()` (returns + clears). Session key `_gtm_datalayer_events`. |
+| Queue | `src/Service/DataLayer/DataLayerManager.php` | `push(array $data, bool $persist = false)` (adds the `ecommerce` reset), `all()` (returns + clears). Session key `_gtm_datalayer_events`. |
 | Symfony events | `src/DataLayer/Event/*.php` | One class per trigger: `ViewItemEvent`, `ViewItemListEvent`, `ViewItemListProductEvent`, `PurchaseEvent`, `ModifyCart`, `CheckoutFunnelEvent`, `AddToWishlistEvent`, `PageViewEvent`. |
 | Listener | `src/DataLayer/EventListener/DataLayerEventListener.php` | `#[AsEventListener]` per event → factory → `DataLayerManager::push()`. **The GA4 event names are defined here.** |
 | Factories | `src/DataLayer/Factory/*.php` | Build payload DTOs from entities (prices, currency, categories, parameters). `DataLayerItemFactory` builds a single `items[]` entry; `FactoryUtilsTrait` has the category-tree helper. |
@@ -65,8 +65,9 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 | Category serialization | `src/DataLayer/Data/DataParseTrait.php` | Turns the category path into `item_category`, `item_category2`, … |
 | Automatic cart/wishlist trigger | `src/EventSubscriber/CartModifiedListener.php` | Doctrine `onFlush` listener; diffs `PurchaseProductVariant` inserts/updates/deletes → `ModifyCart` or `AddToWishlistEvent`. |
 | Automatic purchase trigger | `src/EventSubscriber/PurchaseStateSubscriber.php` | `onReceive` (workflow transition `T_CHECKOUT`) dispatches `PurchaseEvent`. |
-| Twig functions | `src/Twig/GoogleTagManagerExtension.php` | `gtm_get_events`, `gtm_view_item`, `gtm_view_item_list`, `gtm_view_item_list_product`, `gtm_purchase`, `gtm_view_cart`, `gtm_begin_checkout`, `gtm_add_shipping_info`, `gtm_add_payment_info`, `gtm_page_view`. |
+| Twig functions | `src/Twig/GoogleTagManagerExtension.php` | `gtm_get_events`, `gtm_view_item`, `gtm_view_item_list`, `gtm_view_item_list_product`, `gtm_purchase`, `gtm_confirmation_purchase`, `gtm_view_cart`, `gtm_begin_checkout`, `gtm_add_shipping_info`, `gtm_add_payment_info`, `gtm_page_view`. |
 | HTTP endpoints | `src/Controller/DataLayer/DataLayerApi.php` | Prefix `/gtm`: `read/all`, `checkout-funnel/{type}`, `view-item/{id}`. Routes are loaded by the bundle's `config/routes.yaml`. |
+| Confirmation-page purchase | `src/Service/DataLayer/ConfirmationPurchaseTracker.php` + `templates/data_layer/purchase_push.html.twig` | Opt-in (`gtm.purchase_on_confirmation_page`): `purchase` is rendered by the thank-you page once per order instead of being queued. See [§7.7](#77-purchase). |
 | Browser glue | `templates/data_layer/data_layer_push.html.twig` | Inline `<script>`: pushes queued events, listens for `_gtm_trigger`, debug overlay. Include as `@GreendotEshop/data_layer/data_layer_push.html.twig`. |
 | Legacy (do not use) | `src/Service/GoogleAnalytics.php` + Twig `get_google_analytics_array()` in `src/Twig/AppExtension.php` | Old UA-era array builder. Not part of this system. |
 
@@ -86,19 +87,20 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 | `begin_checkout` | `CheckoutFunnelEvent::BeginCheckout` | Twig `gtm_begin_checkout()` or `GET /gtm/checkout-funnel/begin_checkout` | `BeginCheckout` | Yes — first checkout step |
 | `add_shipping_info` | `CheckoutFunnelEvent::AddShippingInfo` | Twig / `GET /gtm/checkout-funnel/add_shipping_info` | `AddShippingInfo` | Yes — when shipping is chosen / step shown |
 | `add_payment_info` | `CheckoutFunnelEvent::AddPaymentInfo` | Twig / `GET /gtm/checkout-funnel/add_payment_info` | `AddPaymentInfo` | Yes — when payment is chosen |
-| `purchase` | `PurchaseEvent(Purchase)` | **Automatic** on checkout workflow transition; Twig `gtm_purchase(purchase)` exists for manual use | `Purchase` | Render the push template on the page after the order redirect (usually already true) |
+| `purchase` | `PurchaseEvent(Purchase)` | **Automatic** on checkout workflow transition; Twig `gtm_purchase(purchase)` exists for manual use | `Purchase` | Recommended: enable `gtm.purchase_on_confirmation_page` and include `purchase_push.html.twig` on the thank-you page ([§7.7](#77-purchase)) |
 | — | `PageViewEvent(Category)` | Twig `gtm_page_view(category)` | — | **No listener exists — currently a no-op.** |
 
-Before every e-commerce event the listener pushes `{"ecommerce": null}` (Google's recommended reset), except
-`add_to_cart`. See [gotchas](#9-gotchas-and-known-limitations) for when the reset gets lost.
+Before every event with an `ecommerce` key, `DataLayerManager::push()` adds `{"ecommerce": null}` (Google's
+recommended reset) in the same storage as the event, so the reset survives delivery via `/gtm/read/all`. Don't push
+the reset yourself; a bare `{"ecommerce": null}` pushed to the manager is ignored.
 
 ---
 
 ## 4. Payload shapes
 
-Not pure GA4: **prices are sent twice, `priceVat` and `priceNoVat`** (and `valueVat` / `valueNoVat` on list/item
-events), instead of GA4's `price`. The GTM container must map these to GA4 fields with Data Layer Variables (see
-[§7.8](#78-gtm-container-configuration)).
+Not pure GA4: besides GA4's `price` (unit price incl. VAT), **prices are also sent as `priceVat` and `priceNoVat`**
+(and `valueVat` / `valueNoVat` on list/item events). All item prices are **per piece**; multiply by `quantity` for the
+line total. See [§7.8](#78-gtm-container-configuration) for the container mapping.
 
 ### `items[]` entry (`DataLayerItem`)
 
@@ -107,6 +109,7 @@ events), instead of GA4's `price`. The GTM container must map these to GA4 field
   "item_id": "1234",            // ProductVariant id (createFromVariant) or Product id (createFromProduct, list events)
   "item_name": "Yoga mat Pro",  // Product name
   "item_brand": "Producer name",// Product::getProducer()->getName(), "Unknown" if none
+  "price": 1290.0,              // = priceVat, unit price
   "priceVat": 1290.0,
   "priceNoVat": 1066.12,
   "quantity": 1,
@@ -118,8 +121,9 @@ events), instead of GA4's `price`. The GTM container must map these to GA4 field
 }
 ```
 
-Prices come from `ProductVariantPriceFactory` in the session currency (`CurrencyManager::get()`); `quantity` defaults to
-the variant's minimal amount (or 1).
+Prices come from `ProductVariantPriceFactory` in the session currency (`CurrencyManager::get()`), priced for
+`quantity` pieces (quantity discounts apply) and divided back to a unit price; `quantity` defaults to the variant's
+minimal amount (or 1).
 
 ### Event-level shapes
 
@@ -134,7 +138,7 @@ the variant's minimal amount (or 1).
 
 // add_to_cart, remove_from_cart, add_to_wishlist, view_cart, begin_checkout, add_shipping_info, add_payment_info
 { "currency": "CZK", "value": 0, "items": [ … ] }
-// cart/wishlist: value = the changed item's price; funnel: value = whole purchase with VAT
+// cart/wishlist: value = unit price × changed quantity; funnel: value = whole purchase with VAT
 
 // purchase
 { "transaction_id": "5678", "value": 0, "tax": 0, "shipping": 0, "currency": "CZK",
@@ -143,7 +147,8 @@ the variant's minimal amount (or 1).
 // with another non-draft order in the last 540 days
 ```
 
-Full dataLayer entry: `{ "event": "<name>", "ecommerce": { …payload… } }`.
+Full dataLayer entry: `{ "event": "<name>", "ecommerce": { …payload… } }`. With
+[Enhanced Conversions](#79-enhanced-conversions-google-ads) enabled, `purchase` also carries a top-level `user_data`.
 
 ---
 
@@ -311,8 +316,7 @@ Cart page:
 > Always guard the funnel functions (`gtm_view_cart`, `gtm_begin_checkout`, …) when called without an argument: they
 > look up the purchase via `PurchaseRepository::findOneBySession()` and a missing purchase causes a `TypeError`.
 
-Thank-you page: nothing to do as long as it renders the push template — `purchase` was queued in the session during
-the checkout transition.
+Thank-you page: include `purchase_push.html.twig`, see [§7.7](#77-purchase).
 
 ### 7.5 Frontend helpers
 
@@ -400,14 +404,40 @@ lacks a bundle endpoint.
 
 ### 7.7 Purchase
 
-Automatic: `PurchaseStateSubscriber::onReceive` dispatches `PurchaseEvent` on the checkout transition and the
-`purchase` event is persisted to the session. Requirements:
+`PurchaseStateSubscriber::onReceive` dispatches `PurchaseEvent` on the checkout transition (usually inside the
+checkout XHR). What happens next depends on one option.
 
-- the order is placed through the bundle's purchase workflow (checkout transition), and
-- the page the user lands on afterwards (thank-you / payment-gateway return) includes the push template.
+**Recommended — confirmation page only** (`config/packages/greendot_eshop.yaml`):
 
-If an external payment gateway redirect happens first, the event waits in the session until the user returns to a
-page with the template. Don't add `gtm_purchase()` on the thank-you page as well — that would double-count.
+```yaml
+greendot_eshop:
+    gtm:
+        purchase_on_confirmation_page: true
+```
+
+`ConfirmationPurchaseTracker` only remembers the order id in the session (`_gtm_pending_purchases`). The thank-you
+page renders the event:
+
+```twig
+{% block body_end %}
+    {% include '@GreendotEshop/data_layer/purchase_push.html.twig' with {
+        purchase: purchase,
+        just_created: true,  {# page reached right after checkout / payment return, e.g. a ?created=1 flag #}
+    } %}
+{% endblock %}
+```
+
+It fires once per order: the id moves to `_gtm_sent_purchases` and the browser keeps a
+`gtm_purchase_sent_<transaction_id>` localStorage flag (reloads, back button, opening the order later from the client
+section). When the session was lost during the payment gateway round trip, `just_created: true` still lets the event
+fire for an order issued in the last 24 hours. Orders without an order number (drafts) never fire. `just_created`
+must be false on pages a customer can reopen at will without the session (e.g. an order detail opened from an email
+link), otherwise the 24-hour fallback can count it on another device.
+
+**Legacy (default, `false`)** — the event is persisted to the session queue and delivered by *whatever page or
+`/gtm/read/all` call comes next*: the thank-you page if the user lands there directly, but just as well a checkout
+step (Back from the payment gateway), the homepage or a product-page XHR. Nothing prevents duplicates across tabs.
+Don't add `gtm_purchase()` on the thank-you page in this mode — that would double-count.
 
 ### 7.8 GTM container configuration
 
@@ -416,14 +446,61 @@ In the GTM UI (per project):
 1. **Data Layer Variables** (Version 2) for fields that are not standard GA4: `ecommerce.value`, `ecommerce.valueVat`,
    `ecommerce.currency`, `ecommerce.transaction_id`, `ecommerce.tax`, `ecommerce.shipping`, `ecommerce.customer_type`,
    `ecommerce.items`, …
-2. **Items price mapping:** GA4 reads `items[].price`, which the bundle does not send. Either map
-   `priceVat`/`priceNoVat` → `price` with a Custom JavaScript variable that returns a transformed `ecommerce.items`, or
-   change the payload in the project (see §8.2). Decide whether the shop reports gross or net prices and stay
-   consistent with `value`.
+2. **Items price mapping:** `items[].price` is the unit price incl. VAT, consistent with `value`, so "Send Ecommerce
+   data" works as is. If the shop reports net prices, map `priceNoVat` → `price` with a Custom JavaScript variable
+   (or change the payload in the project, see §8.2) and do the same for `value`. Never multiply by `quantity` in the
+   container: GA4 does that itself.
 3. **Triggers:** Custom Event triggers named exactly as the `event` values in §3.
 4. **Tags:** GA4 Event tags (or Google Ads / Meta / Sklik …) per trigger, with "Send Ecommerce data" from the data
    layer or the explicit variables above.
 5. `view_item_list_product` is custom — map it to GA4 `view_item` in the container if needed, or ignore it.
+
+### 7.9 Enhanced Conversions (Google Ads)
+
+Enhanced Conversions sends the buyer's hashed email, phone and name with the conversion, so Google Ads can attribute
+the purchase to an ad click even when the click cookie is missing (no consent, Safari, payment gateway round trip).
+Opt-in:
+
+```yaml
+greendot_eshop:
+    gtm:
+        enhanced_conversions: true
+```
+
+`UserDataFactory` then adds `user_data` to the `purchase` event (both delivery modes of §7.7):
+
+```jsonc
+{
+  "event": "purchase",
+  "ecommerce": { … },
+  "user_data": {
+    "sha256_email_address": "…",        // Client::getMail()
+    "sha256_phone_number": "…",         // Client::getPhone(), E.164
+    "address": {                        // only when all four are known
+      "sha256_first_name": "…",         // Client::getName()
+      "sha256_last_name": "…",          // Client::getSurname()
+      "postal_code": "11000",           // PurchaseAddress::getZip(), billing address
+      "country": "CZ"                   // PurchaseAddress::getCountry()
+    }
+  }
+}
+```
+
+- Values are normalized per Google's rules for pre-hashed data and hashed with SHA-256 **on the server**; plain
+  contact data never reaches the page, so other scripts on it cannot read it.
+  - email: trimmed, lowercased, dots removed from the local part of `gmail.com` / `googlemail.com`;
+  - phone: E.164 (`+420739834430`); a number without `+`/`00` gets the calling code of the billing country
+    (CZ, SK, PL, DE, AT, HU), otherwise it is left out;
+  - names: trimmed, lowercased, digits and punctuation removed (diacritics kept).
+- A field that is missing or cannot be normalized is left out; with no usable field, `user_data` is not sent.
+- With `purchase_on_confirmation_page`, `user_data` is added only when this session placed the order. The 24-hour
+  `just_created` fallback sends the purchase without it, because it cannot prove the viewer is the buyer.
+- GTM: in the Google Ads Conversion Tracking tag tick "Include user-provided data from your website" and point it
+  at a *User-Provided Data* variable of type *Code* returning the Data Layer Variable `user_data`. Enhanced
+  Conversions must also be accepted in the Google Ads account (Goals → Settings).
+- Google uses the data only when `ad_user_data` consent is granted (Consent Mode v2); the tags enforce that.
+- Legal: mention in the privacy policy that hashed contact data of buyers is passed to Google for conversion
+  measurement.
 
 ---
 
@@ -437,7 +514,6 @@ In the GTM UI (per project):
    `createFromProduct()`, currency from `CurrencyManager::get()`.
 4. `DataLayerEventListener` — new `#[AsEventListener(event: MyEvent::class)]` method:
    ```php
-   $this->dataLayerManager->push(['ecommerce' => null], true);
    $this->dataLayerManager->push(['event' => 'my_event', 'ecommerce' => $eventData], true);
    ```
    Use `persist: true` unless the event is only ever dispatched during a page render.
@@ -461,10 +537,8 @@ In the GTM UI (per project):
 
 ## 9. Gotchas and known limitations
 
-- **Non-persisted resets get lost over AJAX.** `remove_from_cart` and the checkout funnel push `{"ecommerce": null}`
-  with `persist: false`; `add_to_cart` pushes no reset at all. When those events are delivered via `/gtm/read/all`,
-  the reset was in another request's memory and is gone, so GTM may merge `ecommerce` objects. Enable "Clear ecommerce
-  object" handling in the container or keep the reset in mind when debugging stale items.
+- **`ecommerce` resets are automatic.** Events pushed straight to `window.dataLayer` by project JS (outside the
+  manager) still need their own `{ecommerce: null}` before them, or GTM merges their `items[]` with the previous event.
 - **Order of Twig calls matters** (§5.1). A trigger after the include renders on the *next* page.
 - **Funnel Twig functions without a purchase throw** (§7.4) — guard with the session check.
 - **`gtm_page_view` does nothing** — `PageViewEvent` has no listener.
@@ -490,7 +564,7 @@ In the GTM UI (per project):
 3. Walk the funnel and check that each event appears once, with non-empty `items` and sane prices:
    listing → `view_item_list`; product detail → `view_item_list_product` / `view_item`; add to cart → `add_to_cart`;
    cart → `view_cart`; checkout steps → `begin_checkout`, `add_shipping_info`, `add_payment_info`;
-   order → `purchase` on the thank-you page.
+   order → `purchase` on the thank-you page, and not again after a reload or on the next page.
 4. `/gtm/read/all` directly in the browser returns `[]` right after a page load (queue drained).
 5. GTM Preview mode (Tag Assistant): the tags fire on the matching custom events.
 
@@ -513,7 +587,10 @@ Implementing GTM on a project that uses `greendot/eshopbundle`:
 - [ ] JS: `dispatchGtmTrigger()` helper; call it after every add-to-cart, remove-from-cart, add-to-wishlist request.
 - [ ] JS: `begin_checkout` / `add_shipping_info` / `add_payment_info` via `/gtm/checkout-funnel/{type}` then
       `dispatchGtmTrigger()` at the matching checkout steps.
-- [ ] Thank-you page renders the push template (no manual `gtm_purchase`).
+- [ ] Optional, after a legal check: `greendot_eshop.gtm.enhanced_conversions: true` + GTM Ads tag reads `user_data`
+      (§7.9).
+- [ ] `greendot_eshop.gtm.purchase_on_confirmation_page: true` + thank-you page includes
+      `@GreendotEshop/data_layer/purchase_push.html.twig` (no manual `gtm_purchase`).
 - [ ] Never call a `gtm_*` Twig function after `{{ parent() }}` inside `block gtm`.
 - [ ] Verify with `debug_gtm` overlay (§10) and GTM Preview.
 - [ ] Tell the client/marketing which payload fields exist (§4) so the GTM container maps `priceVat`/`priceNoVat`.

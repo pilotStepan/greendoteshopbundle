@@ -1,0 +1,21 @@
+{#
+    GA4 `purchase` for the order confirmation page, used with greendot_eshop.gtm.purchase_on_confirmation_page.
+    Variables: purchase (Purchase entity), just_created (bool, page reached right after checkout / payment).
+    Fires at most once per order: guarded by the session (server) and by localStorage (reload, back button).
+#}
+{% set gtm_purchase_event = gtm_confirmation_purchase(purchase, just_created ?? false) %}
+{% if gtm_purchase_event %}
+    <script>
+        (function () {
+            var event = {{ gtm_purchase_event|json_encode|raw }};
+            var sentKey = 'gtm_purchase_sent_' + event.ecommerce.transaction_id;
+            try {
+                if (localStorage.getItem(sentKey)) return;
+                localStorage.setItem(sentKey, '1');
+            } catch (e) {}
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ecommerce: null});
+            window.dataLayer.push(event);
+        })();
+    </script>
+{% endif %}

@@ -55,6 +55,13 @@ class GreendotEshopBundle extends AbstractBundle
                         ->booleanNode('has_landing')->defaultValue(true)->end()
                     ->end()
                 ->end()
+                ->arrayNode('gtm')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('purchase_on_confirmation_page')->defaultValue(false)->end()
+                        ->booleanNode('enhanced_conversions')->defaultValue(false)->end()
+                    ->end()
+                ->end()
                 ->arrayNode('mail')
                     ->children()
                         ->arrayNode('order')
@@ -211,6 +218,15 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.shop.default_discount_type',
             $config['shop']['default_discount_type']
+        );
+
+        $builder->setParameter(
+            'greendot_eshop.gtm.purchase_on_confirmation_page',
+            $config['gtm']['purchase_on_confirmation_page'] ?? false
+        );
+        $builder->setParameter(
+            'greendot_eshop.gtm.enhanced_conversions',
+            $config['gtm']['enhanced_conversions'] ?? false
         );
 
         $sendProforma = $config['mail']['order']['send_proforma'] ?? true;

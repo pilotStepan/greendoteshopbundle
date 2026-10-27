@@ -27,6 +27,7 @@ class DataLayerItem implements JsonSerializable
             'item_id'    => $this->item_id,
             'item_name'  => $this->item_name,
             'item_brand' => $this->item_brand,
+            'price'      => $this->priceVat,
             'priceVat'   => $this->priceVat,
             'priceNoVat' => $this->priceNoVat,
             'quantity'   => $this->quantity,

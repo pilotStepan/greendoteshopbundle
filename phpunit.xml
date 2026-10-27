@@ -7,6 +7,7 @@
         <testsuite name="Unit">
             <directory>tests/Affiliate</directory>
             <directory>tests/Controller</directory>
+            <directory>tests/DataLayer</directory>
             <directory>tests/Entity</directory>
             <directory>tests/EventSubscriber</directory>
             <directory>tests/Invoice</directory>
