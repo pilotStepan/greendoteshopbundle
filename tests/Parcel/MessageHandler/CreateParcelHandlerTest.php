@@ -14,6 +14,7 @@ use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Greendot\EshopBundle\Parcel\MessageHandler\CreateParcelHandler;
@@ -139,6 +140,23 @@ class CreateParcelHandlerTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('connection refused');
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
+    // Permanent errors are logged once and the message is acked; throwing would make messenger
+    // log the same failure again as critical.
+    public function testPermanentFailure_acksWithoutThrowingOrScheduling(): void
+    {
+        $purchase = $this->makePurchase();
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $service = $this->createMock(ParcelServiceInterface::class);
+        $service->method('createParcel')->willThrowException(new PermanentParcelException('invalid pickup point'));
+        $this->provider->method('getByPurchase')->willReturn($service);
+
+        $purchase->expects($this->never())->method('setTransportNumber');
+        $this->em->expects($this->never())->method('flush');
+        $this->bus->expects($this->never())->method('dispatch');
+
         ($this->handler)(new CreateParcelMessage(42));
     }
 

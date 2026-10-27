@@ -27,10 +27,13 @@ trait PacketeryApiTrait
     {
         $transportation = $purchase->getTransportation();
         $apiPassword = $transportation?->getSecretKey() ?? '';
-        $packetId = $purchase->getTransportNumber();
+        $packetId = $this->normalizePacketId($purchase->getTransportNumber());
 
-        if (!$packetId) {
-            $this->logger->error('No Packeta packetId on purchase; cannot query status', ['purchaseId' => $purchase->getId()]);
+        if ($packetId === null) {
+            $this->logger->error('No Packeta packetId on purchase; cannot query status', [
+                'purchaseId' => $purchase->getId(),
+                'transportNumber' => $purchase->getTransportNumber(),
+            ]);
             throw new PermanentParcelException('No Packeta packetId on purchase');
         }
 
@@ -54,7 +57,14 @@ trait PacketeryApiTrait
 
     public function supportsStatusPolling(Purchase $purchase): bool
     {
-        return (bool)$purchase->getTransportNumber();
+        return $this->normalizePacketId($purchase->getTransportNumber()) !== null;
+    }
+
+    private function normalizePacketId(?string $transportNumber): ?string
+    {
+        $packetId = preg_replace('/\s+/', '', (string)$transportNumber);
+
+        return preg_match('/^Z\d{10}$/i', $packetId) ? strtoupper($packetId) : null;
     }
 
     private function callPacketeryApi(string $rootElement, array $data, string $logContext, Purchase $purchase): SimpleXMLElement

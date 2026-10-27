@@ -201,7 +201,9 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
 
     // --- Guard: permanent provider error ---
 
-    public function testProviderThrowsPermanent_throwsUnrecoverable(): void
+    // Permanent errors are logged once and the message is acked; throwing would make messenger
+    // log the same failure again as critical.
+    public function testProviderThrowsPermanent_stopsPollingWithoutThrowing(): void
     {
         $purchase = $this->makePurchase();
         $this->purchaseRepo->method('find')->willReturn($purchase);
@@ -211,7 +213,7 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         $this->provider->method('getByPurchase')->willReturn($service);
 
         $this->bus->expects($this->never())->method('dispatch');
-        $this->expectException(UnrecoverableMessageHandlingException::class);
+        $this->em->expects($this->never())->method('persist');
         ($this->handler)($this->makeMsg());
     }
 

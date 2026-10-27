@@ -14,6 +14,8 @@ use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -71,15 +73,40 @@ readonly class RbBankPaymentImportService
 
             $this->entityManager->flush();
         } catch (Throwable $e) {
-            $this->logger->critical('RB bank payment import failed', [
+            $message = $this->redact($e->getMessage());
+            $context = [
                 'startDate' => $startDate->format('d.m.Y'),
                 'exception_class' => $e::class,
-                'exception_message' => $this->password !== ''
-                    ? str_replace($this->password, '***', $e->getMessage())
-                    : $e->getMessage(),
-            ]);
-            throw $e;
+                'exception_message' => $message,
+            ];
+
+            if ($this->isTransientHttpFailure($e)) {
+                $this->logger->warning('RB bank payment import failed', $context);
+            } else {
+                $this->logger->critical('RB bank payment import failed', $context);
+            }
+
+            throw new RbBankImportException($message, (int)$e->getCode());
         }
+    }
+
+    private function redact(string $text): string
+    {
+        return $this->password !== '' ? str_replace($this->password, '***', $text) : $text;
+    }
+
+    private function isTransientHttpFailure(Throwable $e): bool
+    {
+        if ($e instanceof TransportExceptionInterface) {
+            return true;
+        }
+
+        if ($e instanceof HttpExceptionInterface) {
+            $statusCode = $e->getResponse()->getStatusCode();
+            return $statusCode >= 500 || $statusCode === 403;
+        }
+
+        return false;
     }
 
     private function findBankTransferPaymentType(): ?PaymentType

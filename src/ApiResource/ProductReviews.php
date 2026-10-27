@@ -7,6 +7,7 @@ use ApiPlatform\Doctrine\Orm\Util\QueryNameGeneratorInterface;
 use ApiPlatform\Metadata\Operation;
 use Greendot\EshopBundle\Entity\Project\Review;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class ProductReviews extends AbstractFilter
 {
@@ -26,10 +27,14 @@ class ProductReviews extends AbstractFilter
             return;
         }
 
+        if (!is_scalar($value) || !ctype_digit((string)$value)) {
+            throw new BadRequestHttpException(sprintf('Filter "%s" must be a product ID.', self::FILTER_NAME));
+        }
+
         $entityManager = $this->getManagerRegistry()->getManagerForClass(Review::class);
         $repository = $entityManager->getRepository(Review::class);
 
-        $repository->findByProductQB($value, $queryBuilder);
+        $repository->findByProductQB((int)$value, $queryBuilder);
     }
 
     public function getDescription(string $resourceClass): array

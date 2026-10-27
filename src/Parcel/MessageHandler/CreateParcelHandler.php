@@ -90,7 +90,7 @@ readonly class CreateParcelHandler
                 'purchaseId' => $purchaseId,
                 'error' => $e->getMessage(),
             ]);
-            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
+            return;
         } catch (Throwable $e) {
             $this->logger->error('Creating parcel failed; will retry', [
                 'purchaseId' => $purchaseId,

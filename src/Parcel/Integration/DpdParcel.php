@@ -77,11 +77,16 @@ class DpdParcel implements ParcelServiceInterface
             $shipmentId = $data['shipmentResults'][0]['shipmentId'] ?? null;
             $mpsId = $data['shipmentResults'][0]['mpsId'] ?? null;
             if ($shipmentId === null || $mpsId === null) {
+                $statusCode = $response->getStatusCode();
+                $rawResponse = $response->getContent(false);
                 $this->logger->error('DPD API error on createParcel: no shipmentId/mpsId in response', [
                     'purchaseId' => $purchase->getId(),
-                    'httpStatusCode' => $response->getStatusCode(),
-                    'response' => $response->getContent(false),
+                    'httpStatusCode' => $statusCode,
+                    'response' => $rawResponse,
                 ]);
+                if ($statusCode >= 400 && $statusCode < 500 && $statusCode !== 429) {
+                    throw new PermanentParcelException("DPD createParcel failed (HTTP $statusCode): $rawResponse");
+                }
                 throw new TransientParcelException('DPD createParcel failed: no shipmentId/mpsId in response');
             }
 
@@ -138,9 +143,10 @@ class DpdParcel implements ParcelServiceInterface
             $statusCode = (int)($shipment['status'] ?? 0);
             $updateDate = $shipment['updateDate'] ?? null;
             $updateTime = $shipment['updateTime'] ?? null;
-            $occurredAt = ($updateDate && $updateTime)
-                ? DateTimeImmutable::createFromFormat('YmdHis', $updateDate . $updateTime) ?: null
-                : null;
+            $occurredAt = null;
+            if ($updateDate && $updateTime) {
+                $occurredAt = DateTimeImmutable::createFromFormat('YmdHis', $updateDate . $updateTime) ?: null;
+            }
 
             return new ParcelStatusInfoDto(
                 state: $this->mapStatusCode($statusCode),

@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\DataLayer;
 
+use Doctrine\ORM\EntityNotFoundException;
 use Greendot\EshopBundle\DataLayer\Event\CheckoutFunnelEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -49,7 +50,11 @@ class DataLayerApi extends AbstractController
         ProductVariant $productVariant,
     ): JsonResponse
     {
-        $this->eventDispatcher->dispatch(new ViewItemEvent($productVariant));
+        try {
+            $this->eventDispatcher->dispatch(new ViewItemEvent($productVariant));
+        } catch (EntityNotFoundException $e) {
+            throw $this->createNotFoundException('Product of this variant is not available.', $e);
+        }
         return new JsonResponse('ok', 200);
     }
 

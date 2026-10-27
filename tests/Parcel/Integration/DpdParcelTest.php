@@ -8,6 +8,7 @@ use RuntimeException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
+use Greendot\EshopBundle\Parcel\Exception\TransientParcelException;
 use Greendot\EshopBundle\Parcel\Integration\DpdParcel;
 use Greendot\EshopBundle\Parcel\ParcelDeliveryStateEnum;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
@@ -417,6 +418,33 @@ class DpdParcelTest extends TestCase
         $httpClient = new MockHttpClient(new MockResponse(json_encode(['transactionId' => 1, 'shipmentResults' => []])));
 
         $this->expectException(RuntimeException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    public function testCreateParcel_missingShipmentIdOnServerError_throwsTransientException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(json_encode(['shipmentResults' => []]), ['http_code' => 503]));
+
+        $this->expectException(TransientParcelException::class);
+
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('jwt123'))
+        );
+    }
+
+    // DPD answers invalid shipment data with HTTP 400 and per-field messages; retrying the same payload cannot succeed
+    public function testCreateParcel_validationErrorHttp400_throwsPermanentException(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(
+            json_encode(['create.shipmentRequest.shipments[0].receiver.city' => 'MSG1: This field is required.']),
+            ['http_code' => 400],
+        ));
+
+        $this->expectException(PermanentParcelException::class);
+        $this->expectExceptionMessage('MSG1: This field is required.');
 
         $this->makeService($httpClient)->createParcel(
             $this->makePurchase($this->makeTransportation('jwt123'))

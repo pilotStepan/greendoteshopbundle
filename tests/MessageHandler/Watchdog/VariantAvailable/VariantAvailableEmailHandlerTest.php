@@ -98,6 +98,25 @@ class VariantAvailableEmailHandlerTest extends TestCase
         $this->assertNotNull($watchdog->getCompletedAt());
     }
 
+    // Mailer rejects addresses like "a..b@x.com" that slipped through older validation; retrying
+    // can never succeed, so the watchdog is canceled instead of failing on every restock.
+    public function testInvalidEmailAddressCancelsWatchdogWithoutThrowing(): void
+    {
+        $watchdog = $this->makeWatchdog(id: 1, email: 'sanat..kumara@aol.com');
+        $variant = $this->makeVariant(id: 42, name: 'Blue Widget', productName: 'Widget', productSlug: 'widget');
+
+        $this->setupFindReturns($watchdog, $variant);
+        $this->manageMails->method('getBaseTemplate')->willReturn(new TemplatedEmail());
+        $this->manageMails->expects($this->never())->method('sendTemplate');
+        $this->em->expects($this->once())->method('flush');
+        $this->logger->expects($this->once())->method('warning');
+
+        ($this->handler)(new VariantAvailableEmail(1, 42, 'sanat..kumara@aol.com'));
+
+        $this->assertSame(WatchdogState::Canceled, $watchdog->getState());
+        $this->assertNull($watchdog->getCompletedAt());
+    }
+
     public function testEmailAddressFromMessageIsUsed(): void
     {
         $watchdog = $this->makeWatchdog(id: 1, email: 'user@example.com');

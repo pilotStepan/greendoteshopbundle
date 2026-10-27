@@ -63,7 +63,7 @@ class Watchdog
     #[ORM\Column(type: Types::STRING, length: 255, nullable: false)]
     #[Groups(['watchdog:subscribe'])]
     #[Assert\NotBlank(groups: ['watchdog:subscribe'])]
-    #[Assert\Email(groups: ['watchdog:subscribe'])]
+    #[Assert\Email(mode: Assert\Email::VALIDATION_MODE_STRICT, groups: ['watchdog:subscribe'])]
     private ?string $email;
 
     /* API-only attribute */

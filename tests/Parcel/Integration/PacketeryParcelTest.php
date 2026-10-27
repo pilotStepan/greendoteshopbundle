@@ -517,4 +517,38 @@ class PacketeryParcelTest extends TestCase
             $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: ''),
         ));
     }
+
+    public function testSupportsStatusPolling_barcodeWithSpaces_returnsTrue(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertTrue($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: ' Z 415 4090 000'),
+        ));
+    }
+
+    // Czech Post numbers typed in manually on a Packeta order are rejected by Packeta with PacketIdFault
+    public function testSupportsStatusPolling_nonPacketaTrackingNumber_returnsFalse(): void
+    {
+        $service = $this->makeService(new MockHttpClient());
+
+        $this->assertFalse($service->supportsStatusPolling(
+            $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: 'NB0639171869M'),
+        ));
+    }
+
+    public function testGetParcelStatus_barcodeWithSpaces_sendsNormalizedPacketId(): void
+    {
+        $sentBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$sentBody) {
+            $sentBody = $options['body'];
+            return new MockResponse('<response><status>ok</status><result><dateTime>2024-01-20T00:00:00</dateTime><statusCode>1</statusCode><codeText>received data</codeText></result></response>');
+        });
+
+        $this->makeService($httpClient)->getParcelStatus(
+            $this->makePurchase($this->makeTransportation('pw'), null, transportNumber: 'Z 415 4090 000'),
+        );
+
+        $this->assertStringContainsString('<packetId>Z4154090000</packetId>', $sentBody);
+    }
 }

@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Algolia\ProductIndexerInterface;
 use Greendot\EshopBundle\Service\Imports\Branch\ManageBranch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Greendot\EshopBundle\Payment\RbBank\RbBankImportException;
 use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 
 class ScheduledTasksController extends AbstractController
@@ -59,7 +60,11 @@ class ScheduledTasksController extends AbstractController
         $date = new \DateTime();
         $date->modify("-3 days");
 
-        $this->rbBankPaymentImportService->downloadAndProcessPayments($date);
+        try {
+            $this->rbBankPaymentImportService->downloadAndProcessPayments($date);
+        } catch (RbBankImportException $e) {
+            return $this->json(['status' => 'error', 'message' => $e->getMessage()], 502);
+        }
 
         return $this->json(['message' => 'Payments processed successfully']);
     }

@@ -98,11 +98,11 @@ readonly class UpdateDeliveryStatusHandler
         try {
             $statusInfo = $parcelService->getParcelStatus($purchase);
         } catch (PermanentParcelException $e) {
-            $this->logger->error('Parcel status permanently unavailable; stopping polling', [
+            $this->logger->warning('Parcel status permanently unavailable; stopping polling', [
                 'purchaseId' => $purchaseId,
                 'error' => $e->getMessage(),
             ]);
-            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
+            return;
         } catch (Throwable $e) {
             $this->logger->error('Parcel provider failed; will retry', [
                 'purchaseId' => $purchaseId,

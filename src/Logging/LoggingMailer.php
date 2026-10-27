@@ -29,7 +29,11 @@ final readonly class LoggingMailer implements MailerInterface
             $this->logger->info('Sending email', ['recipients' => $recipients]);
             $this->inner->send($message, $envelope);
         } catch (TransportExceptionInterface $e) {
-            $this->logger->critical('Mailer failure', ['recipients' => $recipients, 'exception' => $e]);
+            if ($e->getCode() >= 400 && $e->getCode() < 500) {
+                $this->logger->warning('Mailer failure', ['recipients' => $recipients, 'exception' => $e]);
+            } else {
+                $this->logger->critical('Mailer failure', ['recipients' => $recipients, 'exception' => $e]);
+            }
             throw $e;
         }
     }

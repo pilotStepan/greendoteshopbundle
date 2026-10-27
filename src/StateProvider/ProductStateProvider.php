@@ -12,16 +12,12 @@ use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Service\Price\PriceUtils;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
-use Greendot\EshopBundle\Entity\Project\Availability;
-use Greendot\EshopBundle\EventSubscriber\ParameterEventListener;
-use Greendot\EshopBundle\EventSubscriber\ProductVariantEventListener;
 use Greendot\EshopBundle\Repository\Project\AvailabilityRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Entity\Project\Product;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 readonly class ProductStateProvider implements ProviderInterface
 {
@@ -47,6 +43,9 @@ readonly class ProductStateProvider implements ProviderInterface
       
         $rawParameters = $context['filters']['parameters'] ?? null;
         $filters = is_string($rawParameters) ? json_decode($rawParameters, true) : null;
+        if (!is_array($filters)) {
+            throw new BadRequestHttpException('Missing or invalid "parameters" filter (JSON object expected).');
+        }
 
         // get all filtered IDs
         $productsQuery = $this->productRepository->mainProductsFilter($filters);
