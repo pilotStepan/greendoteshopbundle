@@ -91,6 +91,14 @@ readonly class GPWebpay implements PaymentGatewayInterface
             ));
         }
 
+        if (!$money->isPositive()) {
+            throw new RuntimeException(sprintf(
+                'Purchase #%d total (%s) is not positive; refusing to build a payment link.',
+                $purchase->getId(),
+                $money,
+            ));
+        }
+
         $currencyNumeric = (new ISO4217())->getByCode($currency->getIso())['numeric'];
 
         $this->logger->info('GPW getPayLink initiated', [

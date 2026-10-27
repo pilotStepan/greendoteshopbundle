@@ -180,7 +180,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
             $this->logger->info('Checkout completed', [
                 'purchaseId' => $purchase->getId(),
-                'redirectType' => $purchase->getPaymentType()?->getPaymentTechnicalAction() ? 'gateway' : 'endscreen',
+                'isPaid' => $purchase->isPaid(),
             ]);
 
             return new JsonResponse(['redirect' => $redirectUrl], 200);
@@ -317,8 +317,41 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         $this->purchaseWorkflow->apply($purchase, $transition);
     }
 
+    private function settleIfNothingToPay(Purchase $purchase): bool
+    {
+        try {
+            if (!$this->managePurchase->settleIfNothingToPay($purchase, [
+                'performed_by' => 'client',
+                'source' => 'checkout_zero_total',
+            ])) {
+                return false;
+            }
+
+            $this->em->flush();
+
+            $this->logger->info('Checkout redirect resolved: endscreen (nothing to pay)', [
+                'purchaseId' => $purchase->getId(),
+                'total' => $purchase->getTotalMoney(),
+            ]);
+
+            return true;
+        } catch (Throwable $e) {
+            $this->logger->error('Checkout failed to settle zero-total purchase, continuing with regular payment', [
+                'purchaseId' => $purchase->getId(),
+                'exceptionClass' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
     private function buildRedirectUrl(Purchase $purchase): string
     {
+        if ($this->settleIfNothingToPay($purchase)) {
+            return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
+        }
+
         // If gateway should not process payment, early return end screen url
         if (!$purchase->getPaymentType()->getPaymentTechnicalAction()) {
             $url = $this->urlGenerator->buildOrderEndscreenUrl($purchase);
@@ -331,19 +364,6 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         }
 
         try {
-            if (!$purchase->getTotalPrice()) {
-                $this->logger->info('Checkout preparing prices before gateway redirect', [
-                    'purchaseId' => $purchase->getId(),
-                ]);
-
-                $this->managePurchase->preparePrices($purchase);
-
-                $this->logger->info('Checkout prices prepared', [
-                    'purchaseId' => $purchase->getId(),
-                    'totalPrice' => $purchase->getTotalPrice(),
-                ]);
-            }
-
             $gateway = $this->gatewayProvider->getByPurchase($purchase);
 
             $this->logger->info('Checkout requesting gateway pay link', [

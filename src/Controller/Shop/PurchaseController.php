@@ -150,6 +150,7 @@ class PurchaseController extends AbstractController
         WorkflowInterface      $purchaseWorkflow,
         EntityManagerInterface $entityManager,
         LoggerInterface        $logger,
+        ManagePurchase         $managePurchase,
     ): RedirectResponse
     {
         $this->denyAccessUnlessGranted('view', $purchase);
@@ -159,6 +160,12 @@ class PurchaseController extends AbstractController
         }
 
         try {
+            if ($managePurchase->settleIfNothingToPay($purchase, ['performed_by' => 'client', 'source' => 'pay_endpoint_zero_total'])) {
+                $entityManager->flush();
+
+                return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+            }
+
             return $this->redirect($gpWebpay->getPayLink($purchase));
         } catch (Throwable $e) {
             $logger->error('Failed to get payment gateway link, falling back to endscreen', [

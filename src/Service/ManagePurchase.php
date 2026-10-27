@@ -124,6 +124,27 @@ readonly class ManagePurchase
         $purchase->setPaymentType($paymentType);
     }
 
+    /**
+     * @return bool true when the purchase was settled by this call (false also for an already-paid one)
+     */
+    public function settleIfNothingToPay(Purchase $purchase, array $context = []): bool
+    {
+        $this->preparePrices($purchase);
+        $total = $purchase->getTotalMoney();
+
+        if ($total->isPositive() || !$this->purchaseFlow->can($purchase, PWC::T_PAY_PAY->value)) {
+            return false;
+        }
+
+        $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value, [
+            'amount' => $total->value,
+            'currency' => $total->iso,
+            ...$context,
+        ]);
+
+        return true;
+    }
+
     // Don't delete, used from consumer app
     public function issueInvoice(Purchase $purchase): void
     {

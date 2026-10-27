@@ -70,6 +70,11 @@ final readonly class Money implements JsonSerializable, \Stringable
         return $this->value === 0.0;
     }
 
+    public function isPositive(): bool
+    {
+        return round($this->value, 2) > 0.0;
+    }
+
     public function isSameCurrency(self $other): bool
     {
         return $this->iso === $other->iso;

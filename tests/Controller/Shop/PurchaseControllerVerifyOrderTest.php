@@ -6,17 +6,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ObjectRepository;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Workflow\Workflow;
-use Symfony\Component\Workflow\Transition;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Symfony\Component\Workflow\DefinitionBuilder;
-use Symfony\Component\Workflow\MarkingStore\MethodMarkingStore;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
 use Granam\GpWebPay\CardPayResponse;
 use Granam\GpWebPay\SettingsInterface;
 use Granam\GpWebPay\DigestSignerInterface;
@@ -29,24 +20,12 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
-use Greendot\EshopBundle\EventSubscriber\PurchaseStateSubscriber;
-use Greendot\EshopBundle\Service\ManageVoucher;
-use Greendot\EshopBundle\Service\ManagePurchase;
-use Greendot\EshopBundle\Service\ManageClientDiscount;
-use Greendot\EshopBundle\Service\DateService;
-use Greendot\EshopBundle\Service\CurrencyManager;
-use Greendot\EshopBundle\Service\Vies\ManageVies;
-use Greendot\EshopBundle\Service\WishlistService;
-use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
-use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
-use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Tests\Stub\FakeGpWebpayGateway;
+use Greendot\EshopBundle\Tests\Stub\PurchaseFlowFixtures;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
-use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Exercises PurchaseController::verifyOrder() — the callback GPWebpay redirects
@@ -68,6 +47,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 class PurchaseControllerVerifyOrderTest extends TestCase
 {
+    use PurchaseFlowFixtures;
+
     private MockObject $entityManager;
     private MockObject $paymentRepository;
     private WorkflowInterface $workflow;
@@ -85,32 +66,8 @@ class PurchaseControllerVerifyOrderTest extends TestCase
             [PaymentType::class, $paymentTypeRepository],
         ]);
         $this->paymentActionLogger = new RecordingPaymentActionLogger();
-
-        $definition = (new DefinitionBuilder(
-            [PWC::S_COMPLETED->value],
-            [
-                new Transition(PWC::T_PAY_PAY->value, PWC::S_COMPLETED->value, PWC::S_COMPLETED->value),
-                new Transition(PWC::T_PAY_FAIL->value, PWC::S_COMPLETED->value, PWC::S_COMPLETED->value),
-            ],
-        ))->build();
-
-        $dispatcher = new EventDispatcher();
-        $dispatcher->addSubscriber($this->buildPurchaseStateSubscriber());
-
-        // Production config (config/packages/workflow.yaml) declares purchase_flow
-        // with type: 'workflow' (multi-state marking), not 'state_machine'.
-        $this->workflow = new Workflow($definition, new MethodMarkingStore(false, 'marking'), $dispatcher, PWC::NAME->value);
-
-        $router = $this->createMock(UrlGeneratorInterface::class);
-        $router->method('generate')
-            ->with('client_section_order_detail', $this->anything(), $this->anything())
-            ->willReturn('https://test.example.com/zakaznik/objednavka/999');
-
-        $this->urlGenerator = new PurchaseUrlGenerator(
-            $router,
-            $this->createMock(LoginLinkHandlerInterface::class),
-            $this->buildWishlistService(),
-        );
+        $this->workflow = $this->buildPurchaseWorkflow($this->paymentActionLogger, $this->entityManager, $this->paymentRepository);
+        $this->urlGenerator = $this->buildEndscreenUrlGenerator();
 
         $this->controller = new PurchaseController();
     }
@@ -291,49 +248,4 @@ class PurchaseControllerVerifyOrderTest extends TestCase
         );
     }
 
-    private function buildPurchaseStateSubscriber(): PurchaseStateSubscriber
-    {
-        return new PurchaseStateSubscriber(
-            $this->entityManager,
-            $this->createMock(ManageVoucher::class),
-            $this->buildManagePurchase(),
-            new ManageClientDiscount($this->createMock(EntityManagerInterface::class)),
-            $this->createMock(DateService::class),
-            $this->createMock(EventDispatcherInterface::class),
-            $this->createMock(WorkflowInterface::class),
-            $this->paymentActionLogger,
-            $this->paymentRepository,
-        );
-    }
-
-    private function buildWishlistService(): WishlistService
-    {
-        // Never actually invoked (buildOrderEndscreenUrl doesn't touch wishlists) —
-        // WishlistService is `readonly` so it can't be mocked; a real instance with
-        // mocked dependencies is the only way to satisfy PurchaseUrlGenerator's
-        // constructor.
-        return new WishlistService(
-            $this->createMock(CurrencyManager::class),
-            $this->createMock(PurchasePriceFactory::class),
-            $this->createMock(ProductVariantPriceFactory::class),
-            $this->createMock(\Greendot\EshopBundle\Repository\Project\CurrencyRepository::class),
-            $this->createMock(\Nzo\UrlEncryptorBundle\Encryptor\Encryptor::class),
-            $this->createMock(PurchaseRepository::class),
-            'EUR',
-        );
-    }
-
-    private function buildManagePurchase(): ManagePurchase
-    {
-        return new ManagePurchase(
-            $this->createMock(CurrencyManager::class),
-            $this->createMock(PurchasePriceFactory::class),
-            $this->createMock(ProductVariantPriceFactory::class),
-            $this->createMock(PurchaseRepository::class),
-            new ManageVies($this->createMock(LoggerInterface::class)),
-            $this->createMock(MessageBusInterface::class),
-            $this->createMock(ParcelServiceProviderInterface::class),
-            $this->createMock(WorkflowInterface::class),
-        );
-    }
 }

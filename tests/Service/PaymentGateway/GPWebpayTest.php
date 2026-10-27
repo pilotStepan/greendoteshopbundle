@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Tests\Service\PaymentGateway;
 
 use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
@@ -189,6 +190,52 @@ class GPWebpayTest extends TestCase
         $this->expectExceptionMessage('no order number');
 
         $gpWebpay->getPayLink($purchase);
+    }
+
+    /**
+     * GP webpay rejects AMOUNT=0 with PRCODE 3 / SRCODE 6 ("Incorrect content of field, AMOUNT"),
+     * e.g. for an order fully covered by a gift voucher - no Payment row and no redirect may be created.
+     */
+    #[DataProvider('nonPositiveTotalProvider')]
+    public function testGetPayLinkThrowsForNonPositiveTotalAndPersistsNoPayment(float $total): void
+    {
+        $purchase = new Purchase();
+        $purchase->assignOrderNumber(14270);
+        $purchase->setTotalMoney(new Money($total, 'CZK'));
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('persist');
+
+        $paymentActionLogger = new RecordingPaymentActionLogger();
+
+        $gpWebpay = new GPWebpay(
+            self::$privateKeyFile,
+            self::$publicKeyFile,
+            '',
+            '123456',
+            $this->createMock(UrlGeneratorInterface::class),
+            $entityManager,
+            $this->createMock(LoggerInterface::class),
+            new StubManagePurchase(),
+            $this->buildCurrencyManager('CZK'),
+            $paymentActionLogger,
+            'test',
+        );
+
+        try {
+            $gpWebpay->getPayLink($purchase);
+            $this->fail('Expected getPayLink() to refuse a non-positive total');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('is not positive', $e->getMessage());
+        }
+
+        $this->assertCount(0, $paymentActionLogger->calls);
+    }
+
+    public static function nonPositiveTotalProvider(): iterable
+    {
+        yield 'zero' => [0.0];
+        yield 'negative' => [-10.0];
     }
 
     private function buildCurrencyManager(string $iso = 'CZK'): CurrencyManager
