@@ -47,6 +47,7 @@ class GPWebpayTest extends TestCase
             $idProperty = new \ReflectionProperty($payment, 'id');
             $idProperty->setValue($payment, 999);
         });
+        $entityManager->expects($this->exactly(2))->method('flush');
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
         $urlGenerator->method('generate')->willReturn('https://example.com/order/verify');
 

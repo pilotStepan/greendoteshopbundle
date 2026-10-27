@@ -164,6 +164,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
                 ],
                 $payment,
             );
+            $this->entityManager->flush();
 
             return $redirectUrl;
         } catch (Throwable $e) {

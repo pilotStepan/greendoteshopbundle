@@ -36,4 +36,9 @@ class OrderData
         public ?Money                  $totalMoneySecondary = null,
         public ?string                 $totalPriceMoneySecondary = null,
     ) {}
+
+    public function nothingToPay(): bool
+    {
+        return $this->orderPaid || ($this->totalMoney !== null && !$this->totalMoney->isPositive());
+    }
 }

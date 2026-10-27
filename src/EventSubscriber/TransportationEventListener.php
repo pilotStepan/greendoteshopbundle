@@ -6,6 +6,8 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Enum\VatCalculationType;
+use Greendot\EshopBundle\Enum\VoucherCalculationType;
+use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Entity\Project\Transportation;
@@ -90,6 +92,8 @@ readonly class TransportationEventListener
             $cart->setTransportation($transportation), // pass our transportation to the cart
             $currency,
             VatCalculationType::WithVAT,
+            DiscountCalculationType::WithDiscount,
+            VoucherCalculationType::WithoutVoucher,
         );
 
         $cartTransportationPrice = $priceCalc->getTransportationPrice() ?? 0.0;
