@@ -65,8 +65,9 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 | Category serialization | `src/DataLayer/Data/DataParseTrait.php` | Turns the category path into `item_category`, `item_category2`, … |
 | Automatic cart/wishlist trigger | `src/EventSubscriber/CartModifiedListener.php` | Doctrine `onFlush` listener; diffs `PurchaseProductVariant` inserts/updates/deletes → `ModifyCart` or `AddToWishlistEvent`. |
 | Automatic purchase trigger | `src/EventSubscriber/PurchaseStateSubscriber.php` | `onReceive` (workflow transition `T_CHECKOUT`) dispatches `PurchaseEvent`. |
-| Twig functions | `src/Twig/GoogleTagManagerExtension.php` | `gtm_get_events`, `gtm_view_item`, `gtm_view_item_list`, `gtm_view_item_list_product`, `gtm_purchase`, `gtm_view_cart`, `gtm_begin_checkout`, `gtm_add_shipping_info`, `gtm_add_payment_info`, `gtm_page_view`. |
+| Twig functions | `src/Twig/GoogleTagManagerExtension.php` | `gtm_get_events`, `gtm_view_item`, `gtm_view_item_list`, `gtm_view_item_list_product`, `gtm_purchase`, `gtm_confirmation_purchase`, `gtm_view_cart`, `gtm_begin_checkout`, `gtm_add_shipping_info`, `gtm_add_payment_info`, `gtm_page_view`. |
 | HTTP endpoints | `src/Controller/DataLayer/DataLayerApi.php` | Prefix `/gtm`: `read/all`, `checkout-funnel/{type}`, `view-item/{id}`. Routes are loaded by the bundle's `config/routes.yaml`. |
+| Confirmation-page purchase | `src/Service/DataLayer/ConfirmationPurchaseTracker.php` + `templates/data_layer/purchase_push.html.twig` | Opt-in (`gtm.purchase_on_confirmation_page`): `purchase` is rendered by the thank-you page once per order instead of being queued. See [§7.7](#77-purchase). |
 | Browser glue | `templates/data_layer/data_layer_push.html.twig` | Inline `<script>`: pushes queued events, listens for `_gtm_trigger`, debug overlay. Include as `@GreendotEshop/data_layer/data_layer_push.html.twig`. |
 | Legacy (do not use) | `src/Service/GoogleAnalytics.php` + Twig `get_google_analytics_array()` in `src/Twig/AppExtension.php` | Old UA-era array builder. Not part of this system. |
 
@@ -86,7 +87,7 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 | `begin_checkout` | `CheckoutFunnelEvent::BeginCheckout` | Twig `gtm_begin_checkout()` or `GET /gtm/checkout-funnel/begin_checkout` | `BeginCheckout` | Yes — first checkout step |
 | `add_shipping_info` | `CheckoutFunnelEvent::AddShippingInfo` | Twig / `GET /gtm/checkout-funnel/add_shipping_info` | `AddShippingInfo` | Yes — when shipping is chosen / step shown |
 | `add_payment_info` | `CheckoutFunnelEvent::AddPaymentInfo` | Twig / `GET /gtm/checkout-funnel/add_payment_info` | `AddPaymentInfo` | Yes — when payment is chosen |
-| `purchase` | `PurchaseEvent(Purchase)` | **Automatic** on checkout workflow transition; Twig `gtm_purchase(purchase)` exists for manual use | `Purchase` | Render the push template on the page after the order redirect (usually already true) |
+| `purchase` | `PurchaseEvent(Purchase)` | **Automatic** on checkout workflow transition; Twig `gtm_purchase(purchase)` exists for manual use | `Purchase` | Recommended: enable `gtm.purchase_on_confirmation_page` and include `purchase_push.html.twig` on the thank-you page ([§7.7](#77-purchase)) |
 | — | `PageViewEvent(Category)` | Twig `gtm_page_view(category)` | — | **No listener exists — currently a no-op.** |
 
 Before every event with an `ecommerce` key, `DataLayerManager::push()` adds `{"ecommerce": null}` (Google's
@@ -314,8 +315,7 @@ Cart page:
 > Always guard the funnel functions (`gtm_view_cart`, `gtm_begin_checkout`, …) when called without an argument: they
 > look up the purchase via `PurchaseRepository::findOneBySession()` and a missing purchase causes a `TypeError`.
 
-Thank-you page: nothing to do as long as it renders the push template — `purchase` was queued in the session during
-the checkout transition.
+Thank-you page: include `purchase_push.html.twig`, see [§7.7](#77-purchase).
 
 ### 7.5 Frontend helpers
 
@@ -403,14 +403,40 @@ lacks a bundle endpoint.
 
 ### 7.7 Purchase
 
-Automatic: `PurchaseStateSubscriber::onReceive` dispatches `PurchaseEvent` on the checkout transition and the
-`purchase` event is persisted to the session. Requirements:
+`PurchaseStateSubscriber::onReceive` dispatches `PurchaseEvent` on the checkout transition (usually inside the
+checkout XHR). What happens next depends on one option.
 
-- the order is placed through the bundle's purchase workflow (checkout transition), and
-- the page the user lands on afterwards (thank-you / payment-gateway return) includes the push template.
+**Recommended — confirmation page only** (`config/packages/greendot_eshop.yaml`):
 
-If an external payment gateway redirect happens first, the event waits in the session until the user returns to a
-page with the template. Don't add `gtm_purchase()` on the thank-you page as well — that would double-count.
+```yaml
+greendot_eshop:
+    gtm:
+        purchase_on_confirmation_page: true
+```
+
+`ConfirmationPurchaseTracker` only remembers the order id in the session (`_gtm_pending_purchases`). The thank-you
+page renders the event:
+
+```twig
+{% block body_end %}
+    {% include '@GreendotEshop/data_layer/purchase_push.html.twig' with {
+        purchase: purchase,
+        just_created: true,  {# page reached right after checkout / payment return, e.g. a ?created=1 flag #}
+    } %}
+{% endblock %}
+```
+
+It fires once per order: the id moves to `_gtm_sent_purchases` and the browser keeps a
+`gtm_purchase_sent_<transaction_id>` localStorage flag (reloads, back button, opening the order later from the client
+section). When the session was lost during the payment gateway round trip, `just_created: true` still lets the event
+fire for an order issued in the last 24 hours. Orders without an order number (drafts) never fire. `just_created`
+must be false on pages a customer can reopen at will without the session (e.g. an order detail opened from an email
+link), otherwise the 24-hour fallback can count it on another device.
+
+**Legacy (default, `false`)** — the event is persisted to the session queue and delivered by *whatever page or
+`/gtm/read/all` call comes next*: the thank-you page if the user lands there directly, but just as well a checkout
+step (Back from the payment gateway), the homepage or a product-page XHR. Nothing prevents duplicates across tabs.
+Don't add `gtm_purchase()` on the thank-you page in this mode — that would double-count.
 
 ### 7.8 GTM container configuration
 
@@ -490,7 +516,7 @@ In the GTM UI (per project):
 3. Walk the funnel and check that each event appears once, with non-empty `items` and sane prices:
    listing → `view_item_list`; product detail → `view_item_list_product` / `view_item`; add to cart → `add_to_cart`;
    cart → `view_cart`; checkout steps → `begin_checkout`, `add_shipping_info`, `add_payment_info`;
-   order → `purchase` on the thank-you page.
+   order → `purchase` on the thank-you page, and not again after a reload or on the next page.
 4. `/gtm/read/all` directly in the browser returns `[]` right after a page load (queue drained).
 5. GTM Preview mode (Tag Assistant): the tags fire on the matching custom events.
 
@@ -513,7 +539,8 @@ Implementing GTM on a project that uses `greendot/eshopbundle`:
 - [ ] JS: `dispatchGtmTrigger()` helper; call it after every add-to-cart, remove-from-cart, add-to-wishlist request.
 - [ ] JS: `begin_checkout` / `add_shipping_info` / `add_payment_info` via `/gtm/checkout-funnel/{type}` then
       `dispatchGtmTrigger()` at the matching checkout steps.
-- [ ] Thank-you page renders the push template (no manual `gtm_purchase`).
+- [ ] `greendot_eshop.gtm.purchase_on_confirmation_page: true` + thank-you page includes
+      `@GreendotEshop/data_layer/purchase_push.html.twig` (no manual `gtm_purchase`).
 - [ ] Never call a `gtm_*` Twig function after `{{ parent() }}` inside `block gtm`.
 - [ ] Verify with `debug_gtm` overlay (§10) and GTM Preview.
 - [ ] Tell the client/marketing which payload fields exist (§4) so the GTM container maps `priceVat`/`priceNoVat`.

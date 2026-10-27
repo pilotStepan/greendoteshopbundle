@@ -16,6 +16,7 @@ use Greendot\EshopBundle\DataLayer\Factory\ViewItemFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemListFactory;
 use Greendot\EshopBundle\DataLayer\Factory\ViewItemListProductFactory;
 use Greendot\EshopBundle\DataLayer\Factory\WishlistFactory;
+use Greendot\EshopBundle\Service\DataLayer\ConfirmationPurchaseTracker;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
@@ -30,6 +31,7 @@ class DataLayerEventListener
         private readonly CartFactory           $cartFactory,
         private readonly CheckoutFunnelFactory $checkoutFunnelFactory,
         private readonly WishlistFactory       $wishlistFactory,
+        private readonly ConfirmationPurchaseTracker $confirmationPurchaseTracker,
     ) {}
 
     #[AsEventListener(event: ViewItemListEvent::class)]
@@ -56,6 +58,11 @@ class DataLayerEventListener
     #[AsEventListener(event: PurchaseEvent::class)]
     public function onPurchase(PurchaseEvent $purchaseEvent): void
     {
+        if ($this->confirmationPurchaseTracker->isEnabled()) {
+            $this->confirmationPurchaseTracker->markPending($purchaseEvent->getPurchase());
+            return;
+        }
+
         $eventData = $this->purchaseFactory->create($purchaseEvent->getPurchase());
         $this->dataLayerManager->push(['event' => 'purchase', 'ecommerce' => $eventData], true);
     }
