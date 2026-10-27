@@ -73,7 +73,8 @@ class ConfirmationPurchaseTracker
         $session?->set(self::SENT_KEY, [...$sent, $transactionId]);
 
         $event = ['event' => 'purchase', 'ecommerce' => $this->purchaseFactory->create($purchase)];
-        if ($userData = $this->userDataFactory->create($purchase)) {
+        // contact data only for the session that placed the order: the fallback cannot prove the viewer is the buyer
+        if ($isPending && $userData = $this->userDataFactory->create($purchase)) {
             $event['user_data'] = $userData;
         }
 

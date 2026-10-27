@@ -48,6 +48,16 @@ class ConfirmationPurchaseTrackerTest extends TestCase
         self::assertNotNull($this->createTracker()->consume($this->createPurchase(), true));
     }
 
+    public function testUserDataIsSentOnlyForPendingPurchase(): void
+    {
+        $tracker = $this->createTracker();
+        $pending = $this->createPurchase();
+        $tracker->markPending($pending);
+
+        self::assertArrayHasKey('user_data', $tracker->consume($pending));
+        self::assertArrayNotHasKey('user_data', $this->createTracker()->consume($this->createPurchase(id: 988), true));
+    }
+
     public function testOldPurchaseDoesNotFallBack(): void
     {
         $purchase = $this->createPurchase(dateIssue: new \DateTime('-3 days'));
@@ -81,13 +91,16 @@ class ConfirmationPurchaseTrackerTest extends TestCase
             static fn (Purchase $purchase) => new PurchaseData((string) $purchase->getId(), 1500, 260, 99, 'CZK', 'new', []),
         );
 
-        return new ConfirmationPurchaseTracker($this->requestStack, $purchaseFactory, new UserDataFactory(), $enabled);
+        $userDataFactory = $this->createMock(UserDataFactory::class);
+        $userDataFactory->method('create')->willReturn(['sha256_email_address' => 'hash']);
+
+        return new ConfirmationPurchaseTracker($this->requestStack, $purchaseFactory, $userDataFactory, $enabled);
     }
 
-    private function createPurchase(?int $orderNumber = 2026001, ?\DateTime $dateIssue = null): Purchase
+    private function createPurchase(?int $orderNumber = 2026001, ?\DateTime $dateIssue = null, int $id = 987): Purchase
     {
         $purchase = $this->createMock(Purchase::class);
-        $purchase->method('getId')->willReturn(987);
+        $purchase->method('getId')->willReturn($id);
         $purchase->method('getOrderNumber')->willReturn($orderNumber);
         $purchase->method('getDateIssue')->willReturn($dateIssue ?? new \DateTime('-1 hour'));
 

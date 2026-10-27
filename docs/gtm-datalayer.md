@@ -493,6 +493,8 @@ greendot_eshop:
     (CZ, SK, PL, DE, AT, HU), otherwise it is left out;
   - names: trimmed, lowercased, digits and punctuation removed (diacritics kept).
 - A field that is missing or cannot be normalized is left out; with no usable field, `user_data` is not sent.
+- With `purchase_on_confirmation_page`, `user_data` is added only when this session placed the order. The 24-hour
+  `just_created` fallback sends the purchase without it, because it cannot prove the viewer is the buyer.
 - GTM: in the Google Ads Conversion Tracking tag tick "Include user-provided data from your website" and point it
   at a *User-Provided Data* variable of type *Code* returning the Data Layer Variable `user_data`. Enhanced
   Conversions must also be accepted in the Google Ads account (Goals → Settings).
