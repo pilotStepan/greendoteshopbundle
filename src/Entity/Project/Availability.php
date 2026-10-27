@@ -35,7 +35,7 @@ class Availability implements Translatable
     private $class;
 
     #[ORM\Column(type: 'boolean')]
-    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_list:read', 'product_item:read'])]
+    #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist','product_list:read', 'product_item:read', 'product_product:read'])]
     private $isPurchasable;
 
 
