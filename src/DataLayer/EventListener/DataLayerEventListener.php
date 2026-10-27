@@ -36,7 +36,6 @@ class DataLayerEventListener
     public function onViewItemList(ViewItemListEvent $viewItemList): void
     {
         $eventData = $this->viewItemListFactory->create($viewItemList->getCategory(), $viewItemList->getProductFetchUri(), $viewItemList->getProductIds());
-        $this->dataLayerManager->push(['ecommerce' => null], true);
         $this->dataLayerManager->push(['event' => 'view_item_list', 'ecommerce' => $eventData], true);
     }
 
@@ -44,7 +43,6 @@ class DataLayerEventListener
     public function onViewItemListProduct(ViewItemListProductEvent $viewItemListProductEvent): void
     {
         $eventData = $this->viewItemListProductFactory->create($viewItemListProductEvent->getProduct());
-        $this->dataLayerManager->push(['ecommerce' => null], true);
         $this->dataLayerManager->push(['event' => 'view_item_list_product', 'ecommerce' => $eventData], true);
     }
 
@@ -52,7 +50,6 @@ class DataLayerEventListener
     public function onViewItem(ViewItemEvent $viewItemList): void
     {
         $eventData = $this->viewItemFactory->create($viewItemList->getProductVariant());
-        $this->dataLayerManager->push(['ecommerce' => null], true);
         $this->dataLayerManager->push(['event' => 'view_item', 'ecommerce' => $eventData], true);
     }
 
@@ -60,7 +57,6 @@ class DataLayerEventListener
     public function onPurchase(PurchaseEvent $purchaseEvent): void
     {
         $eventData = $this->purchaseFactory->create($purchaseEvent->getPurchase());
-        $this->dataLayerManager->push(['ecommerce' => null], true);
         $this->dataLayerManager->push(['event' => 'purchase', 'ecommerce' => $eventData], true);
     }
 
@@ -72,7 +68,6 @@ class DataLayerEventListener
         $eventData = $this->cartFactory->create($modifyCart->getPurchaseProductVariant(), $modifyCart->getQuantity());
 
         if ($modifyCart->getType() === ModifyCart::Remove){
-            $this->dataLayerManager->push(['ecommerce' => null]);
             $this->dataLayerManager->push(['event' => 'remove_from_cart', 'ecommerce' => $eventData], true);
         }else{
             $this->dataLayerManager->push(['event' => 'add_to_cart', 'ecommerce' => $eventData], true);
@@ -89,7 +84,6 @@ class DataLayerEventListener
             CheckoutFunnelEvent::AddPaymentInfo  => $this->checkoutFunnelFactory->createAddPaymentInfo($purchase),
             CheckoutFunnelEvent::AddShippingInfo => $this->checkoutFunnelFactory->createAddShippingInfo($purchase),
         };
-        $this->dataLayerManager->push(['ecommerce' => null]);
         $this->dataLayerManager->push(['event' => $event->getType(), 'ecommerce' => $eventData], true);
     }
 
@@ -97,7 +91,6 @@ class DataLayerEventListener
     public function onAddToWishlist(AddToWishlistEvent $event): void
     {
         $eventData = $this->wishlistFactory->create($event->getPurchaseProductVariant(), $event->getQuantity());
-        $this->dataLayerManager->push(['ecommerce' => null], true);
         $this->dataLayerManager->push(['event' => 'add_to_wishlist', 'ecommerce' => $eventData], true);
     }
 

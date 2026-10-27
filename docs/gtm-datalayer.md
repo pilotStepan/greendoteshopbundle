@@ -57,7 +57,7 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 
 | Layer | File | Role |
 |---|---|---|
-| Queue | `src/Service/DataLayer/DataLayerManager.php` | `push(array $data, bool $persist = false)`, `all()` (returns + clears). Session key `_gtm_datalayer_events`. |
+| Queue | `src/Service/DataLayer/DataLayerManager.php` | `push(array $data, bool $persist = false)` (adds the `ecommerce` reset), `all()` (returns + clears). Session key `_gtm_datalayer_events`. |
 | Symfony events | `src/DataLayer/Event/*.php` | One class per trigger: `ViewItemEvent`, `ViewItemListEvent`, `ViewItemListProductEvent`, `PurchaseEvent`, `ModifyCart`, `CheckoutFunnelEvent`, `AddToWishlistEvent`, `PageViewEvent`. |
 | Listener | `src/DataLayer/EventListener/DataLayerEventListener.php` | `#[AsEventListener]` per event → factory → `DataLayerManager::push()`. **The GA4 event names are defined here.** |
 | Factories | `src/DataLayer/Factory/*.php` | Build payload DTOs from entities (prices, currency, categories, parameters). `DataLayerItemFactory` builds a single `items[]` entry; `FactoryUtilsTrait` has the category-tree helper. |
@@ -89,8 +89,9 @@ All paths relative to the bundle root (`vendor/greendot/eshopbundle/`).
 | `purchase` | `PurchaseEvent(Purchase)` | **Automatic** on checkout workflow transition; Twig `gtm_purchase(purchase)` exists for manual use | `Purchase` | Render the push template on the page after the order redirect (usually already true) |
 | — | `PageViewEvent(Category)` | Twig `gtm_page_view(category)` | — | **No listener exists — currently a no-op.** |
 
-Before every e-commerce event the listener pushes `{"ecommerce": null}` (Google's recommended reset), except
-`add_to_cart`. See [gotchas](#9-gotchas-and-known-limitations) for when the reset gets lost.
+Before every event with an `ecommerce` key, `DataLayerManager::push()` adds `{"ecommerce": null}` (Google's
+recommended reset) in the same storage as the event, so the reset survives delivery via `/gtm/read/all`. Don't push
+the reset yourself; a bare `{"ecommerce": null}` pushed to the manager is ignored.
 
 ---
 
@@ -439,7 +440,6 @@ In the GTM UI (per project):
    `createFromProduct()`, currency from `CurrencyManager::get()`.
 4. `DataLayerEventListener` — new `#[AsEventListener(event: MyEvent::class)]` method:
    ```php
-   $this->dataLayerManager->push(['ecommerce' => null], true);
    $this->dataLayerManager->push(['event' => 'my_event', 'ecommerce' => $eventData], true);
    ```
    Use `persist: true` unless the event is only ever dispatched during a page render.
@@ -463,10 +463,8 @@ In the GTM UI (per project):
 
 ## 9. Gotchas and known limitations
 
-- **Non-persisted resets get lost over AJAX.** `remove_from_cart` and the checkout funnel push `{"ecommerce": null}`
-  with `persist: false`; `add_to_cart` pushes no reset at all. When those events are delivered via `/gtm/read/all`,
-  the reset was in another request's memory and is gone, so GTM may merge `ecommerce` objects. Enable "Clear ecommerce
-  object" handling in the container or keep the reset in mind when debugging stale items.
+- **`ecommerce` resets are automatic.** Events pushed straight to `window.dataLayer` by project JS (outside the
+  manager) still need their own `{ecommerce: null}` before them, or GTM merges their `items[]` with the previous event.
 - **Order of Twig calls matters** (§5.1). A trigger after the include renders on the *next* page.
 - **Funnel Twig functions without a purchase throw** (§7.4) — guard with the session check.
 - **`gtm_page_view` does nothing** — `PageViewEvent` has no listener.
