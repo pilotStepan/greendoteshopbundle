@@ -8,6 +8,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Exception\ExceptionInterface as RoutingException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 
@@ -207,15 +209,21 @@ readonly class RouteTranslator
             $routeParameters[$key] = $modifiedAttribute;
         }
 
-        $path = $request->attributes?->get('_route' ?? null);
+        $path = $request->attributes->get('_canonical_route') ?? $request->attributes->get('_route');
         if (!$path){
             $controller = $request->attributes->get('_controller') ?? null;
             if (!$controller) return null;
             $path = $this->getPathByController($controller);
         }
-        if (!$path) return null;
+        if (!$path) {
+            return null;
+        }
 
-        return $this->router->generate($path, $routeParameters);
+        try {
+            return $this->router->generate($path, $routeParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+        } catch (RoutingException) {
+            return null;
+        }
     }
 
     private function getPathByController(string $controller): ?string

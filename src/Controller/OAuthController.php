@@ -53,7 +53,7 @@ class OAuthController extends AbstractController
     public function authCallback(Request $request): Response
     {
         $token = (string)$request->query->get('token');
-        $redirect = (string)($request->query->get('redirect') ?? '/');
+        $redirect = (string)($request->query->get('redirect') ?? $this->generateUrl('web_homepage'));
         $origin = $request->getSchemeAndHttpHost();
 
         $tokenJs = json_encode($token, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);

@@ -48,10 +48,10 @@ class GoogleProductFeedFactory
             $description = substr($description, 0, 3000);
         }
         try {
-            $link = $this->url . $this->urlGenerator->generate('shop_product', ['slug' => $product->getSlug(), 'variant' => $productVariant->getId()]);
+            $link = $this->urlGenerator->generate('shop_product', ['slug' => $product->getSlug(), 'variant' => $productVariant->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         }catch (InvalidParameterException $invalidParameterException){
             $slug = $this->slugger->slug($product->getSlug() ?? $product->getName())->lower()->toString();
-            $link = $this->url . $this->urlGenerator->generate('shop_product', ['slug' => $slug, 'variant' => $productVariant->getId()]);
+            $link = $this->urlGenerator->generate('shop_product', ['slug' => $slug, 'variant' => $productVariant->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
 

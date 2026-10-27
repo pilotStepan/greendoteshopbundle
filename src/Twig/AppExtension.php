@@ -23,6 +23,7 @@ use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Twig\TwigFunction;
 use Twig\Extension\AbstractExtension;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Entity\Project\Product;
@@ -164,7 +165,8 @@ class AppExtension extends AbstractExtension
         $availableLocales = $this->parameterBag->get('app.available.locales');
         $paths = [];
         foreach ($availableLocales as $locale){
-            $paths[$locale] = $this->routeTranslator->getByRequestStack($locale) ?? '/?unknown-translation';
+            $paths[$locale] = $this->routeTranslator->getByRequestStack($locale)
+                ?? $this->router->generate('web_homepage', ['_locale' => $locale], UrlGeneratorInterface::ABSOLUTE_URL);
         }
         return $paths;
     }
@@ -210,16 +212,14 @@ class AppExtension extends AbstractExtension
         $route_params = [];
         if ($this->requestStack?->getMainRequest()?->attributes) {
             $mainRequestAttr = $this->requestStack->getMainRequest()->attributes;
-            if ($mainRequestAttr->get('_route')) {
-                $route = $mainRequestAttr->get('_route');
-            }
+            $route = $mainRequestAttr->get('_canonical_route') ?? $mainRequestAttr->get('_route') ?? $route;
             if ($mainRequestAttr->get('_route_params')) {
                 $route_params = $mainRequestAttr->get('_route_params');
             }
         }
         $route_params["_locale"] = $locale;
 
-        return $this->router->generate($route, $route_params);
+        return $this->router->generate($route, $route_params, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     public function getProductDiscount($productID): ?int
