@@ -1,3 +1,11 @@
+parameters:
+  # GoPay defaults, so projects without GoPay keep booting (every gateway is instantiated by PaymentGatewayProvider).
+  # Set the real values in the project .env; sandbox URL is the default so a misconfigured env never charges real money.
+  env(GOPAY_CLIENT_ID): ''
+  env(GOPAY_CLIENT_SECRET): ''
+  env(GOPAY_GOID): '0'
+  env(GOPAY_API_URL): 'https://gw.sandbox.gopay.com/api'
+
 services:
   _defaults:
     autowire: true
@@ -16,6 +24,13 @@ services:
     arguments:
       $decorated: '@Greendot\EshopBundle\OpenApi\ShortCodeOpenApiFactory.inner'
     autoconfigure: false
+
+  Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayClient:
+    arguments:
+      $clientId: '%env(GOPAY_CLIENT_ID)%'
+      $clientSecret: '%env(GOPAY_CLIENT_SECRET)%'
+      $goId: '%env(GOPAY_GOID)%'
+      $apiUrl: '%env(GOPAY_API_URL)%'
 
   Algolia\AlgoliaSearch\Api\SearchClient:
     factory: [ 'Algolia\AlgoliaSearch\Api\SearchClient', 'create' ]

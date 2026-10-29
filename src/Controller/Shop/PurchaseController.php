@@ -30,6 +30,9 @@ use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Service\PaymentGateway\GoPay;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
+use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -140,11 +143,155 @@ class PurchaseController extends AbstractController
         }
     }
 
+    /**
+     * GoPay redirects the client's browser here (?id=<GoPay payment id>) after the payment attempt.
+     */
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
+    #[Route('/order/verify/gopay', name: 'shop_order_verify_gopay', methods: ['GET'])]
+    public function verifyGoPayOrder(
+        GoPay                  $goPay,
+        PaymentRepository      $paymentRepository,
+        EntityManagerInterface $entityManager,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
+        PurchaseUrlGenerator   $urlGenerator,
+        LoggerInterface        $logger,
+        PaymentActionLogger    $paymentActionLogger,
+        Request                $request,
+    ): Response
+    {
+        $purchase = $this->processGoPayResult(
+            $request, $goPay, $paymentRepository, $entityManager, $purchaseWorkflow, $logger, $paymentActionLogger,
+            PaymentActionType::GOPAY_RETURN, 'client',
+        );
+
+        return $purchase
+            ? $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase))
+            : $this->redirectToRoute('web_homepage');
+    }
+
+    /**
+     * Server-to-server HTTP GET notification (?id=<GoPay payment id>), sent by GoPay on every payment state change.
+     * Covers payments whose outcome is known only after the client left the gateway (e.g. bank transfers).
+     */
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
+    #[Route('/order/notify/gopay', name: 'shop_order_notify_gopay', methods: ['GET'])]
+    public function notifyGoPayOrder(
+        GoPay                  $goPay,
+        PaymentRepository      $paymentRepository,
+        EntityManagerInterface $entityManager,
+        #[Target(PWC::NAME->value)]
+        WorkflowInterface      $purchaseWorkflow,
+        LoggerInterface        $logger,
+        PaymentActionLogger    $paymentActionLogger,
+        Request                $request,
+    ): Response
+    {
+        $purchase = $this->processGoPayResult(
+            $request, $goPay, $paymentRepository, $entityManager, $purchaseWorkflow, $logger, $paymentActionLogger,
+            PaymentActionType::GOPAY_NOTIFY, 'system',
+        );
+
+        // A non-2xx answer makes GoPay retry the notification later
+        return new Response('', $purchase ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);
+    }
+
+    /**
+     * Shared handling of GoPay return and notification: asks GoPay for the real state, resolves our Payment
+     * by the confirmed GoPay id and applies the matching purchase transition.
+     *
+     * @return Purchase|null the purchase the payment belongs to, null when it could not be resolved
+     */
+    private function processGoPayResult(
+        Request                $request,
+        GoPay                  $goPay,
+        PaymentRepository      $paymentRepository,
+        EntityManagerInterface $entityManager,
+        WorkflowInterface      $purchaseWorkflow,
+        LoggerInterface        $logger,
+        PaymentActionLogger    $paymentActionLogger,
+        PaymentActionType      $actionType,
+        string                 $performedBy,
+    ): ?Purchase
+    {
+        $purchase = null;
+        $goPayId = (string)$request->query->get('id', '');
+        $context = [
+            'payment_technical_action' => PaymentTechnicalAction::GOPAY->value,
+            'performed_by' => $performedBy,
+            'source' => 'gopay',
+            'goPayId' => $goPayId,
+        ];
+
+        try {
+            // GoPay is asked first: the id comes from an untrusted URL, and other gateways' payments share
+            // the externalId column (GP webpay stores "1"), so a local lookup alone could resolve a foreign
+            // purchase and redirect to its endscreen - which is a login link for anonymous clients.
+            $status = $goPay->verifyLink();
+
+            $payment = $paymentRepository->findOneBy(['externalId' => $status->id]);
+            $candidate = $payment?->getPurchase();
+            if (!$candidate || $status->orderNumber === null || $status->orderNumber !== (string)$candidate->getOrderNumber()) {
+                $logger->warning('GoPay callback does not match any of our payments', $context + [
+                    'action' => $actionType->value,
+                    'goPayOrderNumber' => $status->orderNumber,
+                    'paymentId' => $payment?->getId(),
+                ]);
+                return null;
+            }
+
+            $purchase = $candidate;
+            $context['amount'] = $payment->getAmount();
+            $context['currency'] = $payment->getCurrency()?->getIso();
+            $context['gopay_state'] = $status->state->value;
+
+            $paymentActionLogger->log($purchase, $actionType->value, $performedBy, null, $request->query->all(), $payment);
+
+            if ($purchase->isPaid()) {
+                $logger->info('Ignoring GoPay callback for an already-paid purchase', [
+                    'purchaseId' => $purchase->getId(),
+                    'goPayId' => $goPayId,
+                ]);
+                $entityManager->flush();
+
+                return $purchase;
+            }
+
+            if ($status->state->isPaid()) {
+                $this->applyTransitionIfPossible($purchaseWorkflow, $purchase, PWC::T_PAY_PAY->value, $logger, $context);
+            } elseif ($status->state->isFailed()) {
+                $this->applyTransitionIfPossible($purchaseWorkflow, $purchase, PWC::T_PAY_FAIL->value, $logger, $context);
+            } else {
+                // Pending (or refund states) - GoPay sends another notification once the state changes
+                $logger->info('GoPay payment has no final outcome yet', [
+                    'purchaseId' => $purchase->getId(),
+                    'goPayId' => $goPayId,
+                    'state' => $status->state->value,
+                ]);
+            }
+
+            $entityManager->flush();
+
+            return $purchase;
+        } catch (Throwable $e) {
+            $logger->error('Error during GoPay verification - payment outcome could not be determined', [
+                'purchaseId' => $purchase?->getId(),
+                'goPayId' => $goPayId,
+                'action' => $actionType->value,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            // Notification: let GoPay retry. Return: still show the endscreen.
+            return $actionType === PaymentActionType::GOPAY_NOTIFY ? null : $purchase;
+        }
+    }
+
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/pay', name: 'purchase_pay', methods: ['GET'])]
     public function pay(
         Purchase               $purchase,
-        GPWebpay               $gpWebpay,
+        PaymentGatewayProvider $gatewayProvider,
         PurchaseUrlGenerator   $urlGenerator,
         #[Target(PWC::NAME->value)]
         WorkflowInterface      $purchaseWorkflow,
@@ -166,7 +313,9 @@ class PurchaseController extends AbstractController
                 return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
             }
 
-            return $this->redirect($gpWebpay->getPayLink($purchase));
+            $gateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
+
+            return $this->redirect($gateway->getPayLink($purchase));
         } catch (Throwable $e) {
             $logger->error('Failed to get payment gateway link, falling back to endscreen', [
                 'purchaseId' => $purchase->getId(),
