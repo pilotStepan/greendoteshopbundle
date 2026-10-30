@@ -18,6 +18,8 @@ use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Tests\Stub\FakeGpWebpayGateway;
+use Greendot\EshopBundle\Tests\Stub\FakeCallbackGateway;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Tests\Stub\PurchaseFlowFixtures;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
@@ -90,6 +92,27 @@ class PurchaseControllerPayTest extends TestCase
         $this->assertCount(0, $this->paymentActionLogger->calls);
     }
 
+    public function testPurchaseWithoutGatewayUsesConfiguredDefaultGateway(): void
+    {
+        // e.g. the "pay by card" link of a bank transfer order in a project that switched to GoPay
+        $purchase = $this->createCompletedPurchase();
+
+        $response = $this->controller->pay(
+            $purchase,
+            new PaymentGatewayProvider(
+                [new FakeGpWebpayGateway(), new FakeGoPayLinkGateway('https://gopay.example.com/pay')],
+                PaymentTechnicalAction::GOPAY->value,
+            ),
+            $this->urlGenerator,
+            $this->workflow,
+            $this->entityManager,
+            $this->createMock(LoggerInterface::class),
+            $this->buildManagePurchase($this->workflow, new Money(150.0, 'CZK')),
+        );
+
+        $this->assertSame('https://gopay.example.com/pay', $response->getTargetUrl());
+    }
+
     private function pay(Purchase $purchase, FakeGpWebpayGateway $gateway, Money $total): RedirectResponse
     {
         // The purchase has no payment type, so the provider falls back to its default (GP webpay) gateway
@@ -111,5 +134,18 @@ class PurchaseControllerPayTest extends TestCase
         $purchase->setMarking([PWC::S_COMPLETED->value => 1]);
 
         return $purchase;
+    }
+}
+
+class FakeGoPayLinkGateway extends FakeCallbackGateway
+{
+    public function __construct(private readonly string $payLink)
+    {
+        parent::__construct();
+    }
+
+    public function getPayLink(Purchase $purchase): string
+    {
+        return $this->payLink;
     }
 }

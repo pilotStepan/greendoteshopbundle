@@ -87,6 +87,31 @@ class GoPayClientTest extends TestCase
         }
     }
 
+    public function testApiUrlFollowsEnvironmentUnlessSetExplicitly(): void
+    {
+        $this->assertStringStartsWith(GoPayClient::PRODUCTION_URL . '/', $this->firstRequestUrl('', 'prod'));
+        $this->assertStringStartsWith(GoPayClient::SANDBOX_URL . '/', $this->firstRequestUrl('', 'dev'));
+        $this->assertStringStartsWith(GoPayClient::SANDBOX_URL . '/', $this->firstRequestUrl('', 'test'));
+        // e.g. a staging server running in prod environment with sandbox credentials
+        $this->assertStringStartsWith(GoPayClient::SANDBOX_URL . '/', $this->firstRequestUrl(GoPayClient::SANDBOX_URL, 'prod'));
+    }
+
+    private function firstRequestUrl(string $apiUrl, string $environment): string
+    {
+        $urls = [];
+        $httpClient = new MockHttpClient(function (string $method, string $url) use (&$urls) {
+            $urls[] = $url;
+
+            return str_ends_with($url, '/oauth2/token')
+                ? new MockResponse(json_encode(['access_token' => 'tok', 'expires_in' => 1800]))
+                : new MockResponse(json_encode(['id' => 1, 'state' => 'CREATED']));
+        });
+
+        (new GoPayClient($httpClient, 'cid', 'secret', '8925782195', $apiUrl, $environment))->getStatus('1');
+
+        return $urls[0];
+    }
+
     public function testFailedTokenRequestThrows(): void
     {
         $client = new GoPayClient(new MockHttpClient([

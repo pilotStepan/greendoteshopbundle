@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
@@ -72,7 +73,15 @@ class GreendotEshopBundle extends AbstractBundle
                     ->end()
                 ->end()
                 ->arrayNode('payment')
+                    ->addDefaultsIfNotSet()
                     ->children()
+                        ->stringNode('default_gateway')
+                            ->defaultValue(PaymentTechnicalAction::GLOBAL_PAYMENTS->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(PaymentTechnicalAction::cases(), 'value'))
+                                ->thenInvalid('Invalid payment gateway "%s"')
+                            ->end()
+                        ->end()
                         ->arrayNode('rb_bank')
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
@@ -233,6 +242,11 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.mail.order.send_proforma',
             $sendProforma
+        );
+
+        $builder->setParameter(
+            'greendot_eshop.payment.default_gateway',
+            $config['payment']['default_gateway'] ?? PaymentTechnicalAction::GLOBAL_PAYMENTS->value
         );
 
         $rbBankConfig = $config['payment']['rb_bank'] ?? [];

@@ -12,12 +12,14 @@ use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Enum\PaymentOutcome;
 use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayClient;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayPaymentStatus;
 use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -25,7 +27,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 //    For tests against the sandbox (GOPAY_API_URL=https://gw.sandbox.gopay.com/api)
 //    use the test payment cards listed in GoPay help (help.gopay.com -> test payment cards).
 #[WithMonologChannel('gateway.gopay')]
-readonly class GoPay implements PaymentGatewayInterface
+readonly class GoPay implements PaymentCallbackGatewayInterface
 {
     /* Languages supported by the GoPay gateway UI */
     private const LANGUAGES = ['CS', 'EN', 'SK', 'DE', 'RU', 'PL', 'HU', 'FR', 'RO', 'BG', 'HR', 'IT', 'ES', 'UK', 'ET', 'LT', 'LV', 'SL', 'PT'];
@@ -103,8 +105,8 @@ readonly class GoPay implements PaymentGatewayInterface
                 'goid' => $this->client->getGoId(),
             ],
             'callback' => [
-                'return_url' => $this->urlGenerator->generate('shop_order_verify_gopay', [], UrlGeneratorInterface::ABSOLUTE_URL),
-                'notification_url' => $this->urlGenerator->generate('shop_order_notify_gopay', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                'return_url' => $this->urlGenerator->generate('shop_order_payment_return', ['gateway' => self::action()->value], UrlGeneratorInterface::ABSOLUTE_URL),
+                'notification_url' => $this->urlGenerator->generate('shop_order_payment_notify', ['gateway' => self::action()->value], UrlGeneratorInterface::ABSOLUTE_URL),
             ],
             'lang' => $this->resolveLanguage(),
         ];
@@ -183,7 +185,50 @@ readonly class GoPay implements PaymentGatewayInterface
      */
     public function verifyLink(): GoPayPaymentStatus
     {
-        $paymentId = (string)$this->requestStack->getCurrentRequest()?->query->get('id', '');
+        return $this->fetchStatus($this->requestStack->getCurrentRequest() ?? new Request());
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function resolveCallback(Request $request): PaymentResult
+    {
+        try {
+            $status = $this->fetchStatus($request);
+        } catch (BadRequestHttpException $e) {
+            throw new UnresolvedPaymentException($e->getMessage(), 0, $e);
+        }
+
+        $payment = $this->entityManager->getRepository(Payment::class)->findOneBy(['externalId' => $status->id]);
+        $purchase = $payment?->getPurchase();
+        if (!$purchase || $status->orderNumber === null || $status->orderNumber !== (string)$purchase->getOrderNumber()) {
+            throw new UnresolvedPaymentException(sprintf(
+                'GoPay payment %s (order number %s) does not match any of our payments (local payment #%s).',
+                $status->id,
+                $status->orderNumber ?? '-',
+                $payment?->getId() ?? '-',
+            ));
+        }
+
+        return new PaymentResult(
+            $payment,
+            match (true) {
+                $status->state?->isPaid() === true => PaymentOutcome::PAID,
+                $status->state?->isFailed() === true => PaymentOutcome::FAILED,
+                default => PaymentOutcome::PENDING,
+            },
+            $status->amount,
+            $status->currency,
+            $status->raw,
+        );
+    }
+
+    /**
+     * @throws Throwable
+     */
+    private function fetchStatus(Request $request): GoPayPaymentStatus
+    {
+        $paymentId = (string)$request->query->get('id', '');
         if ($paymentId === '' || !ctype_digit($paymentId)) {
             throw new BadRequestHttpException('Missing or invalid GoPay payment id.');
         }
@@ -198,9 +243,16 @@ readonly class GoPay implements PaymentGatewayInterface
             throw $e;
         }
 
+        if ($status->state === null) {
+            $this->logger->warning('GoPay reported a payment state unknown to this integration', [
+                'goPayId' => $paymentId,
+                'state' => $status->rawState,
+            ]);
+        }
+
         $this->logger->info('GoPay payment status received', [
             'goPayId' => $paymentId,
-            'state' => $status->state->value,
+            'state' => $status->rawState,
             'orderNumber' => $status->orderNumber,
         ]);
 

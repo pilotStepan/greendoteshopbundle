@@ -1,10 +1,10 @@
 parameters:
   # GoPay defaults, so projects without GoPay keep booting (every gateway is instantiated by PaymentGatewayProvider).
-  # Set the real values in the project .env; sandbox URL is the default so a misconfigured env never charges real money.
+  # Set the credentials in the project env. GOPAY_API_URL is optional: empty = sandbox in dev/test, production otherwise.
   env(GOPAY_CLIENT_ID): ''
   env(GOPAY_CLIENT_SECRET): ''
   env(GOPAY_GOID): '0'
-  env(GOPAY_API_URL): 'https://gw.sandbox.gopay.com/api'
+  env(GOPAY_API_URL): ''
 
 services:
   _defaults:
@@ -31,6 +31,7 @@ services:
       $clientSecret: '%env(GOPAY_CLIENT_SECRET)%'
       $goId: '%env(GOPAY_GOID)%'
       $apiUrl: '%env(GOPAY_API_URL)%'
+      $environment: '%kernel.environment%'
 
   Algolia\AlgoliaSearch\Api\SearchClient:
     factory: [ 'Algolia\AlgoliaSearch\Api\SearchClient', 'create' ]

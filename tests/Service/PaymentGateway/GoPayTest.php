@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Tests\Service\PaymentGateway;
 
 use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Currency;
@@ -16,6 +17,9 @@ use Greendot\EshopBundle\Service\PaymentGateway\GoPay;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayClient;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayException;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayState;
+use Greendot\EshopBundle\Service\PaymentGateway\UnresolvedPaymentException;
+use Greendot\EshopBundle\Repository\Project\PaymentRepository;
+use Greendot\EshopBundle\Enum\PaymentOutcome;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -64,8 +68,8 @@ class GoPayTest extends TestCase
         $this->assertSame('CZK', $body['currency']);
         $this->assertSame('14048', $body['order_number']);
         $this->assertSame(['type' => 'ACCOUNT', 'goid' => 8925782195], $body['target']);
-        $this->assertSame('https://example.com/shop_order_verify_gopay', $body['callback']['return_url']);
-        $this->assertSame('https://example.com/shop_order_notify_gopay', $body['callback']['notification_url']);
+        $this->assertSame('https://example.com/shop_order_payment_return?gateway=gopay', $body['callback']['return_url']);
+        $this->assertSame('https://example.com/shop_order_payment_notify?gateway=gopay', $body['callback']['notification_url']);
         $this->assertSame('john@example.com', $body['payer']['contact']['email']);
 
         $this->assertCount(1, $persisted);
@@ -169,6 +173,94 @@ class GoPayTest extends TestCase
         $goPay->verifyLink();
     }
 
+    #[DataProvider('goPayStates')]
+    public function testResolveCallbackMapsGoPayStateToOutcome(string $state, PaymentOutcome $expected): void
+    {
+        $payment = $this->buildPayment();
+
+        $result = $this->buildCallbackGateway($payment, $state, '14048')
+            ->resolveCallback(new Request(['id' => '3000000001']));
+
+        $this->assertSame($payment, $result->payment);
+        $this->assertSame($expected, $result->outcome);
+        $this->assertSame(15050, $result->amount);
+        $this->assertSame('CZK', $result->currency);
+    }
+
+    public static function goPayStates(): iterable
+    {
+        yield 'paid' => ['PAID', PaymentOutcome::PAID];
+        yield 'canceled' => ['CANCELED', PaymentOutcome::FAILED];
+        yield 'timeouted' => ['TIMEOUTED', PaymentOutcome::FAILED];
+        yield 'method chosen' => ['PAYMENT_METHOD_CHOSEN', PaymentOutcome::PENDING];
+        yield 'refunded' => ['REFUNDED', PaymentOutcome::PENDING];
+        yield 'state unknown to us' => ['SOME_NEW_STATE', PaymentOutcome::PENDING];
+    }
+
+    public function testResolveCallbackRejectsPaymentOfAnotherOrder(): void
+    {
+        // e.g. a GP webpay payment sharing the externalId, or a GoPay payment of a different order
+        $goPay = $this->buildCallbackGateway($this->buildPayment(), 'PAID', '99999');
+
+        $this->expectException(UnresolvedPaymentException::class);
+
+        $goPay->resolveCallback(new Request(['id' => '3000000001']));
+    }
+
+    public function testResolveCallbackRejectsUnknownPayment(): void
+    {
+        $goPay = $this->buildCallbackGateway(null, 'PAID', '14048');
+
+        $this->expectException(UnresolvedPaymentException::class);
+
+        $goPay->resolveCallback(new Request(['id' => '3000000001']));
+    }
+
+    public function testResolveCallbackRejectsInvalidIdWithoutAnyRequest(): void
+    {
+        $goPay = $this->buildCallbackGateway($this->buildPayment(), 'PAID', '14048');
+
+        try {
+            $goPay->resolveCallback(new Request(['id' => '../oauth2/token']));
+            $this->fail('UnresolvedPaymentException expected');
+        } catch (UnresolvedPaymentException) {
+            $this->assertSame([], $this->httpRequests);
+        }
+    }
+
+    private function buildCallbackGateway(?Payment $payment, string $state, string $orderNumber): GoPay
+    {
+        $paymentRepository = $this->createMock(PaymentRepository::class);
+        $paymentRepository->method('findOneBy')->with(['externalId' => '3000000001'])->willReturn($payment);
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getRepository')->with(Payment::class)->willReturn($paymentRepository);
+
+        return $this->buildGateway(
+            [
+                new MockResponse(json_encode(['access_token' => 'tok', 'expires_in' => 1800])),
+                new MockResponse(json_encode([
+                    'id' => 3000000001,
+                    'state' => $state,
+                    'order_number' => $orderNumber,
+                    'amount' => 15050,
+                    'currency' => 'CZK',
+                ])),
+            ],
+            $entityManager,
+            new RecordingPaymentActionLogger(),
+            new Request(),
+        );
+    }
+
+    private function buildPayment(): Payment
+    {
+        $payment = (new Payment())->setExternalId('3000000001')->setAmount(150.5);
+        $this->buildPurchase(150.5)->addPayment($payment);
+
+        return $payment;
+    }
+
     private function buildGateway(
         array                       $responses,
         EntityManagerInterface      $entityManager,
@@ -184,7 +276,9 @@ class GoPayTest extends TestCase
         });
 
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->method('generate')->willReturnCallback(fn (string $route) => 'https://example.com/' . $route);
+        $urlGenerator->method('generate')->willReturnCallback(
+            fn (string $route, array $parameters = []) => 'https://example.com/' . $route . ($parameters ? '?' . http_build_query($parameters) : '')
+        );
 
         $requestStack = new RequestStack();
         $requestStack->push($request);

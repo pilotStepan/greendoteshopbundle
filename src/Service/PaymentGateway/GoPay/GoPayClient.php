@@ -2,6 +2,8 @@
 
 namespace Greendot\EshopBundle\Service\PaymentGateway\GoPay;
 
+use JsonException;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Throwable;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -25,14 +27,36 @@ class GoPayClient
 
     private ?string $token = null;
     private int $tokenExpiresAt = 0;
+    private readonly string $apiUrl;
 
+    /**
+     * @param HttpClientInterface $httpClient
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param string $goId
+     * @param string $apiUrl
+     * @param string $environment
+     */
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly string              $clientId,
         private readonly string              $clientSecret,
         private readonly string              $goId,
-        private readonly string              $apiUrl,
-    ) {}
+        string                               $apiUrl = '',
+        string                               $environment = 'prod',
+    )
+    {
+        $this->apiUrl = $apiUrl !== '' ? $apiUrl : self::defaultApiUrl($environment);
+    }
+
+    private static function defaultApiUrl(string $environment): string
+    {
+        if (in_array($environment, ['dev', 'test'], true)) {
+            return self::SANDBOX_URL;
+        }
+
+        return self::PRODUCTION_URL;
+    }
 
     public function getGoId(): int
     {
@@ -41,7 +65,7 @@ class GoPayClient
 
     /**
      * @return array GoPay payment resource (contains `id`, `state`, `gw_url`, ...)
-     * @throws GoPayException
+     * @throws GoPayException|TransportExceptionInterface|JsonException
      */
     public function createPayment(array $payment): array
     {
@@ -49,7 +73,7 @@ class GoPayClient
     }
 
     /**
-     * @throws GoPayException
+     * @throws GoPayException|TransportExceptionInterface|JsonException
      */
     public function getStatus(string $paymentId): GoPayPaymentStatus
     {
@@ -59,7 +83,7 @@ class GoPayClient
     }
 
     /**
-     * @throws GoPayException
+     * @throws GoPayException|TransportExceptionInterface|JsonException
      */
     private function request(string $method, string $path, array $options = []): array
     {
@@ -73,7 +97,7 @@ class GoPayClient
     }
 
     /**
-     * @throws GoPayException
+     * @throws GoPayException|TransportExceptionInterface|JsonException
      */
     private function getToken(): string
     {
@@ -104,7 +128,10 @@ class GoPayClient
     }
 
     /**
-     * @throws GoPayException
+     * @param ResponseInterface $response
+     * @param string $operation
+     * @return array
+     * @throws GoPayException|JsonException
      */
     private function decode(ResponseInterface $response, string $operation): array
     {
@@ -118,7 +145,7 @@ class GoPayClient
         if ($status >= 300) {
             $errors = $data['errors'] ?? [];
             throw new GoPayException(
-                sprintf('GoPay %s returned HTTP %d: %s', $operation, $status, json_encode($errors ?: $data)),
+                sprintf('GoPay %s returned HTTP %d: %s', $operation, $status, json_encode($errors ?: $data, JSON_THROW_ON_ERROR)),
                 $errors,
                 $status,
             );
