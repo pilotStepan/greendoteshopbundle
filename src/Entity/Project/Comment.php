@@ -38,6 +38,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ['groups' => ['comment:write']],
     paginationEnabled: true,
     order: ['submitted' => 'DESC'],
+    forceEager: false,
 )]
 #[ApiFilter(ExistsFilter::class, properties: ['comment'])] // set this to false, to filter only main comments
 #[ApiFilter(ExistsFilter::class, properties: ['underComment'])] // set this to true, to filter only comments with responses
