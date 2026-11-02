@@ -9,6 +9,7 @@
             <directory>tests/Controller</directory>
             <directory>tests/DataLayer</directory>
             <directory>tests/Entity</directory>
+            <directory>tests/Export</directory>
             <directory>tests/EventSubscriber</directory>
             <directory>tests/Invoice</directory>
             <directory>tests/Mail</directory>

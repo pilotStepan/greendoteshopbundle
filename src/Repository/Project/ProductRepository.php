@@ -867,4 +867,20 @@ class ProductRepository extends HintedRepositoryBase
         return $ordered;
     }
 
+    /**
+     * Number of active, non-deleted products whose (trimmed) name equals $name.
+     * Used by product feeds to detect different products sharing one name.
+     */
+    public function countActiveByName(string $name): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->andWhere('TRIM(p.name) = :name')
+            ->andWhere('p.isActive = 1')
+            ->andWhere('p.isDeleted = 0 OR p.isDeleted IS NULL')
+            ->setParameter('name', $name)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
 }
