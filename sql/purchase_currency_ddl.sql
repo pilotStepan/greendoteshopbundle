@@ -38,7 +38,7 @@ UPDATE `purchase`
     WHERE `currency_id` IS NULL;
 
 ALTER TABLE `client`
-    ADD COLUMN `locale` VARCHAR(10) DEFAULT NULL
+    ADD COLUMN `locale` VARCHAR(10) DEFAULT NULL;
 
 
 -- Report-only: purchases whose PaymentType charges in a currency other than the purchase's

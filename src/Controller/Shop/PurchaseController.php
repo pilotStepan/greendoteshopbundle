@@ -18,7 +18,6 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -36,13 +35,11 @@ use Greendot\EshopBundle\Service\Payment\PaymentCallbackHandler;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 
 class PurchaseController extends AbstractController
 {
@@ -290,78 +287,6 @@ class PurchaseController extends AbstractController
     }
 
 
-    #[CustomApiEndpoint]
-    #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]
-    public function removeOrderItem(int $productVariantId, SessionInterface $session): JsonResponse
-    {
-        $purchase = $session->get('purchase');
-
-        if ($purchase) {
-            $productVariants = $purchase->getProductVariants();
-
-            foreach ($productVariants as $productVariant) {
-                if ($productVariant->getProductVariant()->getId() == $productVariantId) {
-                    $purchase->removeProductVariant($productVariant);
-                    break;
-                }
-            }
-
-            $session->set('purchase', $purchase);
-
-            $purchaseApiModel = new PurchaseApiModel();
-            $purchaseApiModel->parseEntity($purchase);
-
-            return new JsonResponse($purchaseApiModel, 200);
-        }
-
-        return new JsonResponse(['error' => 'Order not found'], 404);
-    }
-
-
-    #[CustomApiEndpoint]
-    #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
-    public function createParcel(
-        Purchase                       $purchase,
-        ParcelServiceProviderInterface $provider,
-        EntityManagerInterface         $entityManager,
-    ): JsonResponse
-    {
-        try {
-            $parcelService = $provider->getByPurchase($purchase);
-            $parcelId = $parcelService->createParcel($purchase);
-        } catch (ParcelServiceNotFoundException) {
-            return new JsonResponse(['message' => 'No parcel service configured'], 400);
-        }
-
-        if (!$parcelId) {
-            return new JsonResponse(['message' => 'Failed to create parcel'], 500);
-        }
-
-        $purchase->setTransportNumber($parcelId);
-        $entityManager->flush();
-
-        return new JsonResponse([
-            'message' => 'Parcel created successfully',
-            'parcelId' => $parcelId,
-        ]);
-    }
-
-    #[CustomApiEndpoint]
-    #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
-    public function getParcelStatus(
-        Purchase                       $purchase,
-        ParcelServiceProviderInterface $provider,
-    ): JsonResponse
-    {
-        try {
-            $parcelService = $provider->getByPurchase($purchase);
-            $status = $parcelService->getParcelStatus($purchase);
-        } catch (ParcelServiceNotFoundException) {
-            return new JsonResponse(['message' => 'No parcel service configured'], 400);
-        }
-
-        return new JsonResponse($status);
-    }
 
     #[Route('/objednavka/{path<.*>?}', name: 'shop_order_steps', options: ['expose' => true], priority: 100)]
     public function orderSteps(): Response
@@ -453,7 +378,6 @@ class PurchaseController extends AbstractController
         }
         // set cart purchase
         $cartPurchase = new Purchase();
-        $cartPurchase->setDateIssue(new \DateTime());
         $cartPurchase->setClient($user);
         $purchaseFlow->apply($cartPurchase, PWC::T_INIT_CART->value);
 

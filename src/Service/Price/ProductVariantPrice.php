@@ -394,8 +394,9 @@ class ProductVariantPrice
         $date = new \DateTime("now");
         $productVariant = $this->productVariant;
         if ($this->productVariant instanceof PurchaseProductVariant) {
-            if ($this->productVariant?->getPurchase()?->getDateIssue()) {
-                $date = $this->productVariant->getPurchase()?->getDateIssue();
+            $purchase = $this->productVariant->getPurchase();
+            if ($purchase !== null) {
+                $date = $purchase->getPricingDate();
             }
             $productVariant = $this->productVariant->getProductVariant();
         }

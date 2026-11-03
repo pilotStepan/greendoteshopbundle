@@ -216,7 +216,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $purchase->method('getClientDiscount')->willReturn($clientDiscountMock);
         }
 
-        $purchase->method('getDateIssue')->willReturn(new \DateTime('now'));
+        $purchase->method('getPricingDate')->willReturn(new \DateTime('now'));
         $purchase->method('getVouchersUsed')->willReturn(new ArrayCollection($vouchers ?? []));
 
         return $purchase;

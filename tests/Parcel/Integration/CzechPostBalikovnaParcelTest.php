@@ -237,6 +237,25 @@ class CzechPostBalikovnaParcelTest extends TestCase
         $this->assertSame('18000', $header['postCode']);
     }
 
+    public function testCreateParcel_transmissionDateIsTodayNotTheOrderDate(): void
+    {
+        $capturedBody = null;
+        $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedBody) {
+            $capturedBody = $options['body'];
+            return new MockResponse(self::successResponse());
+        });
+
+        $before = (new \DateTime())->format('Y-m-d');
+        $this->makeService($httpClient)->createParcel(
+            $this->makePurchase($this->makeTransportation('c2VjcmV0'), $this->makeBranch()) // issued 2024-01-15
+        );
+        $after = (new \DateTime())->format('Y-m-d');
+
+        $transmissionDate = json_decode($capturedBody, true)['parcelServiceHeader']['parcelServiceHeaderCom']['transmissionDate'];
+
+        $this->assertContains($transmissionDate, [$before, $after]);
+    }
+
     public function testCreateParcel_codOrder_includesCodServiceCode(): void
     {
         $capturedBody = null;

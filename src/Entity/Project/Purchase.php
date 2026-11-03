@@ -105,9 +105,17 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $id;
 
-    #[ORM\Column(type: 'datetime')]
-    #[Groups(['purchase:read', 'purchase:write'])]
-    private $date_issue;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, options: ['default' => 'CURRENT_TIMESTAMP'])]
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
+    private \DateTimeImmutable $date_created;
+
+    /**
+     * When the purchase was issued (confirmed by the client), null until then. Prices are frozen to this date.
+     * Write-once: set only through {@see issue()}, never writable through the API.
+     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['purchase:read'])]
+    private ?\DateTime $date_issue = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -335,7 +343,7 @@ class Purchase
 
     public function __construct()
     {
-        $this->date_issue = new \DateTime();
+        $this->date_created = new \DateTimeImmutable();
         $this->ProductVariants = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
         $this->purchaseTrackings = new ArrayCollection();
@@ -375,16 +383,43 @@ class Purchase
         return $this->id;
     }
 
-    public function getDateIssue(): \DateTimeInterface
+    public function getDateCreated(): \DateTimeImmutable
+    {
+        return $this->date_created;
+    }
+
+    /**
+     * Null until the purchase is issued (see {@see issue()}).
+     */
+    public function getDateIssue(): ?\DateTimeInterface
     {
         return $this->date_issue;
     }
 
-    public function setDateIssue(\DateTimeInterface $date_issue): self
+    public function isIssued(): bool
     {
-        $this->date_issue = $date_issue;
+        return $this->date_issue !== null;
+    }
+
+    /**
+     * Issues the purchase now. Write-once: an already issued purchase keeps its original date (and so its prices).
+     * The bundle issues on the checkout / init_order transitions; projects call this from their own transitions
+     * that should freeze prices (e.g. inquiries).
+     */
+    public function issue(): static
+    {
+        $this->date_issue ??= new \DateTime();
 
         return $this;
+    }
+
+    /**
+     * The date prices, discounts and conversion rates are resolved for: the issue date once issued, otherwise now.
+     * Always a fresh instance, so callers can modify it without touching the issue date.
+     */
+    public function getPricingDate(): \DateTime
+    {
+        return $this->date_issue !== null ? clone $this->date_issue : new \DateTime();
     }
 
     public function getDateExpedition(): ?\DateTimeInterface

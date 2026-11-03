@@ -60,7 +60,7 @@ final class InvoiceDataFactory
 
 
         $dateInvoiced = new \DateTime(
-            ($isInvoice ? $purchase->getDateInvoiced() : $purchase->getDateIssue())->format('Y-m-d H:i:s')
+            ($isInvoice ? $purchase->getDateInvoiced() : $purchase->getPricingDate())->format('Y-m-d H:i:s')
         );
         $dateDue = (new \DateTime($dateInvoiced->format('Y-m-d H:i:s')))->modify('+10 days');
 

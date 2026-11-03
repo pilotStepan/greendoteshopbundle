@@ -78,7 +78,7 @@ readonly class ManagePurchase
 
     public function generateInquiryNumber(Purchase $purchase): string
     {
-        return sprintf('%010d%s', $purchase->getDateIssue()->getTimestamp(), $purchase->getId());
+        return sprintf('%010d%s', $purchase->getDateCreated()->getTimestamp(), $purchase->getId());
     }
 
     public function findPurchaseByInquiryNumber(string $inquiryNumber): Purchase
