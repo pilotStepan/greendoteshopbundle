@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\PurchaseLocaleResolver;
 use Greendot\EshopBundle\Enum\PaymentOutcome;
 use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
@@ -19,6 +20,7 @@ use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayClient;
 use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayPaymentStatus;
 use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -47,6 +49,11 @@ readonly class GoPay implements PaymentCallbackGatewayInterface
         private CurrencyManager        $currencyManager,
         private PaymentActionLogger    $paymentActionLogger,
         private RequestStack           $requestStack,
+        private PurchaseLocaleResolver $purchaseLocaleResolver,
+        #[Autowire(param: 'greendot_eshop.payment.gopay.allowed_instruments')]
+        private array                  $allowedInstruments = [],
+        #[Autowire(param: 'greendot_eshop.payment.gopay.default_instrument')]
+        private ?string                $defaultInstrument = null,
     ) {}
 
     /**
@@ -108,12 +115,22 @@ readonly class GoPay implements PaymentCallbackGatewayInterface
                 'return_url' => $this->urlGenerator->generate('shop_order_payment_return', ['gateway' => self::action()->value], UrlGeneratorInterface::ABSOLUTE_URL),
                 'notification_url' => $this->urlGenerator->generate('shop_order_payment_notify', ['gateway' => self::action()->value], UrlGeneratorInterface::ABSOLUTE_URL),
             ],
-            'lang' => $this->resolveLanguage(),
+            'lang' => $this->resolveLanguage($purchase),
         ];
 
+        $payer = [];
+        if ($this->allowedInstruments !== []) {
+            $payer['allowed_payment_instruments'] = array_values($this->allowedInstruments);
+        }
+        if ($this->defaultInstrument !== null) {
+            $payer['default_payment_instrument'] = $this->defaultInstrument;
+        }
         $email = $purchase->getClient()?->getMail();
         if ($email) {
-            $request['payer'] = ['contact' => ['email' => $email]];
+            $payer['contact'] = ['email' => $email];
+        }
+        if ($payer !== []) {
+            $request['payer'] = $payer;
         }
 
         $this->logger->info('GoPay getPayLink initiated', [
@@ -259,10 +276,10 @@ readonly class GoPay implements PaymentCallbackGatewayInterface
         return $status;
     }
 
-    private function resolveLanguage(): string
+    private function resolveLanguage(Purchase $purchase): string
     {
-        $locale = strtoupper(substr((string)$this->requestStack->getCurrentRequest()?->getLocale(), 0, 2));
+        $language = strtoupper(substr($this->purchaseLocaleResolver->resolve($purchase), 0, 2));
 
-        return in_array($locale, self::LANGUAGES, true) ? $locale : self::DEFAULT_LANGUAGE;
+        return in_array($language, self::LANGUAGES, true) ? $language : self::DEFAULT_LANGUAGE;
     }
 }
