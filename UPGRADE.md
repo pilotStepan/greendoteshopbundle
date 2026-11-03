@@ -19,10 +19,15 @@ on the generic `workflow.purchase_flow.completed` (dispatched before `completed.
 
 ### Steps
 
-1. Apply `sql/purchase_date_created.sql` (MariaDB, safe to re-run): adds `date_created`, backfills it from
-   `date_issue`, makes `date_issue` nullable and clears it for draft/cart/wishlist rows.
-2. Clear the cache (API Platform metadata is cached).
-3. Update your code:
+1. **Before the deploy** apply `sql/purchase_date_created_1_schema.sql` (MariaDB, safe to re-run): adds
+   `date_created`, backfills it from `date_issue` and makes `date_issue` nullable. The new mapping needs the column;
+   apps on older bundles keep working with it.
+2. Deploy, clear the cache (API Platform metadata is cached) and **restart the messenger workers** (a running worker
+   keeps the old code and container).
+3. **Right after the deploy** apply `sql/purchase_date_created_2_unissue.sql` (safe to re-run): clears `date_issue`
+   for draft/cart/wishlist rows. Never run it while the app is still on an older bundle: older bundles declare
+   `getDateIssue(): \DateTimeInterface` and throw a `TypeError` on `NULL`.
+4. Update your code:
    - `Purchase::getDateIssue()` now returns `?\DateTimeInterface`. Handle `null`.
    - `Purchase::setDateIssue()` is removed. Don't set it on new carts/wishlists; nothing replaces it.
    - Carts, wishlists and drafts: show/sort by `dateCreated`. Orders: `dateIssue`.
@@ -33,8 +38,31 @@ on the generic `workflow.purchase_flow.completed` (dispatched before `completed.
      `workflow.purchase_flow.completed.<transition>` listener.
    - API clients: `date_issue` is no longer accepted on write; `date_created` is exposed in `purchase:read` and
      `purchase:wishlist`.
-4. Inquiry numbers are now built from `date_created` (`ManagePurchase::generateInquiryNumber()`). Thanks to the backfill,
+5. Inquiry numbers are now built from `date_created` (`ManagePurchase::generateInquiryNumber()`). Thanks to the backfill,
    existing purchases keep the same number.
+
+### Mixed versions (shops sharing the simple-ws CMS)
+
+The CMS has its own `Purchase` entity on the same `purchase` table, so its version has to match the shops it manages.
+
+| CMS | Shop bundle | DB | Result |
+|---|---|---|---|
+| new | < 7.4.0 | part 1 missing | CMS fails on every purchase query (unknown column `date_created`) and on inserts (`date_issue` NOT NULL). |
+| new | < 7.4.0 | part 1 applied | Drafts created in the CMS have `date_issue = NULL`; the old shop throws a `TypeError` when it touches them. |
+| old | >= 7.4.0 | parts 1 + 2 | Works, but drafts created in the CMS get `date_issue` at creation (prices frozen too early) and admins can still write `date_issue`. |
+| new | >= 7.4.0 | parts 1 + 2 | Target state. |
+
+Rollout order: part 1 on every shop DB first → shops one by one (deploy, then part 2) → the CMS last.
+
+A shop that stays on an older bundle behind the new CMS needs part 1 (never part 2) and a trigger that restores the
+old "set on insert" behaviour for CMS inserts. Drop the trigger and run part 2 when that shop upgrades.
+
+```sql
+CREATE TRIGGER purchase_date_issue_legacy BEFORE INSERT ON purchase FOR EACH ROW
+SET NEW.date_issue = COALESCE(NEW.date_issue, NOW());
+```
+
+Never run `doctrine:schema:update --force` on an app whose mapping doesn't know `date_created` yet: it drops the column.
 
 ### Removed
 
