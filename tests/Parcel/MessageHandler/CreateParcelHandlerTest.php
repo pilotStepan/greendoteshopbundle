@@ -49,7 +49,7 @@ class CreateParcelHandlerTest extends TestCase
         );
     }
 
-    private function makePurchase(?string $transportNumber = null, bool $isEndState = false): Purchase
+    private function makePurchase(?string $transportNumber = null, bool $isEndState = false, bool $isIssued = true): Purchase
     {
         $transportation = $this->createMock(Transportation::class);
         $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
@@ -58,6 +58,7 @@ class CreateParcelHandlerTest extends TestCase
         $purchase->method('getId')->willReturn(42);
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
         $purchase->method('hasAnyPlace')->willReturn($isEndState);
+        $purchase->method('isIssued')->willReturn($isIssued);
         $purchase->method('getTransportation')->willReturn($transportation);
         return $purchase;
     }
@@ -115,6 +116,18 @@ class CreateParcelHandlerTest extends TestCase
         $this->bus->expects($this->never())->method('dispatch');
         $this->em->expects($this->never())->method('flush');
 
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
+    public function testUnissuedPurchase_throwsUnrecoverableWithoutCallingCarrier(): void
+    {
+        $purchase = $this->makePurchase(isIssued: false);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $this->provider->expects($this->never())->method('getByPurchase');
+        $this->bus->expects($this->never())->method('dispatch');
+
+        $this->expectException(UnrecoverableMessageHandlingException::class);
         ($this->handler)(new CreateParcelMessage(42));
     }
 

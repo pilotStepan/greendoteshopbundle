@@ -387,7 +387,6 @@ class ProductController extends AbstractController
     private function createCart(?Client $client): Purchase
     {
         $cart = (new Purchase())
-            ->setDateIssue(new \DateTime())
             ->setClient($client)
         ;
         $this->purchaseFlow->apply($cart, PWC::T_INIT_CART->value);

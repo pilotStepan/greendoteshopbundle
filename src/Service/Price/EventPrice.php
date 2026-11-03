@@ -227,8 +227,9 @@ class EventPrice
         $date = new \DateTime("now");
         $event = $this->event;
         if ($this->event instanceof PurchaseEvent) {
-            if ($this->event->getPurchase()?->getDateIssue()){
-                $date = $this->event->getPurchase()->getDateIssue();
+            $purchase = $this->event->getPurchase();
+            if ($purchase !== null) {
+                $date = $purchase->getPricingDate();
             }
             $event = $this->event->getEvent();
         }

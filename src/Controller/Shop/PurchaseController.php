@@ -329,7 +329,6 @@ class PurchaseController extends AbstractController
         }
         // set cart purchase
         $cartPurchase = new Purchase();
-        $cartPurchase->setDateIssue(new \DateTime());
         $cartPurchase->setClient($user);
         $purchaseFlow->apply($cartPurchase, PWC::T_INIT_CART->value);
 

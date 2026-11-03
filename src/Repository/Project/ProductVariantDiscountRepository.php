@@ -60,7 +60,7 @@ class ProductVariantDiscountRepository extends ServiceEntityRepository
                 );
             */
         }elseif($variantOrPurchase instanceof PurchaseProductVariant and $variantOrPurchase->getPurchase()->getId() != null){
-            $date = $variantOrPurchase->getPurchase()->getDateIssue();
+            $date = $variantOrPurchase->getPurchase()->getPricingDate();
             $productVariant = $variantOrPurchase->getProductVariant();
             $qb->andWhere('d.minimalAmount <= :purchasedAmount')
                 ->setParameter('purchasedAmount', $variantOrPurchase->getAmount());

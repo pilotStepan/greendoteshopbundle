@@ -34,14 +34,14 @@ class DateService
     }
 
     /**
-     * Calculate and set dateDelivery based on dateIssue and transportation.duration
+     * Calculate and set dateDelivery based on pricingDate and transportation.duration
      * @param Purchase $purchase - purchase to mutate
      */
     public function calculatePurchaseDeliveryDate(Purchase $purchase) : Purchase
     {
         $duration = $purchase->getTransportation()->getDuration();
 
-        $deliveryDate = $this->addWorkDays($purchase->getDateIssue(), $duration);
+        $deliveryDate = $this->addWorkDays($purchase->getPricingDate(), $duration);
 
         $purchase->setDateDelivery($deliveryDate);
 

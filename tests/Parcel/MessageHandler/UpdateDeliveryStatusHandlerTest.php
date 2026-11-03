@@ -67,7 +67,7 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         return new UpdateDeliveryStatusMessage($id);
     }
 
-    private function makePurchase(int $daysOld = 0, bool $isEndState = false): Purchase
+    private function makePurchase(?int $daysOld = 0, bool $isEndState = false): Purchase
     {
         $transportation = $this->createMock(Transportation::class);
         $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
@@ -75,7 +75,7 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(1);
         $purchase->method('getDateIssue')->willReturn(
-            new DateTimeImmutable("-$daysOld days")
+            $daysOld === null ? null : new DateTimeImmutable("-$daysOld days")
         );
         $purchase->method('hasAnyPlace')->willReturn($isEndState);
         $purchase->method('getTransportation')->willReturn($transportation);
@@ -165,6 +165,21 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
 
         $this->bus->expects($this->never())->method('dispatch');
 
+        ($this->handler)($this->makeMsg());
+    }
+
+    // --- Guard: an unissued purchase must never be polled - that is a bug, fail loudly instead of guessing its age ---
+
+    public function testUnissuedPurchase_throwsUnrecoverableWithoutPolling(): void
+    {
+        $purchase = $this->makePurchase(daysOld: null);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $this->eventRepo->method('findLatestByPurchase')->willReturn(null);
+
+        $this->provider->expects($this->never())->method('getByPurchase');
+        $this->bus->expects($this->never())->method('dispatch');
+
+        $this->expectException(UnrecoverableMessageHandlingException::class);
         ($this->handler)($this->makeMsg());
     }
 

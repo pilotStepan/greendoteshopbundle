@@ -36,7 +36,6 @@ class GoogleAnalytics
             }else{
                 $purchaseTemp->setClient(null);
             }
-            $purchaseTemp->setDateIssue(new \DateTime('now'));
             $purchaseProductVariantTemp = new PurchaseProductVariant();
             $purchaseProductVariantTemp->setProductVariant($productVariant);
             $purchaseProductVariantTemp->setPurchase($purchaseTemp);

@@ -149,7 +149,7 @@ class ManagePurchaseTest extends TestCase
     public function testCalculateInquiryNumberWithPurchase(): void
     {
         $purchase = $this->createMock(Purchase::class);
-        $purchase->method('getDateIssue')->willReturn(new \DateTime('2023-01-01'));
+        $purchase->method('getDateCreated')->willReturn(new \DateTimeImmutable('2023-01-01'));
         $purchase->method('getId')->willReturn(456);
 
         $result = $this->managePurchase->generateInquiryNumber($purchase);

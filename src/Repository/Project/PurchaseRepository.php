@@ -27,17 +27,6 @@ class PurchaseRepository extends ServiceEntityRepository
         parent::__construct($registry, Purchase::class);
     }
 
-    public function lastInquiryOfUser($client)
-    {
-        return $this->createQueryBuilder('p')
-            ->setMaxResults(1)
-            ->orderBy("p.date_issue", "DESC")
-            ->andWhere("p.state = :inquiry")->setParameter('inquiry', 'inquiry')
-            ->andWhere("p.Client = :client")->setParameter("client", $client)
-            ->getQuery()->getOneOrNullResult()
-        ;
-    }
-
     public function lastPurchaseOfUser($client)
     {
         $qb = $this->createQueryBuilder('p')
@@ -65,7 +54,7 @@ class PurchaseRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')->setParameter('client', $client)
-            ->orderBy('p.date_issue', 'desc')
+            ->orderBy('p.date_created', 'desc')
         ;
         return $this->addPlaceFilter($qb, 'p', PWC::S_CART)
             ->getQuery()->getResult()
@@ -136,9 +125,9 @@ class PurchaseRepository extends ServiceEntityRepository
                 ->setParameter('purchaseId', $purchaseId)
             ;
             return $qb->getQuery()->getOneOrNullResult();
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     public function findWishlistBySession(): ?Purchase
@@ -151,19 +140,21 @@ class PurchaseRepository extends ServiceEntityRepository
                 ->setParameter('purchaseId', $purchaseId)
             ;
             return $qb->getQuery()->getOneOrNullResult();
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     public function findCartForClient(?Client $client): ?Purchase
     {
-        if (!$client) return null;
+        if (!$client) {
+            return null;
+        }
 
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')
             ->setParameter('client', $client)
-            ->orderBy('p.date_issue', 'DESC')
+            ->orderBy('p.date_created', 'DESC')
             ->setMaxResults(1)
         ;
         return $this->addPlaceFilter($qb, 'p', PWC::S_CART)
@@ -174,12 +165,14 @@ class PurchaseRepository extends ServiceEntityRepository
 
     public function findWishlistForClient(?Client $client): ?Purchase
     {
-        if (!$client) return null;
+        if (!$client) {
+            return null;
+        }
 
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.client = :client')
             ->setParameter('client', $client)
-            ->orderBy('p.date_issue', 'DESC')
+            ->orderBy('p.date_created', 'DESC')
             ->setMaxResults(1)
         ;
         return $this->addPlaceFilter($qb, 'p', PWC::S_WISHLIST)
