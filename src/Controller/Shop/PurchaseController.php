@@ -18,7 +18,6 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -240,33 +239,6 @@ class PurchaseController extends AbstractController
         return $this->redirectToRoute($redirectRoute);
     }
 
-
-    #[CustomApiEndpoint]
-    #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]
-    public function removeOrderItem(int $productVariantId, SessionInterface $session): JsonResponse
-    {
-        $purchase = $session->get('purchase');
-
-        if ($purchase) {
-            $productVariants = $purchase->getProductVariants();
-
-            foreach ($productVariants as $productVariant) {
-                if ($productVariant->getProductVariant()->getId() == $productVariantId) {
-                    $purchase->removeProductVariant($productVariant);
-                    break;
-                }
-            }
-
-            $session->set('purchase', $purchase);
-
-            $purchaseApiModel = new PurchaseApiModel();
-            $purchaseApiModel->parseEntity($purchase);
-
-            return new JsonResponse($purchaseApiModel, 200);
-        }
-
-        return new JsonResponse(['error' => 'Order not found'], 404);
-    }
 
 
     #[CustomApiEndpoint]
