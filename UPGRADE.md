@@ -1,5 +1,32 @@
 # Upgrade
 
+## 7.4.1 – GoPay payment gateway
+
+New card payment gateway `gopay` (`Service/PaymentGateway/GoPay`) next to GP webpay. GoPay sends the client back to
+`/order/payment/gopay/return` and notifies the shop on `/order/payment/gopay/notify` (shared routes for every gateway
+implementing `PaymentCallbackGatewayInterface`); payment state is always read from the GoPay API, never from the URL.
+The gateway page opens in the purchase language (`PurchaseLocaleResolver`, same as order e-mails).
+
+### Steps
+
+1. Credentials in the project env: `GOPAY_CLIENT_ID`, `GOPAY_CLIENT_SECRET`, `GOPAY_GOID`. Keep `GOPAY_API_URL`
+   empty: the sandbox is used in `dev`/`test`, the live gateway otherwise. Production credentials belong to the
+   server's `.env.local`, never to the committed `.env`.
+2. Optional config (`greendot_eshop.payment`):
+   ```yaml
+   greendot_eshop:
+     payment:
+       default_gateway: gopay                 # for payment types without payment_technical_action
+       gopay:
+         allowed_instruments: [PAYMENT_CARD, APPLE_PAY, GPAY]  # empty = every method enabled for the GoID
+         default_instrument: PAYMENT_CARD     # the gateway opens straight on this method
+   ```
+   Values are checked against `GoPayPaymentInstrument`; a typo stops the container build.
+3. Add `gateway.gopay` to the monolog channels you log to the DB.
+4. **After the deploy** switch the card payment types: `UPDATE payment_type SET payment_technical_action = 'gopay'
+   WHERE payment_technical_action = 'gpw';`. Keep the `GPWEBPAY_*` config: every gateway is still instantiated, and
+   clients who started a GP webpay payment before the switch return to `/order/verify`.
+
 ## 7.4.0 – Purchase `date_created` / `date_issue`
 
 A cart used to be priced at the date it was **created** (its `date_issue` was set in the constructor), so a cart left in

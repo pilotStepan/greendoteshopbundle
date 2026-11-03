@@ -15,13 +15,16 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Tests\Stub\FakeGpWebpayGateway;
+use Greendot\EshopBundle\Tests\Stub\FakeCallbackGateway;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Tests\Stub\PurchaseFlowFixtures;
 use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
 /**
- * Exercises PurchaseController::pay() — the "pay again" link that sends the client to GPWebpay.
+ * Exercises PurchaseController::pay() — the "pay again" link that sends the client to the purchase's payment gateway.
  *
  * An order fully covered by vouchers has a total of 0, which GP webpay rejects
  * ("Incorrect content of field, AMOUNT"), so pay() must settle it as paid instead
@@ -89,11 +92,33 @@ class PurchaseControllerPayTest extends TestCase
         $this->assertCount(0, $this->paymentActionLogger->calls);
     }
 
+    public function testPurchaseWithoutGatewayUsesConfiguredDefaultGateway(): void
+    {
+        // e.g. the "pay by card" link of a bank transfer order in a project that switched to GoPay
+        $purchase = $this->createCompletedPurchase();
+
+        $response = $this->controller->pay(
+            $purchase,
+            new PaymentGatewayProvider(
+                [new FakeGpWebpayGateway(), new FakeGoPayLinkGateway('https://gopay.example.com/pay')],
+                PaymentTechnicalAction::GOPAY->value,
+            ),
+            $this->urlGenerator,
+            $this->workflow,
+            $this->entityManager,
+            $this->createMock(LoggerInterface::class),
+            $this->buildManagePurchase($this->workflow, new Money(150.0, 'CZK')),
+        );
+
+        $this->assertSame('https://gopay.example.com/pay', $response->getTargetUrl());
+    }
+
     private function pay(Purchase $purchase, FakeGpWebpayGateway $gateway, Money $total): RedirectResponse
     {
+        // The purchase has no payment type, so the provider falls back to its default (GP webpay) gateway
         return $this->controller->pay(
             $purchase,
-            $gateway,
+            new PaymentGatewayProvider([$gateway]),
             $this->urlGenerator,
             $this->workflow,
             $this->entityManager,
@@ -109,5 +134,18 @@ class PurchaseControllerPayTest extends TestCase
         $purchase->setMarking([PWC::S_COMPLETED->value => 1]);
 
         return $purchase;
+    }
+}
+
+class FakeGoPayLinkGateway extends FakeCallbackGateway
+{
+    public function __construct(private readonly string $payLink)
+    {
+        parent::__construct();
+    }
+
+    public function getPayLink(Purchase $purchase): string
+    {
+        return $this->payLink;
     }
 }

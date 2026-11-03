@@ -29,6 +29,9 @@ use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Enum\PaymentCallbackSource;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
+use Greendot\EshopBundle\Service\Payment\PaymentCallbackHandler;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -137,11 +140,55 @@ class PurchaseController extends AbstractController
         }
     }
 
+    /**
+     * The client's browser comes back here from the gateway after the payment attempt.
+     * Shared by all gateways implementing PaymentCallbackGatewayInterface (GP webpay still uses /order/verify).
+     */
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
+    #[Route('/order/payment/{gateway}/return', name: 'shop_order_payment_return', methods: ['GET'])]
+    public function paymentReturn(
+        PaymentTechnicalAction $gateway,
+        Request                $request,
+        PaymentGatewayProvider $gatewayProvider,
+        PaymentCallbackHandler $callbackHandler,
+        PurchaseUrlGenerator   $urlGenerator,
+    ): Response
+    {
+        $callbackGateway = $gatewayProvider->getCallbackGateway($gateway) ?? throw $this->createNotFoundException();
+
+        $purchase = $callbackHandler->handle($callbackGateway, $request, PaymentCallbackSource::RETURN);
+
+        return $purchase
+            ? $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase))
+            : $this->redirectToRoute('web_homepage');
+    }
+
+    /**
+     * Server-to-server notification sent by the gateway on payment state changes - covers payments whose
+     * outcome is known only after the client left the gateway (e.g. bank transfers).
+     */
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
+    #[Route('/order/payment/{gateway}/notify', name: 'shop_order_payment_notify', methods: ['GET', 'POST'])]
+    public function paymentNotify(
+        PaymentTechnicalAction $gateway,
+        Request                $request,
+        PaymentGatewayProvider $gatewayProvider,
+        PaymentCallbackHandler $callbackHandler,
+    ): Response
+    {
+        $callbackGateway = $gatewayProvider->getCallbackGateway($gateway) ?? throw $this->createNotFoundException();
+
+        $purchase = $callbackHandler->handle($callbackGateway, $request, PaymentCallbackSource::NOTIFY);
+
+        // A non-2xx answer makes the gateway retry the notification later
+        return new Response('', $purchase ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);
+    }
+
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/pay', name: 'purchase_pay', methods: ['GET'])]
     public function pay(
         Purchase               $purchase,
-        GPWebpay               $gpWebpay,
+        PaymentGatewayProvider $gatewayProvider,
         PurchaseUrlGenerator   $urlGenerator,
         #[Target(PWC::NAME->value)]
         WorkflowInterface      $purchaseWorkflow,
@@ -163,7 +210,9 @@ class PurchaseController extends AbstractController
                 return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
             }
 
-            return $this->redirect($gpWebpay->getPayLink($purchase));
+            $gateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
+
+            return $this->redirect($gateway->getPayLink($purchase));
         } catch (Throwable $e) {
             $logger->error('Failed to get payment gateway link, falling back to endscreen', [
                 'purchaseId' => $purchase->getId(),

@@ -4,6 +4,8 @@ namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayPaymentInstrument;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
@@ -72,7 +74,43 @@ class GreendotEshopBundle extends AbstractBundle
                     ->end()
                 ->end()
                 ->arrayNode('payment')
+                    ->addDefaultsIfNotSet()
                     ->children()
+                        ->stringNode('default_gateway')
+                            ->defaultValue(PaymentTechnicalAction::GLOBAL_PAYMENTS->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(PaymentTechnicalAction::cases(), 'value'))
+                                ->thenInvalid('Invalid payment gateway "%s"')
+                            ->end()
+                        ->end()
+                        ->arrayNode('gopay')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->arrayNode('allowed_instruments')
+                                    ->info('Payment methods offered on the GoPay gateway, e.g. [PAYMENT_CARD, APPLE_PAY, GPAY]. Empty = all methods enabled for the GoID.')
+                                    ->scalarPrototype()
+                                        ->validate()
+                                            ->ifNotInArray(array_column(GoPayPaymentInstrument::cases(), 'value'))
+                                            ->thenInvalid('Invalid GoPay payment instrument %s')
+                                        ->end()
+                                    ->end()
+                                ->end()
+                                ->scalarNode('default_instrument')
+                                    ->info('Payment method the GoPay gateway opens with, e.g. PAYMENT_CARD. Null = the gateway shows the method list.')
+                                    ->defaultNull()
+                                    ->validate()
+                                        ->ifTrue(static fn ($v) => $v !== null && GoPayPaymentInstrument::tryFrom((string)$v) === null)
+                                        ->thenInvalid('Invalid GoPay payment instrument %s')
+                                    ->end()
+                                ->end()
+                            ->end()
+                            ->validate()
+                                ->ifTrue(static fn (array $v) => $v['default_instrument'] !== null
+                                    && $v['allowed_instruments'] !== []
+                                    && !in_array($v['default_instrument'], $v['allowed_instruments'], true))
+                                ->thenInvalid('greendot_eshop.payment.gopay.default_instrument must be one of allowed_instruments.')
+                            ->end()
+                        ->end()
                         ->arrayNode('rb_bank')
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
@@ -234,6 +272,13 @@ class GreendotEshopBundle extends AbstractBundle
             'greendot_eshop.mail.order.send_proforma',
             $sendProforma
         );
+
+        $builder->setParameter(
+            'greendot_eshop.payment.default_gateway',
+            $config['payment']['default_gateway'] ?? PaymentTechnicalAction::GLOBAL_PAYMENTS->value
+        );
+        $builder->setParameter('greendot_eshop.payment.gopay.allowed_instruments', $config['payment']['gopay']['allowed_instruments'] ?? []);
+        $builder->setParameter('greendot_eshop.payment.gopay.default_instrument', $config['payment']['gopay']['default_instrument'] ?? null);
 
         $rbBankConfig = $config['payment']['rb_bank'] ?? [];
         $builder->setParameter('greendot_eshop.payment.rb_bank.enabled', $rbBankConfig['enabled'] ?? false);
