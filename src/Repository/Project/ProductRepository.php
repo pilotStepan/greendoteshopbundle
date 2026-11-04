@@ -576,23 +576,48 @@ class ProductRepository extends HintedRepositoryBase
         return $qb;
     }
 
+    /**
+     * Units sold per product for purchases issued within the given period.
+     * Only products with at least one sale are returned.
+     *
+     * @return array<int, array{id: int, sold_amount: int|string}>
+     */
     public function getSoldProductsCount(DateTime $startDate, DateTime $endDate): array
     {
-       $qb = $this->createQueryBuilder('p')
-            ->select('p.id, COALESCE(SUM(ppv.amount), 0) as sold_amount') // 2. Handle nulls
-            ->leftJoin('p.productVariants', 'pv')
-            ->leftJoin('pv.orderProductVariants', 'ppv')
-            // 1. Move the date conditions INTO the join criteria
-            ->leftJoin('ppv.purchase', 'pu', 'WITH', 'pu.date_invoiced >= :startDate AND pu.date_invoiced <= :endDate')
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.id, SUM(ppv.amount) AS sold_amount')
+            ->innerJoin('p.productVariants', 'pv')
+            ->innerJoin('pv.orderProductVariants', 'ppv')
+            ->innerJoin('ppv.purchase', 'pu')
+            ->andWhere('pu.date_issue >= :startDate')
+            ->andWhere('pu.date_issue <= :endDate')
             ->groupBy('p.id');
 
-        // 3. Ensure your excludePlaces helper also accounts for LEFT JOIN nulls
-        $qb = $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART);
+        $qb = $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART, PWC::S_CANCELLED);
 
         return $qb->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $endDate)
-                ->getQuery()
-          ->getResult();
+            ->setParameter('endDate', $endDate)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Stores the given sold amounts and zeroes every other product, atomically.
+     *
+     * @param array<int, int> $soldAmountByProductId product id => units sold
+     */
+    public function replaceSoldAmounts(array $soldAmountByProductId): void
+    {
+        $em = $this->getEntityManager();
+
+        $em->wrapInTransaction(function () use ($em, $soldAmountByProductId): void {
+            $em->createQuery('UPDATE ' . Product::class . ' p SET p.sold_amount = 0')->execute();
+
+            $update = $em->createQuery('UPDATE ' . Product::class . ' p SET p.sold_amount = :amount WHERE p.id = :id');
+            foreach ($soldAmountByProductId as $productId => $amount) {
+                $update->setParameter('amount', $amount)->setParameter('id', $productId)->execute();
+            }
+        });
     }
 
     /**

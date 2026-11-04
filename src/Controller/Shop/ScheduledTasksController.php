@@ -27,30 +27,33 @@ class ScheduledTasksController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/scheduled/sales', name: 'scheduled_sales', methods: ['GET'])]
-    public function scheduleSales(): JsonResponse
+    public function scheduleSales(LockFactory $lockFactory): JsonResponse
     {
-        $startDate = (new \DateTime())->modify('-6 months');
-        $endDate = new \DateTime();
-
-        $soldProducts = $this->productRepository->getSoldProductsCount($startDate, $endDate);
-        $result = [];
-
-        foreach ($soldProducts as $soldProduct) {
-            $product = $this->productRepository->find($soldProduct['id']);
-            if ($product) {
-                $product->setSoldAmount($soldProduct['sold_amount']);
-                $this->entityManager->persist($product);
-
-                $result[] = [
-                    'product_id' => (int)$soldProduct['id'],
-                    'sold_amount' => (int)$soldProduct['sold_amount'],
-                ];
-            }
+        $lock = $lockFactory->createLock('scheduled_sales', 600);
+        if (!$lock->acquire()) {
+            return new JsonResponse(['status' => 'already_running'], 409);
         }
 
-        $this->entityManager->flush();
+        try {
+            $startDate = (new \DateTime())->modify('-6 months');
+            $endDate = new \DateTime();
 
-        return $this->json($result);
+            $soldAmounts = [];
+            foreach ($this->productRepository->getSoldProductsCount($startDate, $endDate) as $row) {
+                $soldAmounts[(int)$row['id']] = (int)$row['sold_amount'];
+            }
+
+            $this->productRepository->replaceSoldAmounts($soldAmounts);
+
+            return $this->json([
+                'status' => 'ok',
+                'products_with_sales' => count($soldAmounts),
+                'from' => $startDate->format(\DATE_ATOM),
+                'to' => $endDate->format(\DATE_ATOM),
+            ]);
+        } finally {
+            $lock->release();
+        }
     }
 
     #[CustomApiEndpoint]
