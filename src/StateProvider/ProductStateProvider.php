@@ -6,7 +6,9 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
+use Greendot\EshopBundle\EventSubscriber\ParameterEventListener;
 use Greendot\EshopBundle\EventSubscriber\ProductEventListener;
+use Greendot\EshopBundle\Service\ParameterColourNameResolver;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\ListenerManager;
@@ -31,6 +33,7 @@ readonly class ProductStateProvider implements ProviderInterface
         private ParameterRepository     $parameterRepository,
         private PriceRepository         $priceRepository,
         private UploadRepository        $uploadRepository,
+        private ParameterColourNameResolver $colourNameResolver,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|null|object
@@ -72,8 +75,28 @@ readonly class ProductStateProvider implements ProviderInterface
         $productIds = array_slice($allProductIds, $offset, $limit);
         
         // get product entities with initilized associations
-        $unorderedProducts = $this->productRepository->primeProductList($productIds);
-        
+        // ParameterEventListener::postLoad runs one colour query per hydrated colour parameter;
+        // skip it while priming and resolve all colour names in one query afterwards.
+        $parameterListenerWasDisabled = $this->listenerManager->isDisabled(ParameterEventListener::class);
+        $this->listenerManager->disable(ParameterEventListener::class);
+        try {
+            $unorderedProducts = $this->productRepository->primeProductList($productIds);
+        } finally {
+            if (!$parameterListenerWasDisabled) {
+                $this->listenerManager->enable(ParameterEventListener::class);
+            }
+        }
+
+        $this->colourNameResolver->resolve(
+            (static function () use ($unorderedProducts) {
+                foreach ($unorderedProducts as $product) {
+                    foreach ($product->getProductVariants() as $variant) {
+                        yield from $variant->getParameters();
+                    }
+                }
+            })()
+        );
+
         // HACK: fetching by IN(...) breaks order so they have to be reordered
         $productIdMap = [];
         foreach($unorderedProducts as $product) {
