@@ -282,6 +282,10 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
             : $compatible;
         $pool = $byCurrency ?: $compatible;
 
+        // A row with a pay method (Google/Apple Pay) stands for something the customer never chose here.
+        $withoutPayMethod = array_values(array_filter($pool, static fn (PaymentType $c) => $c->getPayMethod() === null));
+        $pool = $withoutPayMethod ?: $pool;
+
         $enabled = array_values(array_filter($pool, static fn (PaymentType $c) => $c->isIsEnabled()));
 
         return $enabled[0] ?? $pool[0];

@@ -12,6 +12,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Greendot\EshopBundle\ApiResource\PaymentTypeByTransportationFilter;
+use Greendot\EshopBundle\Enum\PaymentPayMethod;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Enum\PaymentTypeActionGroup;
 use Greendot\EshopBundle\Money\Money;
@@ -138,6 +139,10 @@ class PaymentType implements Translatable
 
     #[ORM\Column(type: 'string', nullable: true, enumType: PaymentTechnicalAction::class)]
     private ?PaymentTechnicalAction $paymentTechnicalAction = null;
+
+    #[ORM\Column(type: 'string', length: 16, nullable: true, enumType: PaymentPayMethod::class)]
+    #[Groups(['payment:read', 'payment:write'])]
+    private ?PaymentPayMethod $payMethod = null;
 
     #[ORM\Column(nullable: true)]
     private ?array $exportNames = null;
@@ -337,6 +342,18 @@ class PaymentType implements Translatable
     public function setTranslatableLocale($locale): void
     {
         $this->locale = $locale;
+    }
+
+    public function getPayMethod(): ?PaymentPayMethod
+    {
+        return $this->payMethod;
+    }
+
+    public function setPayMethod(?PaymentPayMethod $payMethod): static
+    {
+        $this->payMethod = $payMethod;
+
+        return $this;
     }
 
     public function getActionGroup()

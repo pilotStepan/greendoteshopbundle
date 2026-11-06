@@ -15,7 +15,7 @@ use Granam\GpWebPay\Exceptions\GpWebPayErrorResponse;
 use Granam\GpWebPay\Exceptions\GpWebPayErrorByCustomerResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use Granam\GpWebPay\Codes\CurrencyCodes;
-use Granam\GpWebPay\CardPayRequestValues;
+use Greendot\EshopBundle\Service\PaymentGateway\GpWebpay\PayMethodCardPayRequestValues;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
@@ -137,13 +137,15 @@ readonly class GPWebpay implements PaymentGatewayInterface
             $currencyCodes = new CurrencyCodes(new ISO4217());
             $digestSigner = new DigestSigner($settings);
 
-            $requestValues = CardPayRequestValues::createFromArray([
+            $payMethod = $paymentType?->getPayMethod();
+
+            $requestValues = PayMethodCardPayRequestValues::createWithPayMethod([
                 'ORDERNUMBER' => $payment->getId(),
                 'AMOUNT' => $money->value,
                 'CURRENCY' => $currencyNumeric,
                 'DEPOSITFLAG' => true,
                 'MERORDERNUM' => $orderNumber,
-            ], $currencyCodes);
+            ], $currencyCodes, $payMethod);
 
             $cardPayRequest = new CardPayRequest($requestValues, $settings, $digestSigner);
             $redirectUrl = $cardPayRequest->getRequestUrlWithGetParameters();
@@ -161,6 +163,7 @@ readonly class GPWebpay implements PaymentGatewayInterface
                     'CURRENCY_ISO' => $money->iso,
                     'DEPOSITFLAG' => true,
                     'MERORDERNUM' => $orderNumber,
+                    ...($payMethod !== null ? ['PAYMETHOD' => $payMethod->value] : []),
                 ],
                 $payment,
             );

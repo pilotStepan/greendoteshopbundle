@@ -10,6 +10,7 @@ use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\Currency;
+use Greendot\EshopBundle\Enum\PaymentPayMethod;
 use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
 use Greendot\EshopBundle\Money\Money;
 use Greendot\EshopBundle\Service\ManagePurchase;
@@ -136,6 +137,41 @@ class GPWebpayTest extends TestCase
         $this->assertSame('EUR', $payment->getCurrency()?->getIso());
     }
 
+    #[DataProvider('payMethodProvider')]
+    public function testGetPayLinkSendsAndSignsPayMethodOfPaymentType(PaymentPayMethod $payMethod): void
+    {
+        $this->skipWithoutSha1Signing();
+
+        $paymentActionLogger = new RecordingPaymentActionLogger();
+        $redirectUrl = $this->buildGpWebpayForPayLink($paymentActionLogger)
+            ->getPayLink($this->buildPayablePurchase((new PaymentType())->setPayMethod($payMethod)));
+
+        $parameters = $this->parseQuery($redirectUrl);
+        $this->assertSame($payMethod->value, $parameters['PAYMETHOD']);
+        $this->assertSame($payMethod->value, $paymentActionLogger->calls[0][4]['PAYMETHOD']);
+        $this->assertDigestIsValid($parameters);
+    }
+
+    public static function payMethodProvider(): iterable
+    {
+        yield 'Google Pay' => [PaymentPayMethod::GOOGLE_PAY];
+        yield 'Apple Pay' => [PaymentPayMethod::APPLE_PAY];
+    }
+
+    public function testGetPayLinkOmitsPayMethodWhenPaymentTypeHasNone(): void
+    {
+        $this->skipWithoutSha1Signing();
+
+        $paymentActionLogger = new RecordingPaymentActionLogger();
+        $redirectUrl = $this->buildGpWebpayForPayLink($paymentActionLogger)
+            ->getPayLink($this->buildPayablePurchase(new PaymentType()));
+
+        $parameters = $this->parseQuery($redirectUrl);
+        $this->assertArrayNotHasKey('PAYMETHOD', $parameters);
+        $this->assertArrayNotHasKey('PAYMETHOD', $paymentActionLogger->calls[0][4]);
+        $this->assertDigestIsValid($parameters);
+    }
+
     public function testGetPayLinkThrowsWhenPaymentTypeCurrencyDiffersFromPurchase(): void
     {
         $czk = (new Currency())->setName('CZK')->setSymbol('Kč')->setRounding(0);
@@ -237,6 +273,75 @@ class GPWebpayTest extends TestCase
     {
         yield 'zero' => [0.0];
         yield 'negative' => [-10.0];
+    }
+
+    private function skipWithoutSha1Signing(): void
+    {
+        $probeKey = openssl_pkey_get_private((string) file_get_contents(self::$privateKeyFile));
+        if ($probeKey === false || !@openssl_sign('probe', $probeSignature, $probeKey, OPENSSL_ALGO_SHA1)) {
+            self::markTestSkipped('This OpenSSL build cannot produce RSA-SHA1 signatures required by GP Webpay.');
+        }
+    }
+
+    private function buildGpWebpayForPayLink(RecordingPaymentActionLogger $paymentActionLogger): GPWebpay
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('persist')->willReturnCallback(function ($payment) {
+            (new \ReflectionProperty($payment, 'id'))->setValue($payment, 1001);
+        });
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->method('generate')->willReturn('https://example.com/order/verify');
+
+        return new GPWebpay(
+            self::$privateKeyFile,
+            self::$publicKeyFile,
+            '',
+            '123456',
+            $urlGenerator,
+            $entityManager,
+            $this->createMock(LoggerInterface::class),
+            new StubManagePurchase(),
+            $this->buildCurrencyManager('CZK'),
+            $paymentActionLogger,
+            'test',
+        );
+    }
+
+    private function buildPayablePurchase(PaymentType $paymentType): Purchase
+    {
+        $purchase = new Purchase();
+        $purchase->assignOrderNumber(14048);
+        $purchase->setPaymentType($paymentType);
+        $purchase->setTotalMoney(new Money(150.0, 'CZK'));
+
+        return $purchase;
+    }
+
+    /** @return array<string, string> */
+    private function parseQuery(string $url): array
+    {
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $parameters);
+
+        return $parameters;
+    }
+
+    /**
+     * The gateway rejects a request whose DIGEST does not cover every sent field in the
+     * documented order, so verify the signature over the parameters as they appear in the URL.
+     *
+     * @param array<string, string> $parameters
+     */
+    private function assertDigestIsValid(array $parameters): void
+    {
+        $digest = base64_decode($parameters['DIGEST'], true);
+        unset($parameters['DIGEST'], $parameters['LANG']);
+
+        $this->assertSame(1, openssl_verify(
+            implode('|', $parameters),
+            $digest,
+            (string) file_get_contents(self::$publicKeyFile),
+            OPENSSL_ALGO_SHA1,
+        ));
     }
 
     private function buildCurrencyManager(string $iso = 'CZK'): CurrencyManager
