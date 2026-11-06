@@ -32,6 +32,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_purchase_order_number', columns: ['order_number'])]
+#[ORM\Index(name: 'idx_purchase_date_issue', columns: ['date_issue'])]
+#[ORM\Index(name: 'idx_purchase_date_created', columns: ['date_created'])]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
     operations: [
