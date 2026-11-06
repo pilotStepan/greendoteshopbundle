@@ -65,7 +65,9 @@
     "spatie/schema-org": "^4.0",
     "beberlei/doctrineextensions": "^1.5",
     "ext-zip": "*",
-    "doctrine/doctrine-migrations-bundle": "^3.7"
+    "doctrine/doctrine-migrations-bundle": "^3.7",
+    "rikudou/skqrpayment": "^4.2",
+    "ext-gd": "*"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",

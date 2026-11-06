@@ -11,11 +11,14 @@ use Endroid\QrCode\Writer\PngWriter;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Money\Exception\PurchaseCurrencyMismatchException;
 use Greendot\EshopBundle\Money\Money;
+use Greendot\EshopBundle\Service\QrPayment\PayBySquareQrGenerator;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Throwable;
 
 class QRcodeGenerator
 {
@@ -25,8 +28,12 @@ class QRcodeGenerator
         private UrlGeneratorInterface   $router,
         private CurrencyManager         $currencyManager,
         private ManagePurchase          $managePurchase,
+        private PayBySquareQrGenerator  $payBySquareQrGenerator,
+        private LoggerInterface         $logger,
         #[Autowire('%kernel.project_dir%')]
         private string                  $projectDir,
+        #[Autowire(param: 'greendot_eshop.payment.pay_by_square.beneficiary_name')]
+        private string                  $payBySquareBeneficiaryName,
         #[Autowire('%env(APP_URL)%')]
         private string                  $appUrl = '',
     ) {}
@@ -55,6 +62,39 @@ class QRcodeGenerator
         $currency = $this->currencyManager->getForPurchase($purchase);
         $money = $purchase->getTotalMoney() ?? Money::fromCurrency($purchase->getTotalPrice(), $currency);
 
+        $png = $paymentType->getCountry() === 'SK' && $this->payBySquareBeneficiaryName !== ''
+            ? $this->buildPayBySquarePng($purchase, $iban, $money, $now)
+            : null;
+        $png ??= $this->buildSpaydPng($purchase, $iban, $money, $now);
+
+        $filePath = sprintf('QRcodes/qr_code_%s.png', $purchase->getId());
+        $fullPath = $this->projectDir . '/public/' . $filePath;
+
+        $this->filesystem->dumpFile($fullPath, $png);
+
+        return '/' . $filePath;
+    }
+
+    /**
+     * Returns null on failure (e.g. no xz binary): the order pages call getUri() unguarded,
+     * so an exception here would take them down for a code the customer may not even need.
+     */
+    private function buildPayBySquarePng(Purchase $purchase, string $iban, Money $money, DateTimeImmutable $now): ?string
+    {
+        try {
+            return $this->payBySquareQrGenerator->png($iban, $money, $purchase->getOrderNumber(), $now, $this->payBySquareBeneficiaryName);
+        } catch (Throwable $e) {
+            $this->logger->error('Failed to generate PAY by square QR code for purchase {purchaseId}, falling back to SPAYD', [
+                'purchaseId' => $purchase->getId(),
+                'exception' => $e,
+            ]);
+
+            return null;
+        }
+    }
+
+    private function buildSpaydPng(Purchase $purchase, string $iban, Money $money, DateTimeImmutable $now): string
+    {
         $qrContent = 'SPD*1.0*ACC:'.$iban.'*AM:' .
             number_format($money->value, 2, '.', '') .
             '*CC:' . $money->iso . '*DT:' . $now->format("Ymd") .
@@ -81,16 +121,10 @@ class QRcodeGenerator
         }
 
         $builder = new Builder(...$builderParams);
-        $result = $builder->build();
 
-        $filePath = sprintf('QRcodes/qr_code_%s.png', $purchase->getId());
-        $fullPath = $this->projectDir . '/public/' . $filePath;
-
-        $this->filesystem->dumpFile($fullPath, $result->getString());
-
-        return '/' . $filePath;
+        return $builder->build()->getString();
     }
-    
+
 
     public function getFullUrl(Purchase $purchase): string
     {
