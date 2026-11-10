@@ -1,6 +1,6 @@
 doctrine:
     dbal:
-        url: 'sqlite:///%env(resolve:API_TEST_DB_PATH)%'
+        url: '%env(API_TEST_DATABASE_URL)%'
         types:
             array: Greendot\EshopBundle\Tests\App\Doctrine\LegacyArrayType
     orm:

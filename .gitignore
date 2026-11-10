@@ -2,7 +2,7 @@ composer.lock
 vendor/
 var/
 .idea/
-CLAUDE.md
+CLAUDE.local.md
 .claude
 AGENTS.md
 *.cache

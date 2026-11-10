@@ -17,7 +17,6 @@ use Greendot\EshopBundle\Enum\DiscountAmountType;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 
-use const Dom\VALIDATION_ERR;
 
 /**
  * @extends ServiceEntityRepository<Price>

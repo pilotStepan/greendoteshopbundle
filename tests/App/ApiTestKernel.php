@@ -21,6 +21,18 @@ use Symfony\Component\HttpKernel\Kernel;
  */
 class ApiTestKernel extends Kernel
 {
+    public function __construct(string $environment, bool $debug)
+    {
+        // ApiTestCase sets API_TEST_DATABASE_URL explicitly (SQLite file or MariaDB). Any other
+        // caller that only sets API_TEST_DB_PATH (e.g. the PHPStan object-manager loader) gets SQLite.
+        if (!isset($_SERVER['API_TEST_DATABASE_URL'])) {
+            $path = $_SERVER['API_TEST_DB_PATH'] ?? sys_get_temp_dir() . '/eshopbundle_api_test.db';
+            $_ENV['API_TEST_DATABASE_URL'] = $_SERVER['API_TEST_DATABASE_URL'] = 'sqlite:///' . $path;
+        }
+
+        parent::__construct($environment, $debug);
+    }
+
     public function registerBundles(): iterable
     {
         return [

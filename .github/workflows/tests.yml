@@ -14,6 +14,24 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Functional tests run against the MariaDB version every tenant runs in production (10.5.29).
+    services:
+      mariadb:
+        image: mariadb:10.5.29
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: eshop_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      TEST_DATABASE_URL: mysql://root:root@127.0.0.1:3306/eshop_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,7 +39,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: simplexml, xmlreader, libxml
+          extensions: simplexml, xmlreader, libxml, pdo_mysql
           coverage: none
 
       - name: Validate composer.json and composer.lock
@@ -38,6 +56,9 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
+
+      - name: Static analysis (PHPStan)
+        run: composer phpstan -- --no-progress --error-format=github
 
       - name: Run test suite
         run: vendor/bin/phpunit

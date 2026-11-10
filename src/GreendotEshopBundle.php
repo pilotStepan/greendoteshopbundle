@@ -15,6 +15,12 @@ use Symfony\Component\Yaml\Yaml;
 
 class GreendotEshopBundle extends AbstractBundle
 {
+    public const MIGRATIONS_NAMESPACE = 'Greendot\EshopBundle\Migrations';
+
+    public static function migrationsDirectory(): string
+    {
+        return __DIR__ . '/Migrations';
+    }
 
     /**
      * Uses symfony-native prependExtension
@@ -36,6 +42,14 @@ class GreendotEshopBundle extends AbstractBundle
                 $builder->prependExtensionConfig($extension, $values);
             }
         }
+
+        // Shop-table schema changes ship as bundle migrations; every tenant picks them up next to its own.
+        if ($builder->hasExtension('doctrine_migrations')) {
+            $builder->prependExtensionConfig('doctrine_migrations', [
+                'migrations_paths' => [self::MIGRATIONS_NAMESPACE => self::migrationsDirectory()],
+            ]);
+        }
+
         parent::prependExtension($container, $builder);
     }
 

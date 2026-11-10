@@ -6,7 +6,6 @@ use Greendot\EshopBundle\Entity\ExternalIds;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 
 /**
  * @extends ServiceEntityRepository<ExternalIds>
