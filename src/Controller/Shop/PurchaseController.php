@@ -20,6 +20,7 @@ use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\AdClick\AdClickTracker;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Attribute\DisableListeners;
@@ -361,6 +362,7 @@ class PurchaseController extends AbstractController
         EntityManagerInterface $entityManager,
         #[Target(PWC::NAME->value)]
         WorkflowInterface      $purchaseFlow,
+        AdClickTracker         $adClickTracker,
     ): RedirectResponse
     {
         // Check user login and ownership
@@ -388,6 +390,7 @@ class PurchaseController extends AbstractController
             $amount = $purchaseProductVariant->getAmount();
             $managePurchase->addProductVariantToPurchase($cartPurchase, $productVariant, $amount);
         }
+        $adClickTracker->assignToPurchase($cartPurchase);
 
         // persist
         $entityManager->persist($cartPurchase);

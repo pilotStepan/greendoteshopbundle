@@ -14,6 +14,9 @@ services:
         autowire: true
         autoconfigure: true
 
+    Greendot\EshopBundle\AdClick\:
+        resource: '../../../../src/AdClick/*'
+
     Greendot\EshopBundle\Affiliate\:
         resource: '../../../../src/Affiliate/*'
 

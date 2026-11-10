@@ -100,6 +100,7 @@ class Purchase
     private const SHIPMENT_ID = 'shipment_id';
     private const COURIER_NUMBER = 'courier_number';
     private const REFERER = 'referer';
+    private const AD_CLICKS = 'ad_clicks';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -578,6 +579,25 @@ class Purchase
     {
         $this->additionalInfo = array_filter(
             [...($this->additionalInfo ?? []), self::REFERER => $referer],
+            static fn($v) => $v !== null
+        );
+
+        return $this;
+    }
+
+    /**
+     * Ad clicks that led to this cart/order, oldest first; the last one is the attributed click.
+     * @see \Greendot\EshopBundle\AdClick\AdClickTracker
+     */
+    public function getAdClicks(): array
+    {
+        return $this->additionalInfo[self::AD_CLICKS] ?? [];
+    }
+
+    public function setAdClicks(array $adClicks): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::AD_CLICKS => $adClicks ?: null],
             static fn($v) => $v !== null
         );
 

@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\StateProcessor;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use Greendot\EshopBundle\AdClick\AdClickTracker;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
@@ -11,7 +12,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * CartStateProcessor is responsible for processing the cart state on patch operation.
- * specifically, setting the branch if exactly one branch is associated with the transportation.
+ * specifically, setting the branch if exactly one branch is associated with the transportation,
+ * and refreshing the cart's ad clicks.
  */
 class CartStateProcessor implements ProcessorInterface
 {
@@ -20,6 +22,7 @@ class CartStateProcessor implements ProcessorInterface
         private ProcessorInterface      $inner,
         private ManagePurchase          $managePurchase,
         private CalculatedPricesService $calculatedPricesService,
+        private AdClickTracker          $adClickTracker,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Purchase
@@ -43,6 +46,9 @@ class CartStateProcessor implements ProcessorInterface
         if ($transportation && $branch && !$transportation->getBranches()->contains($branch)) {
             $data->setBranch(null);
         }
+
+        // The cart PATCH can add products, so treat it as an add-to-cart.
+        $this->adClickTracker->assignToPurchase($data);
 
         $persisted = $this->inner->process($data, $operation, $uriVariables, $context);
         assert($persisted instanceof Purchase);

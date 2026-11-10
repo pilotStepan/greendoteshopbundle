@@ -1,0 +1,163 @@
+{#
+    Records ad clicks (click IDs, UTM params) into the `ad_clicks` cookie, read by AdClickTracker on add-to-cart
+    and checkout. Saved only with marketing consent; until the visitor decides, clicks wait in sessionStorage.
+    Include on every page:
+
+        {% include '@GreendotEshop/ad_click/ad_click_capture.html.twig' %}
+
+    Options (pass with `with {...}`):
+        consent           'greendot' (default) | 'cookiebot' | 'cookieconsent' | 'manual'
+        consent_category  category name meaning marketing consent, default 'marketing'
+                          (used by 'greendot' and 'cookieconsent', e.g. 'ads' for some cookieconsent setups)
+
+    'manual' is for any other panel: call this from the panel's own callbacks, including on page load once the
+    stored choice is known (include this template before the panel's script, so the function exists):
+
+        window.GreendotAdClicks.setMarketingConsent(true)   // granted
+        window.GreendotAdClicks.setMarketingConsent(false)  // refused or withdrawn
+#}
+<script>
+    (() => {
+        const CONSENT = {{ (consent|default('greendot'))|json_encode|raw }};
+        const CONSENT_CATEGORY = {{ (consent_category|default('marketing'))|json_encode|raw }};
+        const COOKIE = 'ad_clicks';
+        const PENDING_KEY = 'ad_clicks_pending';
+        const PARAMS = {{ constant('Greendot\\EshopBundle\\AdClick\\AdClickTracker::TRACKED_PARAMS')|json_encode|raw }};
+        const MAX_AGE_DAYS = 30;
+        const MAX_CLICKS = 10;
+        const MAX_LENGTH = 255;
+        // browsers cap a cookie at ~4 KB
+        const MAX_COOKIE_LENGTH = 3800;
+
+        const sameParams = (a, b) => JSON.stringify(a.params) === JSON.stringify(b.params);
+
+        function clickFromUrl() {
+            const query = new URLSearchParams(location.search);
+            const params = {};
+            PARAMS.forEach((name) => {
+                const value = query.get(name);
+                if (value) params[name] = value.slice(0, MAX_LENGTH);
+            });
+            if (!Object.keys(params).length) return null;
+
+            let referrer = null;
+            try {
+                const url = new URL(document.referrer);
+                if (url.host !== location.host) referrer = url.origin + '/';
+            } catch (e) {}
+
+            return {
+                clicked_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+                landing_path: location.pathname.slice(0, MAX_LENGTH),
+                referrer,
+                params,
+            };
+        }
+
+        function readList(read) {
+            try {
+                const list = JSON.parse(read());
+                return Array.isArray(list) ? list : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        const readPending = () => readList(() => sessionStorage.getItem(PENDING_KEY));
+
+        function writePending(clicks) {
+            try {
+                clicks.length
+                    ? sessionStorage.setItem(PENDING_KEY, JSON.stringify(clicks))
+                    : sessionStorage.removeItem(PENDING_KEY);
+            } catch (e) {}
+        }
+
+        const readCookie = () => readList(() => {
+            const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)'));
+            return match ? decodeURIComponent(match[1]) : null;
+        });
+
+        function deleteCookie() {
+            document.cookie = `${COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+        }
+
+        function writeCookie(clicks) {
+            let value = encodeURIComponent(JSON.stringify(clicks));
+            while (clicks.length > 1 && value.length > MAX_COOKIE_LENGTH) {
+                clicks = clicks.slice(1);
+                value = encodeURIComponent(JSON.stringify(clicks));
+            }
+            const secure = location.protocol === 'https:' ? '; Secure' : '';
+            document.cookie = `${COOKIE}=${value}; Max-Age=${MAX_AGE_DAYS * 86400}; Path=/; SameSite=Lax${secure}`;
+        }
+
+        // Moves waiting clicks into the cookie, dropping expired clicks and repeats of a stored click.
+        function save() {
+            const stored = readCookie();
+            const minTime = Date.now() - MAX_AGE_DAYS * 86400000;
+            let clicks = stored.filter((click) => Date.parse(click.clicked_at) > minTime);
+            const pending = readPending();
+            pending.forEach((click) => {
+                if (!clicks.some((c) => sameParams(c, click))) clicks.push(click);
+            });
+            writePending([]);
+
+            if (!pending.length && clicks.length === stored.length) return;
+            clicks.length ? writeCookie(clicks.slice(-MAX_CLICKS)) : deleteCookie();
+        }
+
+        // true = granted, false = refused/withdrawn, null/undefined = no decision yet (clicks keep waiting)
+        function setMarketingConsent(granted) {
+            if (granted === true) save();
+            else if (granted === false) deleteCookie();
+        }
+
+        // Each adapter maps a consent panel's API onto setMarketingConsent(). Panels may initialise before or
+        // after this script, so each one reads the current state and also listens for changes.
+        const adapters = {
+            // Greendot consent widget (greendot.cz/consent/v1/widget.js)
+            greendot() {
+                const fromChoices = (choices) => setMarketingConsent(choices ? choices[CONSENT_CATEGORY] === true : null);
+                window.addEventListener('gd-consent:ready', (e) => fromChoices(e.detail?.decision ? e.detail.choices : null));
+                window.addEventListener('gd-consent:changed', (e) => fromChoices(e.detail?.choices));
+                window.addEventListener('gd-consent:reset', () => setMarketingConsent(false));
+                if (window.GDConsent) fromChoices(window.GDConsent.state?.choices);
+            },
+            // Cookiebot (consent.cookiebot.com/uc.js)
+            cookiebot() {
+                const fromCookiebot = () => setMarketingConsent(
+                    window.Cookiebot?.hasResponse ? window.Cookiebot.consent?.marketing === true : null,
+                );
+                ['CookiebotOnConsentReady', 'CookiebotOnAccept', 'CookiebotOnDecline']
+                    .forEach((name) => window.addEventListener(name, fromCookiebot));
+                fromCookiebot();
+            },
+            // vanilla-cookieconsent v3 (orestbida/cookieconsent)
+            cookieconsent() {
+                const fromCookieConsent = () => {
+                    const cc = window.CookieConsent;
+                    setMarketingConsent(cc?.validConsent?.() ? cc.acceptedCategory(CONSENT_CATEGORY) : null);
+                };
+                ['cc:onConsent', 'cc:onChange'].forEach((name) => window.addEventListener(name, fromCookieConsent));
+                fromCookieConsent();
+            },
+            // any other panel calls window.GreendotAdClicks.setMarketingConsent() itself
+            manual() {},
+        };
+
+        const click = clickFromUrl();
+        if (click) {
+            const pending = readPending();
+            if (!pending.some((c) => sameParams(c, click))) writePending([...pending, click]);
+        }
+
+        window.GreendotAdClicks = { setMarketingConsent };
+
+        if (adapters[CONSENT]) {
+            adapters[CONSENT]();
+        } else {
+            console.warn(`[GreendotAdClicks] Unknown consent adapter "${CONSENT}", falling back to manual.`);
+        }
+    })();
+</script>
