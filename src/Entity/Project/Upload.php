@@ -49,6 +49,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiFilter(ProductWithVariantsUploads::class)]
 class Upload implements Translatable
 {
+    public const FILE_FIELDS = ['path', 'originalName', 'extension', 'mime', 'width', 'height'];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -59,10 +61,12 @@ class Upload implements Translatable
     #[Groups(['upload:read', 'upload_product_with_variants:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
     private ?string $name = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255)]
     #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $extension = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['upload:read', 'upload_product_with_variants:read'])]
     private ?string $mime = null;
@@ -85,16 +89,20 @@ class Upload implements Translatable
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $created = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255)]
     #[Groups(['upload:read', 'upload_product_with_variants:read', 'category_default', 'category:read', 'category:write', 'product_item:read', 'product_list:read', 'product_product:read', 'producer_info:read', 'product_info:write', 'search_result', "SearchProductResultApiModel", 'purchase:read', 'comment:read', 'person:read'])]
     private ?string $path = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255)]
     private ?string $originalName = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $width = null;
 
+    #[Gedmo\Translatable]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $height = null;
 
