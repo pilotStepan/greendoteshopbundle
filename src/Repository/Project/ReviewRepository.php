@@ -29,7 +29,7 @@ class ReviewRepository extends ServiceEntityRepository
      * Compute review distribution and average on *any* filtered QB.
      *
      * @param QueryBuilder $queryBuilder filtered, unpaginated QB (root alias must be "r")
-     * @return array{distribution: array<int,int>, avg: float}
+     * @return array{distribution: array<int,int>, avgRating: float}
      */
     public function getStats(QueryBuilder $queryBuilder): array
     {

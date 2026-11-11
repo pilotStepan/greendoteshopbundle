@@ -143,9 +143,4 @@ class ValueAddedTaxCalculator
         return $reducedPrice;
     }
 
-    private function discountPriceByPercentage(float $price, float $discount): float
-    {
-        $discountedAmount = ($discount / 100) * $price;
-        return $price - $discountedAmount;
-    }
 }

@@ -85,37 +85,6 @@ class PacketeryAddressParcel implements ParcelServiceInterface
         ];
     }
 
-    /**
-     * External-carrier delivery (addressId is a carrier, not a Packeta branch) requires obtaining
-     * the carrier's own tracking number and shipping label after the packet is created in Packeta's
-     * system, otherwise the parcel must be relabeled in depot, delaying delivery.
-     */
-    private function fetchCourierTrackingAndLabel(Purchase $purchase, Transportation $transportation, string $packetId): void
-    {
-        $apiPassword = $transportation->getSecretKey();
-
-        $numberXml = $this->callPacketeryApi('packetCourierNumber', [
-            'apiPassword' => $apiPassword,
-            'packetId' => $packetId,
-        ], 'packetCourierNumber', $purchase);
-
-        $courierNumber = (string)$numberXml->result->courierNumber;
-        $purchase->setCourierNumber($courierNumber);
-
-        $labelXml = $this->callPacketeryApi('packetCourierLabelPdf', [
-            'apiPassword' => $apiPassword,
-            'packetId' => $packetId,
-            'courierNumber' => $courierNumber,
-        ], 'packetCourierLabelPdf', $purchase);
-
-        $this->logger->info('Fetched Packeta courier tracking number for address delivery', [
-            'purchaseId' => $purchase->getId(),
-            'packetId' => $packetId,
-            'courierNumber' => $courierNumber,
-            'labelReceived' => isset($labelXml->result) && (string)$labelXml->result !== '',
-        ]);
-    }
-
     public function supports(TransportationAPI $transportationAPI): bool
     {
         return $this->enabled && $transportationAPI === TransportationAPI::PACKETA_ADDRESS;

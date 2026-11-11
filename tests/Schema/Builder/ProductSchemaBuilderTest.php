@@ -205,7 +205,9 @@ class ProductSchemaBuilderTest extends TestCase
         $product->method('getProductVariants')->willReturn($collection);
         $this->reviewRepository->method('getReviewCountForProduct')->willReturn(0);
 
-        $schema = $this->builder->buildForListing($product)->toArray();
+        $listing = $this->builder->buildForListing($product);
+        $this->assertInstanceOf(\Spatie\SchemaOrg\BaseType::class, $listing);
+        $schema = $listing->toArray();
 
         // Google's Product-snippet validator requires ProductGroup to expose at least
         // one of hasVariant.offers, review, or aggregateRating; a top-level AggregateOffer

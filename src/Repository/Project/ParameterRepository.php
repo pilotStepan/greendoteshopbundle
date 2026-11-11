@@ -186,6 +186,25 @@ class ParameterRepository extends HintedRepositoryBase
         }
     }
 
+    /**
+     * One parameter per distinct value of $parameterGroup across the given variants; none without a group.
+     *
+     * @param list<int> $productVariantIds
+     * @return list<Parameter>
+     */
+    public function getDistinctDataOfParameterGroupForProductVariantArray(?ParameterGroup $parameterGroup, array $productVariantIds): array
+    {
+        if ($parameterGroup === null || $productVariantIds === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.parameterGroup = :group')->setParameter('group', $parameterGroup)
+            ->andWhere('p.productVariant IN (:variants)')->setParameter('variants', $productVariantIds)
+            ->groupBy('p.data')
+            ->getQuery()->getResult();
+    }
+
     public function findParametersQB(QueryBuilder $queryBuilder, int $parameterGroupId): QueryBuilder
     {
         $alias = $queryBuilder->getRootAliases()[0];

@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\Repository\Project;
 
-use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductProduct;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,35 +17,35 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
  */
 class ProductProductRepository extends ServiceEntityRepository
 {
-    public function __construct(private readonly ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ProductProduct::class);
     }
 
+    /**
+     * The best-discounted link that makes this line's product an add-on of another product in the same purchase.
+     */
     public function getForPurchaseProductVariant(PurchaseProductVariant $purchaseProductVariant): ?ProductProduct
     {
-        //get all products in purchase
-        $productRepository = $this->registry->getRepository(Product::class);
-        assert($productRepository instanceof ProductRepository);
-        $productsInPurchase = $productRepository->findProductsByPurchaseQB($purchaseProductVariant->getPurchase());
-        $productsInPurchase = $productsInPurchase
-            ->select('product.id as id')
-            ->distinct()
-            ->getQuery()->getResult();
-        //format to array of ids
-        $productsInPurchase = array_column($productsInPurchase, 'id');
+        $currentProductId = $purchaseProductVariant->getProductVariant()->getProduct()->getId();
 
-        //filter out current product
-        $productsInPurchase = array_filter($productsInPurchase, fn($id) => $id !== $purchaseProductVariant->getProductVariant()->getProduct()->getId());
+        $productsInPurchase = [];
+        foreach ($purchaseProductVariant->getPurchase()->getProductVariants() as $line) {
+            $productId = $line->getProductVariant()->getProduct()->getId();
+            if ($productId !== $currentProductId) {
+                $productsInPurchase[$productId] = $productId;
+            }
+        }
 
-        if (!$productsInPurchase or empty($productsInPurchase)) return null;
-
+        if ($productsInPurchase === []) {
+            return null;
+        }
 
         return $this->createQueryBuilder('productProduct')
             ->andWhere('productProduct.childrenProduct = :productVariant')
-            ->setParameter('productVariant', $purchaseProductVariant->getProductVariant()->getProduct()->getId())
+            ->setParameter('productVariant', $currentProductId)
             ->andWhere('productProduct.parentProduct in (:productInPurchase)')
-            ->setParameter('productInPurchase', $productsInPurchase)
+            ->setParameter('productInPurchase', array_values($productsInPurchase))
             ->orderBy('productProduct.discount', 'DESC')
             ->setMaxResults(1)
             ->getQuery()

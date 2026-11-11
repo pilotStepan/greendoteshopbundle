@@ -7,12 +7,6 @@ parameters:
 			path: src/Affiliate/AffiliateService.php
 
 		-
-			message: '#^Access to undefined constant Doctrine\\DBAL\\Connection\:\:PARAM_INT_ARRAY\.$#'
-			identifier: classConstant.notFound
-			count: 2
-			path: src/Algolia/ProductIndexer.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\ApiResource\\BoundingBoxFilter\:\:filterProperty\(\) has parameter \$value with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
@@ -307,12 +301,6 @@ parameters:
 			path: src/Controller/FragmentController.php
 
 		-
-			message: '#^Method KnpU\\OAuth2ClientBundle\\Client\\OAuth2ClientInterface\:\:redirect\(\) invoked with 1 parameter, 2 required\.$#'
-			identifier: arguments.count
-			count: 2
-			path: src/Controller/OAuthController.php
-
-		-
 			message: '#^Call to an undefined method Knp\\Component\\Pager\\Pagination\\PaginationInterface\<int, mixed\>\:\:setTemplate\(\)\.$#'
 			identifier: method.notFound
 			count: 2
@@ -409,18 +397,6 @@ parameters:
 			path: src/Controller/Shop/ProductController.php
 
 		-
-			message: '#^Property Greendot\\EshopBundle\\Controller\\Shop\\ProductController\:\:\$productRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Controller/Shop/ProductController.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Currency\:\:getConversionRate\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Controller/Shop/PurchaseController.php
-
-		-
 			message: '#^Call to an undefined method Symfony\\Component\\Serializer\\SerializerInterface\:\:normalize\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -439,12 +415,6 @@ parameters:
 			path: src/Controller/Shop/RegistrationController.php
 
 		-
-			message: '#^Method Greendot\\EshopBundle\\Controller\\Shop\\RegistrationController\:\:getAllFormErrors\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: src/Controller/Shop/RegistrationController.php
-
-		-
 			message: '#^Parameter \#1 \$isVerified of method Greendot\\EshopBundle\\Entity\\Project\\Client\:\:setIsVerified\(\) expects bool, int given\.$#'
 			identifier: argument.type
 			count: 1
@@ -455,18 +425,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/Controller/Shop/RegistrationController.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Controller\\Shop\\ScheduledTasksController\:\:\$entityManager is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Controller/Shop/ScheduledTasksController.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Message\:\:setIsAdmin\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Controller/Simple/SimplePurchaseController.php
 
 		-
 			message: '#^Method Greendot\\EshopBundle\\Controller\\TemplateController\:\:template\(\) has parameter \$name with no type specified\.$#'
@@ -481,21 +439,9 @@ parameters:
 			path: src/Controller/TestController.php
 
 		-
-			message: '#^Call to an undefined method Symfony\\Contracts\\Translation\\TranslatorInterface\:\:getCatalogue\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Controller/TranslationController.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Controller\\TranslationController\:\:translateJS\(\) has parameter \$locale with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
-			path: src/Controller/TranslationController.php
-
-		-
-			message: '#^PHPDoc tag @throws with type DeepL\\DeepLException is not subtype of Throwable$#'
-			identifier: throws.notThrowable
-			count: 4
 			path: src/Controller/TranslationController.php
 
 		-
@@ -595,12 +541,6 @@ parameters:
 			path: src/DataFixtures/PurchaseFixtures.php
 
 		-
-			message: '#^Match expression does not handle remaining value\: string$#'
-			identifier: match.unhandled
-			count: 1
-			path: src/DataLayer/EventListener/DataLayerEventListener.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 1
@@ -610,18 +550,6 @@ parameters:
 			message: '#^Parameter \$item_id of class Greendot\\EshopBundle\\DataLayer\\Data\\DataLayerItem constructor expects string, int\|null given\.$#'
 			identifier: argument.type
 			count: 2
-			path: src/DataLayer/Factory/DataLayerItemFactory.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Doctrine\\Common\\Collections\\Collection\<int, Greendot\\EshopBundle\\Entity\\Project\\CategoryProduct\>\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/DataLayer/Factory/DataLayerItemFactory.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Greendot\\EshopBundle\\Entity\\Project\\CategoryProduct\|false\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
 			path: src/DataLayer/Factory/DataLayerItemFactory.php
 
 		-
@@ -673,18 +601,6 @@ parameters:
 			path: src/Doctrine/SoftDeletedFilter.php
 
 		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\TransportationAction not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Doctrine/TransportationActionTransportationIsEnabledFilter.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Entity\\ExternalIds\:\:getExternalId\(\) should return int\|null but returns string\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Entity/ExternalIds.php
-
-		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\ExternalIds\:\:\$externalId type mapping mismatch\: property can contain string\|null but database expects string\.$#'
 			identifier: doctrine.columnType
 			count: 1
@@ -699,12 +615,6 @@ parameters:
 		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Address\:\:\$date_created type mapping mismatch\: property can contain DateTimeInterface\|null but database expects DateTimeInterface\.$#'
 			identifier: doctrine.columnType
-			count: 1
-			path: src/Entity/Project/Address.php
-
-		-
-			message: '#^Unsafe usage of new static\(\)\.$#'
-			identifier: new.static
 			count: 1
 			path: src/Entity/Project/Address.php
 
@@ -787,18 +697,6 @@ parameters:
 			path: src/Entity/Project/BranchType.php
 
 		-
-			message: '#^Attribute class Symfony\\Component\\Serializer\\Attribute\\Groups constructor invoked with 5 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/Entity/Project/Category.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Entity\\Project\\Category\:\:getIsActive\(\) should return bool\|null but returns Doctrine\\Common\\Collections\\ArrayCollection\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Entity/Project/Category.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Entity\\Project\\Category\:\:setTranslatableLocale\(\) has parameter \$locale with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
@@ -861,24 +759,6 @@ parameters:
 		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Category\:\:\$id has no type specified\.$#'
 			identifier: missingType.property
-			count: 1
-			path: src/Entity/Project/Category.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Category\:\:\$isActive \(Doctrine\\Common\\Collections\\ArrayCollection\) does not accept bool\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Entity/Project/Category.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Category\:\:\$isActive type mapping mismatch\: database can contain bool but property expects Doctrine\\Common\\Collections\\ArrayCollection\.$#'
-			identifier: doctrine.columnType
-			count: 1
-			path: src/Entity/Project/Category.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Category\:\:\$isActive type mapping mismatch\: property can contain Doctrine\\Common\\Collections\\ArrayCollection but database expects bool\.$#'
-			identifier: doctrine.columnType
 			count: 1
 			path: src/Entity/Project/Category.php
 
@@ -1009,12 +889,6 @@ parameters:
 			path: src/Entity/Project/CategoryCategory.php
 
 		-
-			message: '#^Parameter \$repositoryClass of attribute class Doctrine\\ORM\\Mapping\\Entity constructor expects class\-string\<Doctrine\\ORM\\EntityRepository\<T of object\>\>\|null, ''Greendot\\\\EshopBundle\\\\Entity\\\\Project\\\\CategoryFile'' given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Entity/Project/CategoryFile.php
-
-		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\CategoryFile\:\:\$category has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
@@ -1115,12 +989,6 @@ parameters:
 			identifier: doctrine.columnType
 			count: 1
 			path: src/Entity/Project/CategoryType.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Entity\\Project\\Client\:\:getUserIdentifier\(\) should return non\-empty\-string but returns int\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Entity/Project/Client.php
 
 		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Client\:\:\$clientAddresses type mapping mismatch\: property can contain Doctrine\\Common\\Collections\\Collection but database expects Doctrine\\Common\\Collections\\Collection&iterable\<Greendot\\EshopBundle\\Entity\\Project\\ClientAddress\>\.$#'
@@ -1747,12 +1615,6 @@ parameters:
 			path: src/Entity/Project/LabelType.php
 
 		-
-			message: '#^Class Greendot\\EshopBundle\\Repository\\ProjectLogRepository not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Entity/Project/Log.php
-
-		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\Log\:\:\$date type mapping mismatch\: property can contain DateTimeInterface\|null but database expects DateTimeInterface\.$#'
 			identifier: doctrine.columnType
 			count: 1
@@ -1873,30 +1735,6 @@ parameters:
 			path: src/Entity/Project/ParameterGroup.php
 
 		-
-			message: '''
-				#^PHPDoc tag @var has invalid value \(
-				Defines the class to specify for example icon\.     \*\)\: Unexpected token "\\n     \* ", expected type at offset 15 on line 2$#
-			'''
-			identifier: phpDoc.parseError
-			count: 1
-			path: src/Entity/Project/ParameterGroup.php
-
-		-
-			message: '''
-				#^PHPDoc tag @var has invalid value \(
-				Defines the unit that should be displayed with the parameter value\.     \*\)\: Unexpected token "\\n     \* ", expected type at offset 15 on line 2$#
-			'''
-			identifier: phpDoc.parseError
-			count: 1
-			path: src/Entity/Project/ParameterGroup.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\ParameterGroup\:\:\$class has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Entity/Project/ParameterGroup.php
-
-		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\ParameterGroup\:\:\$id has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
@@ -1929,12 +1767,6 @@ parameters:
 		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\ParameterGroup\:\:\$productParameterGroups type mapping mismatch\: property can contain Doctrine\\Common\\Collections\\Collection but database expects Doctrine\\Common\\Collections\\Collection&iterable\<Greendot\\EshopBundle\\Entity\\Project\\ProductParameterGroup\>\.$#'
 			identifier: doctrine.associationType
-			count: 1
-			path: src/Entity/Project/ParameterGroup.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\ParameterGroup\:\:\$unit has no type specified\.$#'
-			identifier: missingType.property
 			count: 1
 			path: src/Entity/Project/ParameterGroup.php
 
@@ -2467,12 +2299,6 @@ parameters:
 			path: src/Entity/Project/ProductParameterGroup.php
 
 		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\ProductProductType referenced with incorrect case\: Greendot\\EshopBundle\\Entity\\Project\\productProductType\.$#'
-			identifier: class.nameCase
-			count: 1
-			path: src/Entity/Project/ProductProduct.php
-
-		-
 			message: '#^Property Greendot\\EshopBundle\\Entity\\Project\\ProductProduct\:\:\$discount type mapping mismatch\: property can contain int\|null but database expects int\.$#'
 			identifier: doctrine.columnType
 			count: 1
@@ -2611,30 +2437,6 @@ parameters:
 			path: src/Entity/Project/ProductViewType.php
 
 		-
-			message: '#^Call to an undefined method Traversable\<\(int\|string\), mixed\>\:\:count\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Entity/Project/Purchase.php
-
-		-
-			message: '#^Call to an undefined method Traversable\<\(int\|string\), mixed\>\:\:current\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Entity/Project/Purchase.php
-
-		-
-			message: '#^Call to an undefined method Traversable\<\(int\|string\), mixed\>\:\:uasort\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Entity/Project/Purchase.php
-
-		-
-			message: '#^If condition is always true\.$#'
-			identifier: if.alwaysTrue
-			count: 1
-			path: src/Entity/Project/Purchase.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Entity\\Project\\Purchase\:\:getName\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -2649,12 +2451,6 @@ parameters:
 		-
 			message: '#^Method Greendot\\EshopBundle\\Entity\\Project\\Purchase\:\:setName\(\) has parameter \$name with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: src/Entity/Project/Purchase.php
-
-		-
-			message: '#^Negated boolean expression is always true\.$#'
-			identifier: booleanNot.alwaysTrue
 			count: 1
 			path: src/Entity/Project/Purchase.php
 
@@ -3385,12 +3181,6 @@ parameters:
 			path: src/EventSubscriber/AnonymousClientLogoutListener.php
 
 		-
-			message: '#^Attribute class JetBrains\\PhpStorm\\ArrayShape does not exist\.$#'
-			identifier: attribute.notFound
-			count: 1
-			path: src/EventSubscriber/CartModifiedListener.php
-
-		-
 			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
@@ -3425,24 +3215,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: src/EventSubscriber/ParameterEventListener.php
-
-		-
-			message: '#^Class Greendot\\EshopBundle\\Service\\PriceCalculator referenced with incorrect case\: Greendot\\EshopBundle\\Service\\priceCalculator\.$#'
-			identifier: class.nameCase
-			count: 1
-			path: src/EventSubscriber/PriceEventListener.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\EventSubscriber\\PriceEventListener\:\:supports\(\) has parameter \$entity with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/EventSubscriber/PriceEventListener.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\EventSubscriber\\PriceEventListener\:\:\$priceCalculator is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/EventSubscriber/PriceEventListener.php
 
 		-
 			message: '#^Instanceof between Greendot\\EshopBundle\\Entity\\Project\\Purchase and Greendot\\EshopBundle\\Entity\\Project\\Purchase will always evaluate to true\.$#'
@@ -3517,12 +3289,6 @@ parameters:
 			path: src/I18n/ApiLocaleListener.php
 
 		-
-			message: '#^Attribute class JetBrains\\PhpStorm\\ArrayShape does not exist\.$#'
-			identifier: attribute.notFound
-			count: 1
-			path: src/I18n/RouteTranslator.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 1
@@ -3559,60 +3325,6 @@ parameters:
 			path: src/Invoice/Data/InvoiceData.php
 
 		-
-			message: '#^Method Greendot\\EshopBundle\\Invoice\\Factory\\InvoiceDataFactory\:\:buildPrices\(\) should return array\<float\> but returns array\<int, float\|Greendot\\EshopBundle\\Money\\Money\|int\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceNoVatMoney of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceNoVatMoneySecondary of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceNoVatNoDiscountMoney of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceNoVatNoDiscountMoneySecondary of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceVatMoney of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceVatMoneySecondary of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceVatNoDiscountMoney of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
-			message: '#^Parameter \$totalPriceVatNoDiscountMoneySecondary of class Greendot\\EshopBundle\\Invoice\\Data\\InvoiceData constructor expects Greendot\\EshopBundle\\Money\\Money\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Invoice/Factory/InvoiceDataFactory.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\MessageHandler\\Export\\ProcessChunkHandler\:\:__invoke\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -3625,22 +3337,10 @@ parameters:
 			path: src/MessageHandler/Watchdog/VariantAvailable/NotifyVariantAvailableHandler.php
 
 		-
-			message: '#^Method Greendot\\EshopBundle\\Parcel\\Integration\\PacketeryAddressParcel\:\:fetchCourierTrackingAndLabel\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: src/Parcel/Integration/PacketeryAddressParcel.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Payment\\RbBank\\RbBankPaymentImportService\:\:findBankTransferPaymentType\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
 			path: src/Payment/RbBank/RbBankPaymentImportService.php
-
-		-
-			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 146 near ''productVariant''\: Error\: Class Greendot\\EshopBundle\\Entity\\Project\\ParameterGroup has no field or association named productVariant$#'
-			identifier: doctrine.dql
-			count: 1
-			path: src/Repository/ExternalIdsRepository.php
 
 		-
 			message: '#^Call to an undefined method Doctrine\\ORM\\EntityRepository\<Gedmo\\Translatable\\Entity\\Translation\>\:\:findTranslations\(\)\.$#'
@@ -3685,42 +3385,6 @@ parameters:
 			path: src/Repository/Project/CategoryCategoryRepository.php
 
 		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\CategoryParamGroup not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/CategoryParamGroupRepository.php
-
-		-
-			message: '#^PHPDoc tag @extends has invalid type Greendot\\EshopBundle\\Entity\\Project\\CategoryParamGroup\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/CategoryParamGroupRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\CategoryParamGroupRepository\:\:find\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\CategoryParamGroup\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/CategoryParamGroupRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\CategoryParamGroupRepository\:\:findAll\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\CategoryParamGroup\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/CategoryParamGroupRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\CategoryParamGroupRepository\:\:findBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\CategoryParamGroup\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/CategoryParamGroupRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\CategoryParamGroupRepository\:\:findOneBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\CategoryParamGroup\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/CategoryParamGroupRepository.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\CategoryProductRepository\:\:getMainCategoryForProduct\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -3729,12 +3393,6 @@ parameters:
 		-
 			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\CategoryProductRepository\:\:getMainCategoryForProduct\(\) has parameter \$product with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: src/Repository/Project/CategoryProductRepository.php
-
-		-
-			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 129 near ''category\.categoryType''\: Error\: ''category'' is not defined\.$#'
-			identifier: doctrine.dql
 			count: 1
 			path: src/Repository/Project/CategoryProductRepository.php
 
@@ -3783,18 +3441,6 @@ parameters:
 		-
 			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\CategoryRepository\:\:getCategoriesForEntity\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: src/Repository/Project/CategoryRepository.php
-
-		-
-			message: '#^PHPDoc tag @param has invalid value \(array int\[\]\)\: Unexpected token "int", expected variable at offset 92 on line 4$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: src/Repository/Project/CategoryRepository.php
-
-		-
-			message: '#^PHPDoc tag @param has invalid value \(int\)\: Unexpected token "\\n     \* ", expected variable at offset 89 on line 4$#'
-			identifier: phpDoc.parseError
 			count: 1
 			path: src/Repository/Project/CategoryRepository.php
 
@@ -3887,30 +3533,6 @@ parameters:
 			identifier: missingType.return
 			count: 1
 			path: src/Repository/Project/PriceRepository.php
-
-		-
-			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Repository/Project/ProductProductRepository.php
-
-		-
-			message: '#^Instanceof between Greendot\\EshopBundle\\Repository\\Project\\ProductRepository and Greendot\\EshopBundle\\Repository\\Project\\ProductRepository will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: src/Repository/Project/ProductProductRepository.php
-
-		-
-			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 132 near ''productVariant''\: Error\: Class Greendot\\EshopBundle\\Entity\\Project\\ProductProduct has no association named productVariants$#'
-			identifier: doctrine.dql
-			count: 1
-			path: src/Repository/Project/ProductProductRepository.php
-
-		-
-			message: '#^Variable \$productsInPurchase in empty\(\) always exists and is not falsy\.$#'
-			identifier: empty.variable
-			count: 1
-			path: src/Repository/Project/ProductProductRepository.php
 
 		-
 			message: '#^If condition is always true\.$#'
@@ -4015,72 +3637,6 @@ parameters:
 			path: src/Repository/Project/ProductRepository.php
 
 		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^Instanceof between Greendot\\EshopBundle\\Entity\\Project\\PurchaseProductVariant and Greendot\\EshopBundle\\Entity\\Project\\PurchaseProductVariant will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:findDiscount\(\) has invalid return type Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @extends has invalid type Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:find\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:findAll\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:findBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:findOneBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:remove\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantDiscountRepository\:\:save\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
-			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 14 near ''Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount''\: Error\: Class ''Greendot\\EshopBundle\\Entity\\Project\\ProductVariantDiscount'' is not defined\.$#'
-			identifier: doctrine.dql
-			count: 1
-			path: src/Repository/Project/ProductVariantDiscountRepository.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\ProductVariantRepository\:\:findActiveVariantsForProduct\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -4133,132 +3689,6 @@ parameters:
 			identifier: missingType.parameter
 			count: 1
 			path: src/Repository/Project/PurchaseRepository.php
-
-		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @extends has invalid type Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\QuantityDiscountRepository\:\:find\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\QuantityDiscountRepository\:\:findAll\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\QuantityDiscountRepository\:\:findBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\QuantityDiscountRepository\:\:findOneBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\QuantityDiscountRepository\:\:add\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\QuantityDiscountRepository\:\:remove\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\QuantityDiscount\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/QuantityDiscountRepository.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\ReviewRepository\:\:getStats\(\) should return array\{distribution\: array\<int, int\>, avg\: float\} but returns array\{distribution\: array\{5\: int, 4\: int, 3\: int, 2\: int, 1\: int\}, avgRating\: float\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/Project/ReviewRepository.php
-
-		-
-			message: '#^Offset ''avgRating'' does not exist on array\{distribution\: array\<int, int\>, avg\: float\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Repository/Project/ReviewRepository.php
-
-		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\TransportationAction not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationActionRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\TransportationActionRepository\:\:remove\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\TransportationAction\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationActionRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\TransportationActionRepository\:\:save\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\TransportationAction\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationActionRepository.php
-
-		-
-			message: '#^Class Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^PHPDoc tag @extends has invalid type Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\TransportationPaymentRepository\:\:find\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\TransportationPaymentRepository\:\:findAll\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\TransportationPaymentRepository\:\:findBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^PHPDoc tag @method for method Greendot\\EshopBundle\\Repository\\Project\\TransportationPaymentRepository\:\:findOneBy\(\) return type contains unknown class Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\TransportationPaymentRepository\:\:remove\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
-
-		-
-			message: '#^Parameter \$entity of method Greendot\\EshopBundle\\Repository\\Project\\TransportationPaymentRepository\:\:save\(\) has invalid type Greendot\\EshopBundle\\Entity\\Project\\TransportationPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Repository/Project/TransportationPaymentRepository.php
 
 		-
 			message: '#^Comparison operation "\<" between int\<1, max\> and 1 is always false\.$#'
@@ -4321,12 +3751,6 @@ parameters:
 			path: src/Schema/Builder/ProductSchemaBuilder.php
 
 		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Interface\\PageableInterface\:\:getName\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Schema/Provider/WebPageSchemaProvider.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Security\\EmailVerifier\:\:handleEmailConfirmation\(\) has parameter \$user with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
@@ -4381,12 +3805,6 @@ parameters:
 			path: src/Service/CategoryInfoGetter.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$day$#'
-			identifier: parameter.notFound
-			count: 1
-			path: src/Service/DateService.php
-
-		-
 			message: '#^Parameter \#1 \$isApproved of method Greendot\\EshopBundle\\Entity\\Project\\DownloadRequest\:\:setIsApproved\(\) expects bool, int given\.$#'
 			identifier: argument.type
 			count: 2
@@ -4411,21 +3829,9 @@ parameters:
 			path: src/Service/DownloadRequests/DefaultDownloadRequestHandler.php
 
 		-
-			message: '#^Call to method translateText\(\) on an unknown class DeepL\\Translator\.$#'
-			identifier: class.notFound
-			count: 7
-			path: src/Service/GenerateTranslation.php
-
-		-
 			message: '#^If condition is always true\.$#'
 			identifier: if.alwaysTrue
 			count: 1
-			path: src/Service/GenerateTranslation.php
-
-		-
-			message: '#^Instantiated class DeepL\\Translator not found\.$#'
-			identifier: class.notFound
-			count: 2
 			path: src/Service/GenerateTranslation.php
 
 		-
@@ -4439,18 +3845,6 @@ parameters:
 			identifier: missingType.parameter
 			count: 1
 			path: src/Service/GenerateTranslation.php
-
-		-
-			message: '#^PHPDoc tag @throws with type DeepL\\DeepLException is not subtype of Throwable$#'
-			identifier: throws.notThrowable
-			count: 2
-			path: src/Service/GenerateTranslation.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Repository\\Project\\ParameterRepository\:\:getDistinctDataOfParameterGroupForProductVariantArray\(\)\.$#'
-			identifier: method.notFound
-			count: 3
-			path: src/Service/GoogleAnalytics.php
 
 		-
 			message: '#^Method Greendot\\EshopBundle\\Service\\GoogleAnalytics\:\:addToCart\(\) has parameter \$amount with no type specified\.$#'
@@ -4473,18 +3867,6 @@ parameters:
 		-
 			message: '#^Parameter \#4 \$services of method Greendot\\EshopBundle\\Service\\PriceCalculator\:\:calculatePurchasePrice\(\) expects bool, int given\.$#'
 			identifier: argument.type
-			count: 1
-			path: src/Service/GoogleAnalytics.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\GoogleAnalytics\:\:\$productRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Service/GoogleAnalytics.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\GoogleAnalytics\:\:\$productVariantRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
 			count: 1
 			path: src/Service/GoogleAnalytics.php
 
@@ -4573,12 +3955,6 @@ parameters:
 			path: src/Service/Imports/Branch/CzechPostBranchImporter.php
 
 		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\Imports\\Branch\\CzechPostBranchImporter\:\:\$em is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Service/Imports/Branch/CzechPostBranchImporter.php
-
-		-
 			message: '#^Call to function is_object\(\) with Doctrine\\DBAL\\Driver\\Middleware will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 3
@@ -4611,12 +3987,6 @@ parameters:
 		-
 			message: '#^Property Greendot\\EshopBundle\\Dto\\ProviderBranchData\:\:\$provider \(''balikovna''\|''posta''\|''zasilkovna''\) does not accept ''packeta''\.$#'
 			identifier: assign.propertyType
-			count: 1
-			path: src/Service/Imports/Branch/PacketaBranchImporter.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\Imports\\Branch\\PacketaBranchImporter\:\:\$em is never read, only written\.$#'
-			identifier: property.onlyWritten
 			count: 1
 			path: src/Service/Imports/Branch/PacketaBranchImporter.php
 
@@ -4957,24 +4327,6 @@ parameters:
 			path: src/Service/Price/CalculatedPricesService.php
 
 		-
-			message: '#^Attribute class JetBrains\\PhpStorm\\ArrayShape does not exist\.$#'
-			identifier: attribute.notFound
-			count: 1
-			path: src/Service/Price/EventPrice.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\Price\\PriceUtils\:\:convertCurrency\(\) invoked with 3 parameters, 2 required\.$#'
-			identifier: arguments.count
-			count: 5
-			path: src/Service/Price/EventPrice.php
-
-		-
-			message: '#^Parameter \#2 \$conversionRate of method Greendot\\EshopBundle\\Service\\Price\\PriceUtils\:\:convertCurrency\(\) expects Greendot\\EshopBundle\\Entity\\Project\\ConversionRate, Greendot\\EshopBundle\\Entity\\Project\\Currency given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Service/Price/EventPrice.php
-
-		-
 			message: '#^Property Greendot\\EshopBundle\\Service\\Price\\EventPrice\:\:\$discountService is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
@@ -5027,24 +4379,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: src/Service/Price/EventPriceFactory.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\Price\\PriceUtils\:\:convertCurrency\(\) invoked with 3 parameters, 2 required\.$#'
-			identifier: arguments.count
-			count: 2
-			path: src/Service/Price/EventPurchasePrice.php
-
-		-
-			message: '#^Parameter \#2 \$conversionRate of method Greendot\\EshopBundle\\Service\\Price\\PriceUtils\:\:convertCurrency\(\) expects Greendot\\EshopBundle\\Entity\\Project\\ConversionRate, Greendot\\EshopBundle\\Entity\\Project\\Currency given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Service/Price/EventPurchasePrice.php
-
-		-
-			message: '#^Attribute class JetBrains\\PhpStorm\\ArrayShape does not exist\.$#'
-			identifier: attribute.notFound
-			count: 1
-			path: src/Service/Price/ProductVariantPrice.php
 
 		-
 			message: '#^Property Greendot\\EshopBundle\\Service\\Price\\ProductVariantPrice\:\:\$discountValidUntil \(DateTime\|null\) does not accept DateTimeInterface\|null\.$#'
@@ -5125,18 +4459,6 @@ parameters:
 			path: src/Service/Price/ServiceCalculationUtils.php
 
 		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Currency\:\:getConversionRate\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Call to method Greendot\\EshopBundle\\Repository\\Project\\CurrencyRepository\:\:findOneBy\(\) \- entity Greendot\\EshopBundle\\Entity\\Project\\Currency does not have a field named \$conversionRate\.$#'
-			identifier: doctrine.findOneByArgument
-			count: 2
-			path: src/Service/PriceCalculator.php
-
-		-
 			message: '#^If condition is always true\.$#'
 			identifier: if.alwaysTrue
 			count: 1
@@ -5173,62 +4495,8 @@ parameters:
 			path: src/Service/PriceCalculator.php
 
 		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\PriceCalculator\:\:getClientDiscountValue\(\) has parameter \$client with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\PriceCalculator\:\:getClientDiscountValue\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\PriceCalculator\:\:getFinalPrice\(\) has parameter \$clientDiscount with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\PriceCalculator\:\:getFinalPrice\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Service\\PriceCalculator\:\:transportationFreeFrom\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Parameter \#2 \$dateTime of method Greendot\\EshopBundle\\Repository\\Project\\HandlingPriceRepository\:\:GetByDate\(\) expects Symfony\\Component\\Validator\\Constraints\\DateTime\|null, DateTimeInterface\|null given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\PriceCalculator\:\:\$productRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\PriceCalculator\:\:\$productVariantRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\PriceCalculator\:\:\$security is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Service/PriceCalculator.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Service\\PriceCalculator\:\:\$serializer is never read, only written\.$#'
-			identifier: property.onlyWritten
 			count: 1
 			path: src/Service/PriceCalculator.php
 
@@ -5293,24 +4561,6 @@ parameters:
 			path: src/Service/ShortCodes/ShortCodeBase.php
 
 		-
-			message: '#^Method Greendot\\EshopBundle\\Service\\ValueAddedTaxCalculator\:\:discountPriceByPercentage\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: src/Service/ValueAddedTaxCalculator.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Message\:\:setIsAdmin\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/StateProcessor/PurchaseCheckoutProcessor.php
-
-		-
-			message: '#^Class Greendot\\EshopBundle\\EventSubscriber\\PurchaseEventListener not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/StateProcessor/PurchaseCheckoutProcessor.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\StateProcessor\\PurchaseCheckoutProcessor\:\:process\(\) never returns Symfony\\Component\\HttpFoundation\\RedirectResponse so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
@@ -5327,24 +4577,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: src/StateProcessor/PurchaseCheckoutProcessor.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\StateProvider\\CheapTransportationStateProvider\:\:\$requestStack is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/StateProvider/CheapTransportationStateProvider.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\StateProvider\\ProductProductByParentStateProvider\:\:\$itemProvider is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/StateProvider/ProductProductByParentStateProvider.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Repository\\Project\\PurchaseRepository\:\:findOneBySession\(\) invoked with 1 parameter, 0 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/StateProvider/PurchaseStateProvider.php
 
 		-
 			message: '#^Call to an undefined method Doctrine\\Persistence\\ObjectManager\:\:createQueryBuilder\(\)\.$#'
@@ -5575,18 +4807,6 @@ parameters:
 			path: src/Twig/AppExtension.php
 
 		-
-			message: '#^Property Greendot\\EshopBundle\\Twig\\AppExtension\:\:\$messageRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Twig/AppExtension.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Twig\\AppExtension\:\:\$priceRepository is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Twig/AppExtension.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Greendot\\EshopBundle\\Entity\\Project\\Category\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -5647,88 +4867,10 @@ parameters:
 			path: src/Validator/Constraints/ClientDiscountAvailabilityValidator.php
 
 		-
-			message: '#^Access to an undefined property Symfony\\Component\\Validator\\Constraint\:\:\$message\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Validator/Constraints/ClientMailUniqueValidator.php
-
-		-
-			message: '#^Access to an undefined property Symfony\\Component\\Validator\\Constraint\:\:\$message\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Validator/Constraints/TransportationPaymentAvailabilityValidator.php
-
-		-
 			message: '#^Method Greendot\\EshopBundle\\Validator\\Constraints\\TransportationPaymentAvailabilityValidator\:\:validate\(\) has parameter \$value with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
 			path: src/Validator/Constraints/TransportationPaymentAvailabilityValidator.php
-
-		-
-			message: '#^Access to an undefined property Symfony\\Component\\Validator\\Constraint\:\:\$message\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Validator/Constraints/VoucherAssignableToPurchaseValidator.php
-
-		-
-			message: '#^Parameter \#5 \$entityManager of method Greendot\\EshopBundle\\Controller\\Shop\\PurchaseController\:\:pay\(\) expects Doctrine\\ORM\\EntityManagerInterface, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Controller/Shop/PurchaseControllerPayTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\HttpFoundation\\Response\:\:getTargetUrl\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: tests/Controller/Shop/PurchaseControllerVerifyOrderTest.php
-
-		-
-			message: '#^Parameter \#3 \$entityManager of method Greendot\\EshopBundle\\Controller\\Shop\\PurchaseController\:\:verifyOrder\(\) expects Doctrine\\ORM\\EntityManagerInterface, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
-			identifier: argument.type
-			count: 5
-			path: tests/Controller/Shop/PurchaseControllerVerifyOrderTest.php
-
-		-
-			message: '#^Dead catch \- RuntimeException is never thrown in the try block\.$#'
-			identifier: catch.neverThrown
-			count: 1
-			path: tests/EventSubscriber/PurchaseIssueSubscriberTest.php
-
-		-
-			message: '#^If condition is always true\.$#'
-			identifier: if.alwaysTrue
-			count: 1
-			path: tests/EventSubscriber/PurchaseIssueSubscriberTest.php
-
-		-
-			message: '#^Parameter \#1 \$entityManager of class Greendot\\EshopBundle\\EventSubscriber\\PurchaseStateSubscriber constructor expects Doctrine\\ORM\\EntityManagerInterface, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/EventSubscriber/PurchaseStateSubscriberPaymentLogTest.php
-
-		-
-			message: '#^Parameter \#9 \$paymentRepository of class Greendot\\EshopBundle\\EventSubscriber\\PurchaseStateSubscriber constructor expects Greendot\\EshopBundle\\Repository\\Project\\PaymentRepository, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/EventSubscriber/PurchaseStateSubscriberPaymentLogTest.php
-
-		-
-			message: '#^Method Symfony\\Component\\Messenger\\Middleware\\MiddlewareInterface@anonymous/tests/Messenger/Middleware/LocaleMiddlewareTest\.php\:155\:\:__construct\(\) has parameter \$callback with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Messenger/Middleware/LocaleMiddlewareTest.php
-
-		-
-			message: '#^Method Symfony\\Component\\Messenger\\Middleware\\StackInterface@anonymous/tests/Messenger/Middleware/LocaleMiddlewareTest\.php\:164\:\:__construct\(\) has parameter \$middleware with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Messenger/Middleware/LocaleMiddlewareTest.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Notification\\PurchaseNotificationHandlerInterface@anonymous/tests/Notification/PurchaseTransitionNotificationHandlerTest\.php\:123\:\:__construct\(\) has parameter \$onHandle with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Notification/PurchaseTransitionNotificationHandlerTest.php
 
 		-
 			message: '#^Unable to resolve the template type T in call to function array_values$#'
@@ -5737,259 +4879,7 @@ parameters:
 			path: tests/Notification/PurchaseTransitionNotificationHandlerTest.php
 
 		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Purchase\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Parcel/Integration/DpdParcelTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Purchase\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Parcel/Integration/PacketeryAddressParcelTest.php
-
-		-
-			message: '#^Static method Greendot\\EshopBundle\\Tests\\Parcel\\Integration\\PacketeryAddressParcelTest\:\:successCourierLabelXml\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: tests/Parcel/Integration/PacketeryAddressParcelTest.php
-
-		-
-			message: '#^Static method Greendot\\EshopBundle\\Tests\\Parcel\\Integration\\PacketeryAddressParcelTest\:\:successCourierNumberXml\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: tests/Parcel/Integration/PacketeryAddressParcelTest.php
-
-		-
-			message: '#^Call to an undefined method Doctrine\\ORM\\EntityManagerInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 5
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Entity\\Project\\Purchase\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Parcel\\ParcelServiceProviderInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 3
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Parcel\\ParcelServiceProviderInterface\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 5
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Repository\\Project\\PurchaseRepository\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 9
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Repository\\Project\\TransportationEventRepository\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Messenger\\MessageBusInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 6
-			path: tests/Parcel/MessageHandler/CreateParcelHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Doctrine\\ORM\\EntityManagerInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 8
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Parcel\\ParcelServiceProviderInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Parcel\\ParcelServiceProviderInterface\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 12
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Repository\\Project\\PurchaseRepository\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 18
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Greendot\\EshopBundle\\Repository\\Project\\TransportationEventRepository\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 16
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Messenger\\MessageBusInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 8
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Messenger\\MessageBusInterface\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Workflow\\WorkflowInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 3
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Workflow\\WorkflowInterface\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 9
-			path: tests/Parcel/MessageHandler/UpdateDeliveryStatusHandlerTest.php
-
-		-
-			message: '#^Call to an undefined method Spatie\\SchemaOrg\\Contracts\\ThingContract\:\:toArray\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Schema/Builder/ProductSchemaBuilderTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Routing\\Generator\\UrlGeneratorInterface\:\:expects\(\)\.$#'
-			identifier: method.notFound
-			count: 3
-			path: tests/Schema/Provider/WebPageSchemaProviderTest.php
-
-		-
-			message: '#^Call to an undefined method Symfony\\Component\\Routing\\Generator\\UrlGeneratorInterface\:\:method\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Schema/Provider/WebPageSchemaProviderTest.php
-
-		-
-			message: '#^Method Greendot\\EshopBundle\\Entity\\Interface\\PageableInterface@anonymous/tests/Schema/Provider/WebPageSchemaProviderTest\.php\:136\:\:getTitle\(\) never returns null so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Schema/Provider/WebPageSchemaProviderTest.php
-
-		-
-			message: '#^Parameter \#1 \$data of method Greendot\\EshopBundle\\Entity\\Project\\Parameter\:\:setData\(\) expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Service/ManageVoucherTest.php
-
-		-
-			message: '#^Offset bool on array\{true\: float, false\: float\} on left side of \?\? does not exist\.$#'
-			identifier: nullCoalesce.offset
-			count: 2
-			path: tests/Service/Price/CalculatedPricesServiceTest.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 8
 			path: tests/Service/Price/CalculatedPricesServiceTest.php
-
-		-
-			message: '#^Parameter \#1 \$isDefault of method Greendot\\EshopBundle\\Entity\\Project\\Currency\:\:setIsDefault\(\) expects bool, int given\.$#'
-			identifier: argument.type
-			count: 3
-			path: tests/Service/Price/PriceCalculationFactoryUtil.php
-
-		-
-			message: '#^Parameter \#1 \$vat of method Greendot\\EshopBundle\\Entity\\Project\\HandlingPrice\:\:setVat\(\) expects int\|null, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Service/Price/PriceCalculationFactoryUtil.php
-
-		-
-			message: '#^Parameter \#1 \$vat of method Greendot\\EshopBundle\\Entity\\Project\\Price\:\:setVat\(\) expects int, float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Service/Price/PriceCalculationFactoryUtil.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$conversionRateRepository has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$currencyRepository has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$discountService has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$handlingPriceRepository has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$parameterBag has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$priceRepository has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$priceUtils has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$productProductRepository has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$productVariantPriceFactory has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$security has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$serviceCalculationUtils has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Property Greendot\\EshopBundle\\Tests\\Service\\Price\\PriceCalculationTestCase\:\:\$settingsRepository has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Service/Price/PriceCalculationTestCase.php
-
-		-
-			message: '#^Match expression does not handle remaining value\: string$#'
-			identifier: match.unhandled
-			count: 1
-			path: tests/Service/Price/ProductVariantPriceTest.php

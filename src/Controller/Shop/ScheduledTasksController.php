@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\LockFactory;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,7 +18,6 @@ use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 class ScheduledTasksController extends AbstractController
 {
     public function __construct(
-        private readonly EntityManagerInterface     $entityManager,
         private readonly ProductRepository          $productRepository,
         private readonly RbBankPaymentImportService $rbBankPaymentImportService,
         private readonly ManageBranch               $manageBranch,

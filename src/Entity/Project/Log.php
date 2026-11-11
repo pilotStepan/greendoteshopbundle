@@ -2,11 +2,10 @@
 
 namespace Greendot\EshopBundle\Entity\Project;
 
-use Greendot\EshopBundle\Repository\ProjectLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ProjectLogRepository::class)]
+#[ORM\Entity]
 class Log
 {
     #[ORM\Id]

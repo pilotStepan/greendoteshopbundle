@@ -4,12 +4,17 @@ namespace Greendot\EshopBundle\Validator\Constraints;
 
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\ConstraintValidator;
 
 final class TransportationPaymentAvailabilityValidator extends ConstraintValidator
 {
     public function validate($value, Constraint $constraint): void
     {
+        if (!$constraint instanceof TransportationPaymentAvailability) {
+            throw new UnexpectedTypeException($constraint, TransportationPaymentAvailability::class);
+        }
+
         if (!$value instanceof Purchase) {
             return;
         }

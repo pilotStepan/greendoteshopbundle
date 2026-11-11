@@ -27,15 +27,16 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class UpdateDeliveryStatusHandlerTest extends TestCase
 {
-    private PurchaseRepository $purchaseRepo;
-    private TransportationEventRepository $eventRepo;
-    private ParcelServiceProviderInterface $provider;
-    private EntityManagerInterface $em;
-    private MessageBusInterface $bus;
-    private WorkflowInterface $workflow;
+    private PurchaseRepository&MockObject $purchaseRepo;
+    private TransportationEventRepository&MockObject $eventRepo;
+    private ParcelServiceProviderInterface&MockObject $provider;
+    private EntityManagerInterface&MockObject $em;
+    private MessageBusInterface&MockObject $bus;
+    private WorkflowInterface&MockObject $workflow;
     private UpdateDeliveryStatusHandler $handler;
 
     protected function setUp(): void

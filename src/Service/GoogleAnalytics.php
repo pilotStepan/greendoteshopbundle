@@ -8,8 +8,6 @@ class GoogleAnalytics
 {
     public function __construct(
         readonly private PriceCalculator $priceCalculator,
-        readonly private ProductRepository $productRepository,
-        readonly private ProductVariantRepository $productVariantRepository,
         readonly private CurrencyRepository $currencyRepository,
         readonly private ParameterRepository $parameterRepository,
         readonly private ParameterGroupRepository $parameterGroupRepository,

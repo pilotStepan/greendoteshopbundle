@@ -120,8 +120,8 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
 
     private function buildNotificationHandler(callable $onHandle): PurchaseNotificationHandlerInterface
     {
-        return new class($onHandle) implements PurchaseNotificationHandlerInterface {
-            public function __construct(private $onHandle) {}
+        return new class(\Closure::fromCallable($onHandle)) implements PurchaseNotificationHandlerInterface {
+            public function __construct(private \Closure $onHandle) {}
 
             public function handle(Purchase $purchase, string $transition): void
             {

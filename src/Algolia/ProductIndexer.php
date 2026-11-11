@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Greendot\EshopBundle\Algolia;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -140,7 +141,7 @@ class ProductIndexer implements ProductIndexerInterface
         if ($ids !== null) {
             $where = "({$where}) AND p.id IN (:__ids)";
             $params['__ids'] = $ids;
-            $types['__ids'] = Connection::PARAM_INT_ARRAY;
+            $types['__ids'] = ArrayParameterType::INTEGER;
         }
 
         $offset = 0;
@@ -239,7 +240,7 @@ class ProductIndexer implements ProductIndexerInterface
                   AND foreign_key IN (:ids)
                 SQL,
             ['class' => 'Greendot\\EshopBundle\\Entity\\Project\\Product', 'ids' => $productIds],
-            ['ids' => Connection::PARAM_INT_ARRAY],
+            ['ids' => ArrayParameterType::INTEGER],
         );
 
         $translations = [];

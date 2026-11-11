@@ -36,9 +36,9 @@ use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
 class PurchaseStateSubscriberPaymentLogTest extends TestCase
 {
-    private MockObject $entityManager;
+    private EntityManagerInterface&MockObject $entityManager;
     private RecordingPaymentActionLogger $paymentActionLogger;
-    private MockObject $paymentRepository;
+    private PaymentRepository&MockObject $paymentRepository;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void

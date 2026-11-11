@@ -58,28 +58,30 @@ class CalculatedPricesServiceTest extends TestCase
     private function makeProductVariantPriceMock(array $priceMap): MockObject
     {
         $pvPrice = $this->createMock(ProductVariantPrice::class);
-        $vatType = null;
-        $discType = null;
+        $state = new class {
+            public ?VatCalc $vat = null;
+            public ?DiscCalc $disc = null;
+        };
 
         $pvPrice->method('setVatCalculationType')
-            ->willReturnCallback(function (VatCalc $v) use (&$vatType, $pvPrice) {
-                $vatType = $v;
+            ->willReturnCallback(function (VatCalc $v) use ($state, $pvPrice) {
+                $state->vat = $v;
                 return $pvPrice;
             });
         $pvPrice->method('setDiscountCalculationType')
-            ->willReturnCallback(function (DiscCalc $v) use (&$discType, $pvPrice) {
-                $discType = $v;
+            ->willReturnCallback(function (DiscCalc $v) use ($state, $pvPrice) {
+                $state->disc = $v;
                 return $pvPrice;
             });
         $pvPrice->method('setAmount')->willReturnSelf();
         $pvPrice->method('getPiecePrice')
-            ->willReturnCallback(function () use (&$vatType, &$discType, $priceMap) {
-                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
+            ->willReturnCallback(function () use ($state, $priceMap) {
+                $key = ($state->vat?->value ?? '') . '|' . ($state->disc?->value ?? '');
                 return $priceMap[$key] ?? 0.0;
             });
         $pvPrice->method('getPieceMoney')
-            ->willReturnCallback(function () use (&$vatType, &$discType, $priceMap) {
-                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
+            ->willReturnCallback(function () use ($state, $priceMap) {
+                $key = ($state->vat?->value ?? '') . '|' . ($state->disc?->value ?? '');
                 return new Money($priceMap[$key] ?? 0.0, 'CZK');
             });
         $pvPrice->method('getMoney')->willReturn(new Money(0.0, 'CZK'));
@@ -92,33 +94,35 @@ class CalculatedPricesServiceTest extends TestCase
      * depending on the last VatCalculationType + DiscountCalculationType set,
      * and whether services are included.
      *
-     * @param array<string, array{true: float, false: float}> $priceMap
+     * @param array<string, array<int, float>> $priceMap keyed by (int) $withServices
      */
     private function makePurchasePriceMock(array $priceMap): MockObject
     {
         $ppPrice = $this->createMock(PurchasePrice::class);
-        $vatType = null;
-        $discType = null;
+        $state = new class {
+            public ?VatCalc $vat = null;
+            public ?DiscCalc $disc = null;
+        };
 
         $ppPrice->method('setVatCalculationType')
-            ->willReturnCallback(function (VatCalc $v) use (&$vatType, $ppPrice) {
-                $vatType = $v;
+            ->willReturnCallback(function (VatCalc $v) use ($state, $ppPrice) {
+                $state->vat = $v;
                 return $ppPrice;
             });
         $ppPrice->method('setDiscountCalculationType')
-            ->willReturnCallback(function (DiscCalc $v) use (&$discType, $ppPrice) {
-                $discType = $v;
+            ->willReturnCallback(function (DiscCalc $v) use ($state, $ppPrice) {
+                $state->disc = $v;
                 return $ppPrice;
             });
         $ppPrice->method('getPrice')
-            ->willReturnCallback(function (bool $withServices = false) use (&$vatType, &$discType, $priceMap) {
-                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
-                return $priceMap[$key][$withServices] ?? 0.0;
+            ->willReturnCallback(function (bool $withServices = false) use ($state, $priceMap) {
+                $key = ($state->vat?->value ?? '') . '|' . ($state->disc?->value ?? '');
+                return $priceMap[$key][(int) $withServices] ?? 0.0;
             });
         $ppPrice->method('getMoney')
-            ->willReturnCallback(function (bool $withServices = false) use (&$vatType, &$discType, $priceMap) {
-                $key = ($vatType?->value ?? '') . '|' . ($discType?->value ?? '');
-                return new Money($priceMap[$key][$withServices] ?? 0.0, 'CZK');
+            ->willReturnCallback(function (bool $withServices = false) use ($state, $priceMap) {
+                $key = ($state->vat?->value ?? '') . '|' . ($state->disc?->value ?? '');
+                return new Money($priceMap[$key][(int) $withServices] ?? 0.0, 'CZK');
             });
 
         return $ppPrice;

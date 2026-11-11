@@ -27,7 +27,7 @@ class ExternalIds
         return $this->id;
     }
 
-    public function getExternalId(): ?int
+    public function getExternalId(): ?string
     {
         return $this->externalId;
     }

@@ -45,7 +45,7 @@ composer phpstan:baseline          # regenerate phpstan-baseline.neon (see rules
 
 CI (`.github/workflows/tests.yml`) runs on PHP 8.2 against `master`/PRs: `composer validate --strict`,
 `composer install`, `composer phpstan`, `vendor/bin/phpunit` with `TEST_DATABASE_URL` pointing at a MariaDB 10.5.29
-service, so the whole suite runs once, on MariaDB.
+service.
 
 ### Static analysis (PHPStan)
 - `phpstan.dist.neon`: level 6 + `phpstan-doctrine` (validates DQL/QueryBuilder and entity mappings
@@ -67,21 +67,18 @@ service, so the whole suite runs once, on MariaDB.
 - `tests/Functional` → `Functional` testsuite; these are API-Platform HTTP tests.
 - `tests/App/TestKernel.php` is a minimal kernel (FrameworkBundle only) for endpoint tests that don't
   need the full bundle wiring — register any controller it must expose in `tests/App/config/services.yaml`.
-- `tests/App/ApiTestKernel.php` + `tests/App/ApiTestCase.php` boot a fuller kernel against **SQLite**,
-  one throwaway `.db` file per test class (`var/test/api_test_<TestClass>.db`), created fresh via
-  `SchemaTool::createSchema()` in `setUpBeforeClass()`. Each test runs inside a transaction that's rolled
-  back in `tearDown()` — don't rely on data surviving across tests. A default `Currency` row is created
-  in `setUp()` because currency-aware listeners 500 without one.
-- **MariaDB mode**: with `TEST_DATABASE_URL` set, `ApiTestCase` uses that database instead (schema
-  dropped + recreated per test class). CI always runs this way — production is MariaDB, SQLite hides SQL
-  bugs; SQLite is only the no-setup local default. Run locally:
+- `tests/App/ApiTestKernel.php` + `tests/App/ApiTestCase.php` boot a fuller kernel against **MariaDB
+  10.5.29**, the production version, at `TEST_DATABASE_URL` (default in `phpunit.xml`; CI sets its own). There
+  is no SQLite fallback: it hid SQL that production rejects. Each test class starts from a dropped and
+  recreated schema (`SchemaTool` in `setUpBeforeClass()`); each test runs inside a transaction rolled back in
+  `tearDown()` — don't rely on data surviving across tests. A default `Currency` row is created in `setUp()`
+  because currency-aware listeners 500 without one. Locally, start the database once, then run the suite:
   ```bash
-  docker run -d --rm --name eshop-test-mariadb -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=eshop_test -p 127.0.0.1:33061:3306 mariadb:10.5.29
-  TEST_DATABASE_URL='mysql://root:root@127.0.0.1:33061/eshop_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4' vendor/bin/phpunit --testsuite Functional
+  composer test:db          # Docker: MariaDB 10.5.29 on 127.0.0.1:33061, matches phpunit.xml
+  vendor/bin/phpunit
   ```
-  Any change to a repository, raw SQL, or DQL must be covered by a functional test and run in this
-  mode. Tests of MariaDB-only SQL call `self::requiresMariaDb()` (skipped on SQLite), see
-  `tests/Functional/Api/PurchaseOrderNumberTest.php`. Don't mock repositories to test query logic.
+  Without it, functional tests stop with "No test database at ...". Any change to a repository, raw SQL, or
+  DQL must be covered by a functional test. Don't mock repositories to test query logic.
 - Entity fixtures use `zenstruck/foundry` factories under `tests/App/Factory/*Factory.php` — add new ones
   there rather than instantiating entities by hand in functional tests.
 - `tests/Service/GreendotEshopBundleConfigurationTest.php` guards that every
@@ -202,3 +199,11 @@ service, so the whole suite runs once, on MariaDB.
 - To change bundle behavior, a tenant aliases the bundle's service id to its own class in
   `config/services.yaml` (one tagged service stays in place) or decorates it (`#[AsDecorator]`). It does not
   add parallel aliases and rewire config.
+- Tenant config names bundle code directly: some bundle services get constructor arguments by name in
+  `config/services.yaml` (e.g. `InvoiceMaker`), and bundle Doctrine filters are registered by class and by
+  `DoctrineFiltersConfigNames` case in `config/packages/doctrine.yaml`. Removing or renaming such a parameter,
+  class or enum case breaks every tenant's container, and no bundle test notices. Search all tenant configs first.
+- Unused-looking public classes and public methods stay, even when nothing in the bundle calls them: tenants may.
+  Remove them only if they cannot run at all (e.g. a repository whose entity class no longer exists, DQL on a
+  field that doesn't exist). Other dead code (private methods, unused properties, imports and constructor
+  dependencies) can go. List every removal in the change summary.

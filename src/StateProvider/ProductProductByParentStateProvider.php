@@ -2,7 +2,6 @@
 
 namespace Greendot\EshopBundle\StateProvider;
 
-use ApiPlatform\Doctrine\Orm\State\ItemProvider;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Greendot\EshopBundle\Dto\ProductVariantPriceContext;
@@ -11,12 +10,10 @@ use Greendot\EshopBundle\Repository\Project\ProductProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class ProductProductByParentStateProvider implements ProviderInterface
 {
     public function __construct(
-        #[Autowire(service: ItemProvider::class)] private ProviderInterface $itemProvider,
         private CalculatedPricesService     $calculatedPricesService,
         private ProductProductRepository    $productProductRepository,
         private ProductRepository           $productRepository,

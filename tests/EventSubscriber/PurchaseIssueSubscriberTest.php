@@ -167,19 +167,26 @@ class PurchaseIssueSubscriberTest extends TestCase
 
     public function testFailedCheckoutCanBeRetried(): void
     {
-        $fail = true;
-        $this->dispatcher->addListener(PWC::eventName('transition', PWC::T_CHECKOUT), function () use (&$fail) {
-            if ($fail) {
-                throw new \RuntimeException('temporary');
+        $listener = new class {
+            public bool $fail = true;
+
+            public function __invoke(): void
+            {
+                if ($this->fail) {
+                    throw new \RuntimeException('temporary');
+                }
             }
-        });
+        };
+        $this->dispatcher->addListener(PWC::eventName('transition', PWC::T_CHECKOUT), $listener);
         $purchase = $this->cart();
 
         try {
             $this->workflow->apply($purchase, PWC::T_CHECKOUT->value);
-        } catch (\RuntimeException) {
+            $this->fail('The first checkout must fail.');
+        } catch (\Throwable $e) {
+            $this->assertSame('temporary', $e->getMessage());
         }
-        $fail = false;
+        $listener->fail = false;
         $this->workflow->apply($purchase, PWC::T_CHECKOUT->value);
 
         $this->assertTrue($purchase->isIssued());

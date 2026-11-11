@@ -36,7 +36,7 @@ class EventPurchasePrice
 
     public function getPrice(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->purchasePrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->purchasePrice, $this->conversionRate);
     }
 
     /**
@@ -44,7 +44,7 @@ class EventPurchasePrice
      */
     public function getMinPrice(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->minPrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->minPrice, $this->conversionRate);
     }
 
     public function getDiscountValue() : float

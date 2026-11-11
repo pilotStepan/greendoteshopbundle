@@ -9,10 +9,11 @@ use Greendot\EshopBundle\Schema\Provider\WebPageSchemaProvider;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Greendot\EshopBundle\Entity\Project\CategoryType;
 use Greendot\EshopBundle\Entity\Project\Category as CategoryEntity;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class WebPageSchemaProviderTest extends TestCase
 {
-    private UrlGeneratorInterface $urlGenerator;
+    private UrlGeneratorInterface&MockObject $urlGenerator;
     private WebPageSchemaProvider $provider;
 
     protected function setUp(): void
@@ -143,7 +144,7 @@ class WebPageSchemaProviderTest extends TestCase
 
             public function getControllerName(): string { return $this->controllerName; }
             public function getSlug(): string { return $this->slug; }
-            public function getTitle(): ?string { return $this->name; }
+            public function getTitle(): string { return $this->name; }
             public function getDescription(): ?string { return $this->description; }
             // Provider calls getName(), which Category implements alongside PageableInterface
             public function getName(): string { return $this->name; }

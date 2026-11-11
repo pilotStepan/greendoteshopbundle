@@ -3,6 +3,10 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true">
+    <php>
+        <!-- MariaDB from `composer test:db`. CI sets its own TEST_DATABASE_URL, which takes precedence. -->
+        <env name="TEST_DATABASE_URL" value="mysql://root:root@127.0.0.1:33061/eshop_test?serverVersion=10.5.29-MariaDB&amp;charset=utf8mb4"/>
+    </php>
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Affiliate</directory>

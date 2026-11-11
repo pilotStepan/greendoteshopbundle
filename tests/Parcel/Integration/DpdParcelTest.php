@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Tests\Parcel\Integration;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -86,7 +87,7 @@ class DpdParcelTest extends TestCase
         ?string $shipmentId = '52172',
         ?PurchaseAddress $address = null,
         ?string $currencyIso = 'CZK',
-    ): Purchase {
+    ): Purchase&MockObject {
         $client = $this->createMock(Client::class);
         $client->method('getName')->willReturn('John');
         $client->method('getSurname')->willReturn('Doe');

@@ -49,8 +49,8 @@ Don't add new ones.
 5. Keep it compatible with the code that is still running: add nullable columns or columns with a default, and
    never rename or drop in the same release (add the new column, drop the old one later).
 6. `tests/Functional/Migrations/BundleMigrationsTest.php` runs every bundle migration twice on MariaDB, on top
-   of the schema the mapping creates. CI runs it; locally, run the Functional suite in MariaDB mode
-   (`CLAUDE.md` → Test architecture).
+   of the schema the mapping creates. It runs with the rest of the suite (`composer test:db`, then
+   `vendor/bin/phpunit`).
 
 Don't copy the change into a project's own `migrations/`: the bundle migration already reaches every project.
 

@@ -14,7 +14,6 @@ use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Money\Money;
-use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use Greendot\EshopBundle\StateProcessor\PurchaseCheckoutProcessor;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
@@ -107,7 +106,6 @@ class PurchaseCheckoutProcessorRedirectTest extends TestCase
             new PaymentGatewayProvider([$gateway]),
             $this->buildEndscreenUrlGenerator(),
             $this->buildManagePurchase($this->workflow, $total),
-            new ListenerManager(),
         );
 
         return (new \ReflectionMethod($processor, 'buildRedirectUrl'))->invoke($processor, $purchase);

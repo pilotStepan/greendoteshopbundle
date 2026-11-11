@@ -24,8 +24,6 @@ final class BundleMigrationsTest extends ApiTestCase
 
     public function testEveryMigrationRunsTwiceOnTheCurrentSchema(): void
     {
-        self::requiresMariaDb();
-
         $migrations = glob(GreendotEshopBundle::migrationsDirectory() . '/Version*.php');
         if ($migrations === false || $migrations === []) {
             self::markTestSkipped('The bundle has no migrations yet.');

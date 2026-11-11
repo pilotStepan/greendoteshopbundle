@@ -19,7 +19,7 @@ class OAuthController extends AbstractController
             ->getClient('google')
             ->redirect([
                 'email', 'profile',
-            ])
+            ], [])
         ;
     }
 
@@ -37,7 +37,7 @@ class OAuthController extends AbstractController
             ->getClient('facebook')
             ->redirect([
                 'email', 'public_profile',
-            ])
+            ], [])
         ;
     }
 

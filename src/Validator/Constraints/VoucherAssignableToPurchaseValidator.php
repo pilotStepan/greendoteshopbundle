@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Validator\Constraints;
 
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\ConstraintValidator;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
@@ -11,6 +12,10 @@ final class VoucherAssignableToPurchaseValidator extends ConstraintValidator
 {
     public function validate(mixed $value, Constraint $constraint): void
     {
+        if (!$constraint instanceof VoucherAssignableToPurchase) {
+            throw new UnexpectedTypeException($constraint, VoucherAssignableToPurchase::class);
+        }
+
         if (null === $value) return;
 
         /** @var Voucher $voucher */

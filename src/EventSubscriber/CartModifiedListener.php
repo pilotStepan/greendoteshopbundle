@@ -9,7 +9,6 @@ use Greendot\EshopBundle\DataLayer\Event\AddToWishlistEvent;
 use Greendot\EshopBundle\DataLayer\Event\ModifyCart;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
-use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -101,9 +100,8 @@ class CartModifiedListener
     /**
      * @param PurchaseProductVariant $purchaseProductVariant
      * @param array $changeSet
-     * @return array|null
+     * @return array{amount: int, purchaseProductVariant: PurchaseProductVariant, isOld: bool}|null
      */
-    #[ArrayShape(['amount' => 'int', 'purchaseProductVariant' => PurchaseProductVariant::class, 'isOld' => 'bool'])]
     private function getDifference(PurchaseProductVariant $purchaseProductVariant, array $changeSet): ?array
     {
         if (count($changeSet) !== 1) return null;

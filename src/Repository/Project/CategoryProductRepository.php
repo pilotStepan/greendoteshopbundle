@@ -52,44 +52,44 @@ class CategoryProductRepository extends ServiceEntityRepository
      * @param array|null $excludeCategoryTypeIds //select all categoryTypes but not these - should not be used with categoryTypeIds
      * @return array
      */
+    /**
+     * Ids of the categories the given products are in.
+     *
+     * @param list<int> $relatedProducts product ids
+     * @param list<int>|null $categoryTypeIds only categories of these types
+     * @param list<int>|null $excludeCategoryTypeIds no categories of these types
+     * @return list<int>
+     */
     public function getProductRelatedCategories(array $relatedProducts, ?int $exclude_root_category = null, bool $onlyActive = true, ?array $categoryTypeIds = null, ?array $excludeCategoryTypeIds = null): array
     {
-        $qb = $this->createQueryBuilder('category_product');
-        $qb->select('IDENTITY(category_product.category) as id')
-            ->andWhere(
-                $qb->expr()->in(
-                    'category_product.product',
-                    $relatedProducts
-                )
-            );
-        if ($exclude_root_category) {
-            $qb->andWhere(
-                $qb->expr()->notIn(
-                    ':category',
-                    'category_product.category'
-                ))
-                ->setParameter('category', $exclude_root_category)->getQuery()->getResult();
-        }
-        if ($onlyActive){
-            $qb->leftJoin('category_product.product', 'product');
-            $qb->leftJoin('category_product.category', 'category');
-            $qb->andWhere('category.isActive = true')
-                ->andWhere('product.isActive = true');
-        }elseif ($categoryTypeIds || $excludeCategoryTypeIds){
-            $qb->leftJoin('category_product.category', 'category');
+        $qb = $this->createQueryBuilder('category_product')
+            ->select('IDENTITY(category_product.category) as id')
+            ->innerJoin('category_product.category', 'category')
+            ->andWhere('category_product.product IN (:related_products)')
+            ->setParameter('related_products', $relatedProducts);
+
+        if ($exclude_root_category !== null) {
+            $qb->andWhere('category.id != :exclude_root_category')
+                ->setParameter('exclude_root_category', $exclude_root_category);
         }
 
-        if ($categoryTypeIds){
-            $qb->andWhere('category.categoryType in (:category_types)')
+        if ($onlyActive) {
+            $qb->innerJoin('category_product.product', 'product')
+                ->andWhere('category.isActive = true')
+                ->andWhere('product.isActive = true');
+        }
+
+        if ($categoryTypeIds) {
+            $qb->andWhere('category.categoryType IN (:category_types)')
                 ->setParameter('category_types', $categoryTypeIds);
         }
 
-        if ($excludeCategoryTypeIds){
-            $qb->andWhere('category.categoryType in (:exclude_category_types)')
+        if ($excludeCategoryTypeIds) {
+            $qb->andWhere('category.categoryType NOT IN (:exclude_category_types)')
                 ->setParameter('exclude_category_types', $excludeCategoryTypeIds);
         }
-        $categories = $qb->getQuery()->getResult();
-        return array_column($categories, 'id');
+
+        return array_map('intval', array_column($qb->getQuery()->getScalarResult(), 'id'));
     }
 
      public function getMainCategoryForProduct($product){

@@ -6,7 +6,6 @@ use Throwable;
 use Exception;
 use SimpleXMLElement;
 use Psr\Log\LoggerInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -21,7 +20,6 @@ final class PacketaBranchImporter implements ProviderImporterInterface
     private const BRANCH_FEED_BASE = 'http://www.zasilkovna.cz/api/v4/%s/branch.xml';
 
     public function __construct(
-        private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
         #[Autowire(param: 'greendot_eshop.parcel.packeta.api_password')]
         private readonly string $apiPassword,

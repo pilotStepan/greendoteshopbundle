@@ -3,7 +3,6 @@
 namespace Greendot\EshopBundle\Repository;
 
 use Greendot\EshopBundle\Entity\ExternalIds;
-use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -38,17 +37,5 @@ class ExternalIdsRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
-    }
-
-    public function hasBeenAdded(string $externalId, ProductVariant $productVariant):int
-    {
-        return $this->createQueryBuilder('ei')
-            ->select("count(ei.id)")
-            ->leftJoin('ei.parameterGroup', 'param')
-            ->andWhere('ei.externalId = :externalId')->setParameter('externalId', $externalId)
-            ->andWhere('param.productVariant = :productVariant')->setParameter('productVariant', $productVariant)
-            ->getQuery()->getSingleScalarResult();
-
-
     }
 }

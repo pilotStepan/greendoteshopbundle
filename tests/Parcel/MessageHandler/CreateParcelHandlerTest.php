@@ -21,14 +21,15 @@ use Greendot\EshopBundle\Parcel\MessageHandler\CreateParcelHandler;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class CreateParcelHandlerTest extends TestCase
 {
-    private PurchaseRepository $purchaseRepo;
-    private ParcelServiceProviderInterface $provider;
-    private TransportationEventRepository $transportationEventRepo;
-    private EntityManagerInterface $em;
-    private MessageBusInterface $bus;
+    private PurchaseRepository&MockObject $purchaseRepo;
+    private ParcelServiceProviderInterface&MockObject $provider;
+    private TransportationEventRepository&MockObject $transportationEventRepo;
+    private EntityManagerInterface&MockObject $em;
+    private MessageBusInterface&MockObject $bus;
     private CreateParcelHandler $handler;
 
     protected function setUp(): void
@@ -49,7 +50,7 @@ class CreateParcelHandlerTest extends TestCase
         );
     }
 
-    private function makePurchase(?string $transportNumber = null, bool $isEndState = false, bool $isIssued = true): Purchase
+    private function makePurchase(?string $transportNumber = null, bool $isEndState = false, bool $isIssued = true): Purchase&MockObject
     {
         $transportation = $this->createMock(Transportation::class);
         $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);

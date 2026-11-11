@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -309,13 +310,13 @@ class PurchaseController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/shop/api/session/currency-{currency}', name: "shop_api_session_currency")]
-    public function shopApiSessionCurrency(Currency $currency)
+    public function shopApiSessionCurrency(Currency $currency, PriceUtils $priceUtils)
     {
         return new JsonResponse([
             'symbol' => $currency->getSymbol(),
             'name' => $currency->getName(),
             'rounding' => $currency->getRounding(),
-            'conversion_rate' => $currency->getConversionRate(),
+            'conversion_rate' => $priceUtils->getConversionRate($currency)->getRate(),
         ], 200);
     }
 

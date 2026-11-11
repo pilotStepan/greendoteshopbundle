@@ -26,7 +26,7 @@ class PurchaseIssueDateTest extends ApiTestCase
     {
         parent::setUp();
 
-        // assignNextOrderNumber() uses MySQL `FOR UPDATE`, which SQLite rejects; order numbers are not under test here.
+        // Order numbers are not under test here (PurchaseOrderNumberTest covers them).
         $this->dispatcher()->removeSubscriber(self::getContainer()->get(OrderNumberSubscriber::class));
     }
 

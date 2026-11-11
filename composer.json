@@ -78,10 +78,20 @@
     "phpstan/phpstan": "^2.1",
     "phpstan/phpstan-doctrine": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
-    "phpstan/phpstan-phpunit": "^2.0"
+    "phpstan/phpstan-phpunit": "^2.0",
+    "deeplcom/deepl-php": "^1.0"
+  },
+  "suggest": {
+    "deeplcom/deepl-php": "Needed by GenerateTranslation / TranslationController (DEEPL_API_KEY) to machine-translate entities."
   },
   "scripts": {
     "phpstan": "phpstan analyse --memory-limit=-1",
-    "phpstan:baseline": "phpstan analyse --memory-limit=-1 --generate-baseline"
+    "phpstan:baseline": "phpstan analyse --memory-limit=-1 --generate-baseline",
+    "test:db": "docker run -d --rm --name eshop-test-mariadb -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=eshop_test -p 127.0.0.1:33061:3306 mariadb:10.5.29"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   }
 }

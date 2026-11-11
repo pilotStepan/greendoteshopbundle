@@ -4,6 +4,7 @@ namespace Greendot\EshopBundle\Validator\Constraints;
 
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\ConstraintValidator;
 
 final class ClientMailUniqueValidator extends ConstraintValidator
@@ -14,6 +15,10 @@ final class ClientMailUniqueValidator extends ConstraintValidator
 
     public function validate(mixed $value, Constraint $constraint): void
     {
+        if (!$constraint instanceof ClientMailUnique) {
+            throw new UnexpectedTypeException($constraint, ClientMailUnique::class);
+        }
+
         if (!$value) return;
 
         $existingClient = $this->clientRepository->findNonAnonymousByEmail($value);

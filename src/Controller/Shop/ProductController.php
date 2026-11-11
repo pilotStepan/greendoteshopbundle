@@ -17,7 +17,6 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -41,7 +40,6 @@ use Doctrine\ORM\Query\ResultSetMappingBuilder;
 class ProductController extends AbstractController
 {
     public function __construct(
-        private readonly ProductRepository          $productRepository,
         private readonly ProductVariantRepository   $productVariantRepository,
         private readonly CalculatedPricesService    $calculatedPricesService,
         #[Target(PWC::NAME->value)]

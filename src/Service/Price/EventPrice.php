@@ -12,7 +12,6 @@ use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\DiscountCombinationStrategyInterface;
-use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
 
 class EventPrice
@@ -72,7 +71,7 @@ class EventPrice
         if ($noConversion){
             return $this->calculatedPrice;
         }
-        return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->calculatedPrice, $this->conversionRate);
     }
 
     public function getMinPrice(bool $noConversion = false): ?float
@@ -80,7 +79,7 @@ class EventPrice
         if ($noConversion){
             return $this->minPrice;
         }
-        return $this->priceUtils->convertCurrency($this->minPrice, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->minPrice, $this->conversionRate);
     }
 
     public function getVatPercentage(): ?float
@@ -90,7 +89,7 @@ class EventPrice
 
     public function getVatValue(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->vatValue, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->vatValue, $this->conversionRate);
     }
 
     public function getDiscountPercentage(): ?float
@@ -112,7 +111,7 @@ class EventPrice
 
     public function getDiscountValue(): ?float
     {
-        return $this->priceUtils->convertCurrency($this->discountValue, $this->currency, $this->conversionRate);
+        return $this->priceUtils->convertCurrency($this->discountValue, $this->conversionRate);
     }
 
     public function getDiscountTimeUntil(): ?\DateTime
@@ -144,6 +143,11 @@ class EventPrice
         $this->discountCalculationType = $discountCalculationType;
         $this->recalculateNoQuery();
         return $this;
+    }
+
+    public function getCurrency(): Currency
+    {
+        return $this->currency;
     }
 
     public function setCurrency(Currency $currency, ?ConversionRate $conversionRate = null): self
@@ -184,7 +188,7 @@ class EventPrice
         }
 
         $this->calculatedPrice = $price;
-        $this->vatValue = $this->priceUtils->convertCurrency($this->priceUtils->calculatePercentage($this->calculatedPrice, $this->vatPercentage), $this->currency, $this->conversionRate);
+        $this->vatValue = $this->priceUtils->convertCurrency($this->priceUtils->calculatePercentage($this->calculatedPrice, $this->vatPercentage), $this->conversionRate);
         $this->discountValue = $fullDiscountValue;
     }
 
@@ -268,7 +272,7 @@ class EventPrice
         }
     }
 
-    #[ArrayShape(['price' => "int", 'discountedAmount' => "int", 'vatAmount' => "int"])]
+    /** @return array{price: float|int, discountedAmount: float|int|null, vatAmount: float|int|null} */
     private function calculateValues(Price $price): array
     {
         if (!$price->getPrice()) {

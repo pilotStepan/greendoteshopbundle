@@ -440,7 +440,7 @@ class CategoryRepository extends HintedRepositoryBase
     /**
      * returns array of superCategories for given categories
      *
-     * @param array int[]
+     * @param list<int|Category> $childCategories
      * @param bool $onlyActive
      * @return Category[]
      */
@@ -461,7 +461,7 @@ class CategoryRepository extends HintedRepositoryBase
     /**
      * returns array of subCategories ids for given category
      *
-     * @param int
+     * @param int $parentId
      * @param bool $onlyActive
      * @return int[]
      */

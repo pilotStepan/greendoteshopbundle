@@ -21,7 +21,6 @@ use Greendot\EshopBundle\Entity\Project\Consent;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -31,7 +30,6 @@ use Greendot\EshopBundle\Entity\Project\PurchaseAddress;
 use Greendot\EshopBundle\Entity\Project\PurchaseDiscussion;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Greendot\EshopBundle\EventSubscriber\PurchaseEventListener;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
 use function count;
 use function is_array;
@@ -50,13 +48,10 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         private PaymentGatewayProvider $gatewayProvider,
         private PurchaseUrlGenerator   $urlGenerator,
         private ManagePurchase         $managePurchase,
-        private ListenerManager        $listenerManager,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
     {
-        $this->listenerManager->disable(PurchaseEventListener::class);
-
         $user = $this->security->getUser();
         $isLoggedIn = $user instanceof Client;
 

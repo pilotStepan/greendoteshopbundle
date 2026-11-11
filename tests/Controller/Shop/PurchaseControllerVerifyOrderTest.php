@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Tests\Controller\Shop;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Doctrine\ORM\EntityManagerInterface;
@@ -49,8 +50,8 @@ class PurchaseControllerVerifyOrderTest extends TestCase
 {
     use PurchaseFlowFixtures;
 
-    private MockObject $entityManager;
-    private MockObject $paymentRepository;
+    private EntityManagerInterface&MockObject $entityManager;
+    private PaymentRepository&MockObject $paymentRepository;
     private WorkflowInterface $workflow;
     private RecordingPaymentActionLogger $paymentActionLogger;
     private PurchaseUrlGenerator $urlGenerator;
@@ -94,6 +95,7 @@ class PurchaseControllerVerifyOrderTest extends TestCase
         $this->assertTrue($purchase->isPaid(), 'Purchase must be marked paid on a successful gateway response');
         $this->assertFalse($purchase->getWorkflowFlag(PWC::F_PAYMENT_ERROR->value));
         $this->assertSame(302, $response->getStatusCode());
+        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame('https://test.example.com/zakaznik/objednavka/999?created=1', $response->getTargetUrl());
     }
 
@@ -154,6 +156,7 @@ class PurchaseControllerVerifyOrderTest extends TestCase
         $this->assertFalse($purchase->isPaid(), 'Purchase must not be marked paid when the gateway declines');
         $this->assertTrue($purchase->getWorkflowFlag(PWC::F_PAYMENT_ERROR->value));
         $this->assertSame(302, $response->getStatusCode());
+        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame('https://test.example.com/zakaznik/objednavka/999?created=1', $response->getTargetUrl());
     }
 
@@ -182,6 +185,7 @@ class PurchaseControllerVerifyOrderTest extends TestCase
         $this->assertFalse($purchase->isPaid());
         $this->assertFalse($purchase->getWorkflowFlag(PWC::F_PAYMENT_ERROR->value));
         $this->assertSame(302, $response->getStatusCode());
+        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame('https://test.example.com/zakaznik/objednavka/999?created=1', $response->getTargetUrl());
     }
 
@@ -209,6 +213,7 @@ class PurchaseControllerVerifyOrderTest extends TestCase
         );
 
         $this->assertTrue($purchase->isPaid());
+        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame('https://test.example.com/zakaznik/objednavka/999?created=1', $response->getTargetUrl());
     }
 

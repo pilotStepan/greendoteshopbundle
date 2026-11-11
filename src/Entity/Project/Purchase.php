@@ -359,17 +359,16 @@ class Purchase
         $this->transportationEvents = new ArrayCollection();
     }
 
+    /** @return Collection<int, Product> */
     public function getProducts(): Collection
     {
+        /** @var ArrayCollection<int, Product> $products */
         $products = new ArrayCollection();
 
         foreach ($this->getProductVariants() as $purchaseProductVariant) {
-            $productVariant = $purchaseProductVariant->getProductVariant();
-            if ($productVariant) {
-                $product = $productVariant->getProduct();
-                if ($product && !$products->contains($product)) {
-                    $products->add($product);
-                }
+            $product = $purchaseProductVariant->getProductVariant()->getProduct();
+            if ($product !== null && !$products->contains($product)) {
+                $products->add($product);
             }
         }
 
@@ -1118,20 +1117,14 @@ class Purchase
 
     public function getLastAdminMessage(): ?PurchaseDiscussion
     {
-        $clientMessages = $this->purchaseDiscussions->filter(
-            fn(PurchaseDiscussion $discussion) => $discussion->getIsAdmin(),
-        );
-
-        if ($clientMessages->isEmpty()) {
-            return null;
+        $latest = null;
+        foreach ($this->purchaseDiscussions as $discussion) {
+            if ($discussion->getIsAdmin() && ($latest === null || $discussion->getCreatedAt() > $latest->getCreatedAt())) {
+                $latest = $discussion;
+            }
         }
 
-        $iterator = $clientMessages->getIterator();
-        $iterator->uasort(function (PurchaseDiscussion $a, PurchaseDiscussion $b) {
-            return $b->getCreatedAt() <=> $a->getCreatedAt();
-        });
-
-        return $iterator->count() > 0 ? $iterator->current() : null;
+        return $latest;
     }
 
     public function isDiscussionResolved(): bool

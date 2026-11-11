@@ -76,8 +76,12 @@ class DataLayerItemFactory
 
     private function buildCategories(Product $product): array
     {
-        $category = $product->getCategoryProducts()?->first()?->getCategory();
-        if (!$category) {
+        $categoryProduct = $product->getCategoryProducts()->first();
+        if ($categoryProduct === false) {
+            return [];
+        }
+        $category = $categoryProduct->getCategory();
+        if ($category === null) {
             return [];
         }
         return [$this->getCategoryNameTreeUp($category)];

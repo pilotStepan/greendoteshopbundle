@@ -9,16 +9,10 @@ use Greendot\EshopBundle\Tests\App\Factory\PurchaseFactory;
 
 /**
  * Runs PurchaseRepository::assignNextOrderNumber()'s real `SELECT ... FOR UPDATE` against MariaDB.
- * SQLite rejects that SQL, so the other functional tests switch the order-number subscriber off.
+ * The other functional tests switch the order-number subscriber off; order numbers are not what they test.
  */
 class PurchaseOrderNumberTest extends ApiTestCase
 {
-    protected function setUp(): void
-    {
-        self::requiresMariaDb();
-        parent::setUp();
-    }
-
     public function testFirstOrderNumberContinuesAfterTheHighestPurchaseId(): void
     {
         $purchases = [$this->createPurchase(), $this->createPurchase(), $this->createPurchase()];

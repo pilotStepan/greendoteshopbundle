@@ -50,18 +50,12 @@ class ParameterGroup implements Translatable
     #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'category:read', 'product_variant:read', 'category:write', 'product_variant:read', 'product_variant:write', 'product_item:read', 'product_list:read', 'product_product:read', 'product_info:write', 'comment:read', 'searchable', 'category_parameter_group:read', 'purchase:read', 'purchase:wishlist','purchase:read'])]
     private $name;
 
-    /**
-     * @var
-     * Defines the unit that should be displayed with the parameter value.     *
-     */
+    /** @var string|null unit displayed with the parameter value */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'searchable', 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'category_parameter_group:read','purchase:read'])]
     private $unit;
 
-    /**
-     * @var
-     * Defines the class to specify for example icon.     *
-     */
+    /** @var string|null CSS class, e.g. for an icon */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['parameter_filtered:read', 'parameter:read', 'parameter_group:read', 'product_variant:read', 'product_item:read', 'product_list:read', 'product_product:read', 'comment:read', 'category_parameter_group:read'])]
     private $class;

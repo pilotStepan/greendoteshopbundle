@@ -34,7 +34,7 @@ class PurchaseControllerPayTest extends TestCase
 {
     use PurchaseFlowFixtures;
 
-    private MockObject $entityManager;
+    private EntityManagerInterface&MockObject $entityManager;
     private WorkflowInterface $workflow;
     private RecordingPaymentActionLogger $paymentActionLogger;
     private PurchaseUrlGenerator $urlGenerator;

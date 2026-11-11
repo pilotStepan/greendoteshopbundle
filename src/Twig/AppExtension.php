@@ -17,7 +17,6 @@ use Greendot\EshopBundle\Repository\Project\ProducerRepository;
 use Greendot\EshopBundle\Repository\Project\UploadRepository;
 use Greendot\EshopBundle\Service\Price\ProductVariantPrice;
 use Greendot\EshopBundle\Utils\PriceHelper;
-use Greendot\EshopBundle\Repository\Project\MessageRepository;
 use Greendot\EshopBundle\Service\Price\CalculatedPricesService;
 use Greendot\EshopBundle\Repository\Project\InformationBlockRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -43,7 +42,6 @@ use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Greendot\EshopBundle\Service\InformationBlockService;
 use Greendot\EshopBundle\Service\ValueAddedTaxCalculator;
-use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Repository\Project\CategoryRepository;
@@ -60,11 +58,9 @@ class AppExtension extends AbstractExtension
         private readonly ProductInfoGetter          $productInfoGetter,
         private readonly CurrencyRepository         $currencyRepository,
         private readonly ParameterRepository        $parameterRepository,
-        private readonly PriceRepository            $priceRepository,
         private readonly ValueAddedTaxCalculator    $addedTaxCalculator,
         private readonly CategoryInfoGetter         $categoryInfoGetter,
         private readonly ManageWorkflows            $manageWorkflows,
-        private readonly MessageRepository          $messageRepository,
         private readonly GoogleAnalytics            $googleAnalytics,
         private readonly CategoryRepository         $categoryRepository,
         private readonly RequestStack               $requestStack,

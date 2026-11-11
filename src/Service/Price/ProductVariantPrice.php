@@ -18,7 +18,6 @@ use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\DiscountService;
 use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\DiscountCombinationStrategyInterface;
 use Greendot\EshopBundle\Money\Money;
-use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Bundle\SecurityBundle\Security;
 
 class ProductVariantPrice
@@ -508,7 +507,7 @@ class ProductVariantPrice
         $this->discountPercentage = $this->priceUtils->calculatePercentage($priceAmount, null, $discountedAmount);
     }
 
-    #[ArrayShape(['price' => "int", 'discountedAmount' => "int", 'vatAmount' => "int"])]
+    /** @return array{price: float|int, discountedAmount: float|int|null, vatAmount: float|int|null} */
     private function calculateValues(int $amount, Price $price): array
     {
         if (!$price->getPrice()) {

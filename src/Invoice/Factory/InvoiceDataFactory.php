@@ -87,7 +87,7 @@ final class InvoiceDataFactory
             $totalPriceVatMoney, $totalPriceVatMoneySecondary,
             $totalPriceNoVatNoDiscountMoney, $totalPriceNoVatNoDiscountMoneySecondary,
             $totalPriceVatNoDiscountMoney, $totalPriceVatNoDiscountMoneySecondary,
-        ] = array_values($this->buildPrices($czk, $eur, $moneyPrimary, $moneySecondary));
+        ] = $this->buildPrices($czk, $eur, $moneyPrimary, $moneySecondary);
 
         [$vouchersUsed, $voucherValueCzk, $voucherValueEur, $voucherValueMoney, $voucherValueMoneySecondary] =
             array_values($this->buildVoucher($czk, $eur, $moneyPrimary, $moneySecondary));
@@ -390,7 +390,11 @@ final class InvoiceDataFactory
         );
     }
 
-    /** @return float[] */
+    /**
+     * Twelve amounts (primary/secondary pairs), then eight Money totals, in the order the caller destructures them.
+     *
+     * @return array{float|int, float|int, float|int, float|int, float|int, float|int, float|int, float|int, float|int, float|int, float|int, float|int, Money, Money, Money, Money, Money, Money, Money, Money}
+     */
     private function buildPrices(Currency $currencyPrimary, Currency $currencySecondary, Currency $moneyPrimary, Currency $moneySecondary): array
     {
 

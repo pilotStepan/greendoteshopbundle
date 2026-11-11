@@ -212,6 +212,7 @@ class ProductVariantPriceTest extends PriceCalculationTestCase
         $variant = match ($productType) {
             'pv'  => $this->createProductVariantMock($clientDiscount),
             'ppv' => $this->createPurchaseProductVariantMock($amount, $clientDiscount),
+            default => throw new \InvalidArgumentException(sprintf('Unknown product type "%s".', $productType)),
         };
         $this->priceRepository->method('findPricesByDateAndProductVariantNew')
             ->with($variant)
