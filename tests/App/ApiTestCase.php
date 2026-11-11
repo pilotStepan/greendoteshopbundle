@@ -41,7 +41,7 @@ abstract class ApiTestCase extends WebTestCase
             $schemaTool->dropDatabase();
         } catch (ConnectionException $e) {
             throw new \RuntimeException(sprintf(
-                'No test database at %s. Start it with `composer test:db` (Docker), or set TEST_DATABASE_URL.',
+                'No test database at %s. Run the tests with `composer test`, which starts it (Docker), or set TEST_DATABASE_URL.',
                 preg_replace('#//[^@/]*@#', '//***@', ApiTestKernel::databaseUrl()),
             ), 0, $e);
         }

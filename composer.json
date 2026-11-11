@@ -87,7 +87,17 @@
   "scripts": {
     "phpstan": "phpstan analyse --memory-limit=-1",
     "phpstan:baseline": "phpstan analyse --memory-limit=-1 --generate-baseline",
-    "test:db": "docker run -d --rm --name eshop-test-mariadb -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=eshop_test -p 127.0.0.1:33061:3306 mariadb:10.5.29"
+    "test": [
+      "Composer\\Config::disableProcessTimeout",
+      "docker compose up --detach --wait test-db && phpunit"
+    ],
+    "test:db": "docker compose up --detach --wait test-db",
+    "test:db:stop": "docker compose down"
+  },
+  "scripts-descriptions": {
+    "test": "Start the test database if it isn't running, then run PHPUnit (arguments go to PHPUnit)",
+    "test:db": "Start the MariaDB test database (compose.yaml); does nothing if it is already running",
+    "test:db:stop": "Stop and remove the test database"
   },
   "config": {
     "allow-plugins": {

@@ -21,7 +21,7 @@ use Symfony\Component\HttpKernel\Kernel;
  */
 class ApiTestKernel extends Kernel
 {
-    /** Local default, also set in phpunit.xml; CI sets its own. Start the server with `composer test:db`. */
+    /** Local default, also set in phpunit.xml; CI sets its own. `composer test` starts the server (compose.yaml). */
     public const DEFAULT_DATABASE_URL = 'mysql://root:root@127.0.0.1:33061/eshop_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4';
 
     public static function databaseUrl(): string

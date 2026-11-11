@@ -1,0 +1,21 @@
+# Test database for the Functional suite: MariaDB 10.5.29, the production version, at the URL in phpunit.xml.
+# `composer test` starts it when it isn't running. It then keeps running, also across reboots, until
+# `composer test:db:stop`. Data lives in memory: every test class recreates the schema anyway.
+name: greendot-eshopbundle
+
+services:
+  test-db:
+    image: mariadb:10.5.29
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: eshop_test
+    ports:
+      - "127.0.0.1:33061:3306"
+    tmpfs:
+      - /var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

@@ -33,11 +33,11 @@ is newer, PHPStan still checks against 8.2 (`phpVersion`).
 
 ```bash
 composer install                 # install dependencies
-vendor/bin/phpunit                # run the full suite (Unit + Functional testsuites)
-vendor/bin/phpunit --testsuite Unit
-vendor/bin/phpunit --testsuite Functional
-vendor/bin/phpunit tests/Service/ManagePurchaseTest.php
-vendor/bin/phpunit --filter testSomeMethodName
+composer test                    # start the test DB if needed, run the full suite (Unit + Functional)
+composer test -- --testsuite Unit # arguments after -- go to PHPUnit
+composer test -- tests/Service/ManagePurchaseTest.php
+composer test -- --filter testSomeMethodName
+composer test:db:stop             # stop the test DB (otherwise it keeps running, also across reboots)
 composer validate --strict         # what CI runs before installing deps
 composer phpstan                   # static analysis (PHPStan level 6, config: phpstan.dist.neon)
 composer phpstan:baseline          # regenerate phpstan-baseline.neon (see rules below)
@@ -72,12 +72,10 @@ service.
   is no SQLite fallback: it hid SQL that production rejects. Each test class starts from a dropped and
   recreated schema (`SchemaTool` in `setUpBeforeClass()`); each test runs inside a transaction rolled back in
   `tearDown()` — don't rely on data surviving across tests. A default `Currency` row is created in `setUp()`
-  because currency-aware listeners 500 without one. Locally, start the database once, then run the suite:
-  ```bash
-  composer test:db          # Docker: MariaDB 10.5.29 on 127.0.0.1:33061, matches phpunit.xml
-  vendor/bin/phpunit
-  ```
-  Without it, functional tests stop with "No test database at ...". Any change to a repository, raw SQL, or
+  because currency-aware listeners 500 without one. Locally the database is the `test-db` service in
+  `compose.yaml` (Docker, 127.0.0.1:33061, data in memory, restarts with Docker). `composer test` starts it
+  when it isn't running, so there is nothing to start or stop by hand. Plain `vendor/bin/phpunit` also works
+  while it runs; without it, functional tests stop with "No test database at ...". Any change to a repository, raw SQL, or
   DQL must be covered by a functional test. Don't mock repositories to test query logic.
 - Entity fixtures use `zenstruck/foundry` factories under `tests/App/Factory/*Factory.php` — add new ones
   there rather than instantiating entities by hand in functional tests.
