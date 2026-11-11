@@ -88,7 +88,7 @@ class ParameterRepository extends HintedRepositoryBase
         return $qb->getQuery()->getResult();
     }
 
-    public function findProductParameterGroupsParametersQB(ProductVariant $productVariant, QueryBuilder $queryBuilder = null): QueryBuilder
+    public function findProductParameterGroupsParametersQB(ProductVariant $productVariant, ?QueryBuilder $queryBuilder = null): QueryBuilder
     {
         if (!$queryBuilder){
             $queryBuilder = $this->createQueryBuilder('parameter');

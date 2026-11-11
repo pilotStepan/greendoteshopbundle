@@ -366,7 +366,7 @@ class AppExtension extends AbstractExtension
         return $this->currencyRepository->findOneBy(["isDefault" => true]);
     }
 
-    public function calculatePurchasePrice(Purchase $purchase, Currency $currency = null): float
+    public function calculatePurchasePrice(Purchase $purchase, ?Currency $currency = null): float
     {
         $currency ??= $this->currencyManager->get();
 
@@ -382,7 +382,7 @@ class AppExtension extends AbstractExtension
         );
     }
 
-    public function calculateProductVariantPrice(PurchaseProductVariant $purchaseProductVariant, Currency $currency = null): float
+    public function calculateProductVariantPrice(PurchaseProductVariant $purchaseProductVariant, ?Currency $currency = null): float
     {
         $currency ??= $this->currencyManager->get();
 

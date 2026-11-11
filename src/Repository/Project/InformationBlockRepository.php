@@ -31,7 +31,7 @@ class InformationBlockRepository extends ServiceEntityRepository
      * @return InformationBlock[] Returns an array of InformationBlock objects
      * @throws Exception
      */
-    public function getInformationBlocksForEntity($entity, bool $onlyActive = true, int $informationBlockType = null): array
+    public function getInformationBlocksForEntity($entity, bool $onlyActive = true, ?int $informationBlockType = null): array
     {
         $qb = $this->createQueryBuilder('i');
         if ($onlyActive){

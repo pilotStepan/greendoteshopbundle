@@ -386,7 +386,7 @@ class PurchaseStateSubscriberTest extends TestCase
         return $purchase;
     }
 
-    private function createValidPaymentType(MockObject $transportation = null): MockObject
+    private function createValidPaymentType(?MockObject $transportation = null): MockObject
     {
         $paymentType = $this->createMock(PaymentType::class);
         $paymentType->method('getTransportations')

@@ -17,10 +17,10 @@ class CategorySuperFilter extends AbstractFilter
 {
     public function __construct(
         private readonly CategoryRepository $categoryRepository,
-        ManagerRegistry $managerRegistry = null,
-        LoggerInterface $logger = null,
-        array $properties = null,
-        NameConverterInterface $nameConverter = null)
+        ?ManagerRegistry $managerRegistry = null,
+        ?LoggerInterface $logger = null,
+        ?array $properties = null,
+        ?NameConverterInterface $nameConverter = null)
     {
         parent::__construct($managerRegistry, $logger, $properties, $nameConverter);
     }

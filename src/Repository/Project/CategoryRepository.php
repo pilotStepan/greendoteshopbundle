@@ -244,7 +244,7 @@ class CategoryRepository extends HintedRepositoryBase
         return $this->hintQuery($result->getQuery())->getResult();
     }
 
-    public function findBlogCategoriesByLabel(Label|int $label, int $limit = null)
+    public function findBlogCategoriesByLabel(Label|int $label, ?int $limit = null)
     {
         if ($label instanceof Label) {
             $label = $label->getId();

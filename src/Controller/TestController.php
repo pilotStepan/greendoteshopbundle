@@ -40,7 +40,7 @@ class TestController extends AbstractController
         Purchase         $purchase,
         string           $transition,
         OrderDataFactory $dataFactory,
-        string           $mod = null,
+        ?string           $mod = null,
     ): Response
     {
         $data = $dataFactory->create($purchase);

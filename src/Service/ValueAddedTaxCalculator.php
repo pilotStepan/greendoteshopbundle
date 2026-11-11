@@ -61,7 +61,7 @@ class ValueAddedTaxCalculator
      * @param int $vat
      * @param bool $discount
      */
-    public function getTotalVat(Purchase $order, int $vat = null, bool $discount = true): float
+    public function getTotalVat(Purchase $order, ?int $vat = null, bool $discount = true): float
     {
         $total_tax_sum = 0;
 

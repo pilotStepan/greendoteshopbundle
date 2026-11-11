@@ -397,7 +397,6 @@ class ManagePurchaseTest extends TestCase
     private function setPaymentTypeWithoutSync(Purchase $purchase, PaymentType $paymentType): void
     {
         $property = new \ReflectionProperty(Purchase::class, 'PaymentType');
-        $property->setAccessible(true);
         $property->setValue($purchase, $paymentType);
     }
 

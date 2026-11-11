@@ -197,7 +197,6 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
     private function setPurchaseId(Purchase $purchase, int $id): void
     {
         $reflection = new \ReflectionProperty(Purchase::class, 'id');
-        $reflection->setAccessible(true);
         $reflection->setValue($purchase, $id);
 
         $this->currentPurchase = $purchase;

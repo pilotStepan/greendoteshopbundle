@@ -253,7 +253,7 @@ readonly class RbBankPaymentImportService
 
     private function parseLine(string $line): ?RbBankPaymentRecord
     {
-        $columns = str_getcsv($line, ';');
+        $columns = str_getcsv($line, ';', '"', '\\');
         if (count($columns) < 14) {
             $this->logger->warning('Skipping malformed RB bank payment row', ['line' => $line]);
             return null;

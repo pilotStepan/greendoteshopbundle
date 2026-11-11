@@ -32,7 +32,7 @@ class DiscountService
     public function validateDiscount
     (
         ClientDiscount $clientDiscount,
-        Client         $Client = null,
+        ?Client         $Client = null,
         \DateTime      $Datetime = new \DateTime(),
     ): bool
     {

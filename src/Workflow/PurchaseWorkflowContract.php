@@ -33,7 +33,7 @@ enum PurchaseWorkflowContract: string
     case F_PAYMENT_SUCCESS = 'payment_success';
     case F_PAYMENT_ERROR = 'payment_error';
 
-    public static function eventName(string $event, self $transition = null): string
+    public static function eventName(string $event, ?self $transition = null): string
     {
         if ($transition === null) {
             return sprintf('workflow.%s.%s',
