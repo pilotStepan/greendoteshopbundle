@@ -1,9 +1,24 @@
-# Test database for the Functional suite: MariaDB 10.5.29, the production version, at the URL in phpunit.xml.
-# `composer test` starts it when it isn't running. It then keeps running, also across reboots, until
-# `composer test:db:stop`. Data lives in memory: every test class recreates the schema anyway.
+# Test environment, the same as CI: PHP 8.2 (`php`) and MariaDB 10.5.29, the production version (`test-db`).
+# `composer test` and `composer phpstan` run in `php`, which starts `test-db` when it isn't running. The database
+# then keeps running, also across reboots, until `composer test:db:stop`. Data lives in memory: every test class
+# recreates the schema anyway.
 name: greendot-eshopbundle
 
 services:
+  php:
+    build: docker/php
+    profiles: [tools] # only started by `docker compose run`
+    # Host user, so files written into the checkout (caches, vendor) stay yours.
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app
+    environment:
+      HOME: /tmp
+      TEST_DATABASE_URL: mysql://root:root@test-db:3306/eshop_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4
+    depends_on:
+      test-db:
+        condition: service_healthy
+
   test-db:
     image: mariadb:10.5.29
     environment:

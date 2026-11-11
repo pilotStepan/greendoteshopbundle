@@ -85,21 +85,32 @@
     "deeplcom/deepl-php": "Needed by GenerateTranslation / TranslationController (DEEPL_API_KEY) to machine-translate entities."
   },
   "scripts": {
-    "phpstan": "phpstan analyse --memory-limit=-1",
-    "phpstan:baseline": "phpstan analyse --memory-limit=-1 --generate-baseline",
+    "phpstan": [
+      "Composer\\Config::disableProcessTimeout",
+      "docker compose run --rm --no-deps php vendor/bin/phpstan analyse"
+    ],
+    "phpstan:baseline": [
+      "Composer\\Config::disableProcessTimeout",
+      "docker compose run --rm --no-deps php vendor/bin/phpstan analyse --generate-baseline"
+    ],
     "test": [
       "Composer\\Config::disableProcessTimeout",
-      "docker compose up --detach --wait test-db && phpunit"
+      "docker compose run --rm php vendor/bin/phpunit"
     ],
     "test:db": "docker compose up --detach --wait test-db",
     "test:db:stop": "docker compose down"
   },
   "scripts-descriptions": {
-    "test": "Start the test database if it isn't running, then run PHPUnit (arguments go to PHPUnit)",
+    "phpstan": "Run PHPStan on PHP 8.2 in Docker, as CI does (arguments go to PHPStan)",
+    "phpstan:baseline": "Regenerate phpstan-baseline.neon on PHP 8.2 in Docker",
+    "test": "Run PHPUnit on PHP 8.2 in Docker, as CI does, starting the test database if it isn't running (arguments go to PHPUnit)",
     "test:db": "Start the MariaDB test database (compose.yaml); does nothing if it is already running",
     "test:db:stop": "Stop and remove the test database"
   },
   "config": {
+    "platform": {
+      "php": "8.2.0"
+    },
     "allow-plugins": {
       "php-http/discovery": true
     }

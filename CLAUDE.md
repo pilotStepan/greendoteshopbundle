@@ -18,7 +18,7 @@ identical data format. Tenants switch features with the bundle's config tree (`g
 `GreendotEshopBundle::configure()`) and change behavior by overriding or decorating bundle services in their
 own `config/services.yaml`, never by forking entities.
 
-This repo is a library, tested standalone with plain PHP/Composer/PHPUnit. To try an unreleased bundle
+This repo is a library, tested standalone with Composer, PHPUnit and Docker. To try an unreleased bundle
 change inside a tenant project, set `LOCAL_BUNDLE_PATH` in the tenant's `.env.local` to this checkout and
 run `php bin/console greendot:eshop:sync` there (`--watch` keeps syncing, `--clean` replaces the whole
 `src/`; see `src/Command/SyncBundleCommand.php`). It copies files into the tenant's
@@ -28,24 +28,27 @@ edit the bundle here, never in a tenant's `vendor/`.
 
 ## Commands
 
-All commands run with plain PHP + Composer. The bundle supports PHP >= 8.2 and CI runs 8.2; if your PHP
-is newer, PHPStan still checks against 8.2 (`phpVersion`).
+The bundle supports PHP >= 8.2. `composer test` and `composer phpstan` don't use your PHP: they run in the `php`
+service of `compose.yaml` (PHP 8.2 with CI's extensions and ini values, image built on first use, rebuild with
+`docker compose build php` after changing `docker/php/`), so a newer local PHP can't hide 8.2 failures or add
+its own deprecations. Composer resolves dependencies for 8.2 too (`config.platform.php`), so `composer install`
+and `composer update` work with any local PHP. Any other command on 8.2: `docker compose run --rm php <cmd>`.
 
 ```bash
 composer install                 # install dependencies
-composer test                    # start the test DB if needed, run the full suite (Unit + Functional)
+composer test                    # run the full suite (Unit + Functional) on PHP 8.2, starting the test DB if needed
 composer test -- --testsuite Unit # arguments after -- go to PHPUnit
 composer test -- tests/Service/ManagePurchaseTest.php
 composer test -- --filter testSomeMethodName
 composer test:db:stop             # stop the test DB (otherwise it keeps running, also across reboots)
 composer validate --strict         # what CI runs before installing deps
-composer phpstan                   # static analysis (PHPStan level 6, config: phpstan.dist.neon)
+composer phpstan                   # static analysis on PHP 8.2 (PHPStan level 6, config: phpstan.dist.neon)
 composer phpstan:baseline          # regenerate phpstan-baseline.neon (see rules below)
 ```
 
 CI (`.github/workflows/tests.yml`) runs on PHP 8.2 against `master`/PRs: `composer validate --strict`,
-`composer install`, `composer phpstan`, `vendor/bin/phpunit` with `TEST_DATABASE_URL` pointing at a MariaDB 10.5.29
-service.
+`composer install`, `vendor/bin/phpstan analyse`, `vendor/bin/phpunit` with `TEST_DATABASE_URL` pointing at a MariaDB 10.5.29
+service. It runs the tools directly, not through the Docker-based `composer test` / `composer phpstan`.
 
 ### Static analysis (PHPStan)
 - `phpstan.dist.neon`: level 6 + `phpstan-doctrine` (validates DQL/QueryBuilder and entity mappings
@@ -73,9 +76,10 @@ service.
   recreated schema (`SchemaTool` in `setUpBeforeClass()`); each test runs inside a transaction rolled back in
   `tearDown()` — don't rely on data surviving across tests. A default `Currency` row is created in `setUp()`
   because currency-aware listeners 500 without one. Locally the database is the `test-db` service in
-  `compose.yaml` (Docker, 127.0.0.1:33061, data in memory, restarts with Docker). `composer test` starts it
-  when it isn't running, so there is nothing to start or stop by hand. Plain `vendor/bin/phpunit` also works
-  while it runs; without it, functional tests stop with "No test database at ...". Any change to a repository, raw SQL, or
+  `compose.yaml` (Docker, data in memory, restarts with Docker). `composer test` starts it when it isn't
+  running, so there is nothing to start or stop by hand. Host PHP can still reach it at 127.0.0.1:33061
+  (`vendor/bin/phpunit`, the default URL in `phpunit.xml`), but that runs your PHP, not 8.2; without the
+  database, functional tests stop with "No test database at ...". Any change to a repository, raw SQL, or
   DQL must be covered by a functional test. Don't mock repositories to test query logic.
 - Entity fixtures use `zenstruck/foundry` factories under `tests/App/Factory/*Factory.php` — add new ones
   there rather than instantiating entities by hand in functional tests.
