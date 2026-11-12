@@ -168,6 +168,11 @@ class Upload implements Translatable
         $this->locale = $locale;
     }
 
+    public function getTranslatableLocale(): ?string
+    {
+        return $this->locale;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

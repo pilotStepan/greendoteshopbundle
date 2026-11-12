@@ -155,7 +155,8 @@ class ProductIndexer implements ProductIndexerInterface
                     p.description,
                     p.slug,
                     COALESCE(p.meta_description, '') AS metaDescription,
-                    COALESCE(u.path, '')             AS uploadPath
+                    COALESCE(u.path, '')             AS uploadPath,
+                    p.upload_id                      AS uploadId
                 FROM product p
                 LEFT JOIN upload u ON u.id = p.upload_id
                 WHERE {$where}
@@ -174,9 +175,11 @@ class ProductIndexer implements ProductIndexerInterface
             }
 
             $translations = $this->preloadTranslations(array_column($rows, 'id'));
+            $uploadPaths = $this->preloadUploadPaths(array_filter(array_column($rows, 'uploadId')));
 
             foreach ($rows as $row) {
                 $row['_translations'] = $translations[(int)$row['id']] ?? [];
+                $row['_uploadPaths'] = $uploadPaths[(int)($row['uploadId'] ?? 0)] ?? [];
                 yield $row;
             }
 
@@ -204,6 +207,11 @@ class ProductIndexer implements ProductIndexerInterface
             'uploadPath' => (string)($row['uploadPath'] ?? ''),
             'metaDescription' => (string)($row['metaDescription'] ?? ''),
         ];
+
+        // Raw SQL reads the default-locale path; localised images are exposed as `uploadPath_{locale}`.
+        foreach ($this->getLocales() as $locale) {
+            $record[sprintf('uploadPath_%s', $locale)] = $row['_uploadPaths'][$locale] ?? $record['uploadPath'];
+        }
 
         foreach (static::TRANSLATABLE_FIELDS as $field) {
             $baseValue = (string)($row[$field] ?? '');
@@ -248,6 +256,40 @@ class ProductIndexer implements ProductIndexerInterface
         }
 
         return $translations;
+    }
+
+    /**
+     * Preloads localised image paths of the given uploads in a single query, keyed [uploadId][locale] => path.
+     *
+     * @param int[] $uploadIds
+     * @return array<int, array<string, string>>
+     */
+    protected function preloadUploadPaths(array $uploadIds): array
+    {
+        if (!$uploadIds) {
+            return [];
+        }
+
+        $result = $this->connection()->executeQuery(
+            <<<SQL
+                SELECT foreign_key, locale, content
+                FROM ext_translations
+                WHERE object_class = :class
+                  AND field = 'path'
+                  AND foreign_key IN (:ids)
+                SQL,
+            ['class' => 'Greendot\\EshopBundle\\Entity\\Project\\Upload', 'ids' => array_values($uploadIds)],
+            ['ids' => Connection::PARAM_INT_ARRAY],
+        );
+
+        $paths = [];
+        foreach ($result->fetchAllAssociative() as $row) {
+            if ((string)$row['content'] !== '') {
+                $paths[(int)$row['foreign_key']][$row['locale']] = $row['content'];
+            }
+        }
+
+        return $paths;
     }
 
     /**

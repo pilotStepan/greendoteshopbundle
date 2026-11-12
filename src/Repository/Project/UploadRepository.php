@@ -7,25 +7,26 @@ use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Translation\LocaleSwitcher;
 use Greendot\EshopBundle\Entity\Project\UploadGroup;
 use Greendot\EshopBundle\Entity\Project\UploadType;
 
 /**
- * @extends ServiceEntityRepository<Upload>
+ * @extends HintedRepositoryBase
  *
  * @method Upload|null find($id, $lockMode = null, $lockVersion = null)
  * @method Upload|null findOneBy(array $criteria, array $orderBy = null)
  * @method Upload[]    findAll()
  * @method Upload[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class UploadRepository extends ServiceEntityRepository
+class UploadRepository extends HintedRepositoryBase
 {
-    public function __construct(ManagerRegistry $registry, private UploadGroupRepository $uploadGroupRepository)
+    public function __construct(ManagerRegistry $registry, private UploadGroupRepository $uploadGroupRepository, LocaleSwitcher $localeSwitcher)
     {
-        parent::__construct($registry, Upload::class);
+        parent::__construct($registry, Upload::class, $localeSwitcher);
     }
 
     public function save(Upload $entity, bool $flush = false): void
@@ -80,12 +81,14 @@ class UploadRepository extends ServiceEntityRepository
     {
         $uploadGroups = $this->uploadGroupRepository->getAllUploadGroupsForProduct($product);
 
-        return $this->createQueryBuilder('u')
+        $query = $this->createQueryBuilder('u')
             //must be distinct path, because the llg api has the same image for multiple variants, so it doesn't look weird when printing the result, also helps avoid printing unwanted duplicates
             ->select('DISTINCT u.path')
             ->addSelect('u.name')
             ->andWhere('u.uploadGroup in (:uploadGroups)')->setParameter('uploadGroups', $uploadGroups)
-            ->getQuery()->getResult();
+            ->getQuery();
+
+        return $this->hintQuery($query)->getResult();
     }
 
     /**
@@ -181,7 +184,7 @@ class UploadRepository extends ServiceEntityRepository
             return [];
         }
 
-        $rows = $this->createQueryBuilder('u')
+        $query = $this->createQueryBuilder('u')
             ->select('COALESCE(p.id, pvp.id) AS productId', 'u.id AS uploadId', 'u.path AS path')
             ->innerJoin('u.uploadGroup', 'ug')
             ->leftJoin('ug.productUploadGroups', 'pug')
@@ -195,8 +198,9 @@ class UploadRepository extends ServiceEntityRepository
             ->setParameter('type', UploadGroupTypeEnum::IMAGE)
             ->orderBy('u.sequence', 'ASC')
             ->addOrderBy('u.id', 'ASC')
-            ->getQuery()
-            ->getScalarResult();
+            ->getQuery();
+
+        $rows = $this->hintQuery($query)->getScalarResult();
 
         $result = [];
         foreach ($rows as $row) {
