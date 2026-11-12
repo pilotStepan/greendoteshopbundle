@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Export\Data\Factory;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Export\Data\Model\GoogleProductFeedModel;
@@ -35,6 +36,19 @@ class GoogleProductFeedFactory
         $this->url = $parameterBag->get('greendot_eshop.global.absolute_url') ?? 'https://www.example.com';
     }
 
+    /**
+     * Upload relations are lazy-loaded with the request locale, so the feed's locale is applied explicitly.
+     */
+    private function getLocalisedUploadPath(?Upload $upload, ?string $locale): ?string
+    {
+        if ($upload !== null && $locale && $upload->getTranslatableLocale() !== $locale) {
+            $upload->setTranslatableLocale($locale);
+            $this->entityManager->refresh($upload);
+        }
+
+        return $upload?->getPath();
+    }
+
     public function create(ProductVariant $productVariant, ?string $locale = null): GoogleProductFeedModel
     {
         $product = $productVariant->getProduct();
@@ -56,15 +70,15 @@ class GoogleProductFeedFactory
 
 
         $imageLink = null;
-        if ($productVariant?->getUpload()?->getPath()){
-            $imageLink = $productVariant->getUpload()->getPath();
-        }elseif ($product?->getUpload()?->getPath()){
-            $imageLink = $product->getUpload()->getPath();
+        if ($this->getLocalisedUploadPath($productVariant?->getUpload(), $locale)){
+            $imageLink = $this->getLocalisedUploadPath($productVariant->getUpload(), $locale);
+        }elseif ($this->getLocalisedUploadPath($product?->getUpload(), $locale)){
+            $imageLink = $this->getLocalisedUploadPath($product->getUpload(), $locale);
         }else{
             $qb = $this->uploadRepository->createQueryBuilder('upload');
             $qb = $this->uploadRepository->getProductWithVariantsUploadsQB($product->getId(), $qb);
             $upload = $qb->select('upload')->setMaxResults(1)->getQuery()->getOneOrNullResult();
-            $imageLink = $upload?->getPath();
+            $imageLink = $this->getLocalisedUploadPath($upload, $locale);
         }
 
 
