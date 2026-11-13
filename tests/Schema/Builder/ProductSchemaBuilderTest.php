@@ -30,6 +30,8 @@ class ProductSchemaBuilderTest extends TestCase
     private CurrencyManager&MockObject $currencyManager;
     private ProductVariantPriceFactory&MockObject $priceFactory;
     private ProductSchemaBuilder $builder;
+    /** @var array<int, true> spl_object_id() of variants whose price resolves to 0 ("price on request") */
+    private array $unpricedVariants = [];
 
     protected function setUp(): void
     {
@@ -46,9 +48,12 @@ class ProductSchemaBuilderTest extends TestCase
         $this->currencyManager->method('get')->willReturn($currency);
 
         $this->priceFactory = $this->createMock(ProductVariantPriceFactory::class);
-        $price = $this->createMock(ProductVariantPrice::class);
-        $price->method('getPrice')->willReturn(100.0);
-        $this->priceFactory->method('create')->willReturn($price);
+        $this->priceFactory->method('create')->willReturnCallback(function (ProductVariantEntity $variant) {
+            $price = $this->createMock(ProductVariantPrice::class);
+            $price->method('getPrice')->willReturn(isset($this->unpricedVariants[spl_object_id($variant)]) ? 0.0 : 100.0);
+
+            return $price;
+        });
 
         $this->builder = new ProductSchemaBuilder(
             $this->urlGenerator,
@@ -231,5 +236,163 @@ class ProductSchemaBuilderTest extends TestCase
 
         $this->assertSame('Jana', $schema['reviews'][0]['author']['name']);
         $this->assertArrayNotHasKey('email', $schema['reviews'][0]['author']);
+    }
+
+    public function testVariantWithoutPriceHasNoOffer(): void
+    {
+        $product = $this->createProductMock();
+        $variant = $this->createVariantMock($product);
+        $this->unpricedVariants[spl_object_id($variant)] = true;
+
+        $schema = $this->builder->forProductWithVariant($product, $variant)->build()->toArray();
+
+        $this->assertArrayNotHasKey('offers', $schema);
+    }
+
+    public function testBuildVariantReferenceWithoutPriceHasNoOffer(): void
+    {
+        $product = $this->createProductMock();
+        $variant = $this->createVariantMock($product);
+        $this->unpricedVariants[spl_object_id($variant)] = true;
+
+        $schema = $this->builder->buildVariantReference($variant)->toArray();
+
+        $this->assertArrayNotHasKey('offers', $schema);
+    }
+
+    public function testBuildForListingCountsOnlyPricedVariantsInAggregateOffer(): void
+    {
+        $product = $this->createProductMock();
+        $priced = $this->createVariantMock($product);
+        $unpriced = $this->createVariantMock($product);
+        $this->unpricedVariants[spl_object_id($unpriced)] = true;
+
+        $product->method('getProductVariants')->willReturn(new ArrayCollection([$priced, $unpriced]));
+        $this->reviewRepository->method('getReviewCountForProduct')->willReturn(0);
+
+        $schema = $this->builder->buildForListing($product)->toArray();
+
+        $this->assertSame(1, $schema['offers']['offerCount']);
+        $this->assertArrayHasKey('offers', $schema['hasVariant'][0]);
+        $this->assertArrayNotHasKey('offers', $schema['hasVariant'][1]);
+    }
+
+    public function testProductWithoutAnyImageHasNoImageKey(): void
+    {
+        $product = $this->createProductMock();
+        $variant = $this->createVariantMock($product);
+        $product->method('getProductVariants')->willReturn(new ArrayCollection([$variant]));
+
+        $schema = $this->builder->forProductWithVariant($product, $variant)->build()->toArray();
+
+        // Previously absolute_url . null produced the bare domain as the image.
+        $this->assertArrayNotHasKey('image', $schema);
+    }
+
+    public function testProductImageFallsBackToFirstVariantImage(): void
+    {
+        $product = $this->createProductMock();
+        $withoutImage = $this->createVariantMock($product);
+        $withImage = $this->createVariantMock($product);
+        $upload = $this->createMock(\Greendot\EshopBundle\Entity\Project\Upload::class);
+        $upload->method('getPath')->willReturn('/uploads/variant.jpg');
+        $withImage->method('getUpload')->willReturn($upload);
+        $product->method('getProductVariants')->willReturn(new ArrayCollection([$withoutImage, $withImage]));
+
+        $this->assertSame('https://example.com/uploads/variant.jpg', $this->builder->productImageUrl($product));
+    }
+
+    public function testNamesAreStrippedOfHtml(): void
+    {
+        $product = $this->createMock(ProductEntity::class);
+        $product->method('getName')->willReturn('Evapo-Rust<sup>®</sup>');
+        $product->method('getTitle')->willReturn('Evapo-Rust<sup>®</sup> &amp; more');
+        $product->method('getSlug')->willReturn('evapo-rust-p');
+        $product->method('getControllerName')->willReturn('shop_product');
+
+        $schema = $this->builder->forProduct($product)->build()->toArray();
+
+        $this->assertSame('Evapo-Rust®', $schema['name']);
+        $this->assertSame('Evapo-Rust® & more', $schema['description']);
+    }
+
+    public function testSingleVariantProductGetsVariantProperties(): void
+    {
+        $product = $this->createProductMock();
+        $group = $this->createMock(ParameterGroup::class);
+        $group->method('getName')->willReturn('Barva');
+        $parameter = $this->createMock(Parameter::class);
+        $parameter->method('getParameterGroup')->willReturn($group);
+        $parameter->method('getColorName')->willReturn('Red');
+        $variant = $this->createVariantMock($product, parameters: [$parameter]);
+
+        $schema = $this->builder->forProductWithVariant($product, $variant)->build()->toArray();
+
+        $this->assertSame('Red', $schema['color']);
+    }
+
+    public function testTenantOverridesOfPriceAvailabilityAndNameReachTheMarkup(): void
+    {
+        $builder = new class(
+            $this->urlGenerator,
+            'https://example.com',
+            $this->reviewRepository,
+            $this->productRepository,
+            $this->productProductRepository,
+            $this->currencyManager,
+            $this->priceFactory,
+        ) extends ProductSchemaBuilder {
+            public function variantPrice(ProductVariantEntity $variant): ?float
+            {
+                return 55.5;
+            }
+
+            protected function availabilityUrl(ProductVariantEntity $variant): string
+            {
+                return 'https://schema.org/BackOrder';
+            }
+
+            protected function variantName(ProductVariantEntity $variant): ?string
+            {
+                return 'Custom name';
+            }
+        };
+
+        $product = $this->createProductMock();
+        $variantA = $this->createVariantMock($product);
+        $variantB = $this->createVariantMock($product);
+        $product->method('getProductVariants')->willReturn(new ArrayCollection([$variantA, $variantB]));
+        $this->reviewRepository->method('getReviewCountForProduct')->willReturn(0);
+
+        $single = $builder->forProductWithVariant($product, $variantA)->build()->toArray();
+        $this->assertSame(55.5, $single['offers']['price']);
+        $this->assertSame('https://schema.org/BackOrder', $single['offers']['availability']);
+        $this->assertSame('Custom name', $single['name']);
+
+        $group = $builder->buildForListing($product)->toArray();
+        $this->assertSame(55.5, $group['offers']['lowPrice']);
+        $this->assertSame('Custom name', $group['hasVariant'][0]['name']);
+        $this->assertSame('https://schema.org/BackOrder', $group['hasVariant'][1]['offers']['availability']);
+    }
+
+    public function testRelationshipsUseOnlyLoadableChildren(): void
+    {
+        $product = $this->createProductMock();
+        $child = $this->createProductMock();
+        $type = $this->createMock(\Greendot\EshopBundle\Entity\Project\ProductProductType::class);
+        $type->method('getName')->willReturn('RELATED');
+        $relation = $this->createMock(\Greendot\EshopBundle\Entity\Project\ProductProduct::class);
+        $relation->method('getChildrenProduct')->willReturn($child);
+        $relation->method('getProductProductType')->willReturn($type);
+
+        // findBy() would also return relations to products hidden by Doctrine filters,
+        // whose proxies throw EntityNotFoundException when touched.
+        $this->productProductRepository->expects($this->never())->method('findBy');
+        $this->productProductRepository->expects($this->once())
+            ->method('findWithLoadableChildren')->with($product)->willReturn([$relation]);
+
+        $schema = $this->builder->forProduct($product)->withProductRelationships()->build()->toArray();
+
+        $this->assertSame('Test Product', $schema['isSimilarTo'][0]['name']);
     }
 }

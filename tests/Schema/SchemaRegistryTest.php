@@ -100,6 +100,23 @@ class SchemaRegistryTest extends TestCase
         $this->assertStringContainsString('</script>', $output);
     }
 
+    public function testRenderCannotBeBrokenOutOfByValues(): void
+    {
+        $name = 'Evil </script><script>alert(1)</script> & co';
+        $provider = $this->makeProvider(supports: true, provides: Schema::webPage()->name($name), priority: 0);
+
+        $registry = new SchemaRegistry([$provider]);
+        $registry->collect(new \stdClass());
+        $html = $registry->render();
+
+        // Only the wrapper's own closing tag may appear.
+        $this->assertSame(1, substr_count(strtolower($html), '</script'));
+        $this->assertStringNotContainsString('<script>alert', $html);
+
+        $json = trim(preg_replace('~^<script type="application/ld\+json">|</script>$~', '', trim($html)));
+        $this->assertSame($name, json_decode($json, true)['name']);
+    }
+
     public function testRenderReturnsEmptyStringWhenNoSchemasCollected(): void
     {
         $registry = new SchemaRegistry([]);

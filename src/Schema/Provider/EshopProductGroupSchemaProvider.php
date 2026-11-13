@@ -4,9 +4,9 @@ namespace Greendot\EshopBundle\Schema\Provider;
 
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\ProductGroup;
-use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Enum\ProductViewTypeEnum;
+use Greendot\EshopBundle\Schema\SchemaText;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
 use Greendot\EshopBundle\Schema\Builder\ProductSchemaBuilder;
@@ -18,12 +18,16 @@ use Greendot\EshopBundle\Schema\UnsupportedSchemaSubjectException;
 
 class EshopProductGroupSchemaProvider implements SchemaProviderInterface
 {
+    /**
+     * $priceFactory is unused (prices come from ProductSchemaBuilder::variantPrice()), but tenants
+     * call this constructor positionally from their subclasses, so the signature stays.
+     */
     public function __construct(
         private readonly UrlGeneratorInterface      $urlGenerator,
         private readonly ProductRepository          $productRepository,
         private readonly ReviewRepository           $reviewRepository,
         private readonly ProductSchemaBuilder       $builder,
-        private readonly ProductVariantPriceFactory $priceFactory,
+        ProductVariantPriceFactory                  $priceFactory,
         private readonly CurrencyManager            $currencyManager,
     ) {}
 
@@ -45,11 +49,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
         $currency = $this->currencyManager->get();
 
         $prices = array_filter(array_map(
-            fn($variant) => $this->priceFactory->create(
-                $variant,
-                $currency,
-                vatCalculationType: VatCalculationType::WithVAT,
-            )->getPrice(),
+            fn($variant) => $this->builder->variantPrice($variant),
             $variants,
         ));
 
@@ -58,24 +58,19 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
                 ->lowPrice(min($prices))
                 ->highPrice(max($prices))
                 ->priceCurrency($currency->getName())
-                ->offerCount(count($variants))
+                ->offerCount(count($prices))
             : null;
 
         $schema = Schema::productGroup()
             ->identifier(sprintf('%s#group',
                 $this->urlGenerator->generate($object->getControllerName(), ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
             ))
-            ->name($object->getName())
-            ->description($object->getDescription())
+            ->name(SchemaText::plain($object->getName()))
+            ->description(SchemaText::plain($object->getDescription()))
+            ->image($this->builder->productImageUrl($object))
             ->productGroupID($object->getExternalId() ?? (string) $object->getId())
             ->brand(Schema::brand()
                 ->name($object->getProducer()?->getName()),
-            )
-            ->variesBy(
-                array_map(
-                    fn($paramGroup) => ProductSchemaBuilder::SCHEMA_VARIES_BY_MAP[mb_strtolower($paramGroup->getName())] ?? $paramGroup->getName(),
-                    $this->productRepository->findVariantParameterGroupsByProduct($object),
-                ),
             )
             ->hasVariant(
                 array_map(
@@ -85,6 +80,14 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             )
             ->offers($aggregateOffer)
         ;
+
+        $variesBy = array_map(
+            fn($paramGroup) => ProductSchemaBuilder::SCHEMA_VARIES_BY_MAP[mb_strtolower($paramGroup->getName())] ?? $paramGroup->getName(),
+            $this->productRepository->findVariantParameterGroupsByProduct($object),
+        );
+        if ($variesBy !== []) {
+            $schema->variesBy($variesBy);
+        }
 
         $reviewCount = $this->reviewRepository->getReviewCountForProduct($object);
         if ($reviewCount > 0) {

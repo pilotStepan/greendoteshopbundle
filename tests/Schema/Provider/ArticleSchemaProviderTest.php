@@ -73,6 +73,16 @@ class ArticleSchemaProviderTest extends TestCase
         $this->assertSame('Text článku', $array['articleBody']);
     }
 
+    public function testHeadlineFallsBackToNameWhenTitleIsEmpty(): void
+    {
+        $category = $this->createCategoryStub(CategoryTypeEnum::BLOG, name: 'Labortops 02/2024', title: '');
+        $this->urlGenerator->method('generate')->willReturn('https://example.com/blog/x');
+
+        $array = $this->provider->provide($category)->toArray();
+
+        $this->assertSame('Labortops 02/2024', $array['headline']);
+    }
+
     public function testProvideOmitsDescriptionAndBodyWhenBlank(): void
     {
         $category = $this->createCategoryStub(CategoryTypeEnum::BLOG, description: '   ', html: null);

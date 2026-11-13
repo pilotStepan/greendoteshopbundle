@@ -83,13 +83,11 @@ class EshopProductGroupSchemaProviderTest extends TestCase
         $currency->method('getName')->willReturn('CZK');
         $this->currencyManager->method('get')->willReturn($currency);
 
-        $priceA = $this->createMock(ProductVariantPrice::class);
-        $priceA->method('getPrice')->willReturn(10.0);
-        $priceB = $this->createMock(ProductVariantPrice::class);
-        $priceB->method('getPrice')->willReturn(30.0);
-
-        $this->priceFactory->method('create')
-            ->willReturnOnConsecutiveCalls($priceA, $priceB);
+        // Prices come from the builder, so a tenant overriding variantPrice() changes them here too.
+        $this->builder->method('variantPrice')->willReturnMap([
+            [$variantA, 10.0],
+            [$variantB, 30.0],
+        ]);
 
         $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([]);
         $this->productRepository->method('findApprovedReviews')->willReturn([]);
@@ -199,6 +197,65 @@ class EshopProductGroupSchemaProviderTest extends TestCase
         $this->assertSame(4.0, $array['aggregateRating']['ratingValue']);
         $this->assertSame('Petr', $array['reviews'][0]['author']['name']);
         $this->assertArrayNotHasKey('email', $array['reviews'][0]['author']);
+    }
+
+    public function testProvideOmitsVariesByWhenNoVariantParameterGroupsAndStripsHtml(): void
+    {
+        $product = $this->createProvidableProduct(name: 'Evapo-Rust<sup>®</sup>', description: '<p>Odrezovač&nbsp;rzi</p>');
+        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([]);
+
+        $array = $this->provider->provide($product)->toArray();
+
+        $this->assertArrayNotHasKey('variesBy', $array);
+        $this->assertSame('Evapo-Rust®', $array['name']);
+        $this->assertSame('Odrezovač rzi', $array['description']);
+    }
+
+    public function testProvideMapsVariesByAndTakesImageFromBuilder(): void
+    {
+        $product = $this->createProvidableProduct();
+        $group = $this->createMock(\Greendot\EshopBundle\Entity\Project\ParameterGroup::class);
+        $group->method('getName')->willReturn('Barva');
+        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([$group]);
+        $this->builder->method('productImageUrl')->willReturn('https://example.com/uploads/a.jpg');
+
+        $array = $this->provider->provide($product)->toArray();
+
+        $this->assertSame(['color'], $array['variesBy']);
+        $this->assertSame('https://example.com/uploads/a.jpg', $array['image']);
+    }
+
+    public function testProvideOmitsAggregateOfferWhenNoVariantHasPrice(): void
+    {
+        $product = $this->createProvidableProduct();
+        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([]);
+        $this->builder->method('variantPrice')->willReturn(0.0);
+
+        $array = $this->provider->provide($product)->toArray();
+
+        $this->assertArrayNotHasKey('offers', $array);
+    }
+
+    private function createProvidableProduct(string $name = 'Test Product', string $description = 'Description'): ProductEntity&MockObject
+    {
+        $product = $this->createProductMock(ProductViewTypeEnum::ESHOP, variantCount: 2);
+
+        $currency = $this->createMock(Currency::class);
+        $currency->method('getName')->willReturn('CZK');
+        $this->currencyManager->method('get')->willReturn($currency);
+
+        $this->productRepository->method('findApprovedReviews')->willReturn([]);
+        $this->reviewRepository->method('getReviewCountForProduct')->willReturn(0);
+        $this->builder->method('buildVariantReference')->willReturn(new ProductSchema());
+        $this->urlGenerator->method('generate')->willReturn('https://example.com/product');
+
+        $product->method('getName')->willReturn($name);
+        $product->method('getDescription')->willReturn($description);
+        $product->method('getSlug')->willReturn('test-product');
+        $product->method('getControllerName')->willReturn('product_show');
+        $product->method('getProducer')->willReturn(null);
+
+        return $product;
     }
 
     private function createProductMock(

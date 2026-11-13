@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Schema\Provider;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\WebPage;
 use Greendot\EshopBundle\Enum\CategoryTypeEnum;
+use Greendot\EshopBundle\Schema\SchemaText;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Greendot\EshopBundle\Entity\Interface\PageableInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -36,8 +37,8 @@ class WebPageSchemaProvider implements SchemaProviderInterface
         return Schema::webPage()
             ->identifier(sprintf('%s#webpage', $url))
             ->url($url)
-            ->name($object->getName())
-            ->description($object->getDescription())
+            ->name(SchemaText::plain($object->getName()))
+            ->description(SchemaText::plain($object->getDescription()))
         ;
     }
 

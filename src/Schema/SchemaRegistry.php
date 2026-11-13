@@ -59,7 +59,9 @@ class SchemaRegistry
 
         $json = json_encode(
             count($payload) === 1 ? $payload[0] : $payload,
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+            // JSON_HEX_TAG/AMP: escape < > & so no value (product names, customer reviews) can close
+            // the <script> element and inject HTML; the escaped JSON parses to the same strings.
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_THROW_ON_ERROR,
         );
 
         return sprintf(

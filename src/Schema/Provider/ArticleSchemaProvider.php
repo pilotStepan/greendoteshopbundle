@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Schema\Provider;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\Article;
 use Greendot\EshopBundle\Enum\CategoryTypeEnum;
+use Greendot\EshopBundle\Schema\SchemaText;
 use Greendot\EshopBundle\Schema\SchemaProviderInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -46,10 +47,10 @@ class ArticleSchemaProvider implements SchemaProviderInterface
             ->identifier(sprintf('%s#article', $url))
             ->url($url)
             ->mainEntityOfPage($url)
-            ->headline($object->getTitle() ?? $object->getName())
-            ->name($object->getName())
-            ->description($this->stripToNull($object->getDescription()))
-            ->articleBody($this->stripToNull($object->getHtml()))
+            ->headline(SchemaText::plain($object->getTitle()) ?? SchemaText::plain($object->getName()))
+            ->name(SchemaText::plain($object->getName()))
+            ->description(SchemaText::plain($object->getDescription()))
+            ->articleBody(SchemaText::plain($object->getHtml()))
         ;
 
         $upload = $object->getUpload();
@@ -82,16 +83,5 @@ class ArticleSchemaProvider implements SchemaProviderInterface
     public function getPriority(): int
     {
         return 0;
-    }
-
-    private function stripToNull(?string $value): ?string
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        $stripped = trim(strip_tags($value));
-
-        return $stripped === '' ? null : $stripped;
     }
 }

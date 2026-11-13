@@ -23,6 +23,25 @@ class ProductProductRepository extends ServiceEntityRepository
         parent::__construct($registry, ProductProduct::class);
     }
 
+    /**
+     * Relations of a parent product whose child product can be loaded. The inner join lets Doctrine
+     * filters (e.g. ProductActiveFilter) drop relations to hidden products; otherwise touching the
+     * child proxy throws EntityNotFoundException.
+     *
+     * @return ProductProduct[]
+     */
+    public function findWithLoadableChildren(Product $parentProduct): array
+    {
+        return $this->createQueryBuilder('productProduct')
+            ->addSelect('child', 'type')
+            ->innerJoin('productProduct.childrenProduct', 'child')
+            ->leftJoin('productProduct.productProductType', 'type')
+            ->andWhere('productProduct.parentProduct = :parentProduct')
+            ->setParameter('parentProduct', $parentProduct)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getForPurchaseProductVariant(PurchaseProductVariant $purchaseProductVariant): ?ProductProduct
     {
         //get all products in purchase

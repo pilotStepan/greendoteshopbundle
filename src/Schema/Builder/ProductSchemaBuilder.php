@@ -2,10 +2,12 @@
 
 namespace Greendot\EshopBundle\Schema\Builder;
 
+use Spatie\SchemaOrg\Offer;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\BaseType;
 use Spatie\SchemaOrg\Product as ProductSchema;
 use Spatie\SchemaOrg\Contracts\ThingContract;
+use Greendot\EshopBundle\Schema\SchemaText;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Repository\Project\ReviewRepository;
@@ -62,12 +64,12 @@ class ProductSchemaBuilder
         $clone->schema = Schema::product()
             ->identifier(sprintf('%s#product', $url))
             ->url($url)
-            ->name($product->getName())
-            ->image($this->absoluteUrl . $product->getUpload()?->getPath())
+            ->name(SchemaText::plain($product->getName()))
+            ->image($this->productImageUrl($product))
             ->brand(Schema::brand()
                 ->name($product->getProducer()?->getName()),
             )
-            ->description($product->getTitle())
+            ->description(SchemaText::plain($product->getTitle()))
         ;
 
         return $clone;
@@ -97,22 +99,12 @@ class ProductSchemaBuilder
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $clone->schema
-            ->name($variant->getName() ?? $variant->getProduct()->getName())
+            ->name($this->variantName($variant))
             ->image($this->variantImageUrl($variant))
-            ->offers(Schema::offer()
-                ->url($url)
-                ->price(
-                    $this->priceFactory->create(
-                        $variant,
-                        $this->currencyManager->get(),
-                        vatCalculationType: VatCalculationType::WithVAT,
-                    )->getPrice(),
-                )
-                ->priceCurrency($this->getCurrencyCode())
-                ->availability($this->availabilityUrl($variant))
-                ->itemCondition(self::CONDITION_NEW),
-            )
+            ->offers($this->buildOffer($variant, $url))
         ;
+
+        $this->applyVariantProperties($clone->schema, $variant);
 
         return $clone;
     }
@@ -132,28 +124,74 @@ class ProductSchemaBuilder
         $schema = Schema::product()
             ->identifier(sprintf('%s#variant-%d', $url, $variant->getId() ?? 0))
             ->url($url)
-            ->name($variant->getName() ?? $product->getName())
+            ->name($this->variantName($variant))
             ->image($this->variantImageUrl($variant))
-            ->description($variant->getName() ?? $product->getTitle() ?? $product->getName())
+            ->description($this->variantName($variant))
             ->brand(Schema::brand()->name($product->getProducer()?->getName()))
-            ->offers(Schema::offer()
-                ->url($url)
-                ->price(
-                    $this->priceFactory->create(
-                        $variant,
-                        $this->currencyManager->get(),
-                        vatCalculationType: VatCalculationType::WithVAT,
-                    )->getPrice(),
-                )
-                ->priceCurrency($this->getCurrencyCode())
-                ->availability($this->availabilityUrl($variant))
-                ->itemCondition(self::CONDITION_NEW),
-            )
+            ->offers($this->buildOffer($variant, $url))
         ;
 
         $this->applyVariantProperties($schema, $variant);
 
         return $schema;
+    }
+
+    /**
+     * Price used in the markup (Offer, AggregateOffer). Tenants override it to match the price the page shows.
+     */
+    public function variantPrice(ProductVariantEntity $variant): ?float
+    {
+        return $this->priceFactory->create(
+            $variant,
+            $this->currencyManager->get(),
+            vatCalculationType: VatCalculationType::WithVAT,
+        )->getPrice();
+    }
+
+    /**
+     * Product image, falling back to the first variant image; null when there is none.
+     */
+    public function productImageUrl(ProductEntity $product): ?string
+    {
+        $path = $product->getUpload()?->getPath();
+        if ($path === null) {
+            foreach ($product->getProductVariants() as $variant) {
+                $path = $variant->getUpload()?->getPath();
+                if ($path !== null) {
+                    break;
+                }
+            }
+        }
+
+        return $path ? $this->absoluteUrl . $path : null;
+    }
+
+    /**
+     * Name (and description) of a variant in the markup, as plain text.
+     */
+    protected function variantName(ProductVariantEntity $variant): ?string
+    {
+        return SchemaText::plain($variant->getName() ?? $variant->getProduct()?->getName());
+    }
+
+    /**
+     * Variants without a positive price ("price on request") get no Offer: an Offer with price 0 reads as free.
+     */
+    protected function buildOffer(ProductVariantEntity $variant, string $url): ?Offer
+    {
+        $price = $this->variantPrice($variant);
+
+        if ($price === null || $price <= 0) {
+            return null;
+        }
+
+        return Schema::offer()
+            ->url($url)
+            ->price($price)
+            ->priceCurrency($this->getCurrencyCode())
+            ->availability($this->availabilityUrl($variant))
+            ->itemCondition(self::CONDITION_NEW)
+        ;
     }
 
     private function variantImageUrl(ProductVariantEntity $variant): ?string
@@ -163,14 +201,14 @@ class ProductSchemaBuilder
         return $path ? $this->absoluteUrl . $path : null;
     }
 
-    private function availabilityUrl(ProductVariantEntity $variant): string
+    protected function availabilityUrl(ProductVariantEntity $variant): string
     {
         return $variant->getAvailability()?->getIsPurchasable()
             ? 'https://schema.org/InStock'
             : 'https://schema.org/OutOfStock';
     }
 
-    private function applyVariantProperties(ProductSchema $schema, ProductVariantEntity $variant): void
+    protected function applyVariantProperties(ProductSchema $schema, ProductVariantEntity $variant): void
     {
         foreach ($variant->getParameters() as $parameter) {
             $groupName = $parameter->getParameterGroup()?->getName();
@@ -254,7 +292,7 @@ class ProductSchemaBuilder
 
     public function applyRelationships(BaseType $schema, ProductEntity $product): void
     {
-        $relations = $this->productProductRepository->findBy(['parentProduct' => $product]);
+        $relations = $this->productProductRepository->findWithLoadableChildren($product);
 
         $similarTo = [];
         $relatedTo = [];
@@ -268,7 +306,7 @@ class ProductSchemaBuilder
                 'slug' => $child->getSlug(),
             ], UrlGeneratorInterface::ABSOLUTE_URL);
 
-            $ref = Schema::product()->url($url)->name($child->getName());
+            $ref = Schema::product()->url($url)->name(SchemaText::plain($child->getName()));
 
             match ($relation->getProductProductType()->getName()) {
                 'RELATED'    => $similarTo[] = $ref,
@@ -306,17 +344,17 @@ class ProductSchemaBuilder
         $currency = $this->currencyManager->get();
 
         $prices = array_filter(array_map(
-            fn($v) => $this->priceFactory->create($v, $currency, vatCalculationType: VatCalculationType::WithVAT)->getPrice(),
+            fn($v) => $this->variantPrice($v),
             $variants,
         ));
 
         $schema = Schema::productGroup()
             ->identifier(sprintf('%s#group', $url))
             ->url($url)
-            ->name($product->getName())
+            ->name(SchemaText::plain($product->getName()))
             ->productGroupID((string) $product->getId())
             ->brand(Schema::brand()->name($product->getProducer()?->getName()))
-            ->image($this->absoluteUrl . $product->getUpload()?->getPath())
+            ->image($this->productImageUrl($product))
             ->hasVariant(
                 array_map(
                     fn($v) => $this->buildVariantReference($v),
@@ -330,7 +368,7 @@ class ProductSchemaBuilder
                 ->lowPrice(min($prices))
                 ->highPrice(max($prices))
                 ->priceCurrency($currency->getName())
-                ->offerCount($variantCount),
+                ->offerCount(count($prices)),
             );
         }
 
