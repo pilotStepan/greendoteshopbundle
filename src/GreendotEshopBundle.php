@@ -183,6 +183,10 @@ class GreendotEshopBundle extends AbstractBundle
                             ->end()
                         ->end()
                         ->stringNode('secondary_currency_name')->defaultValue('EUR')->end()
+                        ->arrayNode('product_category_types')
+                            ->info('Category type IDs whose products a category listing collects from its subtree, e.g. [3, 4]. The crawl does not descend into other types (e.g. linked articles). Empty = every subcategory.')
+                            ->integerPrototype()->end()
+                        ->end()
                         ->arrayNode('price')
                             ->addDefaultsIfNotSet()
                             ->children()
@@ -305,6 +309,11 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.shop.secondary_currency_name',
             $secondaryCurrencyName
+        );
+
+        $builder->setParameter(
+            'greendot_eshop.shop.product_category_types',
+            $config['shop']['product_category_types'] ?? []
         );
 
         $builder->setParameter(

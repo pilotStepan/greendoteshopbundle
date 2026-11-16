@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Repository\Project;
 
 use Exception;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Greendot\EshopBundle\Entity\Project\Event;
@@ -16,6 +17,7 @@ use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 use Greendot\EshopBundle\Entity\Project\SubMenuType;
 use Greendot\EshopBundle\Entity\Project\CategoryProduct;
 use Greendot\EshopBundle\Entity\Project\CategoryCategory;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\LocaleSwitcher;
 
 /**
@@ -28,8 +30,16 @@ class CategoryRepository extends HintedRepositoryBase
 {
     private $entityManager;
 
-    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager, LocaleSwitcher $localeSwitcher)
-    {
+    /**
+     * @param list<int> $productCategoryTypes
+     */
+    public function __construct(
+        ManagerRegistry $registry,
+        EntityManagerInterface $entityManager,
+        LocaleSwitcher $localeSwitcher,
+        #[Autowire(param: 'greendot_eshop.shop.product_category_types')]
+        private readonly array $productCategoryTypes = [],
+    ) {
         parent::__construct($registry, Category::class, $localeSwitcher);
         $this->entityManager = $entityManager;
     }
@@ -549,9 +559,23 @@ class CategoryRepository extends HintedRepositoryBase
     }
 
 
+    /**
+     * The parent and every category below it. With greendot_eshop.shop.product_category_types set,
+     * the crawl only follows subcategories of those types, so categories linked for other reasons
+     * (e.g. related articles) and everything below them are left out.
+     */
     public function findAllChildCategoryIds(int $parentCategoryId): array
     {
         $conn = $this->getEntityManager()->getConnection();
+
+        $typeJoin = '';
+        $params = ['parentId' => $parentCategoryId];
+        $types = [];
+        if ($this->productCategoryTypes !== []) {
+            $typeJoin = 'INNER JOIN p_category sub ON sub.id = cc.category_sub_id AND sub.category_type_id IN (:types)';
+            $params['types'] = $this->productCategoryTypes;
+            $types['types'] = ArrayParameterType::INTEGER;
+        }
 
         $sql = "
         WITH RECURSIVE category_tree AS (
@@ -562,11 +586,12 @@ class CategoryRepository extends HintedRepositoryBase
             SELECT cc.category_sub_id
             FROM p_category_category cc
             INNER JOIN category_tree ct ON cc.category_super_id = ct.id
+            $typeJoin
         )
         SELECT id FROM category_tree
         ";
 
-        $result = $conn->executeQuery($sql, ['parentId' => $parentCategoryId])->fetchFirstColumn();
+        $result = $conn->executeQuery($sql, $params, $types)->fetchFirstColumn();
         return !empty($result) ? $result : [$parentCategoryId];
     }
 
