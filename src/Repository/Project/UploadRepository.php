@@ -15,8 +15,6 @@ use Greendot\EshopBundle\Entity\Project\UploadGroup;
 use Greendot\EshopBundle\Entity\Project\UploadType;
 
 /**
- * @extends HintedRepositoryBase
- *
  * @method Upload|null find($id, $lockMode = null, $lockVersion = null)
  * @method Upload|null findOneBy(array $criteria, array $orderBy = null)
  * @method Upload[]    findAll()

@@ -280,7 +280,7 @@ class ProductIndexer implements ProductIndexerInterface
                   AND foreign_key IN (:ids)
                 SQL,
             ['class' => 'Greendot\\EshopBundle\\Entity\\Project\\Upload', 'ids' => array_values($uploadIds)],
-            ['ids' => Connection::PARAM_INT_ARRAY],
+            ['ids' => ArrayParameterType::INTEGER],
         );
 
         $paths = [];
