@@ -83,6 +83,8 @@ service. It runs the tools directly, not through the Docker-based `composer test
   DQL must be covered by a functional test. Don't mock repositories to test query logic.
 - Entity fixtures use `zenstruck/foundry` factories under `tests/App/Factory/*Factory.php` — add new ones
   there rather than instantiating entities by hand in functional tests.
+- `tests/App/config/api/doctrine.yaml` enables every bundle Doctrine filter, as tenants do, plus a tenant-style
+  `tests/App/Doctrine/PaymentTypeIsEnabledFilter`. Factories default to visible rows (enabled, active).
 - `tests/Service/GreendotEshopBundleConfigurationTest.php` guards that every
   `#[Autowire(param: 'greendot_eshop.*')]` used anywhere in `src/` is actually defined in
   `GreendotEshopBundle::loadExtension()` — add the parameter there whenever you add such an `Autowire`.
@@ -143,6 +145,11 @@ service. It runs the tools directly, not through the Docker-based `composer test
   admins. `PurchaseIssueSubscriber` listens on `completed.checkout` / `completed.init_order` and must stay off
   the generic `completed` event.
 - A purchase that must be issued but isn't is a bug: throw, don't fall back to another date.
+- An issued purchase's references stay loadable after the catalog hides them (disabled transportation or payment
+  type, inactive product or variant, soft-deleted currency). Doctrine SQL filters also apply to lazy loads, so
+  `IssuedPurchaseReferencesListener` loads the to-one references of issued purchases and their lines with only the
+  filters that hide them suspended. It covers any enabled filter without parameters, bundle or tenant, so a new
+  visibility filter must take none. Code that reads a purchase doesn't need to disable filters for this.
 
 ### API Platform layer
 - Entities carry `#[ApiResource]`/`#[ApiFilter]`/`#[Get]`/`#[GetCollection]`/... attributes directly

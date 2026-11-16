@@ -14,7 +14,30 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Entity'
                 prefix: 'Greendot\EshopBundle\Entity'
                 alias: GreendotEshopBundle
+        # Every bundle filter, registered and enabled the way tenants do (config/packages/doctrine.yaml).
         filters:
-            transportation_isEnabled:
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::ProductActiveFilter->value:
+                class: Greendot\EshopBundle\Doctrine\ProductActiveFilter
+                enabled: true
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::ProductVariantActiveFilter->value:
+                class: Greendot\EshopBundle\Doctrine\ProductVariantActiveFilter
+                enabled: true
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::ProductProductActiveFilter->value:
+                class: Greendot\EshopBundle\Doctrine\ProductProductActiveFilter
+                enabled: true
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::TransportationIsEnabledFilter->value:
                 class: Greendot\EshopBundle\Doctrine\TransportationIsEnabledFilter
+                enabled: true
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::CommentIsActiveFilter->value:
+                class: Greendot\EshopBundle\Doctrine\CommentIsActiveFilter
+                enabled: true
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::TransportationActionTransportationIsEnabledFilter->value:
+                class: Greendot\EshopBundle\Doctrine\TransportationActionTransportationIsEnabledFilter
+                enabled: true
+            !php/enum Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames::SoftDeletedFilter->value:
+                class: Greendot\EshopBundle\Doctrine\SoftDeletedFilter
+                enabled: true
+            # A tenant's own filter, next to the bundle's.
+            payment_type_isEnabled:
+                class: Greendot\EshopBundle\Tests\App\Doctrine\PaymentTypeIsEnabledFilter
                 enabled: true
