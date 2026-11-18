@@ -113,6 +113,14 @@ class Comment implements PageableInterface
     #[Groups(['comment:read', 'comment:write'])]
     private bool $isRead = false;
 
+    /**
+     * Free-form data without its own column. Keys in use:
+     * - notifications: e-mails telling the customer about the admin reply, oldest first, list of {sentAt: ATOM, email}.
+     * Not serialized: the CMS reads it straight from the database.
+     */
+    #[ORM\Column(type: Types::JSON, options: ['default' => '[]'])]
+    private array $extra = [];
+
     #[ORM\Column(length: 255, unique: true )]
     #[Slug(fields: ['title'])]
     #[Groups(['comment:read'])]
@@ -357,6 +365,49 @@ class Comment implements PageableInterface
     public function setIsRead(bool $isRead): self
     {
         $this->isRead = $isRead;
+        return $this;
+    }
+
+    /**
+     * The published admin reply, or null while there is none (a reply saved as a draft is inactive).
+     * Call it with the comment_isActive filter disabled: the filter hides inactive replies from the collection.
+     */
+    public function getPublishedAdminReply(): ?self
+    {
+        foreach ($this->underComment as $reply) {
+            if ($reply->isIsAdmin() && $reply->isActive()) {
+                return $reply;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Where to tell the author about a reply: a question asked while logged in belongs to the client,
+     * a guest leaves an e-mail on the comment. Null when there is neither.
+     */
+    public function getAuthorEmail(): ?string
+    {
+        $email = $this->client !== null ? $this->client->getMail() : $this->email;
+
+        return $email !== null && $email !== '' ? $email : null;
+    }
+
+    /**
+     * @return list<array{sentAt: string, email: string}>
+     */
+    public function getNotifications(): array
+    {
+        return $this->extra['notifications'] ?? [];
+    }
+
+    public function addNotification(string $email, \DateTimeImmutable $sentAt): self
+    {
+        $this->extra['notifications'] = [
+            ...$this->getNotifications(),
+            ['sentAt' => $sentAt->format(\DateTimeInterface::ATOM), 'email' => $email],
+        ];
+
         return $this;
     }
 
