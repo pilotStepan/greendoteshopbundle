@@ -11,6 +11,7 @@ use Greendot\EshopBundle\EventSubscriber\ParameterEventListener;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
 use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Service\SizeParameterValueSequencer;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -25,6 +26,7 @@ class FilteredParametersStateProvider implements ProviderInterface
         private ParameterBagInterface       $parameterBag,
         private CurrencyManager             $currencyManager,
         private SizeParameterValueSequencer $parameterValueSequencer,
+        private PriceUtils                  $priceUtils,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -72,22 +74,29 @@ class FilteredParametersStateProvider implements ProviderInterface
         }
 
 
-        // create fake price
+        // create fake price (min/max are stored in the default currency, convert to the selected one)
+        $currency = $this->currencyManager->get();
+        $rounding = $currency->getRounding() ?? 0;
         $priceVirtualParamGroup = [
             "id" => "price",
             "name" => "Cena",
-            "unit" => "Kč",
+            "unit" => $currency->getSymbol(),
             "type" => [ "id" => 0, "name" => "string"],
             "parameterGroupFilterType" => [ "id" => 1, "name" => "range"],
             "isProductParameter" => true,
             "isFilter" => true,
-            "rounding" => $this->currencyManager->get()->getRounding(),
-        ];    
+            "rounding" => $rounding,
+        ];
         $parameters = [];
         if (isset($priceMinMax)) {
+            $rate = $this->priceUtils->getConversionRate($currency)->getRate();
+            $scale = 10 ** $rounding;
+            // floor min / ceil max so rounding never cuts off the cheapest / most expensive product
+            $priceMin = floor((float)$priceMinMax['priceMin'] * $rate * $scale) / $scale;
+            $priceMax = ceil((float)$priceMinMax['priceMax'] * $rate * $scale) / $scale;
             $parameters = [
-                ['data' => $priceMinMax['priceMin'], 'parameterGroup' => $priceVirtualParamGroup],
-                ['data' => $priceMinMax['priceMax'], 'parameterGroup' => $priceVirtualParamGroup]
+                ['data' => $priceMin, 'parameterGroup' => $priceVirtualParamGroup],
+                ['data' => $priceMax, 'parameterGroup' => $priceVirtualParamGroup]
             ];
         }
         $parameterEntities = $this->parameterValueSequencer->sort(array_map(static fn($row) => $row[0], $results));

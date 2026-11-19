@@ -13,6 +13,8 @@ use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Repository\Utils\SafeJoin;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use DateTime;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
@@ -43,6 +45,8 @@ class ProductRepository extends HintedRepositoryBase
         private readonly CategoryInfoGetter     $categoryInfoGetter,
         private readonly PriceRepository        $priceRepository,
         private readonly ParameterBagInterface  $parameterBag,
+        private readonly CurrencyManager        $currencyManager,
+        private readonly PriceUtils             $priceUtils,
         LocaleSwitcher $localeSwitcher
     )
     {
@@ -431,6 +435,12 @@ class ProductRepository extends HintedRepositoryBase
 
                 // TODO: change according to config default types and priceRepository->
                 $minPriceCalculation = $this->priceRepository->resolvePriceCalculationExpression($vatCalculationType, $discountCalculationType);
+
+                // selected range is in the currently selected currency, prices in DB are in the default one
+                $rate = $this->priceUtils->getConversionRate($this->currencyManager->get())->getRate() ?: 1;
+                $selectedMin = (float)$parameter['selectedParameters'][0] / $rate;
+                $selectedMax = (float)$parameter['selectedParameters'][1] / $rate;
+
                 // Apply range filter using MIN($minPriceCalculation)
                 $queryBuilder
                     ->andWhere('price.validFrom <= :date')
@@ -439,8 +449,8 @@ class ProductRepository extends HintedRepositoryBase
                     ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
                     ->andHaving("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
-                    ->setParameter('minPrice', (float)$parameter['selectedParameters'][0]-1) // expected: [min, max], correction for rounding error
-                    ->setParameter('maxPrice', (float)$parameter['selectedParameters'][1]+1)
+                    ->setParameter('minPrice', $selectedMin - 1) // expected: [min, max], correction for rounding error
+                    ->setParameter('maxPrice', $selectedMax + 1)
                     ->setParameter('date', new \DateTime());
 
             }
