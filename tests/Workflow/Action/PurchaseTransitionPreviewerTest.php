@@ -54,8 +54,8 @@ class PurchaseTransitionPreviewerTest extends TestCase
             'can' => true,
             'blockers' => [],
             'actions' => [
-                ['key' => 'invoice.issue', 'skippable' => false, 'label' => 'Vystavení faktury', 'detail' => null, 'category' => 'other'],
-                ['key' => 'purchase_notification.customer_email', 'skippable' => true, 'label' => 'purchase_notification.customer_email', 'detail' => null, 'category' => 'other'],
+                ['key' => 'invoice.issue', 'skippable' => false, 'email_preview' => false, 'label' => 'Vystavení faktury', 'detail' => null, 'category' => 'other'],
+                ['key' => 'purchase_notification.customer_email', 'skippable' => true, 'email_preview' => false, 'label' => 'purchase_notification.customer_email', 'detail' => null, 'category' => 'other'],
             ],
             'system' => [
                 ['label' => 'Systém', 'detail' => 'detail', 'category' => 'state'],

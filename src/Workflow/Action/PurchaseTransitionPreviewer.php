@@ -7,6 +7,7 @@ namespace Greendot\EshopBundle\Workflow\Action;
 use InvalidArgumentException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
+use Greendot\EshopBundle\Notification\PreviewableEmailNotificationInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 
@@ -46,6 +47,8 @@ final readonly class PurchaseTransitionPreviewer
             actions: array_map(fn (ResolvedAction $a) => [
                 'key' => $a->entry->key,
                 'skippable' => $a->entry->skippable,
+                'email_preview' => $a->entry->kind === ActionKind::NOTIFICATION
+                    && $this->resolver->notificationHandler($a->entry->key) instanceof PreviewableEmailNotificationInterface,
                 ...$this->describe($a->description),
             ], $this->resolver->resolve($purchase, $this->purchaseWorkflow, $transition)),
             system: array_map(

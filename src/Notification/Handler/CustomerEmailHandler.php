@@ -11,11 +11,13 @@ use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
 use Greendot\EshopBundle\Notification\DescribableNotificationInterface;
+use Greendot\EshopBundle\Notification\PreviewableEmailNotificationInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Greendot\EshopBundle\Workflow\Action\ActionCategory;
 use Greendot\EshopBundle\Workflow\Action\ActionDescription;
 
 #[AsTaggedItem(index: 'purchase_notification.customer_email')]
-final readonly class CustomerEmailHandler implements PurchaseNotificationHandlerInterface, DescribableNotificationInterface
+final readonly class CustomerEmailHandler implements PurchaseNotificationHandlerInterface, DescribableNotificationInterface, PreviewableEmailNotificationInterface
 {
     public function __construct(
         private ManageMails         $manageMails,
@@ -32,18 +34,19 @@ final readonly class CustomerEmailHandler implements PurchaseNotificationHandler
         );
     }
 
-    public function handle(Purchase $purchase, string $transition): void
+    public function buildEmail(Purchase $purchase, string $transition): TemplatedEmail
     {
-        $orderData = $this->orderDataFactory->create($purchase);
-
-        $email = $this->manageMails->getBaseTemplate()
+        return $this->manageMails->getBaseTemplate()
             ->to($purchase->getClient()->getMail())
             ->subject($this->resolveSubject($transition, $purchase->getOrderNumber()))
             ->htmlTemplate(sprintf('email/order/%s.html.twig', $transition))
-            ->context(['data' => $orderData, 'transition' => $transition])
+            ->context(['data' => $this->orderDataFactory->create($purchase), 'transition' => $transition])
         ;
+    }
 
-        $this->manageMails->sendTemplate($email);
+    public function handle(Purchase $purchase, string $transition): void
+    {
+        $this->manageMails->sendTemplate($this->buildEmail($purchase, $transition));
     }
 
     private function resolveSubject(string $transition, ?int $orderNumber): string

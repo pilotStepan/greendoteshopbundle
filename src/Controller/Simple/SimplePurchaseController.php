@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames;
 use Symfony\Component\Workflow\Registry;
 use InvalidArgumentException;
 use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionPreviewer;
+use Greendot\EshopBundle\Notification\PurchaseEmailPreviewer;
 use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionActionResolver;
 use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionActionSubscriber;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -100,6 +101,19 @@ class SimplePurchaseController extends AbstractController
     {
         try {
             return $this->json($previewer->preview($purchase, $transition));
+        } catch (InvalidArgumentException $e) {
+            throw new NotFoundHttpException($e->getMessage(), $e);
+        }
+    }
+
+    /**
+     * The rendered e-mail a notification of the transition would send (see PurchaseEmailPreviewer for its limits).
+     */
+    #[Route('/{purchase}/transition-preview/{transition}/email/{alias}', name: 'transition_email_preview', methods: ['GET'])]
+    public function previewPurchaseTransitionEmail(Purchase $purchase, string $transition, string $alias, PurchaseEmailPreviewer $previewer): JsonResponse
+    {
+        try {
+            return $this->json($previewer->preview($purchase, $transition, $alias));
         } catch (InvalidArgumentException $e) {
             throw new NotFoundHttpException($e->getMessage(), $e);
         }

@@ -204,6 +204,10 @@ service. It runs the tools directly, not through the Docker-based `composer test
     `PurchaseTransitionEffectDescriberInterface`, so the CMS can show what it does.
     `TransitionEffectDescriberCoverageTest` enforces this for the bundle.
   - Notification handlers can implement `DescribableNotificationInterface` to show their recipient in the preview.
+  - Handlers that send one e-mail can also implement `PreviewableEmailNotificationInterface` (`buildEmail()`,
+    which `handle()` sends). The CMS then renders the e-mail via `GET .../transition-preview/{transition}/email/{alias}`
+    (`PurchaseEmailPreviewer`, inside `PurchaseNotificationRuntime` like sending). It renders the purchase as it is
+    before the transition, so values the transition itself sets (invoice number, state) can differ.
   - Tenants verify their config with `bin/console greendot:eshop:workflow:check`.
 - **Search**: `src/Algolia` wraps `algolia/algoliasearch-client-php`; the bundle wires
   `Algolia\AlgoliaSearch\Api\SearchClient` from `%env(ALGOLIA_APP_ID)%`/`%env(ALGOLIA_API_KEY)%` in
