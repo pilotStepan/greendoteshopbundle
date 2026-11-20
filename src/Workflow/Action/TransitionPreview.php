@@ -11,7 +11,7 @@ final readonly class TransitionPreview implements \JsonSerializable
 {
     /**
      * @param list<string>                                                                                    $blockers
-     * @param list<array{key: string, label: string, detail: ?string, category: string, skippable: bool, email_preview: bool}> $actions
+     * @param list<array{key: string, label: string, detail: ?string, category: string, skippable: bool, email_preview: bool, sms: array{text: string}|array{error: string}|null}> $actions
      * @param list<array{label: string, detail: ?string, category: string}>                                 $system
      */
     public function __construct(

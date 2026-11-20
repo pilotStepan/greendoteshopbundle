@@ -8,6 +8,9 @@ use InvalidArgumentException;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Greendot\EshopBundle\Notification\PreviewableEmailNotificationInterface;
+use Greendot\EshopBundle\Notification\PreviewableSmsNotificationInterface;
+use Greendot\EshopBundle\Notification\PurchaseNotificationRuntime;
+use Symfony\Component\Workflow\Transition;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 
@@ -20,6 +23,7 @@ final readonly class PurchaseTransitionPreviewer
         private WorkflowInterface                $purchaseWorkflow,
         private PurchaseTransitionActionResolver $resolver,
         private TranslatorInterface              $translator,
+        private PurchaseNotificationRuntime      $notificationRuntime,
     ) {}
 
     /**
@@ -49,6 +53,7 @@ final readonly class PurchaseTransitionPreviewer
                 'skippable' => $a->entry->skippable,
                 'email_preview' => $a->entry->kind === ActionKind::NOTIFICATION
                     && $this->resolver->notificationHandler($a->entry->key) instanceof PreviewableEmailNotificationInterface,
+                'sms' => $this->smsPreview($purchase, $transition, $a),
                 ...$this->describe($a->description),
             ], $this->resolver->resolve($purchase, $this->purchaseWorkflow, $transition)),
             system: array_map(
@@ -56,6 +61,33 @@ final readonly class PurchaseTransitionPreviewer
                 $this->resolver->systemEffects($purchase, $this->purchaseWorkflow, $transition),
             ),
         );
+    }
+
+    /**
+     * The SMS text, rendered like the real one (purchase locale) from the purchase before the transition.
+     *
+     * @return array{text: string}|array{error: string}|null null when the action is no SMS or sends nothing
+     */
+    private function smsPreview(Purchase $purchase, Transition $transition, ResolvedAction $action): ?array
+    {
+        if ($action->entry->kind !== ActionKind::NOTIFICATION) {
+            return null;
+        }
+
+        $handler = $this->resolver->notificationHandler($action->entry->key);
+        if (!$handler instanceof PreviewableSmsNotificationInterface) {
+            return null;
+        }
+
+        $notificationKey = $this->resolver->notificationKey($this->purchaseWorkflow, $transition);
+        try {
+            $sms = $this->notificationRuntime->run($purchase, fn () => $handler->buildSms($purchase, $notificationKey));
+        } catch (\Throwable $e) {
+            // The SMS factories log their own failures; the dialog only needs to say the text is unavailable.
+            return ['error' => 'Text SMS nelze sestavit: ' . $e->getMessage()];
+        }
+
+        return $sms !== null ? ['text' => $sms->text] : null;
     }
 
     /**

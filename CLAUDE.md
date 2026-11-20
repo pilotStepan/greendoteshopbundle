@@ -208,6 +208,8 @@ service. It runs the tools directly, not through the Docker-based `composer test
     which `handle()` sends). The CMS then renders the e-mail via `GET .../transition-preview/{transition}/email/{alias}`
     (`PurchaseEmailPreviewer`, inside `PurchaseNotificationRuntime` like sending). It renders the purchase as it is
     before the transition, so values the transition itself sets (invoice number, state) can differ.
+  - SMS handlers can implement `PreviewableSmsNotificationInterface` (`buildSms()`); the transition preview then
+    inlines the text (`sms`), built from the same `OrderTransitionSmsFactoryInterface` a shop may override.
   - Tenants verify their config with `bin/console greendot:eshop:workflow:check`.
 - **Search**: `src/Algolia` wraps `algolia/algoliasearch-client-php`; the bundle wires
   `Algolia\AlgoliaSearch\Api\SearchClient` from `%env(ALGOLIA_APP_ID)%`/`%env(ALGOLIA_API_KEY)%` in
