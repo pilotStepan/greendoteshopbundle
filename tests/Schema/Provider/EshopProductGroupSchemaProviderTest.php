@@ -211,18 +211,29 @@ class EshopProductGroupSchemaProviderTest extends TestCase
         $this->assertSame('Odrezovač rzi', $array['description']);
     }
 
-    public function testProvideMapsVariesByAndTakesImageFromBuilder(): void
+    public function testProvideTakesVariesByBrandAndImageFromBuilder(): void
     {
         $product = $this->createProvidableProduct();
-        $group = $this->createMock(\Greendot\EshopBundle\Entity\Project\ParameterGroup::class);
-        $group->method('getName')->willReturn('Barva');
-        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn([$group]);
+        $this->builder->method('variesBy')->willReturn(['https://schema.org/color']);
+        $this->builder->method('brand')->willReturn(\Spatie\SchemaOrg\Schema::brand()->name('Acme'));
         $this->builder->method('productImageUrl')->willReturn('https://example.com/uploads/a.jpg');
 
         $array = $this->provider->provide($product)->toArray();
 
-        $this->assertSame(['color'], $array['variesBy']);
+        $this->assertSame(['https://schema.org/color'], $array['variesBy']);
+        $this->assertSame('Acme', $array['brand']['name']);
         $this->assertSame('https://example.com/uploads/a.jpg', $array['image']);
+    }
+
+    public function testProvideSetsUrlAndOmitsBrandWithoutProducer(): void
+    {
+        $product = $this->createProvidableProduct();
+
+        $array = $this->provider->provide($product)->toArray();
+
+        $this->assertSame('https://example.com/product', $array['url']);
+        $this->assertSame('https://example.com/product#group', $array['@id']);
+        $this->assertArrayNotHasKey('brand', $array);
     }
 
     public function testProvideOmitsAggregateOfferWhenNoVariantHasPrice(): void

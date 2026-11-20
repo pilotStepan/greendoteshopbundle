@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Schema\Builder;
 
+use Spatie\SchemaOrg\Brand;
 use Spatie\SchemaOrg\Offer;
 use Spatie\SchemaOrg\Schema;
 use Spatie\SchemaOrg\BaseType;
@@ -66,10 +67,8 @@ class ProductSchemaBuilder
             ->url($url)
             ->name(SchemaText::plain($product->getName()))
             ->image($this->productImageUrl($product))
-            ->brand(Schema::brand()
-                ->name($product->getProducer()?->getName()),
-            )
-            ->description(SchemaText::plain($product->getTitle()))
+            ->brand($this->brand($product))
+            ->description($this->productDescription($product))
         ;
 
         return $clone;
@@ -127,7 +126,7 @@ class ProductSchemaBuilder
             ->name($this->variantName($variant))
             ->image($this->variantImageUrl($variant))
             ->description($this->variantName($variant))
-            ->brand(Schema::brand()->name($product->getProducer()?->getName()))
+            ->brand($this->brand($product))
             ->offers($this->buildOffer($variant, $url))
         ;
 
@@ -164,6 +163,43 @@ class ProductSchemaBuilder
         }
 
         return $path ? $this->absoluteUrl . $path : null;
+    }
+
+    /**
+     * Brand from the producer; null (property left out) when the product has no named producer.
+     */
+    public function brand(ProductEntity $product): ?Brand
+    {
+        $name = SchemaText::plain($product->getProducer()?->getName());
+
+        return $name !== null ? Schema::brand()->name($name) : null;
+    }
+
+    /**
+     * Description of a single product in the markup, as plain text. Tenants override it to use their own text field.
+     */
+    public function productDescription(ProductEntity $product): ?string
+    {
+        return SchemaText::plain($product->getTitle());
+    }
+
+    /**
+     * Properties the variants of a product group differ in, as schema.org URLs (ProductGroup.variesBy).
+     * Parameter groups without a mapping in SCHEMA_VARIES_BY_MAP are left out: variesBy only takes schema.org properties.
+     *
+     * @return list<string>
+     */
+    public function variesBy(ProductEntity $product): array
+    {
+        $properties = [];
+        foreach ($this->productRepository->findVariantParameterGroupsByProduct($product) as $parameterGroup) {
+            $property = self::SCHEMA_VARIES_BY_MAP[mb_strtolower((string) $parameterGroup->getName())] ?? null;
+            if ($property !== null) {
+                $properties[] = 'https://schema.org/' . $property;
+            }
+        }
+
+        return array_values(array_unique($properties));
     }
 
     /**
@@ -353,7 +389,7 @@ class ProductSchemaBuilder
             ->url($url)
             ->name(SchemaText::plain($product->getName()))
             ->productGroupID((string) $product->getId())
-            ->brand(Schema::brand()->name($product->getProducer()?->getName()))
+            ->brand($this->brand($product))
             ->image($this->productImageUrl($product))
             ->hasVariant(
                 array_map(

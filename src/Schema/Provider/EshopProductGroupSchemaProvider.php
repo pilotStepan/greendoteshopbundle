@@ -61,17 +61,16 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
                 ->offerCount(count($prices))
             : null;
 
+        $url = $this->urlGenerator->generate($object->getControllerName(), ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL);
+
         $schema = Schema::productGroup()
-            ->identifier(sprintf('%s#group',
-                $this->urlGenerator->generate($object->getControllerName(), ['slug' => $object->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
-            ))
+            ->identifier(sprintf('%s#group', $url))
+            ->url($url)
             ->name(SchemaText::plain($object->getName()))
             ->description(SchemaText::plain($object->getDescription()))
             ->image($this->builder->productImageUrl($object))
             ->productGroupID($object->getExternalId() ?? (string) $object->getId())
-            ->brand(Schema::brand()
-                ->name($object->getProducer()?->getName()),
-            )
+            ->brand($this->builder->brand($object))
             ->hasVariant(
                 array_map(
                     fn($variant) => $this->builder->buildVariantReference($variant),
@@ -81,10 +80,7 @@ class EshopProductGroupSchemaProvider implements SchemaProviderInterface
             ->offers($aggregateOffer)
         ;
 
-        $variesBy = array_map(
-            fn($paramGroup) => ProductSchemaBuilder::SCHEMA_VARIES_BY_MAP[mb_strtolower($paramGroup->getName())] ?? $paramGroup->getName(),
-            $this->productRepository->findVariantParameterGroupsByProduct($object),
-        );
+        $variesBy = $this->builder->variesBy($object);
         if ($variesBy !== []) {
             $schema->variesBy($variesBy);
         }

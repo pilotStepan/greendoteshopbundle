@@ -375,6 +375,41 @@ class ProductSchemaBuilderTest extends TestCase
         $this->assertSame('https://schema.org/BackOrder', $group['hasVariant'][1]['offers']['availability']);
     }
 
+    public function testProductWithoutProducerHasNoBrand(): void
+    {
+        $product = $this->createProductMock();
+        $product->method('getProducer')->willReturn(null);
+        $product->method('getProductVariants')->willReturn(new ArrayCollection());
+
+        $array = $this->builder->forProduct($product)->build()->toArray();
+
+        $this->assertArrayNotHasKey('brand', $array);
+        $this->assertNull($this->builder->brand($product));
+    }
+
+    public function testDescriptionComesFromTheProductDescriptionHook(): void
+    {
+        $product = $this->createProductMock();
+        $product->method('getProductVariants')->willReturn(new ArrayCollection());
+
+        $this->assertSame('Test Product Title', $this->builder->productDescription($product));
+        $this->assertSame('Test Product Title', $this->builder->forProduct($product)->build()->toArray()['description']);
+    }
+
+    public function testVariesByMapsKnownGroupsToSchemaOrgUrlsAndDropsUnknownOnes(): void
+    {
+        $product = $this->createProductMock();
+        $groups = [];
+        foreach (['Barva', 'Velikost', 'Objem', 'barva'] as $name) {
+            $group = $this->createMock(ParameterGroup::class);
+            $group->method('getName')->willReturn($name);
+            $groups[] = $group;
+        }
+        $this->productRepository->method('findVariantParameterGroupsByProduct')->willReturn($groups);
+
+        $this->assertSame(['https://schema.org/color', 'https://schema.org/size'], $this->builder->variesBy($product));
+    }
+
     public function testRelationshipsUseOnlyLoadableChildren(): void
     {
         $product = $this->createProductMock();
