@@ -10,9 +10,12 @@ use Greendot\EshopBundle\Service\PurchaseLocaleResolver;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\Event\CompletedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 
 
+/**
+ * @deprecated Notifications now run through PurchaseTransitionActionSubscriber, which reads the same
+ *             `notifications` metadata. This class no longer subscribes to anything.
+ */
 final readonly class PurchaseNotificationSubscriber implements EventSubscriberInterface
 {
     public function __construct(
@@ -22,9 +25,7 @@ final readonly class PurchaseNotificationSubscriber implements EventSubscriberIn
 
     public static function getSubscribedEvents(): array
     {
-        return [
-            PWC::eventName('completed') => 'dispatchNotifications',
-        ];
+        return [];
     }
 
     public function dispatchNotifications(CompletedEvent $event): void

@@ -11,9 +11,12 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
+use Greendot\EshopBundle\Notification\DescribableNotificationInterface;
+use Greendot\EshopBundle\Workflow\Action\ActionCategory;
+use Greendot\EshopBundle\Workflow\Action\ActionDescription;
 
 #[AsTaggedItem(index: 'purchase_notification.customer_email_with_proforma')]
-final readonly class CustomerEmailWithProformaHandler implements PurchaseNotificationHandlerInterface
+final readonly class CustomerEmailWithProformaHandler implements PurchaseNotificationHandlerInterface, DescribableNotificationInterface
 {
     public function __construct(
         private ManageMails         $manageMails,
@@ -21,6 +24,15 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
         private TranslatorInterface $translator,
         private InvoiceMaker        $invoiceMaker,
     ) {}
+
+    public function describe(Purchase $purchase, string $transition): ActionDescription
+    {
+        return new ActionDescription(
+            'Poslat e-mail zákazníkovi s fakturou',
+            detail: $purchase->getClient()?->getMail(),
+            category: ActionCategory::EMAIL,
+        );
+    }
 
     public function handle(Purchase $purchase, string $transition): void
     {

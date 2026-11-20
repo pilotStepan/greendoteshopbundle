@@ -9,8 +9,13 @@ use Greendot\EshopBundle\Utils\ApiRequestMatcher;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Workflow\Action\ActionCategory;
+use Greendot\EshopBundle\Workflow\Action\ActionDescription;
+use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionEffectDescriberInterface;
+use Symfony\Component\Workflow\Transition;
+use Symfony\Component\Workflow\WorkflowInterface;
 
-readonly class AffiliateOrderEventSubscriber implements EventSubscriberInterface
+readonly class AffiliateOrderEventSubscriber implements EventSubscriberInterface, PurchaseTransitionEffectDescriberInterface
 {
     public function __construct(
         private AffiliateService $affiliateService,
@@ -58,5 +63,25 @@ readonly class AffiliateOrderEventSubscriber implements EventSubscriberInterface
         /* @var Purchase $purchase */
         $purchase = $event->getSubject();
         $this->affiliateService->dispatchCancelAffiliateEntryMessage($purchase);
+    }
+
+    public function describeEffects(Purchase $purchase, Transition $transition, WorkflowInterface $workflow): iterable
+    {
+        $name = $transition->getName();
+
+        if ($name === PWC::T_CHECKOUT->value) {
+            yield new ActionDescription('Přiřadit affiliate partnera', category: ActionCategory::INTEGRATION);
+            return;
+        }
+
+        if ($purchase->getAffiliateId() === null) {
+            return;
+        }
+
+        if (in_array($name, [PWC::T_PAY_PAY->value, PWC::T_COMPLETE->value], true)) {
+            yield new ActionDescription('Zapsat provizi partnerovi', detail: $purchase->getAffiliateId(), category: ActionCategory::INTEGRATION);
+        } elseif (in_array($name, [PWC::T_PAY_REFUND->value, PWC::T_CANCEL->value], true)) {
+            yield new ActionDescription('Zrušit provizi partnera', detail: $purchase->getAffiliateId(), category: ActionCategory::INTEGRATION);
+        }
     }
 }

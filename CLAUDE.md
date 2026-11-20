@@ -191,6 +191,20 @@ service. It runs the tools directly, not through the Docker-based `composer test
 - **Purchase workflow**: `src/Workflow/PurchaseWorkflowContract` defines the Symfony Workflow places/
   transitions that drive purchase status; `PurchaseStateSubscriber*` (see `tests/EventSubscriber`) reacts
   to transitions (payment logging, etc.).
+- **Transition actions** (`src/Workflow/Action`): the side effects of a transition that a tenant switches on
+  in its workflow YAML. Tenants define the places and transitions themselves.
+  - Each transition's metadata can carry `actions: [key, {action: key, skippable: bool}]`. A key names a
+    `PurchaseActionInterface` service (`#[AsTaggedItem(index: 'invoice.issue')]`) or a notification handler
+    alias (`purchase_notification.*`). The legacy `notifications` list is read too and is always skippable.
+  - `PurchaseTransitionActionResolver` is the single reader of that metadata. `PurchaseTransitionActionSubscriber`
+    uses it to run actions on the generic `completed` event, honoring the `skip_actions` and `silent` context.
+    The CMS preview uses it too (`GET /simple/api/purchases/{id}/transition-preview/{transition}`), so the
+    preview cannot drift from what runs.
+  - Any subscriber that reacts to a specific `workflow.purchase_flow.*` event in code must implement
+    `PurchaseTransitionEffectDescriberInterface`, so the CMS can show what it does.
+    `TransitionEffectDescriberCoverageTest` enforces this for the bundle.
+  - Notification handlers can implement `DescribableNotificationInterface` to show their recipient in the preview.
+  - Tenants verify their config with `bin/console greendot:eshop:workflow:check`.
 - **Search**: `src/Algolia` wraps `algolia/algoliasearch-client-php`; the bundle wires
   `Algolia\AlgoliaSearch\Api\SearchClient` from `%env(ALGOLIA_APP_ID)%`/`%env(ALGOLIA_API_KEY)%` in
   `config/services.yaml`, aliasing `ProductIndexerInterface` to `ProductIndexer`.

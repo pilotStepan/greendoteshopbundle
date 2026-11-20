@@ -10,6 +10,11 @@ use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Greendot\EshopBundle\Doctrine\DoctrineFiltersConfigNames;
 use Symfony\Component\Workflow\Registry;
+use InvalidArgumentException;
+use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionPreviewer;
+use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionActionResolver;
+use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionActionSubscriber;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Greendot\EshopBundle\Service\InvoiceMaker;
@@ -86,8 +91,22 @@ class SimplePurchaseController extends AbstractController
         return $this->json($result, 200);
     }
 
+    /**
+     * What applying the transition would do: configured actions (skippable ones can be passed back as
+     * `skip_actions` to make-transition), built-in system effects, and guard blockers.
+     */
+    #[Route('/{purchase}/transition-preview/{transition}', name: 'transition_preview', methods: ['GET'])]
+    public function previewPurchaseTransition(Purchase $purchase, string $transition, PurchaseTransitionPreviewer $previewer): JsonResponse
+    {
+        try {
+            return $this->json($previewer->preview($purchase, $transition));
+        } catch (InvalidArgumentException $e) {
+            throw new NotFoundHttpException($e->getMessage(), $e);
+        }
+    }
+
     #[Route('/{purchase}/make-transition', name: 'make_transition', methods: ['POST'])]
-    public function makePurchaseTransition(Purchase $purchase, Request $request, Registry $registry, EntityManagerInterface $em): JsonResponse
+    public function makePurchaseTransition(Purchase $purchase, Request $request, Registry $registry, EntityManagerInterface $em, PurchaseTransitionActionResolver $actionResolver): JsonResponse
     {
         try {
             $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
@@ -108,8 +127,33 @@ class SimplePurchaseController extends AbstractController
             return new JsonResponse(['errors' => $messages], Response::HTTP_BAD_REQUEST);
         }
 
+        $skipActions = $data['skip_actions'] ?? [];
+        if (!is_array($skipActions) || !array_is_list($skipActions)) {
+            throw new BadRequestHttpException('skip_actions must be a list of action keys');
+        }
+
+        if ($skipActions) {
+            $transition = null;
+            foreach ($pFlow->getEnabledTransitions($purchase) as $enabled) {
+                if ($enabled->getName() === $data['transition']) {
+                    $transition = $enabled;
+                    break;
+                }
+            }
+            \assert($transition !== null); // can() passed above
+            try {
+                PurchaseTransitionActionSubscriber::skippedKeys(
+                    [PurchaseTransitionActionSubscriber::CONTEXT_SKIP_ACTIONS => $skipActions],
+                    $actionResolver->entries($pFlow, $transition),
+                    $transition->getName(),
+                );
+            } catch (LogicException $e) {
+                return new JsonResponse(['errors' => [$e->getMessage()]], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         // We wrap it in transaction to ensure atomicity
-        $newState = $em->wrapInTransaction(function () use ($purchase, $data, $pFlow) {
+        $newState = $em->wrapInTransaction(function () use ($purchase, $data, $pFlow, $skipActions) {
             // Mutate the aggregate
             if (!empty($data['package'])) {
                 $purchase->setTransportNumber($data['package']);
@@ -117,7 +161,8 @@ class SimplePurchaseController extends AbstractController
 
             // Add a runtime “silent” flag if Simple sets it
             $pFlow->apply($purchase, $data['transition'], [
-                'silent' => $data['silent'] ?? false,
+                PurchaseTransitionActionSubscriber::CONTEXT_SILENT => $data['silent'] ?? false,
+                PurchaseTransitionActionSubscriber::CONTEXT_SKIP_ACTIONS => $skipActions,
                 'performed_by' => 'admin',
                 'actor' => $this->getUser()?->getUserIdentifier(),
             ]);
