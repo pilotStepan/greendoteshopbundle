@@ -28,6 +28,7 @@
             <directory>tests/Schema</directory>
             <directory>tests/Service</directory>
             <directory>tests/StateProcessor</directory>
+            <directory>tests/Workflow</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

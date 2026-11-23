@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Service\PurchaseLocaleResolver;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
 use Greendot\EshopBundle\Notification\PurchaseTransitionNotification;
 use Greendot\EshopBundle\Notification\PurchaseTransitionNotificationHandler;
+use Greendot\EshopBundle\Notification\PurchaseNotificationRuntime;
 
 /**
  * Regression coverage: the notification must actually be rendered under the purchase's
@@ -147,9 +148,7 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
             $purchaseRepository,
             $locator,
             new NullLogger(),
-            new PurchaseLocaleResolver('cs'),
-            $localeSwitcher,
-            $this->buildEntityManager(),
+            new PurchaseNotificationRuntime(new PurchaseLocaleResolver('cs'), $localeSwitcher, $this->buildEntityManager()),
         );
     }
 

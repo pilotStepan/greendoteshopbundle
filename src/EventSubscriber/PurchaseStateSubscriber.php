@@ -28,8 +28,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Greendot\EshopBundle\Enum\PaymentActionType;
 use Greendot\EshopBundle\Repository\Project\PaymentRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Workflow\Action\ActionCategory;
+use Greendot\EshopBundle\Workflow\Action\ActionDescription;
+use Greendot\EshopBundle\Workflow\Action\PurchaseTransitionEffectDescriberInterface;
+use Symfony\Component\Workflow\Transition;
 
-readonly class PurchaseStateSubscriber implements EventSubscriberInterface
+readonly class PurchaseStateSubscriber implements EventSubscriberInterface, PurchaseTransitionEffectDescriberInterface
 {
     private LoggerInterface $logger;
 
@@ -387,5 +391,65 @@ readonly class PurchaseStateSubscriber implements EventSubscriberInterface
         if ($this->purchaseWorkflow->can($purchase, PWC::T_COMPLETE->value)) {
             $this->purchaseWorkflow->apply($purchase, PWC::T_COMPLETE->value);
         }
+    }
+
+    public function describeEffects(Purchase $purchase, Transition $transition, WorkflowInterface $workflow): iterable
+    {
+        $hasIssuedVouchers = !$purchase->getVouchersIssued()->isEmpty();
+
+        switch ($transition->getName()) {
+            case PWC::T_CHECKOUT->value:
+                if (!$purchase->getVouchersUsed()->isEmpty() || $purchase->getClientDiscount() !== null) {
+                    yield new ActionDescription('Uplatnit poukazy a slevu', category: ActionCategory::STATE);
+                }
+                yield new ActionDescription('Spočítat datum doručení', category: ActionCategory::STATE);
+                break;
+            case PWC::T_INIT_ORDER->value:
+                yield new ActionDescription('Nastavit měnu objednávky', category: ActionCategory::STATE);
+                break;
+            case PWC::T_PAY_PAY->value:
+                yield new ActionDescription('Označit jako zaplacené', category: ActionCategory::STATE);
+                if ($hasIssuedVouchers) {
+                    yield new ActionDescription('Aktivovat vydané poukazy', category: ActionCategory::STATE);
+                }
+                break;
+            case PWC::T_PAY_FAIL->value:
+                yield new ActionDescription('Označit chybu platby', category: ActionCategory::STATE);
+                break;
+            case PWC::T_PAY_REFUND->value:
+                yield new ActionDescription('Zrušit příznak zaplacení', category: ActionCategory::STATE);
+                if ($hasIssuedVouchers) {
+                    yield new ActionDescription('Zneplatnit vydané poukazy', category: ActionCategory::STATE);
+                }
+                break;
+            case PWC::T_CANCEL->value:
+                yield new ActionDescription('Zapsat storno do historie plateb', category: ActionCategory::STATE);
+                if ($hasIssuedVouchers) {
+                    yield new ActionDescription('Zneplatnit vydané poukazy', category: ActionCategory::STATE);
+                }
+                break;
+        }
+
+        $finishesTrack = in_array($transition->getName(), [PWC::T_LOG_DELIVER->value, PWC::T_LOG_PICKUP_DONE->value, PWC::T_PAY_PAY->value], true);
+        if ($finishesTrack && $this->completesAfter($purchase, $transition, $workflow)) {
+            yield new ActionDescription('Dokončit objednávku', category: ActionCategory::STATE);
+        }
+    }
+
+    /**
+     * Whether `complete` becomes possible in the marking this transition leads to (mirrors tryAutoComplete()).
+     */
+    private function completesAfter(Purchase $purchase, Transition $transition, WorkflowInterface $workflow): bool
+    {
+        $places = array_keys($purchase->getMarking());
+        $places = array_values(array_unique([...array_diff($places, $transition->getFroms()), ...$transition->getTos()]));
+
+        foreach ($workflow->getDefinition()->getTransitions() as $candidate) {
+            if ($candidate->getName() === PWC::T_COMPLETE->value && !array_diff($candidate->getFroms(), $places)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

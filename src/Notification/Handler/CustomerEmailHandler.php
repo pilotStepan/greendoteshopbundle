@@ -10,9 +10,14 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
+use Greendot\EshopBundle\Notification\DescribableNotificationInterface;
+use Greendot\EshopBundle\Notification\PreviewableEmailNotificationInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Greendot\EshopBundle\Workflow\Action\ActionCategory;
+use Greendot\EshopBundle\Workflow\Action\ActionDescription;
 
 #[AsTaggedItem(index: 'purchase_notification.customer_email')]
-final readonly class CustomerEmailHandler implements PurchaseNotificationHandlerInterface
+final readonly class CustomerEmailHandler implements PurchaseNotificationHandlerInterface, DescribableNotificationInterface, PreviewableEmailNotificationInterface
 {
     public function __construct(
         private ManageMails         $manageMails,
@@ -20,18 +25,28 @@ final readonly class CustomerEmailHandler implements PurchaseNotificationHandler
         private TranslatorInterface $translator,
     ) {}
 
-    public function handle(Purchase $purchase, string $transition): void
+    public function describe(Purchase $purchase, string $transition): ActionDescription
     {
-        $orderData = $this->orderDataFactory->create($purchase);
+        return new ActionDescription(
+            'Poslat e-mail zákazníkovi',
+            detail: $purchase->getClient()?->getMail(),
+            category: ActionCategory::EMAIL,
+        );
+    }
 
-        $email = $this->manageMails->getBaseTemplate()
+    public function buildEmail(Purchase $purchase, string $transition): TemplatedEmail
+    {
+        return $this->manageMails->getBaseTemplate()
             ->to($purchase->getClient()->getMail())
             ->subject($this->resolveSubject($transition, $purchase->getOrderNumber()))
             ->htmlTemplate(sprintf('email/order/%s.html.twig', $transition))
-            ->context(['data' => $orderData, 'transition' => $transition])
+            ->context(['data' => $this->orderDataFactory->create($purchase), 'transition' => $transition])
         ;
+    }
 
-        $this->manageMails->sendTemplate($email);
+    public function handle(Purchase $purchase, string $transition): void
+    {
+        $this->manageMails->sendTemplate($this->buildEmail($purchase, $transition));
     }
 
     private function resolveSubject(string $transition, ?int $orderNumber): string

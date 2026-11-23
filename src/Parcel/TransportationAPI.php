@@ -9,4 +9,18 @@ enum TransportationAPI: string
     case DPD = "dpd";                         // DPD
     case PACKETA = "packeta";                 // Zásilkovna
     case PACKETA_ADDRESS = "packeta_address"; // Packeta home/address delivery
+
+    /**
+     * Carrier name for admin-facing text (Czech).
+     */
+    public function carrierName(): string
+    {
+        return match ($this) {
+            self::CP_DO_RUKY => 'Česká pošta (do ruky)',
+            self::CP_BALIKOVNA => 'Česká pošta (Balíkovna)',
+            self::DPD => 'DPD',
+            self::PACKETA => 'Zásilkovna',
+            self::PACKETA_ADDRESS => 'Zásilkovna (na adresu)',
+        };
+    }
 }
