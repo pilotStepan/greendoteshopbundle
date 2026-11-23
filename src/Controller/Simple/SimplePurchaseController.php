@@ -300,7 +300,7 @@ class SimplePurchaseController extends AbstractController
                 continue;
             }
 
-            if ($pdfFilePath === null || !is_readable($pdfFilePath)) {
+            if (!is_readable($pdfFilePath)) {
                 $skippedCount++;
                 continue;
             }

@@ -67,10 +67,6 @@ class ClientSectionController extends AbstractController implements TurnOffIsAct
         try {
             $pdfFilePath = $invoiceMaker->createInvoiceOrProforma($purchase);
 
-            if (!$pdfFilePath) {
-                throw new \RuntimeException('Invoice generation failed');
-            }
-
             if (!file_exists($pdfFilePath)) {
                 throw new FileNotFoundException($pdfFilePath);
             }

@@ -60,14 +60,11 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
     {
         $email = $this->buildEmail($purchase, $transition);
 
-        $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
-        if ($invoicePath) {
-            $email->attachFromPath(
-                $invoicePath,
-                 $purchase->getOrderNumber() . '.pdf',
-                'application/pdf',
-            );
-        }
+        $email->attachFromPath(
+            $this->invoiceMaker->createInvoiceOrProforma($purchase),
+            $purchase->getOrderNumber() . '.pdf',
+            'application/pdf',
+        );
 
         $this->manageMails->sendTemplate($email);
     }

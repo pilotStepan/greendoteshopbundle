@@ -78,15 +78,6 @@ class GreendotEshopBundle extends AbstractBundle
                         ->booleanNode('enhanced_conversions')->defaultValue(false)->end()
                     ->end()
                 ->end()
-                ->arrayNode('mail')
-                    ->children()
-                        ->arrayNode('order')
-                            ->children()
-                                ->booleanNode('send_proforma')->defaultValue(true)->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
                 ->arrayNode('payment')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -296,12 +287,6 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter(
             'greendot_eshop.gtm.enhanced_conversions',
             $config['gtm']['enhanced_conversions'] ?? false
-        );
-
-        $sendProforma = $config['mail']['order']['send_proforma'] ?? true;
-        $builder->setParameter(
-            'greendot_eshop.mail.order.send_proforma',
-            $sendProforma
         );
 
         $builder->setParameter(

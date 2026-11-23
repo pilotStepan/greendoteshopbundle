@@ -5,7 +5,6 @@ parameters:
     greendot_eshop.blog.items_per_page: 10
     greendot_eshop.shop.default_vat_type: 'Price including VAT'
     greendot_eshop.shop.default_discount_type: 'Price including conventional discounts'
-    greendot_eshop.mail.order.send_proforma: false
     greendot_eshop.shop.secondary_currency_name: 'EUR'
     greendot_eshop.shop.price.extension.discount_combination_strategy: 'sum'
 
