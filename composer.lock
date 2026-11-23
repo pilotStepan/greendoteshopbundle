@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0e3fac6cb4e2240ac9b2338cd269bff1",
+    "content-hash": "767029c0be191b3b30ede1465e92339f",
     "packages": [
         {
             "name": "alcohol/iso4217",
@@ -4673,6 +4673,228 @@
                 "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
             "time": "2019-03-08T08:55:37+00:00"
+        },
+        {
+            "name": "rikudou/iban",
+            "version": "v1.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RikudouSage/IBAN.git",
+                "reference": "7fe69bf9274792c37d5a8d9d38ef5cb000f8377a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RikudouSage/IBAN/zipball/7fe69bf9274792c37d5a8d9d38ef5cb000f8377a",
+                "reference": "7fe69bf9274792c37d5a8d9d38ef5cb000f8377a",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3 | ^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "php-coveralls/php-coveralls": "^2.1",
+                "phpstan/phpstan": "^0.12.63",
+                "phpunit/phpunit": "^9"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rikudou\\Iban\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "WTFPL"
+            ],
+            "authors": [
+                {
+                    "name": "Dominik Chrástecký",
+                    "email": "dominik@chrastecky.cz"
+                }
+            ],
+            "description": "Library for working with IBANs",
+            "homepage": "https://github.com/RikudouSage/IBAN",
+            "keywords": [
+                "IBAN"
+            ],
+            "support": {
+                "issues": "https://github.com/RikudouSage/IBAN/issues",
+                "source": "https://github.com/RikudouSage/IBAN/tree/v1.3.0"
+            },
+            "funding": [
+                {
+                    "url": "https://ko-fi.com/dominik_ch",
+                    "type": "ko_fi"
+                },
+                {
+                    "url": "https://liberapay.com/dominik_ch",
+                    "type": "liberapay"
+                }
+            ],
+            "time": "2023-09-11T07:54:00+00:00",
+            "published-time": "2023-09-11T07:54:33+00:00"
+        },
+        {
+            "name": "rikudou/qr-payment-interface",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RikudouSage/QrPaymentInterface.git",
+                "reference": "752f7a6bf1190c7d65ead90b5989f61927436c89"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RikudouSage/QrPaymentInterface/zipball/752f7a6bf1190c7d65ead90b5989f61927436c89",
+                "reference": "752f7a6bf1190c7d65ead90b5989f61927436c89",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1",
+                "rikudou/iban": "^1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.16"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rikudou\\QrPayment\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dominik Chrástecký",
+                    "email": "dominik@chrastecky.cz"
+                }
+            ],
+            "description": "Common interface for my qr payment libraries",
+            "keywords": [
+                "payment",
+                "qr"
+            ],
+            "support": {
+                "issues": "https://github.com/RikudouSage/QrPaymentInterface/issues",
+                "source": "https://github.com/RikudouSage/QrPaymentInterface/tree/v1.1.0"
+            },
+            "time": "2021-04-27T20:05:08+00:00",
+            "published-time": "2021-04-27T20:05:37+00:00"
+        },
+        {
+            "name": "rikudou/qr-payment-qr-code-provider",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RikudouSage/QrPaymentQrCodeProvider.git",
+                "reference": "d233c4bedeecf2ff7cd7e7d4ec7f4ad4a5eb4b64"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RikudouSage/QrPaymentQrCodeProvider/zipball/d233c4bedeecf2ff7cd7e7d4ec7f4ad4a5eb4b64",
+                "reference": "d233c4bedeecf2ff7cd7e7d4ec7f4ad4a5eb4b64",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.3",
+                "rikudou/qr-payment-interface": "^1.0"
+            },
+            "require-dev": {
+                "bacon/bacon-qr-code": "^3.0",
+                "chillerlan/php-qrcode": "^5.0",
+                "endroid/qr-code": "^6.0",
+                "friendsofphp/php-cs-fixer": "^3.1",
+                "phpstan/phpstan": "^0.12.99"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rikudou\\QrPaymentQrCodeProvider\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "QR code provider for QR payment libraries",
+            "support": {
+                "issues": "https://github.com/RikudouSage/QrPaymentQrCodeProvider/issues",
+                "source": "https://github.com/RikudouSage/QrPaymentQrCodeProvider/tree/v1.2.0"
+            },
+            "time": "2024-12-20T23:25:11+00:00",
+            "published-time": "2024-12-20T23:25:33+00:00"
+        },
+        {
+            "name": "rikudou/skqrpayment",
+            "version": "v4.2.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RikudouSage/QrPaymentSK.git",
+                "reference": "857ab3707dd7effc2050c7ef152c61aef7c33d92"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RikudouSage/QrPaymentSK/zipball/857ab3707dd7effc2050c7ef152c61aef7c33d92",
+                "reference": "857ab3707dd7effc2050c7ef152c61aef7c33d92",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3 || ^8.0",
+                "rikudou/iban": "^1.0",
+                "rikudou/qr-payment-interface": "^1.0",
+                "rikudou/qr-payment-qr-code-provider": "^1.2"
+            },
+            "require-dev": {
+                "endroid/qr-code": "^3.9",
+                "friendsofphp/php-cs-fixer": "^2.16",
+                "phpstan/phpstan": "^0.12.32",
+                "phpunit/phpunit": "^8.5"
+            },
+            "suggest": {
+                "endroid/qr-code": "For getting QR code image",
+                "rikudou/pay-by-square-decoder": "If you want to decode Pay By Square encoded data"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "rikudou\\SkQrPayment\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dominik Chrástecký",
+                    "email": "dominik@chrastecky.cz"
+                }
+            ],
+            "description": "QR payment library for Slovak accounts",
+            "homepage": "https://github.com/RikudouSage/QrPaymentSK",
+            "keywords": [
+                "payment",
+                "qr"
+            ],
+            "support": {
+                "issues": "https://github.com/RikudouSage/QrPaymentSK/issues",
+                "source": "https://github.com/RikudouSage/QrPaymentSK/tree/v4.2.3"
+            },
+            "funding": [
+                {
+                    "url": "https://ko-fi.com/dominik_ch",
+                    "type": "ko_fi"
+                },
+                {
+                    "url": "https://liberapay.com/dominik_ch",
+                    "type": "liberapay"
+                }
+            ],
+            "time": "2025-10-10T08:54:11+00:00",
+            "published-time": "2025-10-10T08:56:35+00:00"
         },
         {
             "name": "sabberworm/php-css-parser",
@@ -13388,11 +13610,12 @@
         "ext-simplexml": "*",
         "ext-xmlreader": "*",
         "ext-libxml": "*",
-        "ext-zip": "*"
+        "ext-zip": "*",
+        "ext-gd": "*"
     },
     "platform-dev": {},
     "platform-overrides": {
         "php": "8.2.0"
     },
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }

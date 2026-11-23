@@ -134,6 +134,19 @@ class GreendotEshopBundle extends AbstractBundle
                                 ->stringNode('password')->defaultValue('')->end()
                             ->end()
                         ->end()
+                        ->arrayNode('pay_by_square')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->stringNode('beneficiary_name')
+                                    ->info('Holder of the account behind SK payment types, as the bank knows it. Empty = SK payment types keep the SPAYD QR code.')
+                                    ->defaultValue('')
+                                    ->validate()
+                                        ->ifTrue(static fn (string $v) => mb_strlen($v) > 70)
+                                        ->thenInvalid('greendot_eshop.payment.pay_by_square.beneficiary_name must be at most 70 characters, got %s')
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
                 ->arrayNode('parcel')
@@ -304,6 +317,8 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter('greendot_eshop.payment.rb_bank.account', $rbBankConfig['account'] ?? '');
         $builder->setParameter('greendot_eshop.payment.rb_bank.bank_code', $rbBankConfig['bank_code'] ?? '');
         $builder->setParameter('greendot_eshop.payment.rb_bank.password', $rbBankConfig['password'] ?? '');
+
+        $builder->setParameter('greendot_eshop.payment.pay_by_square.beneficiary_name', $config['payment']['pay_by_square']['beneficiary_name'] ?? '');
 
         $secondaryCurrencyName = $config['shop']['secondary_currency_name'] ?? 'EUR';
         $builder->setParameter(
