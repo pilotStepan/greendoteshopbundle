@@ -63,10 +63,11 @@ trait TransitionActionTestTrait
     /**
      * @param array<string, mixed> $metadata
      *
-     * @return \SplObjectStorage<Transition, array<string, mixed>>
+     * @return \SplObjectStorage<Transition, array<mixed>> the exact type InMemoryMetadataStore declares (SplObjectStorage is invariant)
      */
     private static function transitionsMetadata(Transition $transition, array $metadata): \SplObjectStorage
     {
+        /** @var \SplObjectStorage<Transition, array<mixed>> $storage */
         $storage = new \SplObjectStorage();
         $storage->offsetSet($transition, $metadata);
 
