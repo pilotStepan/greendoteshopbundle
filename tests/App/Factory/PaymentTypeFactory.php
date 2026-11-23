@@ -29,6 +29,7 @@ final class PaymentTypeFactory extends PersistentProxyObjectFactory
             'sequence' => 1,
             'country' => 'CZ',
             'actionGroup' => PaymentTypeActionGroup::cases()[0],
+            'isEnabled' => true,
         ];
     }
 }

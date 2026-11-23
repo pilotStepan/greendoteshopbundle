@@ -6,6 +6,7 @@ use Symfony\Component\Mime\Address;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Greendot\EshopBundle\Dto\WithdrawalData;
+use Greendot\EshopBundle\Entity\Project\Comment;
 use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
@@ -54,6 +55,28 @@ class ManageMails
                 'order_number' => $purchase->getOrderNumber(),
                 'client_section_link' => $this->purchaseUrlGenerator->buildOrderDetailUrl($purchase),
                 'last_admin_message' => $purchase->getLastAdminMessage(),
+            ])
+        ;
+
+        $this->mailer->send($email);
+    }
+
+    /**
+     * Tells the customer that their advice-section question has a reply. The shop provides the template
+     * (email/advice/reply.html.twig).
+     */
+    public function sendAdviceReplyEmail(Comment $question, Comment $reply, string $recipientEmail, string $questionUrl): void
+    {
+        $email = (new TemplatedEmail())
+            ->from($this->fromAddress)
+            ->to($recipientEmail)
+            ->subject($this->translator->trans('Na Váš dotaz v poradně jsme odpověděli'))
+            ->htmlTemplate('email/advice/reply.html.twig')
+            ->context([
+                'question_title' => $question->getTitle(),
+                'question_content' => $question->getContent(),
+                'reply_content' => $reply->getContent(),
+                'question_url' => $questionUrl,
             ])
         ;
 

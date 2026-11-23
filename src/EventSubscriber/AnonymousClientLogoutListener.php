@@ -7,9 +7,8 @@ use Greendot\EshopBundle\Service\ApiRequestDetector;
 use Greendot\EshopBundle\Service\ListenerManager;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
-use Symfony\Component\HttpKernel\Event\RequestEvent;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 #[AsEventListener(event: 'kernel.controller', priority: -10)]
 class AnonymousClientLogoutListener
@@ -35,6 +34,9 @@ class AnonymousClientLogoutListener
 
         if ($request->attributes->get('_route') !== 'client_section_order_detail') {
             $response = $this->security->logout(false);
+            if ($response instanceof RedirectResponse && $request->isMethodSafe()) {
+                $response->setTargetUrl($request->getUri());
+            }
             $event->setController(fn() => $response);
         }
     }

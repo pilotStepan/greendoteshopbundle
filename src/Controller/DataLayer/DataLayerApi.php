@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\DataLayer;
 
+use Doctrine\ORM\EntityNotFoundException;
 use Greendot\EshopBundle\DataLayer\Event\CheckoutFunnelEvent;
 use Greendot\EshopBundle\DataLayer\Event\ViewItemEvent;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
@@ -31,7 +32,7 @@ class DataLayerApi extends AbstractController
     #[Route('/checkout-funnel/{type}', name:'checkout_funnel')]
     public function checkoutFunnel(string $type, PurchaseRepository $purchaseRepository): JsonResponse
     {
-        if (!in_array($type, [CheckoutFunnelEvent::ViewCart, CheckoutFunnelEvent::BeginCheckout, CheckoutFunnelEvent::AddPaymentInfo,CheckoutFunnelEvent::AddShippingInfo])){
+        if (!in_array($type, CheckoutFunnelEvent::TYPES, true)) {
             return new JsonResponse(sprintf('Invalid type of: %s', $type), 400);
         }
 
@@ -49,7 +50,11 @@ class DataLayerApi extends AbstractController
         ProductVariant $productVariant,
     ): JsonResponse
     {
-        $this->eventDispatcher->dispatch(new ViewItemEvent($productVariant));
+        try {
+            $this->eventDispatcher->dispatch(new ViewItemEvent($productVariant));
+        } catch (EntityNotFoundException $e) {
+            throw $this->createNotFoundException('Product of this variant is not available.', $e);
+        }
         return new JsonResponse('ok', 200);
     }
 

@@ -14,20 +14,22 @@ use Greendot\EshopBundle\Parcel\ParcelServiceInterface;
 use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Parcel\TransportationAPI;
 use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
+use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use Greendot\EshopBundle\Parcel\Message\CreateParcelMessage;
 use Greendot\EshopBundle\Parcel\Message\UpdateDeliveryStatusMessage;
 use Greendot\EshopBundle\Parcel\MessageHandler\CreateParcelHandler;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class CreateParcelHandlerTest extends TestCase
 {
-    private PurchaseRepository $purchaseRepo;
-    private ParcelServiceProviderInterface $provider;
-    private TransportationEventRepository $transportationEventRepo;
-    private EntityManagerInterface $em;
-    private MessageBusInterface $bus;
+    private PurchaseRepository&MockObject $purchaseRepo;
+    private ParcelServiceProviderInterface&MockObject $provider;
+    private TransportationEventRepository&MockObject $transportationEventRepo;
+    private EntityManagerInterface&MockObject $em;
+    private MessageBusInterface&MockObject $bus;
     private CreateParcelHandler $handler;
 
     protected function setUp(): void
@@ -48,7 +50,7 @@ class CreateParcelHandlerTest extends TestCase
         );
     }
 
-    private function makePurchase(?string $transportNumber = null, bool $isEndState = false): Purchase
+    private function makePurchase(?string $transportNumber = null, bool $isEndState = false, bool $isIssued = true): Purchase&MockObject
     {
         $transportation = $this->createMock(Transportation::class);
         $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
@@ -57,6 +59,7 @@ class CreateParcelHandlerTest extends TestCase
         $purchase->method('getId')->willReturn(42);
         $purchase->method('getTransportNumber')->willReturn($transportNumber);
         $purchase->method('hasAnyPlace')->willReturn($isEndState);
+        $purchase->method('isIssued')->willReturn($isIssued);
         $purchase->method('getTransportation')->willReturn($transportation);
         return $purchase;
     }
@@ -117,6 +120,18 @@ class CreateParcelHandlerTest extends TestCase
         ($this->handler)(new CreateParcelMessage(42));
     }
 
+    public function testUnissuedPurchase_throwsUnrecoverableWithoutCallingCarrier(): void
+    {
+        $purchase = $this->makePurchase(isIssued: false);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+
+        $this->provider->expects($this->never())->method('getByPurchase');
+        $this->bus->expects($this->never())->method('dispatch');
+
+        $this->expectException(UnrecoverableMessageHandlingException::class);
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
     public function testNoParcelService_throwsUnrecoverable(): void
     {
         $purchase = $this->makePurchase();
@@ -139,6 +154,23 @@ class CreateParcelHandlerTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('connection refused');
+        ($this->handler)(new CreateParcelMessage(42));
+    }
+
+    // Permanent errors are logged once and the message is acked; throwing would make messenger
+    // log the same failure again as critical.
+    public function testPermanentFailure_acksWithoutThrowingOrScheduling(): void
+    {
+        $purchase = $this->makePurchase();
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $service = $this->createMock(ParcelServiceInterface::class);
+        $service->method('createParcel')->willThrowException(new PermanentParcelException('invalid pickup point'));
+        $this->provider->method('getByPurchase')->willReturn($service);
+
+        $purchase->expects($this->never())->method('setTransportNumber');
+        $this->em->expects($this->never())->method('flush');
+        $this->bus->expects($this->never())->method('dispatch');
+
         ($this->handler)(new CreateParcelMessage(42));
     }
 

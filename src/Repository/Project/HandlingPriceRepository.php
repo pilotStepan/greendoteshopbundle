@@ -9,7 +9,6 @@ use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Validator\Constraints\DateTime;
 
 /**
  * @extends ServiceEntityRepository<HandlingPrice>
@@ -25,7 +24,7 @@ class HandlingPriceRepository extends ServiceEntityRepository
     }
 
     // get handling price from a specific transportation or paymentType that is valid by a date
-    public function GetByDate(Transportation|PaymentType|AdditionalPurchaseCost $entity, ?DateTime $dateTime = null) : ?HandlingPrice
+    public function GetByDate(Transportation|PaymentType|AdditionalPurchaseCost $entity, ?\DateTimeInterface $dateTime = null) : ?HandlingPrice
     {
         // If date is null, make it today
         if ($dateTime === null) {

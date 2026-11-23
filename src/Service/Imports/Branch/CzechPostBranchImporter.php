@@ -5,7 +5,6 @@ namespace Greendot\EshopBundle\Service\Imports\Branch;
 use Throwable;
 use SimpleXMLElement;
 use Psr\Log\LoggerInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Greendot\EshopBundle\Dto\ProviderBranchData;
 
@@ -18,7 +17,6 @@ final class CzechPostBranchImporter implements ProviderImporterInterface
     private const API_URL = 'http://napostu.ceskaposta.cz/vystupy/balikovny.xml';
 
     public function __construct(
-        private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
     ) {}
 

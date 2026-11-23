@@ -13,6 +13,7 @@ use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
+use Greendot\EshopBundle\Service\DataLayer\ConfirmationPurchaseTracker;
 use Greendot\EshopBundle\Service\DataLayer\DataLayerManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Twig\Attribute\AsTwigFunction;
@@ -22,7 +23,8 @@ class GoogleTagManagerExtension
     public function __construct(
         private readonly DataLayerManager $dataLayerManager,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly PurchaseRepository $purchaseRepository
+        private readonly PurchaseRepository $purchaseRepository,
+        private readonly ConfirmationPurchaseTracker $confirmationPurchaseTracker,
     )
     {
     }
@@ -55,6 +57,12 @@ class GoogleTagManagerExtension
     public function purchase(Purchase $purchase): void
     {
         $this->eventDispatcher->dispatch(new PurchaseEvent($purchase));
+    }
+
+    #[AsTwigFunction('gtm_confirmation_purchase')]
+    public function confirmationPurchase(Purchase $purchase, bool $justCreated = false): ?array
+    {
+        return $this->confirmationPurchaseTracker->consume($purchase, $justCreated);
     }
 
     #[AsTwigFunction('gtm_page_view')]

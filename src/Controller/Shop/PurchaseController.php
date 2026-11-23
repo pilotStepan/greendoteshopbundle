@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Controller\Shop;
 
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Throwable;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,9 +19,9 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Service\WishlistService;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Greendot\EshopBundle\Service\PurchaseApiModel;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Greendot\EshopBundle\AdClick\AdClickTracker;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Greendot\EshopBundle\Attribute\CustomApiEndpoint;
 use Greendot\EshopBundle\Attribute\DisableListeners;
@@ -30,16 +31,17 @@ use Greendot\EshopBundle\EventSubscriber\AnonymousClientLogoutListener;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Greendot\EshopBundle\Service\PaymentGateway\GPWebpay;
+use Greendot\EshopBundle\Enum\PaymentCallbackSource;
+use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
+use Greendot\EshopBundle\Service\Payment\PaymentCallbackHandler;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Greendot\EshopBundle\Service\Payment\PaymentActionLogger;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Greendot\EshopBundle\Parcel\ParcelServiceProviderInterface;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Greendot\EshopBundle\Parcel\Exception\ParcelServiceNotFoundException;
 
 class PurchaseController extends AbstractController
 {
@@ -140,16 +142,61 @@ class PurchaseController extends AbstractController
         }
     }
 
+    /**
+     * The client's browser comes back here from the gateway after the payment attempt.
+     * Shared by all gateways implementing PaymentCallbackGatewayInterface (GP webpay still uses /order/verify).
+     */
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
+    #[Route('/order/payment/{gateway}/return', name: 'shop_order_payment_return', methods: ['GET'])]
+    public function paymentReturn(
+        PaymentTechnicalAction $gateway,
+        Request                $request,
+        PaymentGatewayProvider $gatewayProvider,
+        PaymentCallbackHandler $callbackHandler,
+        PurchaseUrlGenerator   $urlGenerator,
+    ): Response
+    {
+        $callbackGateway = $gatewayProvider->getCallbackGateway($gateway) ?? throw $this->createNotFoundException();
+
+        $purchase = $callbackHandler->handle($callbackGateway, $request, PaymentCallbackSource::RETURN);
+
+        return $purchase
+            ? $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase))
+            : $this->redirectToRoute('web_homepage');
+    }
+
+    /**
+     * Server-to-server notification sent by the gateway on payment state changes - covers payments whose
+     * outcome is known only after the client left the gateway (e.g. bank transfers).
+     */
+    #[DisableListeners([AnonymousClientLogoutListener::class])]
+    #[Route('/order/payment/{gateway}/notify', name: 'shop_order_payment_notify', methods: ['GET', 'POST'])]
+    public function paymentNotify(
+        PaymentTechnicalAction $gateway,
+        Request                $request,
+        PaymentGatewayProvider $gatewayProvider,
+        PaymentCallbackHandler $callbackHandler,
+    ): Response
+    {
+        $callbackGateway = $gatewayProvider->getCallbackGateway($gateway) ?? throw $this->createNotFoundException();
+
+        $purchase = $callbackHandler->handle($callbackGateway, $request, PaymentCallbackSource::NOTIFY);
+
+        // A non-2xx answer makes the gateway retry the notification later
+        return new Response('', $purchase ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);
+    }
+
     #[CustomApiEndpoint]
     #[Route('/api/purchase/{id}/pay', name: 'purchase_pay', methods: ['GET'])]
     public function pay(
         Purchase               $purchase,
-        GPWebpay               $gpWebpay,
+        PaymentGatewayProvider $gatewayProvider,
         PurchaseUrlGenerator   $urlGenerator,
         #[Target(PWC::NAME->value)]
         WorkflowInterface      $purchaseWorkflow,
         EntityManagerInterface $entityManager,
         LoggerInterface        $logger,
+        ManagePurchase         $managePurchase,
     ): RedirectResponse
     {
         $this->denyAccessUnlessGranted('view', $purchase);
@@ -159,7 +206,15 @@ class PurchaseController extends AbstractController
         }
 
         try {
-            return $this->redirect($gpWebpay->getPayLink($purchase));
+            if ($managePurchase->settleIfNothingToPay($purchase, ['performed_by' => 'client', 'source' => 'pay_endpoint_zero_total'])) {
+                $entityManager->flush();
+
+                return $this->redirect($urlGenerator->buildOrderEndscreenUrl($purchase));
+            }
+
+            $gateway = $gatewayProvider->getByPurchase($purchase) ?? $gatewayProvider->getDefault();
+
+            return $this->redirect($gateway->getPayLink($purchase));
         } catch (Throwable $e) {
             $logger->error('Failed to get payment gateway link, falling back to endscreen', [
                 'purchaseId' => $purchase->getId(),
@@ -234,78 +289,6 @@ class PurchaseController extends AbstractController
     }
 
 
-    #[CustomApiEndpoint]
-    #[Route('/api/remove-variant/{productVariantId}', name: 'api_remove_order_item', methods: ['DELETE'], options: ['expose' => true])]
-    public function removeOrderItem(int $productVariantId, SessionInterface $session): JsonResponse
-    {
-        $purchase = $session->get('purchase');
-
-        if ($purchase) {
-            $productVariants = $purchase->getProductVariants();
-
-            foreach ($productVariants as $productVariant) {
-                if ($productVariant->getProductVariant()->getId() == $productVariantId) {
-                    $purchase->removeProductVariant($productVariant);
-                    break;
-                }
-            }
-
-            $session->set('purchase', $purchase);
-
-            $purchaseApiModel = new PurchaseApiModel();
-            $purchaseApiModel->parseEntity($purchase);
-
-            return new JsonResponse($purchaseApiModel, 200);
-        }
-
-        return new JsonResponse(['error' => 'Order not found'], 404);
-    }
-
-
-    #[CustomApiEndpoint]
-    #[Route('/api/purchase/{id}/create-parcel', name: 'api_purchase_create_parcel', methods: ['POST'])]
-    public function createParcel(
-        Purchase                       $purchase,
-        ParcelServiceProviderInterface $provider,
-        EntityManagerInterface         $entityManager,
-    ): JsonResponse
-    {
-        try {
-            $parcelService = $provider->getByPurchase($purchase);
-            $parcelId = $parcelService->createParcel($purchase);
-        } catch (ParcelServiceNotFoundException) {
-            return new JsonResponse(['message' => 'No parcel service configured'], 400);
-        }
-
-        if (!$parcelId) {
-            return new JsonResponse(['message' => 'Failed to create parcel'], 500);
-        }
-
-        $purchase->setTransportNumber($parcelId);
-        $entityManager->flush();
-
-        return new JsonResponse([
-            'message' => 'Parcel created successfully',
-            'parcelId' => $parcelId,
-        ]);
-    }
-
-    #[CustomApiEndpoint]
-    #[Route('/api/purchase/{id}/parcel-status', name: 'api_purchase_parcel_status', methods: ['GET'])]
-    public function getParcelStatus(
-        Purchase                       $purchase,
-        ParcelServiceProviderInterface $provider,
-    ): JsonResponse
-    {
-        try {
-            $parcelService = $provider->getByPurchase($purchase);
-            $status = $parcelService->getParcelStatus($purchase);
-        } catch (ParcelServiceNotFoundException) {
-            return new JsonResponse(['message' => 'No parcel service configured'], 400);
-        }
-
-        return new JsonResponse($status);
-    }
 
     #[Route('/objednavka/{path<.*>?}', name: 'shop_order_steps', options: ['expose' => true], priority: 100)]
     public function orderSteps(): Response
@@ -327,13 +310,13 @@ class PurchaseController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/shop/api/session/currency-{currency}', name: "shop_api_session_currency")]
-    public function shopApiSessionCurrency(Currency $currency)
+    public function shopApiSessionCurrency(Currency $currency, PriceUtils $priceUtils)
     {
         return new JsonResponse([
             'symbol' => $currency->getSymbol(),
             'name' => $currency->getName(),
             'rounding' => $currency->getRounding(),
-            'conversion_rate' => $currency->getConversionRate(),
+            'conversion_rate' => $priceUtils->getConversionRate($currency)->getRate(),
         ], 200);
     }
 
@@ -347,7 +330,7 @@ class PurchaseController extends AbstractController
     {
         // Check user login and ownership
         $user = $this->getUser();
-        $returnTo = $request->query->get('returnTo', '/');
+        $returnTo = $request->query->get('returnTo') ?? $this->generateUrl('web_homepage');
 
         if (!$user || $user !== $purchase->getClient()) {
             throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
@@ -368,7 +351,7 @@ class PurchaseController extends AbstractController
         $session->set('purchase', $purchase->getId());
 
         // Redirect to page
-        return $this->redirect('/objednavka/obsah');
+        return $this->redirectToRoute('shop_order_steps', ['path' => 'obsah']);
     }
 
     #[Route('/api/purchase/{id}/repeat', name: 'purchase_repeat')]
@@ -380,11 +363,12 @@ class PurchaseController extends AbstractController
         EntityManagerInterface $entityManager,
         #[Target(PWC::NAME->value)]
         WorkflowInterface      $purchaseFlow,
+        AdClickTracker         $adClickTracker,
     ): RedirectResponse
     {
         // Check user login and ownership
         $user = $this->getUser();
-        $returnTo = $request->query->get('returnTo', '/');
+        $returnTo = $request->query->get('returnTo') ?? $this->generateUrl('web_homepage');
 
         if (!$user || $user !== $purchase->getClient()) {
             throw new AccessDeniedHttpException("This purchase does not belong to the current user.");
@@ -397,7 +381,6 @@ class PurchaseController extends AbstractController
         }
         // set cart purchase
         $cartPurchase = new Purchase();
-        $cartPurchase->setDateIssue(new \DateTime());
         $cartPurchase->setClient($user);
         $purchaseFlow->apply($cartPurchase, PWC::T_INIT_CART->value);
 
@@ -408,6 +391,7 @@ class PurchaseController extends AbstractController
             $amount = $purchaseProductVariant->getAmount();
             $managePurchase->addProductVariantToPurchase($cartPurchase, $productVariant, $amount);
         }
+        $adClickTracker->assignToPurchase($cartPurchase);
 
         // persist
         $entityManager->persist($cartPurchase);
@@ -417,13 +401,13 @@ class PurchaseController extends AbstractController
         $session->set('purchase', $cartPurchase->getId());
 
         // Redirect to page
-        return $this->redirect('/objednavka/obsah');
+        return $this->redirectToRoute('shop_order_steps', ['path' => 'obsah']);
     }
 
     #[Route('/seznam-prani', name: 'shop_wishlist', options: ['expose' => true], priority: 2)]
     public function wishlist(RequestStack $requestStack, WishlistService $wishlistService, PurchaseRepository $repo): Response
     {
-        if (!$this->getUser()) return $this->redirect('/');
+        if (!$this->getUser()) return $this->redirectToRoute('web_homepage');
 
         $wishlistId = $requestStack->getSession()->get('wishlist');
         $wishlist = $repo->find($wishlistId);

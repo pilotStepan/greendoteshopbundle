@@ -6,6 +6,7 @@ use Greendot\EshopBundle\Entity\Project\Currency;
 use Greendot\EshopBundle\Money\Exception\CurrencyMismatchException;
 use Greendot\EshopBundle\Money\Money;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class MoneyTest extends TestCase
 {
@@ -42,6 +43,21 @@ class MoneyTest extends TestCase
 
         $this->assertTrue($money->isZero());
         $this->assertSame('CZK', $money->getIso());
+    }
+
+    #[DataProvider('isPositiveProvider')]
+    public function testIsPositive(float $value, bool $expected): void
+    {
+        $this->assertSame($expected, (new Money($value, 'CZK'))->isPositive());
+    }
+
+    public static function isPositiveProvider(): iterable
+    {
+        yield 'zero' => [0.0, false];
+        yield 'negative (voucher exceeding total with WithVoucherToMinus)' => [-5.0, false];
+        yield 'float leftover below one minor unit' => [0.004, false];
+        yield 'one minor unit' => [0.01, true];
+        yield 'regular total' => [150.0, true];
     }
 
     public function testAddSameCurrency(): void

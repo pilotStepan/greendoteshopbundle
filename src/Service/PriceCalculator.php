@@ -13,49 +13,31 @@ use Greendot\EshopBundle\Entity\Project\Voucher;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Greendot\EshopBundle\Enum\VoucherCalculationType;
-use Greendot\EshopBundle\Repository\Project\ClientDiscountRepository;
 use Greendot\EshopBundle\Repository\Project\CurrencyRepository;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Repository\Project\PriceRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
-use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Exception;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Service\Price\PurchasePriceFactory;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /* @deprecated */
 class PriceCalculator
 {
-    private ProductRepository $productRepository;
-    private ProductVariantRepository $productVariantRepository;
-    private SerializerInterface $serializer;
     private CurrencyRepository $currencyRepository;
-    private ClientDiscountRepository $clientDiscountRepository;
-    private Security $security;
     public PriceRepository $priceRepository;
     private HandlingPriceRepository $handlingPriceRepository;
 
     public function __construct(
-        ProductRepository        $productRepository,
-        ProductVariantRepository $productVariantRepository,
-        SerializerInterface      $serializer,
         CurrencyRepository       $currencyRepository,
-        ClientDiscountRepository $clientDiscountRepository,
-        Security                 $security,
         PriceRepository          $priceRepository,
         HandlingPriceRepository  $handlingPriceRepository,
         private readonly PurchasePriceFactory $purchasePriceFactory,
-        private readonly ProductVariantPriceFactory $productVariantPriceFactory
+        private readonly ProductVariantPriceFactory $productVariantPriceFactory,
+        private readonly PriceUtils $priceUtils,
     )
     {
-        $this->productRepository = $productRepository;
-        $this->productVariantRepository = $productVariantRepository;
-        $this->serializer = $serializer;
         $this->currencyRepository = $currencyRepository;
-        $this->clientDiscountRepository = $clientDiscountRepository;
-        $this->security = $security;
         $this->priceRepository = $priceRepository;
         $this->handlingPriceRepository = $handlingPriceRepository;
     }
@@ -279,7 +261,7 @@ class PriceCalculator
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph
-            $purchasePrice = $this->calculatePurchasePrice($purchaseOrTransportation, $this->currencyRepository->findOneBy(["conversionRate" => 1]), null, false, $vatCalculationType, DiscountCalculationType::WithDiscount);
+            $purchasePrice = $this->calculatePurchasePrice($purchaseOrTransportation, $this->currencyRepository->findOneBy(["isDefault" => true]), null, false, $vatCalculationType, DiscountCalculationType::WithDiscount);
 
             // check for null transportation
             if ($purchaseOrTransportation->getTransportation() !== null)
@@ -340,7 +322,7 @@ class PriceCalculator
                 return 0;
             }
             //zmenit enum na withVat na jinych eshopech ale bdl chce vzdy dopravu zdarma podle ceny bez dph
-            $purchasePrice = $this->calculatePurchasePrice($purchaseOrPayment, $this->currencyRepository->findOneBy(["conversionRate" => 1]), null, false, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
+            $purchasePrice = $this->calculatePurchasePrice($purchaseOrPayment, $this->currencyRepository->findOneBy(["isDefault" => true]), null, false, VatCalculationType::WithoutVAT, DiscountCalculationType::WithDiscount);
 
 
             // check for null payment
@@ -387,8 +369,7 @@ class PriceCalculator
 
     public function convertCurrency(float $price, Currency $currency): float
     {
-        $price = $price * $currency->getConversionRate();
-        return round($price, $currency->getRounding());
+        return $this->priceUtils->convertCurrency($price, $this->priceUtils->getConversionRate($currency));
     }
 
     private function roundToNearestHalf(float $price): float
@@ -423,40 +404,6 @@ class PriceCalculator
         $discountedPrice = $price - $discount;
 
         return round($discountedPrice, 2);
-    }
-
-    private function getClientDiscountValue($client): float
-    {
-        $clientDiscount = $this->clientDiscountRepository->findCurrentClientDiscount($client);
-        if ($clientDiscount) {
-            return $clientDiscount->getDiscount();
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function getFinalPrice(DiscountCalculationType $discountCalculationType, Price $price, int $additionalDiscount, $clientDiscount): float
-    {
-        switch ($discountCalculationType) {
-            case DiscountCalculationType::WithoutDiscount:
-                return $price->getPrice();
-            case DiscountCalculationType::WithDiscount:
-                $fullDiscount = $price->getDiscount() + $additionalDiscount;
-                $discountedPrice = $this->applyDiscount($fullDiscount, $price->getPrice());
-                return ($discountedPrice > $price->getMinPrice()) ? $discountedPrice : $price->getMinPrice();
-            case DiscountCalculationType::WithDiscountPlusAfterRegistrationDiscount:
-                $additionalDiscount += $clientDiscount;
-                $fullDiscount = $price->getDiscount() + $additionalDiscount;
-                $discountedPrice = $this->applyDiscount($fullDiscount, $price->getPrice());
-                return ($discountedPrice > $price->getMinPrice()) ? $discountedPrice : $price->getMinPrice();
-            case DiscountCalculationType::WithoutDiscountPlusAfterRegistrationDiscount:
-                $discountedPrice = $this->applyDiscount(10, $price->getPrice());
-                return ($discountedPrice > $price->getMinPrice()) ? $discountedPrice : $price->getMinPrice();
-        }
-        throw new Exception("Unknown Enum::discountCalculationType");
     }
 
     public function applyVouchers(float|int|null         $finalPrice,

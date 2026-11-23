@@ -38,22 +38,22 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class PriceCalculationTestCase extends TestCase
 {
-    protected $priceUtils;
-    protected $priceRepository;
-    protected $security;
-    protected $discountService;
-    protected $currencyRepository;
-    protected $handlingPriceRepository;
-    protected $productVariantPriceFactory;
+    protected PriceUtils $priceUtils;
+    protected PriceRepository&MockObject $priceRepository;
+    protected Security&MockObject $security;
+    protected DiscountService&MockObject $discountService;
+    protected CurrencyRepository&MockObject $currencyRepository;
+    protected HandlingPriceRepository&MockObject $handlingPriceRepository;
+    protected ProductVariantPriceFactory $productVariantPriceFactory;
 
-    protected $settingsRepository;
-    protected $serviceCalculationUtils;
+    protected SettingsRepository&MockObject $settingsRepository;
+    protected ServiceCalculationUtils $serviceCalculationUtils;
 
-    protected $parameterBag;
+    protected ParameterBagInterface&MockObject $parameterBag;
 
-    protected $conversionRateRepository;
+    protected ConversionRateRepository&MockObject $conversionRateRepository;
 
-    protected $productProductRepository;
+    protected ProductProductRepository&MockObject $productProductRepository;
     protected function setUp(): void
     {
         $this->conversionRateRepository = $this->createMock(ConversionRateRepository::class);
@@ -220,7 +220,7 @@ abstract class PriceCalculationTestCase extends TestCase
             $purchase->method('getClientDiscount')->willReturn($clientDiscountMock);
         }
 
-        $purchase->method('getDateIssue')->willReturn(new \DateTime('now'));
+        $purchase->method('getPricingDate')->willReturn(new \DateTime('now'));
         $purchase->method('getVouchersUsed')->willReturn(new ArrayCollection($vouchers ?? []));
         // These test purchases represent an in-progress (cart) purchase, so
         // PurchasePrice must take the dynamic-calculation branch, not the frozen one.

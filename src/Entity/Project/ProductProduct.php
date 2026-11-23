@@ -103,7 +103,7 @@ class ProductProduct
         return $this->productProductType;
     }
 
-    public function setProductProductType(?productProductType $productProductType): static
+    public function setProductProductType(?ProductProductType $productProductType): static
     {
         $this->productProductType = $productProductType;
 

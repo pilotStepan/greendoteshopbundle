@@ -13,6 +13,8 @@ use Greendot\EshopBundle\Entity\Project\Upload;
 use Greendot\EshopBundle\Enum\UploadGroupTypeEnum;
 use Greendot\EshopBundle\Repository\Utils\SafeJoin;
 use Greendot\EshopBundle\Service\CategoryInfoGetter;
+use Greendot\EshopBundle\Service\CurrencyManager;
+use Greendot\EshopBundle\Service\Price\PriceUtils;
 use DateTime;
 use Greendot\EshopBundle\Entity\Project\ParameterGroup;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
@@ -43,6 +45,8 @@ class ProductRepository extends HintedRepositoryBase
         private readonly CategoryInfoGetter     $categoryInfoGetter,
         private readonly PriceRepository        $priceRepository,
         private readonly ParameterBagInterface  $parameterBag,
+        private readonly CurrencyManager        $currencyManager,
+        private readonly PriceUtils             $priceUtils,
         LocaleSwitcher $localeSwitcher
     )
     {
@@ -431,6 +435,12 @@ class ProductRepository extends HintedRepositoryBase
 
                 // TODO: change according to config default types and priceRepository->
                 $minPriceCalculation = $this->priceRepository->resolvePriceCalculationExpression($vatCalculationType, $discountCalculationType);
+
+                // selected range is in the currently selected currency, prices in DB are in the default one
+                $rate = $this->priceUtils->getConversionRate($this->currencyManager->get())->getRate() ?: 1;
+                $selectedMin = (float)$parameter['selectedParameters'][0] / $rate;
+                $selectedMax = (float)$parameter['selectedParameters'][1] / $rate;
+
                 // Apply range filter using MIN($minPriceCalculation)
                 $queryBuilder
                     ->andWhere('price.validFrom <= :date')
@@ -439,8 +449,8 @@ class ProductRepository extends HintedRepositoryBase
                     ->addSelect("MIN({$minPriceCalculation}) AS hidden priceFilter_minPrice")
                     ->groupBy('p')
                     ->andHaving("priceFilter_minPrice BETWEEN :minPrice AND :maxPrice")
-                    ->setParameter('minPrice', (float)$parameter['selectedParameters'][0]-1) // expected: [min, max], correction for rounding error
-                    ->setParameter('maxPrice', (float)$parameter['selectedParameters'][1]+1)
+                    ->setParameter('minPrice', $selectedMin - 1) // expected: [min, max], correction for rounding error
+                    ->setParameter('maxPrice', $selectedMax + 1)
                     ->setParameter('date', new \DateTime());
 
             }
@@ -576,23 +586,48 @@ class ProductRepository extends HintedRepositoryBase
         return $qb;
     }
 
+    /**
+     * Units sold per product for purchases issued within the given period.
+     * Only products with at least one sale are returned.
+     *
+     * @return array<int, array{id: int, sold_amount: int|string}>
+     */
     public function getSoldProductsCount(DateTime $startDate, DateTime $endDate): array
     {
-       $qb = $this->createQueryBuilder('p')
-            ->select('p.id, COALESCE(SUM(ppv.amount), 0) as sold_amount') // 2. Handle nulls
-            ->leftJoin('p.productVariants', 'pv')
-            ->leftJoin('pv.orderProductVariants', 'ppv')
-            // 1. Move the date conditions INTO the join criteria
-            ->leftJoin('ppv.purchase', 'pu', 'WITH', 'pu.date_invoiced >= :startDate AND pu.date_invoiced <= :endDate')
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.id, SUM(ppv.amount) AS sold_amount')
+            ->innerJoin('p.productVariants', 'pv')
+            ->innerJoin('pv.orderProductVariants', 'ppv')
+            ->innerJoin('ppv.purchase', 'pu')
+            ->andWhere('pu.date_issue >= :startDate')
+            ->andWhere('pu.date_issue <= :endDate')
             ->groupBy('p.id');
 
-        // 3. Ensure your excludePlaces helper also accounts for LEFT JOIN nulls
-        $qb = $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART);
+        $qb = $this->excludePlaces($qb, 'pu', PWC::S_DRAFT, PWC::S_WISHLIST, PWC::S_CART, PWC::S_CANCELLED);
 
         return $qb->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $endDate)
-                ->getQuery()
-          ->getResult();
+            ->setParameter('endDate', $endDate)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Stores the given sold amounts and zeroes every other product, atomically.
+     *
+     * @param array<int, int> $soldAmountByProductId product id => units sold
+     */
+    public function replaceSoldAmounts(array $soldAmountByProductId): void
+    {
+        $em = $this->getEntityManager();
+
+        $em->wrapInTransaction(function () use ($em, $soldAmountByProductId): void {
+            $em->createQuery('UPDATE ' . Product::class . ' p SET p.sold_amount = 0')->execute();
+
+            $update = $em->createQuery('UPDATE ' . Product::class . ' p SET p.sold_amount = :amount WHERE p.id = :id');
+            foreach ($soldAmountByProductId as $productId => $amount) {
+                $update->setParameter('amount', $amount)->setParameter('id', $productId)->execute();
+            }
+        });
     }
 
     /**
@@ -845,6 +880,22 @@ class ProductRepository extends HintedRepositoryBase
         }
 
         return $ordered;
+    }
+
+    /**
+     * Number of active, non-deleted products whose (trimmed) name equals $name.
+     * Used by product feeds to detect different products sharing one name.
+     */
+    public function countActiveByName(string $name): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->andWhere('TRIM(p.name) = :name')
+            ->andWhere('p.isActive = 1')
+            ->andWhere('p.isDeleted = 0 OR p.isDeleted IS NULL')
+            ->setParameter('name', $name)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
 }

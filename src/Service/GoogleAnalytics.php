@@ -8,8 +8,6 @@ class GoogleAnalytics
 {
     public function __construct(
         readonly private PriceCalculator $priceCalculator,
-        readonly private ProductRepository $productRepository,
-        readonly private ProductVariantRepository $productVariantRepository,
         readonly private CurrencyRepository $currencyRepository,
         readonly private ParameterRepository $parameterRepository,
         readonly private ParameterGroupRepository $parameterGroupRepository,
@@ -36,7 +34,6 @@ class GoogleAnalytics
             }else{
                 $purchaseTemp->setClient(null);
             }
-            $purchaseTemp->setDateIssue(new \DateTime('now'));
             $purchaseProductVariantTemp = new PurchaseProductVariant();
             $purchaseProductVariantTemp->setProductVariant($productVariant);
             $purchaseProductVariantTemp->setPurchase($purchaseTemp);

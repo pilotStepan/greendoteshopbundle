@@ -78,7 +78,7 @@ readonly class ManagePurchase
 
     public function generateInquiryNumber(Purchase $purchase): string
     {
-        return sprintf('%010d%s', $purchase->getDateIssue()->getTimestamp(), $purchase->getId());
+        return sprintf('%010d%s', $purchase->getDateCreated()->getTimestamp(), $purchase->getId());
     }
 
     public function findPurchaseByInquiryNumber(string $inquiryNumber): Purchase
@@ -122,6 +122,27 @@ readonly class ManagePurchase
 
         $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value, $context);
         $purchase->setPaymentType($paymentType);
+    }
+
+    /**
+     * @return bool true when the purchase was settled by this call (false also for an already-paid one)
+     */
+    public function settleIfNothingToPay(Purchase $purchase, array $context = []): bool
+    {
+        $this->preparePrices($purchase);
+        $total = $purchase->getTotalMoney();
+
+        if ($total->isPositive() || !$this->purchaseFlow->can($purchase, PWC::T_PAY_PAY->value)) {
+            return false;
+        }
+
+        $this->purchaseFlow->apply($purchase, PWC::T_PAY_PAY->value, [
+            'amount' => $total->value,
+            'currency' => $total->iso,
+            ...$context,
+        ]);
+
+        return true;
     }
 
     // Don't delete, used from consumer app

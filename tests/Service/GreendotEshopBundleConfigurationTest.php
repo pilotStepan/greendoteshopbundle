@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Tests\Service;
 use Greendot\EshopBundle\GreendotEshopBundle;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Finder\Finder;
@@ -37,6 +38,36 @@ class GreendotEshopBundleConfigurationTest extends TestCase
                 )
             );
         }
+    }
+
+    public function testPayBySquareBeneficiaryNameDefaultsToEmpty(): void
+    {
+        self::assertSame('', $this->loadPayBySquareConfig([])->getParameter('greendot_eshop.payment.pay_by_square.beneficiary_name'));
+    }
+
+    public function testPayBySquareBeneficiaryNameAllowsSeventyCharacters(): void
+    {
+        $name = str_repeat('š', 70);
+
+        self::assertSame($name, $this->loadPayBySquareConfig(['beneficiary_name' => $name])->getParameter('greendot_eshop.payment.pay_by_square.beneficiary_name'));
+    }
+
+    public function testPayBySquareBeneficiaryNameRejectsMoreThanSeventyCharacters(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->loadPayBySquareConfig(['beneficiary_name' => str_repeat('a', 71)]);
+    }
+
+    /** @param array<string, string> $config */
+    private function loadPayBySquareConfig(array $config): ContainerBuilder
+    {
+        $builder = new ContainerBuilder();
+        $builder->setParameter('kernel.environment', 'test');
+        $builder->setParameter('kernel.build_dir', sys_get_temp_dir());
+        (new GreendotEshopBundle())->getContainerExtension()->load([['payment' => ['pay_by_square' => $config]]], $builder);
+
+        return $builder;
     }
 
     /**

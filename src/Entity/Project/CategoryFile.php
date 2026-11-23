@@ -3,12 +3,10 @@
 namespace Greendot\EshopBundle\Entity\Project;
 
 use Greendot\EshopBundle\Repository\Project\CategoryFileRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Table(name: 'p_category_file')]
-#[ORM\Entity(repositoryClass: CategoryFile::class)]
+#[ORM\Entity(repositoryClass: CategoryFileRepository::class)]
 class CategoryFile
 {
     #[ORM\Id]

@@ -59,7 +59,7 @@ class ManageVoucherTest extends TestCase
         $paramGroup->setName('certificateValue');
         $parameter = new Parameter();
         $parameter->setParameterGroup($paramGroup);
-        $parameter->setData(100);
+        $parameter->setData('100');
         $variant->addParameter($parameter);
 
         $purchaseProductVariant = new PurchaseProductVariant();

@@ -14,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TranslationController extends AbstractController
@@ -96,6 +97,9 @@ class TranslationController extends AbstractController
     #[Route('/translate/javascript/locale-{locale}', name: 'translate_js')]
     public function translateJS($locale, TranslatorInterface $translator, Request $request): Response
     {
+        if (!$translator instanceof TranslatorBagInterface) {
+            throw new \LogicException('The translator must expose its catalogues (TranslatorBagInterface).');
+        }
         $defaultLocale = 'en';
         $translations = $translator->getCatalogue($defaultLocale)->all('messages+intl-icu');
         $resultArray = array();

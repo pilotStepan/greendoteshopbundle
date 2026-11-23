@@ -12,6 +12,7 @@ use Greendot\EshopBundle\Service\ManageMails;
 use Greendot\EshopBundle\Entity\Project\Watchdog;
 use Greendot\EshopBundle\Enum\Watchdog\WatchdogState;
 use Greendot\EshopBundle\Entity\Project\ProductVariant;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Greendot\EshopBundle\Message\Watchdog\VariantAvailable\VariantAvailableEmail;
@@ -47,19 +48,31 @@ final readonly class VariantAvailableEmailHandler
             throw new UnrecoverableMessageHandlingException('ProductVariant not found for ID: ' . $message->productVariantId);
         }
 
-        $email = $this->manageMails
-            ->getBaseTemplate()
-            ->to($message->email)
-            ->htmlTemplate('/email/watchdog/variant_available.html.twig')
-            ->context(['data' => [
-                'variant_name' => $variant->getName(),
-                'product_name' => $variant->getProduct()->getName(),
-                'product_slug' => $variant->getProduct()->getSlug(),
-            ]])
-            ->subject('Produkt je opět dostupný')
-        ;
+        try {
+            $email = $this->manageMails
+                ->getBaseTemplate()
+                ->to($message->email)
+                ->htmlTemplate('/email/watchdog/variant_available.html.twig')
+                ->context(['data' => [
+                    'variant_name' => $variant->getName(),
+                    'product_name' => $variant->getProduct()->getName(),
+                    'product_slug' => $variant->getProduct()->getSlug(),
+                ]])
+                ->subject('Produkt je opět dostupný')
+            ;
 
-        $this->manageMails->sendTemplate($email);
+            $this->manageMails->sendTemplate($email);
+        } catch (RfcComplianceException $e) {
+            $watchdog->setState(WatchdogState::Canceled);
+            $this->em->flush();
+
+            $this->logger->warning('Variant available watchdog canceled: invalid email address.', [
+                'watchdogId' => $watchdog->getId(),
+                'email' => $message->email,
+                'error' => $e->getMessage(),
+            ]);
+            return;
+        }
 
         $watchdog->markCompleted();
         $this->em->flush();

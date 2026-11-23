@@ -4,6 +4,8 @@ namespace Greendot\EshopBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
 use Greendot\EshopBundle\Enum\DiscountCalculationType;
+use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
+use Greendot\EshopBundle\Service\PaymentGateway\GoPay\GoPayPaymentInstrument;
 use Greendot\EshopBundle\Enum\VatCalculationType;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
@@ -13,6 +15,12 @@ use Symfony\Component\Yaml\Yaml;
 
 class GreendotEshopBundle extends AbstractBundle
 {
+    public const MIGRATIONS_NAMESPACE = 'Greendot\EshopBundle\Migrations';
+
+    public static function migrationsDirectory(): string
+    {
+        return __DIR__ . '/Migrations';
+    }
 
     /**
      * Uses symfony-native prependExtension
@@ -34,6 +42,14 @@ class GreendotEshopBundle extends AbstractBundle
                 $builder->prependExtensionConfig($extension, $values);
             }
         }
+
+        // Shop-table schema changes ship as bundle migrations; every tenant picks them up next to its own.
+        if ($builder->hasExtension('doctrine_migrations')) {
+            $builder->prependExtensionConfig('doctrine_migrations', [
+                'migrations_paths' => [self::MIGRATIONS_NAMESPACE => self::migrationsDirectory()],
+            ]);
+        }
+
         parent::prependExtension($container, $builder);
     }
 
@@ -55,6 +71,13 @@ class GreendotEshopBundle extends AbstractBundle
                         ->booleanNode('has_landing')->defaultValue(true)->end()
                     ->end()
                 ->end()
+                ->arrayNode('gtm')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('purchase_on_confirmation_page')->defaultValue(false)->end()
+                        ->booleanNode('enhanced_conversions')->defaultValue(false)->end()
+                    ->end()
+                ->end()
                 ->arrayNode('mail')
                     ->children()
                         ->arrayNode('order')
@@ -65,7 +88,43 @@ class GreendotEshopBundle extends AbstractBundle
                     ->end()
                 ->end()
                 ->arrayNode('payment')
+                    ->addDefaultsIfNotSet()
                     ->children()
+                        ->stringNode('default_gateway')
+                            ->defaultValue(PaymentTechnicalAction::GLOBAL_PAYMENTS->value)
+                            ->validate()
+                                ->ifNotInArray(array_column(PaymentTechnicalAction::cases(), 'value'))
+                                ->thenInvalid('Invalid payment gateway "%s"')
+                            ->end()
+                        ->end()
+                        ->arrayNode('gopay')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->arrayNode('allowed_instruments')
+                                    ->info('Payment methods offered on the GoPay gateway, e.g. [PAYMENT_CARD, APPLE_PAY, GPAY]. Empty = all methods enabled for the GoID.')
+                                    ->scalarPrototype()
+                                        ->validate()
+                                            ->ifNotInArray(array_column(GoPayPaymentInstrument::cases(), 'value'))
+                                            ->thenInvalid('Invalid GoPay payment instrument %s')
+                                        ->end()
+                                    ->end()
+                                ->end()
+                                ->scalarNode('default_instrument')
+                                    ->info('Payment method the GoPay gateway opens with, e.g. PAYMENT_CARD. Null = the gateway shows the method list.')
+                                    ->defaultNull()
+                                    ->validate()
+                                        ->ifTrue(static fn ($v) => $v !== null && GoPayPaymentInstrument::tryFrom((string)$v) === null)
+                                        ->thenInvalid('Invalid GoPay payment instrument %s')
+                                    ->end()
+                                ->end()
+                            ->end()
+                            ->validate()
+                                ->ifTrue(static fn (array $v) => $v['default_instrument'] !== null
+                                    && $v['allowed_instruments'] !== []
+                                    && !in_array($v['default_instrument'], $v['allowed_instruments'], true))
+                                ->thenInvalid('greendot_eshop.payment.gopay.default_instrument must be one of allowed_instruments.')
+                            ->end()
+                        ->end()
                         ->arrayNode('rb_bank')
                             ->children()
                                 ->booleanNode('enabled')->defaultValue(false)->end()
@@ -73,6 +132,19 @@ class GreendotEshopBundle extends AbstractBundle
                                 ->stringNode('account')->defaultValue('')->end()
                                 ->stringNode('bank_code')->defaultValue('')->end()
                                 ->stringNode('password')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('pay_by_square')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->stringNode('beneficiary_name')
+                                    ->info('Holder of the account behind SK payment types, as the bank knows it. Empty = SK payment types keep the SPAYD QR code.')
+                                    ->defaultValue('')
+                                    ->validate()
+                                        ->ifTrue(static fn (string $v) => mb_strlen($v) > 70)
+                                        ->thenInvalid('greendot_eshop.payment.pay_by_square.beneficiary_name must be at most 70 characters, got %s')
+                                    ->end()
+                                ->end()
                             ->end()
                         ->end()
                     ->end()
@@ -124,6 +196,10 @@ class GreendotEshopBundle extends AbstractBundle
                             ->end()
                         ->end()
                         ->stringNode('secondary_currency_name')->defaultValue('EUR')->end()
+                        ->arrayNode('product_category_types')
+                            ->info('Category type IDs whose products a category listing collects from its subtree, e.g. [3, 4]. The crawl does not descend into other types (e.g. linked articles). Empty = every subcategory.')
+                            ->integerPrototype()->end()
+                        ->end()
                         ->arrayNode('price')
                             ->addDefaultsIfNotSet()
                             ->children()
@@ -213,11 +289,27 @@ class GreendotEshopBundle extends AbstractBundle
             $config['shop']['default_discount_type']
         );
 
+        $builder->setParameter(
+            'greendot_eshop.gtm.purchase_on_confirmation_page',
+            $config['gtm']['purchase_on_confirmation_page'] ?? false
+        );
+        $builder->setParameter(
+            'greendot_eshop.gtm.enhanced_conversions',
+            $config['gtm']['enhanced_conversions'] ?? false
+        );
+
         $sendProforma = $config['mail']['order']['send_proforma'] ?? true;
         $builder->setParameter(
             'greendot_eshop.mail.order.send_proforma',
             $sendProforma
         );
+
+        $builder->setParameter(
+            'greendot_eshop.payment.default_gateway',
+            $config['payment']['default_gateway'] ?? PaymentTechnicalAction::GLOBAL_PAYMENTS->value
+        );
+        $builder->setParameter('greendot_eshop.payment.gopay.allowed_instruments', $config['payment']['gopay']['allowed_instruments'] ?? []);
+        $builder->setParameter('greendot_eshop.payment.gopay.default_instrument', $config['payment']['gopay']['default_instrument'] ?? null);
 
         $rbBankConfig = $config['payment']['rb_bank'] ?? [];
         $builder->setParameter('greendot_eshop.payment.rb_bank.enabled', $rbBankConfig['enabled'] ?? false);
@@ -226,10 +318,17 @@ class GreendotEshopBundle extends AbstractBundle
         $builder->setParameter('greendot_eshop.payment.rb_bank.bank_code', $rbBankConfig['bank_code'] ?? '');
         $builder->setParameter('greendot_eshop.payment.rb_bank.password', $rbBankConfig['password'] ?? '');
 
+        $builder->setParameter('greendot_eshop.payment.pay_by_square.beneficiary_name', $config['payment']['pay_by_square']['beneficiary_name'] ?? '');
+
         $secondaryCurrencyName = $config['shop']['secondary_currency_name'] ?? 'EUR';
         $builder->setParameter(
             'greendot_eshop.shop.secondary_currency_name',
             $secondaryCurrencyName
+        );
+
+        $builder->setParameter(
+            'greendot_eshop.shop.product_category_types',
+            $config['shop']['product_category_types'] ?? []
         );
 
         $builder->setParameter(

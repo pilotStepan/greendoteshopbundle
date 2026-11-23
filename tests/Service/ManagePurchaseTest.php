@@ -37,6 +37,7 @@ use Greendot\EshopBundle\Repository\Project\SettingsRepository;
 use Greendot\EshopBundle\Service\Price\AdditionalPurchaseCost\AdditionalPurchaseCostProvider;
 use Greendot\EshopBundle\Service\Price\ServiceCalculationUtils;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
+use Greendot\EshopBundle\Tests\Stub\PurchaseFlowFixtures;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\HandlingPriceRepository;
 use Greendot\EshopBundle\Repository\Project\ConversionRateRepository;
@@ -46,6 +47,8 @@ use Greendot\EshopBundle\Service\Price\Extension\DiscountCombination\HighestDisc
 
 class ManagePurchaseTest extends TestCase
 {
+    use PurchaseFlowFixtures;
+
     private PurchaseRepository&MockObject $purchaseRepository;
     private MessageBusInterface&MockObject $bus;
     private ManagePurchase $managePurchase;
@@ -147,7 +150,7 @@ class ManagePurchaseTest extends TestCase
     public function testCalculateInquiryNumberWithPurchase(): void
     {
         $purchase = $this->createMock(Purchase::class);
-        $purchase->method('getDateIssue')->willReturn(new \DateTime('2023-01-01'));
+        $purchase->method('getDateCreated')->willReturn(new \DateTimeImmutable('2023-01-01'));
         $purchase->method('getId')->willReturn(456);
 
         $result = $this->managePurchase->generateInquiryNumber($purchase);
@@ -395,8 +398,72 @@ class ManagePurchaseTest extends TestCase
     private function setPaymentTypeWithoutSync(Purchase $purchase, PaymentType $paymentType): void
     {
         $property = new \ReflectionProperty(Purchase::class, 'PaymentType');
-        $property->setAccessible(true);
         $property->setValue($purchase, $paymentType);
+    }
+
+    public function testSettleIfNothingToPayMarksZeroTotalPurchasePaid(): void
+    {
+        $purchase = new Purchase();
+
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->method('can')->with($purchase, PWC::T_PAY_PAY->value)->willReturn(true);
+        $purchaseFlow->expects($this->once())->method('apply')->with(
+            $purchase,
+            PWC::T_PAY_PAY->value,
+            ['amount' => 0.0, 'currency' => 'CZK', 'performed_by' => 'client', 'source' => 'checkout_zero_total'],
+        );
+
+        $managePurchase = $this->buildManagePurchase($purchaseFlow, new Money(0.0, 'CZK'));
+
+        $this->assertTrue($managePurchase->settleIfNothingToPay($purchase, [
+            'performed_by' => 'client',
+            'source' => 'checkout_zero_total',
+        ]));
+    }
+
+    /**
+     * VoucherCalculationType::WithVoucherToMinus lets vouchers push the total below zero.
+     */
+    public function testSettleIfNothingToPayMarksNegativeTotalPurchasePaid(): void
+    {
+        $purchase = new Purchase();
+
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->method('can')->willReturn(true);
+        $purchaseFlow->expects($this->once())->method('apply')->with(
+            $purchase,
+            PWC::T_PAY_PAY->value,
+            $this->callback(static fn(array $context) => $context['amount'] === -10.0),
+        );
+
+        $managePurchase = $this->buildManagePurchase($purchaseFlow, new Money(-10.0, 'CZK'));
+
+        $this->assertTrue($managePurchase->settleIfNothingToPay($purchase));
+    }
+
+    public function testSettleIfNothingToPayLeavesPositiveTotalUnpaid(): void
+    {
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->method('can')->willReturn(true);
+        $purchaseFlow->expects($this->never())->method('apply');
+
+        $managePurchase = $this->buildManagePurchase($purchaseFlow, new Money(1790.0, 'CZK'));
+
+        $this->assertFalse($managePurchase->settleIfNothingToPay(new Purchase()));
+    }
+
+    /**
+     * Also covers already-paid purchases: pay_pay only leaves pay_pending, so can() is false for them.
+     */
+    public function testSettleIfNothingToPayReturnsFalseWhenPayTransitionNotAllowed(): void
+    {
+        $purchaseFlow = $this->createMock(WorkflowInterface::class);
+        $purchaseFlow->method('can')->willReturn(false);
+        $purchaseFlow->expects($this->never())->method('apply');
+
+        $managePurchase = $this->buildManagePurchase($purchaseFlow, new Money(0.0, 'CZK'));
+
+        $this->assertFalse($managePurchase->settleIfNothingToPay(new Purchase()));
     }
 
     private function createManagePurchase(

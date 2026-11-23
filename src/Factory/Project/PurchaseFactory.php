@@ -5,6 +5,7 @@ namespace Greendot\EshopBundle\Factory\Project;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Zenstruck\Foundry\ModelFactory;
+use Zenstruck\Foundry\Object\Instantiator;
 use Zenstruck\Foundry\Proxy;
 use Zenstruck\Foundry\RepositoryProxy;
 
@@ -68,7 +69,8 @@ final class PurchaseFactory extends ModelFactory
     protected function initialize(): self
     {
         return $this
-            // ->afterInstantiate(function(Purchase $purchase): void {})
+            // date_issue is write-once (no setter, see Purchase::issue()); fixtures back-date it by force.
+            ->instantiateWith(Instantiator::withConstructor()->alwaysForce('date_issue'))
             ;
     }
 

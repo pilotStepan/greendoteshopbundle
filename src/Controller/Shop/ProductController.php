@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Greendot\EshopBundle\AdClick\AdClickTracker;
 use Greendot\EshopBundle\Attribute\OmitLocaleAwareListener;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -16,7 +17,6 @@ use Greendot\EshopBundle\Entity\Project\PurchaseProductVariant;
 use Greendot\EshopBundle\Entity\Project\Product;
 use Greendot\EshopBundle\Repository\Project\ClientRepository;
 use Greendot\EshopBundle\Repository\Project\ParameterRepository;
-use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Greendot\EshopBundle\Repository\Project\ProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseProductVariantRepository;
 use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
@@ -40,7 +40,6 @@ use Doctrine\ORM\Query\ResultSetMappingBuilder;
 class ProductController extends AbstractController
 {
     public function __construct(
-        private readonly ProductRepository          $productRepository,
         private readonly ProductVariantRepository   $productVariantRepository,
         private readonly CalculatedPricesService    $calculatedPricesService,
         #[Target(PWC::NAME->value)]
@@ -127,6 +126,7 @@ class ProductController extends AbstractController
         PurchaseRepository $purchaseRepository,
         EntityManagerInterface $entityManager,
         SerializerInterface $serializer,
+        AdClickTracker $adClickTracker,
     ): Response
     {
 
@@ -144,6 +144,7 @@ class ProductController extends AbstractController
             if ($amount > 0) {
                 $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
             }
+            $adClickTracker->assignToPurchase($purchase);
 
             $entityManager->persist($purchase);
             $entityManager->flush();
@@ -152,6 +153,7 @@ class ProductController extends AbstractController
 
             $purchase = $this->createCart($this->getUser());
             $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+            $adClickTracker->assignToPurchase($purchase);
 
             $entityManager->persist($purchase);
             $entityManager->flush();
@@ -201,6 +203,7 @@ class ProductController extends AbstractController
         ManagePurchase $manageOrder,
         PurchaseRepository $purchaseRepository,
         EntityManagerInterface $entityManager,
+        AdClickTracker $adClickTracker,
     ): Response
     {
         $session = $requestStack->getSession();
@@ -219,6 +222,7 @@ class ProductController extends AbstractController
         if ($amount > 0) {
             $wishlist = $manageOrder->addProductVariantToPurchase($wishlist, $productVariant, $amount);
         }
+        $adClickTracker->assignToPurchase($wishlist);
 
         $entityManager->persist($wishlist);
         $entityManager->flush();
@@ -238,6 +242,7 @@ class ProductController extends AbstractController
         GoogleAnalytics $googleAnalytics,
         #[Target(PWC::NAME->value)]
         WorkflowInterface $purchaseFlow,
+        AdClickTracker $adClickTracker,
     )
     {
         $session = $requestStack->getSession();
@@ -246,6 +251,7 @@ class ProductController extends AbstractController
 
             $productVariant = $this->productVariantRepository->find($variant_id);
             $purchase       = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+            $adClickTracker->assignToPurchase($purchase);
 
             $session->set('inquiry', $purchase);
         } else {
@@ -259,6 +265,7 @@ class ProductController extends AbstractController
                 $purchase->setClient($client);
             }
             $purchase = $manageOrder->addProductVariantToPurchase($purchase, $productVariant, $amount);
+            $adClickTracker->assignToPurchase($purchase);
 
             $session->set('inquiry', $purchase);
         }
@@ -387,7 +394,6 @@ class ProductController extends AbstractController
     private function createCart(?Client $client): Purchase
     {
         $cart = (new Purchase())
-            ->setDateIssue(new \DateTime())
             ->setClient($client)
         ;
         $this->purchaseFlow->apply($cart, PWC::T_INIT_CART->value);

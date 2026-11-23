@@ -1,0 +1,25 @@
+includes:
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-doctrine/rules.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-symfony/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    # Lowest PHP version the bundle supports (composer.json "php": ">=8.2"), so code that
+    # only works on newer PHP is reported even when analysing on a newer interpreter.
+    phpVersion: 80200
+    paths:
+        - src
+        - tests
+    tmpDir: var/cache/phpstan
+    ignoreErrors:
+        # Legacy code has ~1.5k untyped arrays/generics; requiring array shapes everywhere is
+        # mostly noise. Native parameter/return/property types are still enforced at level 6.
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
+    doctrine:
+        objectManagerLoader: tests/phpstan/object-manager.php

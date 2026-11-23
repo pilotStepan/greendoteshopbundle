@@ -105,6 +105,10 @@ class Person implements Translatable
     #[Groups(['person:read'])]
     private ?bool $isActive = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(['person:read', 'person:write'])]
+    private ?int $sequence = null;
+
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: ProductPerson::class)]
     private Collection $productPeople;
 
@@ -478,4 +482,15 @@ class Person implements Translatable
         $this->fullName = implode(' ', $parts);
     }
 
+    public function getSequence(): ?int
+    {
+        return $this->sequence;
+    }
+
+    public function setSequence(?int $sequence): static
+    {
+        $this->sequence = $sequence;
+
+        return $this;
+    }
 }

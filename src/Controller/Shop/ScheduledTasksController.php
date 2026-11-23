@@ -4,7 +4,6 @@ namespace Greendot\EshopBundle\Controller\Shop;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\LockFactory;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,12 +12,12 @@ use Greendot\EshopBundle\Algolia\ProductIndexerInterface;
 use Greendot\EshopBundle\Service\Imports\Branch\ManageBranch;
 use Greendot\EshopBundle\Repository\Project\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Greendot\EshopBundle\Payment\RbBank\RbBankImportException;
 use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 
 class ScheduledTasksController extends AbstractController
 {
     public function __construct(
-        private readonly EntityManagerInterface     $entityManager,
         private readonly ProductRepository          $productRepository,
         private readonly RbBankPaymentImportService $rbBankPaymentImportService,
         private readonly ManageBranch               $manageBranch,
@@ -26,30 +25,33 @@ class ScheduledTasksController extends AbstractController
 
     #[CustomApiEndpoint]
     #[Route('/scheduled/sales', name: 'scheduled_sales', methods: ['GET'])]
-    public function scheduleSales(): JsonResponse
+    public function scheduleSales(LockFactory $lockFactory): JsonResponse
     {
-        $startDate = (new \DateTime())->modify('-6 months');
-        $endDate = new \DateTime();
-
-        $soldProducts = $this->productRepository->getSoldProductsCount($startDate, $endDate);
-        $result = [];
-
-        foreach ($soldProducts as $soldProduct) {
-            $product = $this->productRepository->find($soldProduct['id']);
-            if ($product) {
-                $product->setSoldAmount($soldProduct['sold_amount']);
-                $this->entityManager->persist($product);
-
-                $result[] = [
-                    'product_id' => (int)$soldProduct['id'],
-                    'sold_amount' => (int)$soldProduct['sold_amount'],
-                ];
-            }
+        $lock = $lockFactory->createLock('scheduled_sales', 600);
+        if (!$lock->acquire()) {
+            return new JsonResponse(['status' => 'already_running'], 409);
         }
 
-        $this->entityManager->flush();
+        try {
+            $startDate = (new \DateTime())->modify('-6 months');
+            $endDate = new \DateTime();
 
-        return $this->json($result);
+            $soldAmounts = [];
+            foreach ($this->productRepository->getSoldProductsCount($startDate, $endDate) as $row) {
+                $soldAmounts[(int)$row['id']] = (int)$row['sold_amount'];
+            }
+
+            $this->productRepository->replaceSoldAmounts($soldAmounts);
+
+            return $this->json([
+                'status' => 'ok',
+                'products_with_sales' => count($soldAmounts),
+                'from' => $startDate->format(\DATE_ATOM),
+                'to' => $endDate->format(\DATE_ATOM),
+            ]);
+        } finally {
+            $lock->release();
+        }
     }
 
     #[CustomApiEndpoint]
@@ -59,7 +61,11 @@ class ScheduledTasksController extends AbstractController
         $date = new \DateTime();
         $date->modify("-3 days");
 
-        $this->rbBankPaymentImportService->downloadAndProcessPayments($date);
+        try {
+            $this->rbBankPaymentImportService->downloadAndProcessPayments($date);
+        } catch (RbBankImportException $e) {
+            return $this->json(['status' => 'error', 'message' => $e->getMessage()], 502);
+        }
 
         return $this->json(['message' => 'Payments processed successfully']);
     }

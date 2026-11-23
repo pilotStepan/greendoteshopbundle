@@ -16,6 +16,7 @@ use Greendot\EshopBundle\Entity\Project\Payment;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Greendot\EshopBundle\Entity\Project\PaymentType;
 use Greendot\EshopBundle\Entity\Project\Transportation;
+use Greendot\EshopBundle\Enum\PaymentPayMethod;
 use Greendot\EshopBundle\Enum\PaymentTechnicalAction;
 use Greendot\EshopBundle\Service\CurrencyManager;
 use Greendot\EshopBundle\Service\Vies\ManageVies;
@@ -36,9 +37,9 @@ use Greendot\EshopBundle\Tests\Stub\RecordingPaymentActionLogger;
 
 class PurchaseStateSubscriberPaymentLogTest extends TestCase
 {
-    private MockObject $entityManager;
+    private EntityManagerInterface&MockObject $entityManager;
     private RecordingPaymentActionLogger $paymentActionLogger;
-    private MockObject $paymentRepository;
+    private PaymentRepository&MockObject $paymentRepository;
     private PurchaseStateSubscriber $subscriber;
 
     protected function setUp(): void
@@ -289,6 +290,55 @@ class PurchaseStateSubscriberPaymentLogTest extends TestCase
         $this->subscriber->onPayment($event);
 
         $this->assertSame($enabled, $purchase->getPaymentType());
+    }
+
+    /**
+     * A bank-transfer order paid online through GP webpay must not be relabelled as Google/Apple Pay
+     * just because that row shares the 'gpw' technical action with the generic card row.
+     */
+    public function testOnPaymentPrefersPaymentTypeWithoutPayMethod(): void
+    {
+        $applePay = (new PaymentType())
+            ->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)
+            ->setPayMethod(PaymentPayMethod::APPLE_PAY)
+            ->setIsEnabled(true);
+        $card = (new PaymentType())->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)->setIsEnabled(true);
+
+        $transportation = (new Transportation())->addPaymentType($applePay)->addPaymentType($card);
+
+        $purchase = new Purchase();
+        $purchase->setTransportation($transportation);
+
+        $paymentTypeRepository = $this->createMock(PaymentTypeRepository::class);
+        $paymentTypeRepository->method('findBy')->willReturn([$applePay, $card]);
+        $this->entityManager->method('getRepository')->with(PaymentType::class)->willReturn($paymentTypeRepository);
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertSame($card, $purchase->getPaymentType());
+    }
+
+    public function testOnPaymentKeepsWalletPaymentTypeTheCustomerChose(): void
+    {
+        $googlePay = (new PaymentType())
+            ->setPaymentTechnicalAction(PaymentTechnicalAction::GLOBAL_PAYMENTS)
+            ->setPayMethod(PaymentPayMethod::GOOGLE_PAY);
+        $purchase = new Purchase();
+        $purchase->setPaymentType($googlePay);
+
+        $this->entityManager->expects($this->never())->method('getRepository');
+
+        $event = $this->createTransitionEvent($purchase, [
+            'payment_technical_action' => PaymentTechnicalAction::GLOBAL_PAYMENTS->value,
+        ]);
+
+        $this->subscriber->onPayment($event);
+
+        $this->assertSame($googlePay, $purchase->getPaymentType());
     }
 
     /**

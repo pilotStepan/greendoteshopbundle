@@ -52,7 +52,6 @@ readonly class PurchaseWishlistStateProvider implements ProviderInterface
     private function createWishlist(Client $client): Purchase
     {
         $wishlist = (new Purchase())
-            ->setDateIssue(new \DateTime())
             ->setClient($client)
         ;
 

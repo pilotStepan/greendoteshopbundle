@@ -82,7 +82,7 @@ class CategoryFixtures extends Fixture implements DependentFixtureInterface, Fix
         return $nestedCategories;
     }
 
-    private function createCategoriesWithMenuType(string $categoryTypeName, string $menuTypeName, int $count, string $subMenuTypeName = null): array
+    private function createCategoriesWithMenuType(string $categoryTypeName, string $menuTypeName, int $count, ?string $subMenuTypeName = null): array
     {
         $categoryType = $this->entityManager->getRepository(CategoryType::class)->findOneBy(['name' => $categoryTypeName]);
         $menuType = $this->entityManager->getRepository(MenuType::class)->findOneBy(['name' => $menuTypeName]);

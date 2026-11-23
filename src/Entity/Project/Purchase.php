@@ -33,6 +33,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: '`purchase`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_purchase_order_number', columns: ['order_number'])]
+#[ORM\Index(name: 'idx_purchase_date_issue', columns: ['date_issue'])]
+#[ORM\Index(name: 'idx_purchase_date_created', columns: ['date_created'])]
 #[ORM\Entity(repositoryClass: PurchaseRepository::class)]
 #[ApiResource(
     operations: [
@@ -106,6 +108,7 @@ class Purchase
     private const SHIPMENT_ID = 'shipment_id';
     private const COURIER_NUMBER = 'courier_number';
     private const REFERER = 'referer';
+    private const AD_CLICKS = 'ad_clicks';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -113,9 +116,17 @@ class Purchase
     #[Groups(['purchase:read', 'purchase:write', 'purchase:wishlist'])]
     private $id;
 
-    #[ORM\Column(type: 'datetime')]
-    #[Groups(['purchase:read', 'purchase:write'])]
-    private $date_issue;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, options: ['default' => 'CURRENT_TIMESTAMP'])]
+    #[Groups(['purchase:read', 'purchase:wishlist'])]
+    private \DateTimeImmutable $date_created;
+
+    /**
+     * When the purchase was issued (confirmed by the client), null until then. Prices are frozen to this date.
+     * Write-once: set only through {@see issue()}, never writable through the API.
+     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['purchase:read'])]
+    private ?\DateTime $date_issue = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     #[Groups(['purchase:read', 'purchase:write'])]
@@ -347,7 +358,7 @@ class Purchase
 
     public function __construct()
     {
-        $this->date_issue = new \DateTime();
+        $this->date_created = new \DateTimeImmutable();
         $this->ProductVariants = new ArrayCollection();
         $this->purchaseEvents = new ArrayCollection();
         $this->purchaseTrackings = new ArrayCollection();
@@ -361,17 +372,16 @@ class Purchase
         $this->additionalPurchaseCosts = new ArrayCollection();
     }
 
+    /** @return Collection<int, Product> */
     public function getProducts(): Collection
     {
+        /** @var ArrayCollection<int, Product> $products */
         $products = new ArrayCollection();
 
         foreach ($this->getProductVariants() as $purchaseProductVariant) {
-            $productVariant = $purchaseProductVariant->getProductVariant();
-            if ($productVariant) {
-                $product = $productVariant->getProduct();
-                if ($product && !$products->contains($product)) {
-                    $products->add($product);
-                }
+            $product = $purchaseProductVariant->getProductVariant()->getProduct();
+            if ($product !== null && !$products->contains($product)) {
+                $products->add($product);
             }
         }
 
@@ -388,16 +398,43 @@ class Purchase
         return $this->id;
     }
 
-    public function getDateIssue(): \DateTimeInterface
+    public function getDateCreated(): \DateTimeImmutable
+    {
+        return $this->date_created;
+    }
+
+    /**
+     * Null until the purchase is issued (see {@see issue()}).
+     */
+    public function getDateIssue(): ?\DateTimeInterface
     {
         return $this->date_issue;
     }
 
-    public function setDateIssue(\DateTimeInterface $date_issue): self
+    public function isIssued(): bool
     {
-        $this->date_issue = $date_issue;
+        return $this->date_issue !== null;
+    }
+
+    /**
+     * Issues the purchase now. Write-once: an already issued purchase keeps its original date (and so its prices).
+     * The bundle issues on the checkout / init_order transitions; projects call this from their own transitions
+     * that should freeze prices (e.g. inquiries).
+     */
+    public function issue(): static
+    {
+        $this->date_issue ??= new \DateTime();
 
         return $this;
+    }
+
+    /**
+     * The date prices, discounts and conversion rates are resolved for: the issue date once issued, otherwise now.
+     * Always a fresh instance, so callers can modify it without touching the issue date.
+     */
+    public function getPricingDate(): \DateTime
+    {
+        return $this->date_issue !== null ? clone $this->date_issue : new \DateTime();
     }
 
     public function getDateExpedition(): ?\DateTimeInterface
@@ -554,6 +591,25 @@ class Purchase
     {
         $this->additionalInfo = array_filter(
             [...($this->additionalInfo ?? []), self::REFERER => $referer],
+            static fn($v) => $v !== null
+        );
+
+        return $this;
+    }
+
+    /**
+     * Ad clicks that led to this cart/order, oldest first; the last one is the attributed click.
+     * @see \Greendot\EshopBundle\AdClick\AdClickTracker
+     */
+    public function getAdClicks(): array
+    {
+        return $this->additionalInfo[self::AD_CLICKS] ?? [];
+    }
+
+    public function setAdClicks(array $adClicks): static
+    {
+        $this->additionalInfo = array_filter(
+            [...($this->additionalInfo ?? []), self::AD_CLICKS => $adClicks ?: null],
             static fn($v) => $v !== null
         );
 
@@ -1074,20 +1130,14 @@ class Purchase
 
     public function getLastAdminMessage(): ?PurchaseDiscussion
     {
-        $clientMessages = $this->purchaseDiscussions->filter(
-            fn(PurchaseDiscussion $discussion) => $discussion->getIsAdmin(),
-        );
-
-        if ($clientMessages->isEmpty()) {
-            return null;
+        $latest = null;
+        foreach ($this->purchaseDiscussions as $discussion) {
+            if ($discussion->getIsAdmin() && ($latest === null || $discussion->getCreatedAt() > $latest->getCreatedAt())) {
+                $latest = $discussion;
+            }
         }
 
-        $iterator = $clientMessages->getIterator();
-        $iterator->uasort(function (PurchaseDiscussion $a, PurchaseDiscussion $b) {
-            return $b->getCreatedAt() <=> $a->getCreatedAt();
-        });
-
-        return $iterator->count() > 0 ? $iterator->current() : null;
+        return $latest;
     }
 
     public function isDiscussionResolved(): bool

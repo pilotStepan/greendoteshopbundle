@@ -224,7 +224,7 @@ class CzechPostParcel implements ParcelServiceInterface
         return [
             'parcelServiceHeader' => [
                 'parcelServiceHeaderCom' => [
-                    'transmissionDate' => $purchase->getDateIssue()->format('Y-m-d'),
+                    'transmissionDate' => (new \DateTime())->format('Y-m-d'),
                     'customerID' => $this->customerId,
                     'postCode' => $this->postCode,
                     'locationNumber' => 1,

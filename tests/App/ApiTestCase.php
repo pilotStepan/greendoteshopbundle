@@ -2,6 +2,7 @@
 
 namespace Greendot\EshopBundle\Tests\App;
 
+use Doctrine\DBAL\Exception\ConnectionException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Greendot\EshopBundle\Tests\App\Factory\CurrencyFactory;
@@ -18,41 +19,35 @@ abstract class ApiTestCase extends WebTestCase
 
     protected static function createKernel(array $options = []): KernelInterface
     {
-        $_ENV['API_TEST_DB_PATH'] = $_SERVER['API_TEST_DB_PATH'] = self::dbPath();
+        ApiTestKernel::databaseUrl();
 
         return new ApiTestKernel('test', true);
     }
 
+    /**
+     * Every test class starts from an empty schema in the MariaDB database at TEST_DATABASE_URL.
+     * Production is MariaDB, and that is the only database the tests run on.
+     */
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
-
-        $dbPath = self::dbPath();
-        if (!is_dir(dirname($dbPath))) {
-            mkdir(dirname($dbPath), 0777, true);
-        }
-        if (is_file($dbPath)) {
-            unlink($dbPath);
-        }
 
         $kernel = self::bootKernel();
         $em = $kernel->getContainer()->get('doctrine')->getManager();
         \assert($em instanceof EntityManagerInterface);
 
         $schemaTool = new SchemaTool($em);
-        $metadata = $em->getMetadataFactory()->getAllMetadata();
-        $schemaTool->createSchema($metadata);
+        try {
+            $schemaTool->dropDatabase();
+        } catch (ConnectionException $e) {
+            throw new \RuntimeException(sprintf(
+                'No test database at %s. Run the tests with `composer test`, which starts it (Docker), or set TEST_DATABASE_URL.',
+                preg_replace('#//[^@/]*@#', '//***@', ApiTestKernel::databaseUrl()),
+            ), 0, $e);
+        }
+        $schemaTool->createSchema($em->getMetadataFactory()->getAllMetadata());
 
         self::ensureKernelShutdown();
-    }
-
-    private static function dbPath(): string
-    {
-        // One file per test class (rather than a single shared one) avoids Windows file-lock
-        // contention between classes and means each class always starts from a clean schema.
-        $name = str_replace('\\', '_', static::class);
-
-        return dirname(__DIR__, 2) . '/var/test/api_test_' . $name . '.db';
     }
 
     protected function getEntityManager(): EntityManagerInterface
@@ -67,11 +62,23 @@ abstract class ApiTestCase extends WebTestCase
     {
         parent::setUp();
         $this->client = static::createClient();
-        $this->getEntityManager()->beginTransaction();
+        if ($this->rollsBackAfterEachTest()) {
+            $this->getEntityManager()->beginTransaction();
+        }
 
         // Every request runs CurrencyLocaleListener -> CurrencyManager, which requires
         // a default Currency row to exist; without one, even unrelated endpoints 500.
         CurrencyFactory::createOne();
+    }
+
+    /**
+     * Each test runs in a transaction rolled back in tearDown(). Tests that run DDL return false:
+     * MariaDB commits DDL implicitly, so there is nothing left to roll back. The schema is recreated
+     * per test class, so the next class still starts clean.
+     */
+    protected function rollsBackAfterEachTest(): bool
+    {
+        return true;
     }
 
     protected function tearDown(): void

@@ -19,6 +19,7 @@ use Greendot\EshopBundle\Service\PurchaseLocaleResolver;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
 use Greendot\EshopBundle\Notification\PurchaseTransitionNotification;
 use Greendot\EshopBundle\Notification\PurchaseTransitionNotificationHandler;
+use Greendot\EshopBundle\Notification\PurchaseNotificationRuntime;
 
 /**
  * Regression coverage: the notification must actually be rendered under the purchase's
@@ -120,8 +121,8 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
 
     private function buildNotificationHandler(callable $onHandle): PurchaseNotificationHandlerInterface
     {
-        return new class($onHandle) implements PurchaseNotificationHandlerInterface {
-            public function __construct(private $onHandle) {}
+        return new class(\Closure::fromCallable($onHandle)) implements PurchaseNotificationHandlerInterface {
+            public function __construct(private \Closure $onHandle) {}
 
             public function handle(Purchase $purchase, string $transition): void
             {
@@ -147,9 +148,7 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
             $purchaseRepository,
             $locator,
             new NullLogger(),
-            new PurchaseLocaleResolver('cs'),
-            $localeSwitcher,
-            $this->buildEntityManager(),
+            new PurchaseNotificationRuntime(new PurchaseLocaleResolver('cs'), $localeSwitcher, $this->buildEntityManager()),
         );
     }
 
@@ -197,7 +196,6 @@ class PurchaseTransitionNotificationHandlerTest extends TestCase
     private function setPurchaseId(Purchase $purchase, int $id): void
     {
         $reflection = new \ReflectionProperty(Purchase::class, 'id');
-        $reflection->setAccessible(true);
         $reflection->setValue($purchase, $id);
 
         $this->currentPurchase = $purchase;

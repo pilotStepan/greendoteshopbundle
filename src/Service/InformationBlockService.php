@@ -16,7 +16,7 @@ class InformationBlockService
      * @return InformationBlock[]
      * @throws Exception
      */
-    public function getInformationBlocksForEntity($entity,bool $onlyActive = true, int $informationBlockTypeID = null): array
+    public function getInformationBlocksForEntity($entity,bool $onlyActive = true, ?int $informationBlockTypeID = null): array
     {
         return $this->informationBlockRepository->getInformationBlocksForEntity($entity, $onlyActive, $informationBlockTypeID);
     }

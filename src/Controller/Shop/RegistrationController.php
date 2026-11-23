@@ -129,16 +129,6 @@ class RegistrationController extends AbstractController
         }
     }
 
-    private function getAllFormErrors(FormInterface $form): array
-    {
-        $errors = [];
-        foreach ($form->getErrors(true, true) as $error) {
-            $formName            = $error->getOrigin()->getName();
-            $errors[$formName][] = $error->getMessage();
-        }
-        return $errors;
-    }
-
     #[CustomApiEndpoint]
     #[Route('/api/validate-email-{email}', name: 'shop_validate_email')]
     public function checkEmail($email, ClientRepository $clientRepository): Response

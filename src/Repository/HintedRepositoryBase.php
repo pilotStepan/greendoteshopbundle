@@ -39,7 +39,7 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         return $qb->getQuery()->getOneOrNullResult();
     }
 
-    final public function findOneByHinted(array $criteria, array $orderBy = null): ?object
+    final public function findOneByHinted(array $criteria, ?array $orderBy = null): ?object
     {
         $stringCriteria = array_filter($criteria, static fn($v) => is_string($v) && $v !== '');
 
@@ -94,7 +94,7 @@ abstract class HintedRepositoryBase extends ServiceEntityRepository
         return $result ? (int) $result['foreignKey'] : null;
     }
 
-    final public function findByHinted(array $criteria, array $orderBy = null, $limit = null, $offset = null): array
+    final public function findByHinted(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): array
     {
         $qb = $this->createQueryBuilder('e');
 

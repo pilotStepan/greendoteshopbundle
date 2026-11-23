@@ -25,6 +25,8 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Greendot\EshopBundle\Service\Price\ProductVariantPriceFactory;
 use Greendot\EshopBundle\Repository\Project\PaymentTypeRepository;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Greendot\EshopBundle\Payment\RbBank\RbBankImportException;
 use Greendot\EshopBundle\Payment\RbBank\RbBankPaymentImportService;
 
 class RbBankPaymentImportServiceTest extends TestCase
@@ -323,7 +325,7 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->entityManager->expects($this->never())->method('flush');
         $this->logger->expects($this->once())->method('critical');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RbBankImportException::class);
 
         $this->createService(new MockHttpClient(new MockResponse('')))
             ->downloadAndProcessPayments(new \DateTime('2026-06-01'))
@@ -340,9 +342,45 @@ class RbBankPaymentImportServiceTest extends TestCase
         $this->entityManager->expects($this->never())->method('flush');
         $this->logger->expects($this->once())->method('critical');
 
-        $this->expectException(\Throwable::class);
+        $this->expectException(RbBankImportException::class);
 
         $this->createService($httpClient)->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+    }
+
+    #[DataProvider('transientHttpStatusProvider')]
+    public function testLogsWarningOnTransientBankHttpFailure(int $httpCode): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse('', ['http_code' => $httpCode]));
+
+        $this->logger->expects($this->never())->method('critical');
+        $this->logger->expects($this->once())->method('warning');
+
+        $this->expectException(RbBankImportException::class);
+
+        $this->createService($httpClient)->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+    }
+
+    public static function transientHttpStatusProvider(): array
+    {
+        return [
+            'forbidden' => [403],
+            'server error' => [500],
+            'service unavailable' => [503],
+        ];
+    }
+
+    public function testThrownExceptionDoesNotLeakPassword(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse('', ['http_code' => 403]));
+
+        try {
+            $this->createService($httpClient)->downloadAndProcessPayments(new \DateTime('2026-06-01'));
+            $this->fail('Expected RbBankImportException.');
+        } catch (RbBankImportException $e) {
+            $this->assertStringNotContainsString('SECRET', $e->getMessage());
+            $this->assertStringContainsString('password=***', $e->getMessage());
+            $this->assertNull($e->getPrevious());
+        }
     }
 
     public function testCriticalLogRedactsPasswordFromExceptionMessage(): void

@@ -57,6 +57,11 @@ readonly class CreateParcelHandler
             return;
         }
 
+        if (!$purchase->isIssued()) {
+            $this->logger->error('Purchase is not issued; refusing to create a parcel', ['purchaseId' => $purchaseId]);
+            throw new UnrecoverableMessageHandlingException("Purchase is not issued (ID: $purchaseId)");
+        }
+
         try {
             $parcelService = $this->parcelServiceProvider->getByPurchase($purchase);
         } catch (ParcelServiceNotFoundException $e) {
@@ -90,7 +95,7 @@ readonly class CreateParcelHandler
                 'purchaseId' => $purchaseId,
                 'error' => $e->getMessage(),
             ]);
-            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
+            return;
         } catch (Throwable $e) {
             $this->logger->error('Creating parcel failed; will retry', [
                 'purchaseId' => $purchaseId,

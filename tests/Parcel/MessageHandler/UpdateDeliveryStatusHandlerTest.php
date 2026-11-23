@@ -27,15 +27,16 @@ use Greendot\EshopBundle\Repository\Project\PurchaseRepository;
 use Greendot\EshopBundle\Repository\Project\TransportationEventRepository;
 use Greendot\EshopBundle\Workflow\PurchaseWorkflowContract as PWC;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class UpdateDeliveryStatusHandlerTest extends TestCase
 {
-    private PurchaseRepository $purchaseRepo;
-    private TransportationEventRepository $eventRepo;
-    private ParcelServiceProviderInterface $provider;
-    private EntityManagerInterface $em;
-    private MessageBusInterface $bus;
-    private WorkflowInterface $workflow;
+    private PurchaseRepository&MockObject $purchaseRepo;
+    private TransportationEventRepository&MockObject $eventRepo;
+    private ParcelServiceProviderInterface&MockObject $provider;
+    private EntityManagerInterface&MockObject $em;
+    private MessageBusInterface&MockObject $bus;
+    private WorkflowInterface&MockObject $workflow;
     private UpdateDeliveryStatusHandler $handler;
 
     protected function setUp(): void
@@ -67,7 +68,7 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         return new UpdateDeliveryStatusMessage($id);
     }
 
-    private function makePurchase(int $daysOld = 0, bool $isEndState = false): Purchase
+    private function makePurchase(?int $daysOld = 0, bool $isEndState = false): Purchase
     {
         $transportation = $this->createMock(Transportation::class);
         $transportation->method('getTransportationAPI')->willReturn(TransportationAPI::PACKETA);
@@ -75,7 +76,7 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         $purchase = $this->createMock(Purchase::class);
         $purchase->method('getId')->willReturn(1);
         $purchase->method('getDateIssue')->willReturn(
-            new DateTimeImmutable("-$daysOld days")
+            $daysOld === null ? null : new DateTimeImmutable("-$daysOld days")
         );
         $purchase->method('hasAnyPlace')->willReturn($isEndState);
         $purchase->method('getTransportation')->willReturn($transportation);
@@ -168,6 +169,21 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         ($this->handler)($this->makeMsg());
     }
 
+    // --- Guard: an unissued purchase must never be polled - that is a bug, fail loudly instead of guessing its age ---
+
+    public function testUnissuedPurchase_throwsUnrecoverableWithoutPolling(): void
+    {
+        $purchase = $this->makePurchase(daysOld: null);
+        $this->purchaseRepo->method('find')->willReturn($purchase);
+        $this->eventRepo->method('findLatestByPurchase')->willReturn(null);
+
+        $this->provider->expects($this->never())->method('getByPurchase');
+        $this->bus->expects($this->never())->method('dispatch');
+
+        $this->expectException(UnrecoverableMessageHandlingException::class);
+        ($this->handler)($this->makeMsg());
+    }
+
     // --- Guard: no parcel service ---
 
     public function testNoParcelService_throwsUnrecoverable(): void
@@ -201,7 +217,9 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
 
     // --- Guard: permanent provider error ---
 
-    public function testProviderThrowsPermanent_throwsUnrecoverable(): void
+    // Permanent errors are logged once and the message is acked; throwing would make messenger
+    // log the same failure again as critical.
+    public function testProviderThrowsPermanent_stopsPollingWithoutThrowing(): void
     {
         $purchase = $this->makePurchase();
         $this->purchaseRepo->method('find')->willReturn($purchase);
@@ -211,7 +229,7 @@ class UpdateDeliveryStatusHandlerTest extends TestCase
         $this->provider->method('getByPurchase')->willReturn($service);
 
         $this->bus->expects($this->never())->method('dispatch');
-        $this->expectException(UnrecoverableMessageHandlingException::class);
+        $this->em->expects($this->never())->method('persist');
         ($this->handler)($this->makeMsg());
     }
 

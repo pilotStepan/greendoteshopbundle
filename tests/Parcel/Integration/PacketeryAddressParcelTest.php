@@ -3,6 +3,7 @@
 namespace Greendot\EshopBundle\Tests\Parcel\Integration;
 
 use RuntimeException;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\NullLogger;
 use Greendot\EshopBundle\Parcel\Exception\PermanentParcelException;
 use PHPUnit\Framework\TestCase;
@@ -68,16 +69,6 @@ class PacketeryAddressParcelTest extends TestCase
         return "<response><status>ok</status><result><id>4154090000</id><barcode>$barcode</barcode><barcodeText>Z 415 4090 000</barcodeText></result></response>";
     }
 
-    private static function successCourierNumberXml(string $courierNumber = 'CN123456'): string
-    {
-        return "<response><status>ok</status><result><courierNumber>$courierNumber</courierNumber><carrierId>131</carrierId><carrierName>SK Packeta Home HD</carrierName></result></response>";
-    }
-
-    private static function successCourierLabelXml(): string
-    {
-        return '<response><status>ok</status><result>BASE64PDFCONTENT</result></response>';
-    }
-
     private function makeTransportation(string $secretKey, string $token): Transportation
     {
         $t = $this->createMock(Transportation::class);
@@ -125,7 +116,7 @@ class PacketeryAddressParcelTest extends TestCase
         string           $country = 'sk',
         ?PurchaseAddress $address = null,
         ?string          $currencyIso = 'EUR',
-    ): Purchase
+    ): Purchase&MockObject
     {
         $client = $this->createMock(Client::class);
         $client->method('getName')->willReturn('John');

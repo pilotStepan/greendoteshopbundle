@@ -20,13 +20,11 @@ use Greendot\EshopBundle\Entity\Project\Client;
 use Greendot\EshopBundle\Service\ManagePurchase;
 use Greendot\EshopBundle\Entity\Project\Purchase;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Greendot\EshopBundle\Service\ListenerManager;
 use Greendot\EshopBundle\Url\PurchaseUrlGenerator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\DependencyInjection\Attribute\Target;
-use Greendot\EshopBundle\EventSubscriber\PurchaseEventListener;
 use Greendot\EshopBundle\Service\Cart\PurchaseUpdate;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Greendot\EshopBundle\Service\PaymentGateway\PaymentGatewayProvider;
@@ -45,14 +43,11 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         private PaymentGatewayProvider $gatewayProvider,
         private PurchaseUrlGenerator   $urlGenerator,
         private ManagePurchase         $managePurchase,
-        private ListenerManager        $listenerManager,
-        private PurchaseUpdate          $purchaseUpdate,
+        private PurchaseUpdate         $purchaseUpdate,
     ) {}
 
     public function process($data, Operation $operation, array $uriVariables = [], array $context = []): JsonResponse|RedirectResponse
     {
-        $this->listenerManager->disable(PurchaseEventListener::class);
-
         $user = $this->security->getUser();
         $isLoggedIn = $user instanceof Client;
 
@@ -126,7 +121,7 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
 
             $this->logger->info('Checkout completed', [
                 'purchaseId' => $purchase->getId(),
-                'redirectType' => $purchase->getPaymentType()?->getPaymentTechnicalAction() ? 'gateway' : 'endscreen',
+                'isPaid' => $purchase->isPaid(),
             ]);
 
             return new JsonResponse(['redirect' => $redirectUrl], 200);
@@ -166,8 +161,41 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         $this->purchaseWorkflow->apply($purchase, $transition);
     }
 
+    private function settleIfNothingToPay(Purchase $purchase): bool
+    {
+        try {
+            if (!$this->managePurchase->settleIfNothingToPay($purchase, [
+                'performed_by' => 'client',
+                'source' => 'checkout_zero_total',
+            ])) {
+                return false;
+            }
+
+            $this->em->flush();
+
+            $this->logger->info('Checkout redirect resolved: endscreen (nothing to pay)', [
+                'purchaseId' => $purchase->getId(),
+                'total' => $purchase->getTotalMoney(),
+            ]);
+
+            return true;
+        } catch (Throwable $e) {
+            $this->logger->error('Checkout failed to settle zero-total purchase, continuing with regular payment', [
+                'purchaseId' => $purchase->getId(),
+                'exceptionClass' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
     private function buildRedirectUrl(Purchase $purchase): string
     {
+        if ($this->settleIfNothingToPay($purchase)) {
+            return $this->urlGenerator->buildOrderEndscreenUrl($purchase);
+        }
+
         // If gateway should not process payment, early return end screen url
         if (!$purchase->getPaymentType()->getPaymentTechnicalAction()) {
             $url = $this->urlGenerator->buildOrderEndscreenUrl($purchase);
@@ -180,19 +208,6 @@ final readonly class PurchaseCheckoutProcessor implements ProcessorInterface
         }
 
         try {
-            if (!$purchase->getTotalPrice()) {
-                $this->logger->info('Checkout preparing prices before gateway redirect', [
-                    'purchaseId' => $purchase->getId(),
-                ]);
-
-                $this->managePurchase->preparePrices($purchase);
-
-                $this->logger->info('Checkout prices prepared', [
-                    'purchaseId' => $purchase->getId(),
-                    'totalPrice' => $purchase->getTotalPrice(),
-                ]);
-            }
-
             $gateway = $this->gatewayProvider->getByPurchase($purchase);
 
             $this->logger->info('Checkout requesting gateway pay link', [

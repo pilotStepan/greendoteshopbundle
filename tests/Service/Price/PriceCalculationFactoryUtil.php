@@ -23,7 +23,7 @@ class PriceCalculationFactoryUtil
     {
         return (new Price())
             ->setPrice($unitPrice)
-            ->setVat($vatPercentage)
+            ->setVat((int) $vatPercentage)
             ->setMinimalAmount($minimalAmount ?? 1)
             ->setDiscount($discount ?? 0.0)
             ->setMinPrice($minPrice ?? 0.0)
@@ -80,7 +80,7 @@ class PriceCalculationFactoryUtil
             ->setName('CZK')
             ->addConversionRate($conversionRate)
             ->setRounding(1)
-            ->setIsDefault(1);
+            ->setIsDefault(true);
     }
 
     public static function czkThreeSpaceRounding(): Currency
@@ -96,7 +96,7 @@ class PriceCalculationFactoryUtil
             ->setName('CZK')
             ->addConversionRate($conversionRate)
             ->setRounding(3)
-            ->setIsDefault(1);
+            ->setIsDefault(true);
     }
 
     public static function eur(): Currency
@@ -110,7 +110,7 @@ class PriceCalculationFactoryUtil
             ->setName('EUR')
             ->addConversionRate($conversionRate)
             ->setRounding(2)
-            ->setIsDefault(0);
+            ->setIsDefault(false);
     }
 
     private static function makeHandlingPrice(
@@ -122,7 +122,7 @@ class PriceCalculationFactoryUtil
     {
         return (new HandlingPrice())
             ->setPrice($price)
-            ->setVat($vat)
+            ->setVat((int) $vat)
             ->setFreeFromPrice($freeFromPrice)
             ->setDiscount($discount)
             ->setValidFrom(new \DateTime('-1 day'))

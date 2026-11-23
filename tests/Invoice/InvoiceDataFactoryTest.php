@@ -109,7 +109,7 @@ class InvoiceDataFactoryTest extends TestCase
             ->setPaymentType($paymentType)
             ->setTransportation($transportation)
             ->setCurrency($currency)
-            ->setDateIssue(new \DateTime())
+            ->issue()
         ;
         (new \ReflectionProperty($purchase, 'id'))->setValue($purchase, 1);
 

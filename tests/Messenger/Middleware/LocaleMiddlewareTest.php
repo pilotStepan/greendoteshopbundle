@@ -152,8 +152,8 @@ class LocaleMiddlewareTest extends TestCase
 
     private function createStackReturning(callable $callback): StackInterface
     {
-        $middleware = new class($callback) implements \Symfony\Component\Messenger\Middleware\MiddlewareInterface {
-            public function __construct(private $callback) {}
+        $middleware = new class(\Closure::fromCallable($callback)) implements \Symfony\Component\Messenger\Middleware\MiddlewareInterface {
+            public function __construct(private \Closure $callback) {}
 
             public function handle(Envelope $envelope, StackInterface $stack): Envelope
             {
@@ -162,7 +162,7 @@ class LocaleMiddlewareTest extends TestCase
         };
 
         return new class($middleware) implements StackInterface {
-            public function __construct(private $middleware) {}
+            public function __construct(private \Symfony\Component\Messenger\Middleware\MiddlewareInterface $middleware) {}
 
             public function next(): \Symfony\Component\Messenger\Middleware\MiddlewareInterface
             {

@@ -14,7 +14,7 @@ class DateService
     /**
      * Return mutated date with added number of days skipping weekends
      * @param DateTime $date - date to mutate
-     * @param int $day - days to add
+     * @param int $days - days to add
      */
     public function addWorkDays(DateTime $date, int $days) : DateTime
     {
@@ -25,7 +25,7 @@ class DateService
             $result->modify('+1 day');
 
             // skip weekends
-            if (!in_array($result->format('N'), [6, 7])) {
+            if (!in_array($result->format('N'), ['6', '7'], true)) {
                 $added++;
             }
         }
@@ -34,14 +34,14 @@ class DateService
     }
 
     /**
-     * Calculate and set dateDelivery based on dateIssue and transportation.duration
+     * Calculate and set dateDelivery based on pricingDate and transportation.duration
      * @param Purchase $purchase - purchase to mutate
      */
     public function calculatePurchaseDeliveryDate(Purchase $purchase) : Purchase
     {
         $duration = $purchase->getTransportation()->getDuration();
 
-        $deliveryDate = $this->addWorkDays($purchase->getDateIssue(), $duration);
+        $deliveryDate = $this->addWorkDays($purchase->getPricingDate(), $duration);
 
         $purchase->setDateDelivery($deliveryDate);
 

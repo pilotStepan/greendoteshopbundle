@@ -216,7 +216,11 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
-        return $this->getId();
+        if ($this->id === null) {
+            throw new \LogicException('A client without an id has no user identifier.');
+        }
+
+        return (string) $this->id;
     }
 
     public function getPassword(): ?string

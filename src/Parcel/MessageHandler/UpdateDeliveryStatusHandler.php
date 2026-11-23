@@ -61,6 +61,12 @@ readonly class UpdateDeliveryStatusHandler
             return;
         }
 
+        $dateIssue = $purchase->getDateIssue();
+        if ($dateIssue === null) {
+            $this->logger->error('Purchase is not issued but its delivery is polled; stopping polling', ['purchaseId' => $purchaseId]);
+            throw new UnrecoverableMessageHandlingException("Purchase is not issued (ID: $purchaseId)");
+        }
+
         $lastEvent = $this->transportationEventRepository->findLatestByPurchase($purchase);
         if ($lastEvent?->getState()->isFinal()) {
             $this->logger->info('Delivery final; skipping further checks', ['purchaseId' => $purchaseId]);
@@ -79,7 +85,7 @@ readonly class UpdateDeliveryStatusHandler
             return;
         }
 
-        $ageDays = $purchase->getDateIssue()->diff(new DateTimeImmutable())->days;
+        $ageDays = $dateIssue->diff(new DateTimeImmutable())->days;
         if ($ageDays >= self::MAX_POLL_DAYS) {
             $this->logger->warning('Polling window expired; giving up', [
                 'purchaseId' => $purchaseId,
@@ -98,11 +104,11 @@ readonly class UpdateDeliveryStatusHandler
         try {
             $statusInfo = $parcelService->getParcelStatus($purchase);
         } catch (PermanentParcelException $e) {
-            $this->logger->error('Parcel status permanently unavailable; stopping polling', [
+            $this->logger->warning('Parcel status permanently unavailable; stopping polling', [
                 'purchaseId' => $purchaseId,
                 'error' => $e->getMessage(),
             ]);
-            throw new UnrecoverableMessageHandlingException('Permanent parcel error (purchase ' . $purchaseId . ')', 0, $e);
+            return;
         } catch (Throwable $e) {
             $this->logger->error('Parcel provider failed; will retry', [
                 'purchaseId' => $purchaseId,

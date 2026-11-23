@@ -11,7 +11,21 @@ class DataLayerManager
 
     public function __construct(private readonly RequestStack $requestStack){}
 
+    /**
+     * Every event with an `ecommerce` key gets its own `{ecommerce: null}` reset right before it, in the same
+     * storage, so GTM never merges items[] of consecutive events. A bare reset pushed by a caller is ignored.
+     */
     public function push(array $data, bool $persist = false): void
+    {
+        if ($data === ['ecommerce' => null]) return;
+
+        if (array_key_exists('ecommerce', $data)) {
+            $this->store(['ecommerce' => null], $persist);
+        }
+        $this->store($data, $persist);
+    }
+
+    private function store(array $data, bool $persist): void
     {
         if (!$persist){
             $this->events[] = $data;

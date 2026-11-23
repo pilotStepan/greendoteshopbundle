@@ -16,6 +16,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Base abstract class containing common address fields and logic for both client and purchase addresses.
+ * Subclasses keep a no-argument constructor: fromArray() instantiates them with new static().
+ *
+ * @phpstan-consistent-constructor
  */
 #[ORM\Entity(repositoryClass: AddressRepository::class)]
 #[ORM\Table(name: "address")]

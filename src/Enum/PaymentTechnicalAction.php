@@ -6,4 +6,5 @@ enum PaymentTechnicalAction: string
 {
     case GLOBAL_PAYMENTS = 'gpw';
     case COMGATE = 'comgate';
+    case GOPAY = 'gopay';
 }

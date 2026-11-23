@@ -11,9 +11,14 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Greendot\EshopBundle\Mail\Factory\OrderDataFactory;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Greendot\EshopBundle\Notification\PurchaseNotificationHandlerInterface;
+use Greendot\EshopBundle\Notification\DescribableNotificationInterface;
+use Greendot\EshopBundle\Notification\PreviewableEmailNotificationInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Greendot\EshopBundle\Workflow\Action\ActionCategory;
+use Greendot\EshopBundle\Workflow\Action\ActionDescription;
 
 #[AsTaggedItem(index: 'purchase_notification.customer_email_with_proforma')]
-final readonly class CustomerEmailWithProformaHandler implements PurchaseNotificationHandlerInterface
+final readonly class CustomerEmailWithProformaHandler implements PurchaseNotificationHandlerInterface, DescribableNotificationInterface, PreviewableEmailNotificationInterface
 {
     public function __construct(
         private ManageMails         $manageMails,
@@ -22,10 +27,20 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
         private InvoiceMaker        $invoiceMaker,
     ) {}
 
-    public function handle(Purchase $purchase, string $transition): void
+    public function describe(Purchase $purchase, string $transition): ActionDescription
     {
-        $orderData = $this->orderDataFactory->create($purchase);
+        return new ActionDescription(
+            'Poslat e-mail zákazníkovi s fakturou',
+            detail: $purchase->getClient()?->getMail(),
+            category: ActionCategory::EMAIL,
+        );
+    }
 
+    /**
+     * Without the invoice/proforma PDF, which handle() attaches.
+     */
+    public function buildEmail(Purchase $purchase, string $transition): TemplatedEmail
+    {
         $params = ['%id%' => $purchase->getOrderNumber() ?? ''];
         $key = 'email.subject.order.' . $transition;
         $subject = $this->translator->trans($key, $params, 'emails');
@@ -33,12 +48,17 @@ final readonly class CustomerEmailWithProformaHandler implements PurchaseNotific
             $subject = $this->translator->trans('email.subject.order.default', $params, 'emails');
         }
 
-        $email = $this->manageMails->getBaseTemplate()
+        return $this->manageMails->getBaseTemplate()
             ->to($purchase->getClient()->getMail())
             ->subject($subject)
             ->htmlTemplate(sprintf('email/order/%s.html.twig', $transition))
-            ->context(['data' => $orderData, 'transition' => $transition])
+            ->context(['data' => $this->orderDataFactory->create($purchase), 'transition' => $transition])
         ;
+    }
+
+    public function handle(Purchase $purchase, string $transition): void
+    {
+        $email = $this->buildEmail($purchase, $transition);
 
         $invoicePath = $this->invoiceMaker->createInvoiceOrProforma($purchase);
         if ($invoicePath) {

@@ -3,11 +3,20 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true">
+    <php>
+        <!-- MariaDB from compose.yaml, started by `composer test`. CI sets its own TEST_DATABASE_URL, which takes precedence. -->
+        <env name="TEST_DATABASE_URL" value="mysql://root:root@127.0.0.1:33061/eshop_test?serverVersion=10.5.29-MariaDB&amp;charset=utf8mb4"/>
+        <!-- Debug kernels raise SHELL_VERBOSITY to 3, which makes the default logger print every event to stderr. -->
+        <server name="SHELL_VERBOSITY" value="-1"/>
+    </php>
     <testsuites>
         <testsuite name="Unit">
+            <directory>tests/AdClick</directory>
             <directory>tests/Affiliate</directory>
             <directory>tests/Controller</directory>
+            <directory>tests/DataLayer</directory>
             <directory>tests/Entity</directory>
+            <directory>tests/Export</directory>
             <directory>tests/EventSubscriber</directory>
             <directory>tests/Invoice</directory>
             <directory>tests/Mail</directory>
@@ -18,6 +27,8 @@
             <directory>tests/Parcel</directory>
             <directory>tests/Schema</directory>
             <directory>tests/Service</directory>
+            <directory>tests/StateProcessor</directory>
+            <directory>tests/Workflow</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

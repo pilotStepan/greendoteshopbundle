@@ -88,7 +88,7 @@ class ParameterRepository extends HintedRepositoryBase
         return $qb->getQuery()->getResult();
     }
 
-    public function findProductParameterGroupsParametersQB(ProductVariant $productVariant, QueryBuilder $queryBuilder = null): QueryBuilder
+    public function findProductParameterGroupsParametersQB(ProductVariant $productVariant, ?QueryBuilder $queryBuilder = null): QueryBuilder
     {
         if (!$queryBuilder){
             $queryBuilder = $this->createQueryBuilder('parameter');
@@ -184,6 +184,25 @@ class ParameterRepository extends HintedRepositoryBase
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    /**
+     * One parameter per distinct value of $parameterGroup across the given variants; none without a group.
+     *
+     * @param list<int> $productVariantIds
+     * @return list<Parameter>
+     */
+    public function getDistinctDataOfParameterGroupForProductVariantArray(?ParameterGroup $parameterGroup, array $productVariantIds): array
+    {
+        if ($parameterGroup === null || $productVariantIds === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.parameterGroup = :group')->setParameter('group', $parameterGroup)
+            ->andWhere('p.productVariant IN (:variants)')->setParameter('variants', $productVariantIds)
+            ->groupBy('p.data')
+            ->getQuery()->getResult();
     }
 
     public function findParametersQB(QueryBuilder $queryBuilder, int $parameterGroupId): QueryBuilder

@@ -36,8 +36,10 @@ class DataLayerItemFactory
         if (!$quantity){
             $quantity = $productVariantPrice->getMinimalAmount() ?? 1;
         }
-        $priceNoVat = $productVariantPrice->getPrice() ?? 0.0;
-        $priceVat = $productVariantPrice->setVatCalculationType(VatCalculationType::WithVAT)->getPrice() ?? 0.0;
+        // ProductVariantPrice prices all `quantity` pieces; GA4 items carry the unit price
+        $pieces = max(1, $quantity);
+        $priceNoVat = round(($productVariantPrice->getPrice() ?? 0.0) / $pieces, 2);
+        $priceVat = round(($productVariantPrice->setVatCalculationType(VatCalculationType::WithVAT)->getPrice() ?? 0.0) / $pieces, 2);
 
         return new DataLayerItem(
             item_id: $variant->getId(),
@@ -74,8 +76,12 @@ class DataLayerItemFactory
 
     private function buildCategories(Product $product): array
     {
-        $category = $product->getCategoryProducts()?->first()?->getCategory();
-        if (!$category) {
+        $categoryProduct = $product->getCategoryProducts()->first();
+        if ($categoryProduct === false) {
+            return [];
+        }
+        $category = $categoryProduct->getCategory();
+        if ($category === null) {
             return [];
         }
         return [$this->getCategoryNameTreeUp($category)];

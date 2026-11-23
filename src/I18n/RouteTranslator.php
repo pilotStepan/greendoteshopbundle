@@ -3,11 +3,12 @@
 namespace Greendot\EshopBundle\I18n;
 
 use Greendot\EshopBundle\Attribute\TranslatableRoute;
-use JetBrains\PhpStorm\ArrayShape;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Exception\ExceptionInterface as RoutingException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Greendot\EshopBundle\Repository\HintedRepositoryBase;
 
@@ -60,19 +61,15 @@ readonly class RouteTranslator
 
         $attributeConfig = $this->parseAttribute($controller);
 
-        if (!$attributeConfig || !isset($attributeConfig['params']) || count($attributeConfig['params']) === 0) {
+        if ($attributeConfig === null || $attributeConfig['params'] === []) {
             return $this->buildUri($request, $desiredLocale);
         }
 
         $modifiedAttributes = [];
         foreach ($attributeConfig['params'] as $spec) {
-            $param = $spec['param'] ?? null;
-            $class = $spec['class'] ?? null;
-            $property = $spec['property'] ?? 'slug';
-
-            if (!$param || !$class) {
-                continue;
-            }
+            $param = $spec['param'];
+            $class = $spec['class'];
+            $property = $spec['property'];
 
             $currentValue = $this->getArgumentFromRequest($param, $request);
             if (!$currentValue) {
@@ -99,8 +96,9 @@ readonly class RouteTranslator
      *
      * Normalized shape:
      *  ['params' => [ ['param' => string, 'class' => string, 'property' => string], ... ]]
+     *
+     * @return array{params: list<array{param: string, class: string, property: string}>}|null
      */
-    #[ArrayShape(['params' => 'array'])]
     private function parseAttribute(string $controllerClass): ?array
     {
         [$controllerClass, $method] = explode('::', $controllerClass);
@@ -207,15 +205,21 @@ readonly class RouteTranslator
             $routeParameters[$key] = $modifiedAttribute;
         }
 
-        $path = $request->attributes?->get('_route' ?? null);
+        $path = $request->attributes->get('_canonical_route') ?? $request->attributes->get('_route');
         if (!$path){
             $controller = $request->attributes->get('_controller') ?? null;
             if (!$controller) return null;
             $path = $this->getPathByController($controller);
         }
-        if (!$path) return null;
+        if (!$path) {
+            return null;
+        }
 
-        return $this->router->generate($path, $routeParameters);
+        try {
+            return $this->router->generate($path, $routeParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+        } catch (RoutingException) {
+            return null;
+        }
     }
 
     private function getPathByController(string $controller): ?string

@@ -17,7 +17,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Ignore;
 use Exception;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Gedmo\Translatable\Translatable;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Greendot\EshopBundle\Entity\Interface\PageableInterface;
@@ -112,10 +112,10 @@ class Category implements Translatable, PageableInterface
     #[Groups(['category_with_parents:read', 'product_item:read'])]
     private $categorySubCategories;
 
-    /** @var ArrayCollection these are the child categories, ei. this entity is the super_category */
+    /** @var bool */
     #[Gedmo\Versioned]
     #[ORM\Column(type: 'boolean', name: 'is_active')]
-    #[Groups('category_with_parents:read','category_default', 'category:read', 'product_item:read', 'comment:read')]
+    #[Groups(['category_with_parents:read', 'category_default', 'category:read', 'product_item:read', 'comment:read'])]
     private $isActive;
 
     #[Gedmo\Translatable]

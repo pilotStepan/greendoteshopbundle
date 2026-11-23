@@ -13,7 +13,7 @@ use Symfony\Component\HttpKernel\Kernel;
  * Kernel for HTTP-level functional tests against #[ApiResource] endpoints.
  *
  * Unlike TestKernel (which avoids Doctrine/API Platform entirely), this kernel boots
- * a real Doctrine + API Platform + Security stack backed by SQLite, but does NOT
+ * a real Doctrine + API Platform + Security stack backed by MariaDB (TEST_DATABASE_URL), but does NOT
  * register the real GreendotEshopBundle. The bundle's own config/services.yaml
  * autowires everything under src/* (SMS, payment, JWT auth, OAuth2, ...), which would
  * require credentials/bundles not available in tests. Instead, tests/App/config/api/
@@ -21,6 +21,19 @@ use Symfony\Component\HttpKernel\Kernel;
  */
 class ApiTestKernel extends Kernel
 {
+    /** Local default, also set in phpunit.xml; CI sets its own. `composer test` starts the server (compose.yaml). */
+    public const DEFAULT_DATABASE_URL = 'mysql://root:root@127.0.0.1:33061/eshop_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4';
+
+    public static function databaseUrl(): string
+    {
+        $url = $_SERVER['TEST_DATABASE_URL'] ?? $_ENV['TEST_DATABASE_URL'] ?? getenv('TEST_DATABASE_URL');
+        if (!\is_string($url) || $url === '') {
+            throw new \LogicException('Set TEST_DATABASE_URL to a MariaDB database (phpunit.xml does).');
+        }
+
+        return $url;
+    }
+
     public function registerBundles(): iterable
     {
         return [

@@ -25,7 +25,7 @@ class SyncBundleCommand extends Command
 {
     private string $localBundlePath;
 
-    public function __construct(string $localBundlePath = null)
+    public function __construct(?string $localBundlePath = null)
     {
         if ($localBundlePath === null) {
             throw new RuntimeException('Define LOCAL_BUNDLE_PATH in your .env file to use this command');

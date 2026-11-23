@@ -64,7 +64,10 @@
     "karser/karser-recaptcha3-bundle": "^0.3.0",
     "spatie/schema-org": "^4.0",
     "beberlei/doctrineextensions": "^1.5",
-    "ext-zip": "*"
+    "ext-zip": "*",
+    "doctrine/doctrine-migrations-bundle": "^3.7",
+    "rikudou/skqrpayment": "^4.2",
+    "ext-gd": "*"
   },
   "require-dev": {
     "symfony/http-kernel": "^7.0",
@@ -73,6 +76,45 @@
     "phpunit/phpunit": "^10.5",
     "doctrine/doctrine-fixtures-bundle": "^3.6",
     "zenstruck/foundry": "^1.37",
-    "symfony/stopwatch": "^7.4"
+    "symfony/stopwatch": "^7.4",
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-doctrine": "^2.0",
+    "phpstan/phpstan-symfony": "^2.0",
+    "phpstan/phpstan-phpunit": "^2.0",
+    "deeplcom/deepl-php": "^1.0"
+  },
+  "suggest": {
+    "deeplcom/deepl-php": "Needed by GenerateTranslation / TranslationController (DEEPL_API_KEY) to machine-translate entities."
+  },
+  "scripts": {
+    "phpstan": [
+      "Composer\\Config::disableProcessTimeout",
+      "docker compose run --rm --no-deps php vendor/bin/phpstan analyse"
+    ],
+    "phpstan:baseline": [
+      "Composer\\Config::disableProcessTimeout",
+      "docker compose run --rm --no-deps php vendor/bin/phpstan analyse --generate-baseline"
+    ],
+    "test": [
+      "Composer\\Config::disableProcessTimeout",
+      "docker compose run --rm php vendor/bin/phpunit"
+    ],
+    "test:db": "docker compose up --detach --wait test-db",
+    "test:db:stop": "docker compose down"
+  },
+  "scripts-descriptions": {
+    "phpstan": "Run PHPStan on PHP 8.2 in Docker, as CI does (arguments go to PHPStan)",
+    "phpstan:baseline": "Regenerate phpstan-baseline.neon on PHP 8.2 in Docker",
+    "test": "Run PHPUnit on PHP 8.2 in Docker, as CI does, starting the test database if it isn't running (arguments go to PHPUnit)",
+    "test:db": "Start the MariaDB test database (compose.yaml); does nothing if it is already running",
+    "test:db:stop": "Stop and remove the test database"
+  },
+  "config": {
+    "platform": {
+      "php": "8.2.0"
+    },
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   }
 }
