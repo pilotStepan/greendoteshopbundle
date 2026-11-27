@@ -587,6 +587,34 @@ class ProductRepository extends HintedRepositoryBase
     }
 
     /**
+     * Orders by product.sold_amount: units sold in the last 6 months, refreshed by the /scheduled/sales endpoint.
+     * Products without sales (NULL) count as 0.
+     */
+    public function sortProductsBySoldAmount(QueryBuilder $qb, string $direction): QueryBuilder
+    {
+        $alias = $qb->getRootAliases()[0];
+        $qb->addSelect(sprintf('COALESCE(%s.sold_amount, 0) AS HIDDEN soldAmount', $alias))
+            ->addOrderBy('soldAmount', strtoupper($direction));
+
+        return $qb;
+    }
+
+    /**
+     * The shop's own product order: the category's order inside a category (mainProductsFilter() joins it as 'cp'),
+     * otherwise product.sequence.
+     */
+    private function sortProductsByListingOrder(QueryBuilder $qb, bool $inCategory): void
+    {
+        if ($inCategory) {
+            $qb->addOrderBy('cp.sequence', 'ASC');
+
+            return;
+        }
+
+        $this->sortProductsBySequence($qb, 'DESC');
+    }
+
+    /**
      * Units sold per product for purchases issued within the given period.
      * Only products with at least one sale are returned.
      *
@@ -706,7 +734,7 @@ class ProductRepository extends HintedRepositoryBase
         if (!isset($filters['externalId'])) $filters['externalId'] = false;
 
 
-        $availableOrderByIds = ['name', 'price', 'rating', 'default'];
+        $availableOrderByIds = ['name', 'price', 'rating', 'bestseller', 'default'];
 
         if (!isset($filters['orderBy'])){
             $filters['orderBy'] = ['id' => '', 'direction' => 'DESC'];
@@ -801,12 +829,12 @@ class ProductRepository extends HintedRepositoryBase
             case 'rating':
                 $this->sortProductsByReviews($qb, $direction);
                 break;
+            case 'bestseller':
+                $this->sortProductsBySoldAmount($qb, $direction);
+                $this->sortProductsByListingOrder($qb, $filters['categoryId'] > 0);
+                break;
             default:
-                if ($filters['categoryId'] > 0) {
-                    $qb->addOrderBy('cp.sequence', 'ASC');
-                    break;
-                }
-                $this->sortProductsBySequence($qb, 'DESC');
+                $this->sortProductsByListingOrder($qb, $filters['categoryId'] > 0);
                 break;
         }
 
